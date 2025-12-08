@@ -39,8 +39,8 @@ class QueryExtensions:
         return [
             selectinload(Utility.discrete_utilities).options(
                 joinedload(DiscreteUtility.value_metric),
-                selectinload(DiscreteProbability.parent_options),
-                selectinload(DiscreteProbability.parent_outcomes),
+                selectinload(DiscreteUtility.parent_options),
+                selectinload(DiscreteUtility.parent_outcomes),
             )
         ]
 

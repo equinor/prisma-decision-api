@@ -28,7 +28,7 @@ class Utility(Base, BaseEntity):
         foreign_keys="[DiscreteUtility.utility_id]"
     )
 
-    def __init__(self, id: uuid.UUID, issue_id: uuid.UUID, discrete_utilities: Optional[list[DiscreteUtility]] = None):
+    def __init__(self, id: uuid.UUID, issue_id: uuid.UUID, discrete_utilities: Optional[list["DiscreteUtility"]] = None):
         self.id = id
         self.issue_id = issue_id
         if discrete_utilities:

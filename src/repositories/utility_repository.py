@@ -16,7 +16,7 @@ from src.constants import default_value_metric_id
 
 class UtilityRepository(BaseRepository[Utility, uuid.UUID]):
     def __init__(self, session: AsyncSession):
-        super().__init__(session, Utility, query_extension_method=QueryExtensions.empty_load)
+        super().__init__(session, Utility, query_extension_method=QueryExtensions.load_utility_with_relationships)
 
     async def update(self, entities: list[Utility]) -> list[Utility]:
         entities_to_update = await self.get([utility.id for utility in entities])
@@ -24,9 +24,7 @@ class UtilityRepository(BaseRepository[Utility, uuid.UUID]):
         self.prepare_entities_for_update([entities, entities_to_update])
         for n, entity_to_update in enumerate(entities_to_update):
             entity = entities[n]
-            entity_to_update.values = entity.values
-            if entity.issue_id:
-                entity_to_update = entity.issue_id
+            entity_to_update = await self._update_utility(entity, entity_to_update)
 
         await self.session.flush()
         return entities_to_update
@@ -44,11 +42,10 @@ def recalculate_discrete_utility_table(session: Session, id: uuid.UUID):
 
     query = (
         select(Utility).where(Utility.id == id).options(
-            # TODO: Add selectinload for value metrics when ready
-            # selectinload(Utility.value_metrics),
             selectinload(Utility.discrete_utilities).options(
                 selectinload(DiscreteUtility.parent_options),
                 selectinload(DiscreteUtility.parent_outcomes),
+                joinedload(DiscreteUtility.value_metric),
             ),
             joinedload(Utility.issue).options(
                 joinedload(Issue.node).options(

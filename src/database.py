@@ -63,9 +63,14 @@ async def validate_default_scenarios(session: AsyncSession):
                 else:
                     scenario.is_default = False
             await session.flush()
+    await session.commit()
 
 async def ensure_default_value_metric_exists(session: AsyncSession):
     value_metrics = list((await session.scalars(select(ValueMetric))).all())
+
+    for value_metric in value_metrics:
+        if value_metric.name == "":
+            await session.delete(value_metric)
 
     if default_value_metric_id in [x.id for x in value_metrics]:
         return
@@ -73,7 +78,7 @@ async def ensure_default_value_metric_exists(session: AsyncSession):
     # create default value metric
     default_metric = ValueMetric(id = default_value_metric_id, name='value')
     session.add(default_metric)
-    await session.flush()
+    await session.commit()
 
 async def get_connection_string_and_token(
     env: str,
