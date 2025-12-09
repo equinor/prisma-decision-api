@@ -7,8 +7,8 @@ from src.models import NodeStyle
 class NodeStyleDto(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     node_id: uuid.UUID
-    x_position: float = Field(default=0., decimal_places=14)
-    y_position: float = Field(default=0., decimal_places=14)
+    x_position: float = 0.
+    y_position: float = 0.
 
 
 class NodeStyleIncomingDto(NodeStyleDto):
