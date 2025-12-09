@@ -39,7 +39,7 @@ class DiscreteProbability(Base, BaseEntity):
     id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True)
     outcome_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("outcome.id", ondelete="CASCADE"), index=True)
     uncertainty_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("uncertainty.id"), index=True) # cascade delete handled in uncertainty model
-    probability: Mapped[Optional[float]] = mapped_column(Float(precision=14), default=None, nullable=True)
+    probability: Mapped[Optional[float]] = mapped_column(Float(precision=53), default=None, nullable=True)
 
     outcome: Mapped["Outcome"] = relationship("Outcome", foreign_keys=[outcome_id])
     uncertainty: Mapped["Uncertainty"] = relationship("Uncertainty", back_populates="discrete_probabilities", foreign_keys=[uncertainty_id])

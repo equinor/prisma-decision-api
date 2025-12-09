@@ -7,7 +7,7 @@ class DiscreteProbabilityDto(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     uncertainty_id: uuid.UUID
     outcome_id: uuid.UUID
-    probability: Optional[float] = None
+    probability: Optional[float] = Field(default=None, decimal_places=14)
     parent_outcome_ids: List[uuid.UUID] = []
     parent_option_ids: List[uuid.UUID] = []
 
