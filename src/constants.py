@@ -42,6 +42,9 @@ class DatabaseConstants(int, Enum):
     MAX_SHORT_STRING_LENGTH = 60
     MAX_LONG_STRING_LENGTH = 600
 
+class DtoConstants(int, Enum):
+    DECIMAL_PLACES = 14
+
 class NodeStates(str, Enum):
     OPTION = "option"
     OUTCOME = "outcome"
