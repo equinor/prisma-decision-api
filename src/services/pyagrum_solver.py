@@ -9,6 +9,7 @@ from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.dtos.option_dtos import OptionOutgoingDto
 from src.dtos.outcome_dtos import OutcomeOutgoingDto
 from src.dtos.model_solution_dtos import SolutionDto
+from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator, DecisionTreeGraph
 from typing import TypeVar
 
 T = TypeVar('T', OptionOutgoingDto, OutcomeOutgoingDto)
@@ -20,6 +21,28 @@ class PyagrumSolver:
 
     def _reset_diagram(self):
         self.diagram = gum.InfluenceDiagram()
+
+    def _is_decision_reachable(self, from_node_id: int, to_node_id: int) -> bool:
+        """
+        Check if from_node_id is reachable by to_node_id 
+        (i.e., if from_node_id is an ancestor of to_node_id)
+        """
+        # Get all ancestors of to_node_id
+        ancestors = self._get_all_ancestors(to_node_id)
+        return from_node_id in ancestors
+
+    def _get_all_ancestors(self, node_id: int) -> set[int]:
+        """Recursively get all ancestors of a node"""
+
+        ancestors: set[int] = set()
+        parents: set[int] = set(self.diagram.parents(node_id))
+        
+        for parent in parents:
+            ancestors.add(parent)
+            # Recursively get ancestors of this parent
+            ancestors.update(self._get_all_ancestors(parent))
+        
+        return ancestors
 
     def add_to_lookup(self, issue: IssueOutgoingDto, node_id: int) -> None:
         self.node_lookup[issue.id.__str__()] = node_id
@@ -33,10 +56,29 @@ class PyagrumSolver:
     def _sort_state_dtos(self, dtos: list[T]) -> list[T]:
         return sorted(dtos, key=lambda x: x.id.__str__())
 
-    def find_optimal_decisions(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]):
+    async def find_optimal_decisions(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]):
         self.build_influence_diagram(issues, edges)
 
+        decision_tree_creator = await DecisionTreeCreator.initialize(scenario_id = issues[0].scenario_id,
+                                            nodes = issues,
+                                            edges = edges)
+        
+        partial_order = await decision_tree_creator.calculate_partial_order()
+
+        partial_order_decisions = [x for x in partial_order if x in [issue.id for issue in issues if issue.type == Type.DECISION]]
         ie = gum.ShaferShenoyLIMIDInference(self.diagram)
+
+        for idx, decision_id in enumerate(partial_order_decisions):
+            current_decision_node_id = self.node_lookup[decision_id.__str__()]
+            
+            # Get all previous decisions in the partial order
+            for prev_decision_id in partial_order_decisions[:idx]:
+                prev_decision_node_id = self.node_lookup[prev_decision_id.__str__()]
+
+                # Check if prev_decision is already reachable/known by current_decision
+                if not self._is_decision_reachable(prev_decision_node_id, current_decision_node_id):
+                    ie.addNoForgettingAssumption(prev_decision_node_id, current_decision_node_id)
+
         if not ie.isSolvable():
             raise RuntimeError("Influence diagram is not solvable")
         ie.makeInference()
@@ -141,6 +183,16 @@ class PyagrumSolver:
             return probabilities
 
     def add_utility(self, issue: IssueOutgoingDto):
+        self.add_utility_node(issue)
+        self.add_virtual_utility_node(issue)
+
+    def add_utility_node(self, issue: IssueOutgoingDto):
+        if issue.type in [Type.DECISION.value, Type.UNCERTAINTY.value]:
+            return
+        
+    def add_virtual_utility_node(self, issue: IssueOutgoingDto):
+        if issue.type == Type.UTILITY.value:
+            return
         node_id = self.diagram.addUtilityNode( # type: ignore
             gum.LabelizedVariable(
                 f"{issue.id.__str__()} utility",
