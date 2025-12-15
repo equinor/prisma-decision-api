@@ -22,28 +22,6 @@ class PyagrumSolver:
     def _reset_diagram(self):
         self.diagram = gum.InfluenceDiagram()
 
-    def _is_decision_reachable(self, from_node_id: int, to_node_id: int) -> bool:
-        """
-        Check if from_node_id is reachable by to_node_id 
-        (i.e., if from_node_id is an ancestor of to_node_id)
-        """
-        # Get all ancestors of to_node_id
-        ancestors = self._get_all_ancestors(to_node_id)
-        return from_node_id in ancestors
-
-    def _get_all_ancestors(self, node_id: int) -> set[int]:
-        """Recursively get all ancestors of a node"""
-
-        ancestors: set[int] = set()
-        parents: set[int] = set(self.diagram.parents(node_id))
-        
-        for parent in parents:
-            ancestors.add(parent)
-            # Recursively get ancestors of this parent
-            ancestors.update(self._get_all_ancestors(parent))
-        
-        return ancestors
-
     def add_to_lookup(self, issue: IssueOutgoingDto, node_id: int) -> None:
         self.node_lookup[issue.id.__str__()] = node_id
 
@@ -66,19 +44,15 @@ class PyagrumSolver:
         
         partial_order = await decision_tree_creator.calculate_partial_order()
 
-        partial_order_decisions = [x for x in partial_order if x in [issue.id for issue in issues if issue.type == Type.DECISION]]
+        partial_order = [
+            (await decision_tree_creator.get_node_from_uuid(tree_node_id)).issue.id 
+            for tree_node_id in partial_order
+        ]
+
+        partial_order_decisions = [x for x in partial_order if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]]
         ie = gum.ShaferShenoyLIMIDInference(self.diagram)
 
-        for idx, decision_id in enumerate(partial_order_decisions):
-            current_decision_node_id = self.node_lookup[decision_id.__str__()]
-            
-            # Get all previous decisions in the partial order
-            for prev_decision_id in partial_order_decisions[:idx]:
-                prev_decision_node_id = self.node_lookup[prev_decision_id.__str__()]
-
-                # Check if prev_decision is already reachable/known by current_decision
-                if not self._is_decision_reachable(prev_decision_node_id, current_decision_node_id):
-                    ie.addNoForgettingAssumption(prev_decision_node_id, current_decision_node_id)
+        ie.addNoForgettingAssumption([str(x) for x in partial_order_decisions])
 
         if not ie.isSolvable():
             raise RuntimeError("Influence diagram is not solvable")
