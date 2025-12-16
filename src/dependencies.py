@@ -12,7 +12,6 @@ from src.services.discrete_probability_service import DiscreteProbabilityService
 from src.services.discrete_utility_service import DiscreteUtilityService
 from src.services.utility_service import UtilityService
 from src.services.value_metric_service import ValueMetricService
-from src.services.scenario_service import ScenarioService
 from src.services.edge_service import EdgeService
 from src.services.node_service import NodeService
 from src.services.node_style_service import NodeStyleService
@@ -82,8 +81,10 @@ async def get_uncertainty_service() -> UncertaintyService:
 async def get_discrete_probability_service() -> DiscreteProbabilityService:
     return DiscreteProbabilityService()
 
+
 async def get_discrete_utility_service() -> DiscreteUtilityService:
     return DiscreteUtilityService()
+
 
 async def get_utility_service() -> UtilityService:
     return UtilityService()
@@ -91,10 +92,6 @@ async def get_utility_service() -> UtilityService:
 
 async def get_value_metric_service() -> ValueMetricService:
     return ValueMetricService()
-
-
-async def get_scenario_service() -> ScenarioService:
-    return ScenarioService()
 
 
 async def get_edge_service() -> EdgeService:
@@ -118,8 +115,8 @@ async def get_user_service() -> UserService:
 
 
 async def get_solver_service() -> SolverService:
-    return SolverService(await get_scenario_service())
+    return SolverService(await get_project_service())
 
 
 async def get_structure_service() -> StructureService:
-    return StructureService(await get_scenario_service())
+    return StructureService(await get_project_service())

@@ -8,13 +8,7 @@ from src.dtos.project_roles_dtos import (
     ProjectRoleMapper,
 )
 from src.models.project import Project, default_endtime
-from src.dtos.scenario_dtos import (
-    ScenarioMapper,
-    ScenarioCreateViaProjectDto,
-    ScenarioIncomingDto,
-    ScenarioOutgoingDto,
-    PopulatedScenarioDto,
-)
+
 from src.constants import DatabaseConstants
 
 from src.dtos.project_roles_dtos import ProjectRoleOutgoingDto
@@ -32,22 +26,18 @@ class ProjectDto(BaseModel):
 
 class ProjectCreateDto(ProjectDto):
     users: list[ProjectRoleCreateDto]
-    scenarios: list[ScenarioCreateViaProjectDto]
 
 
 class ProjectIncomingDto(ProjectDto):
     users: list[ProjectRoleIncomingDto]
-    scenarios: list[ScenarioIncomingDto]
 
 
 class ProjectOutgoingDto(ProjectDto):
     users: list[ProjectRoleOutgoingDto]
-    scenarios: list[ScenarioOutgoingDto]
 
 
 class PopulatedProjectDto(ProjectDto):
     users: list[ProjectRoleOutgoingDto]
-    scenarios: list[PopulatedScenarioDto]
 
 
 class ProjectMapper:
@@ -61,7 +51,6 @@ class ProjectMapper:
             public=dto.public,
             end_date=dto.end_date,
             project_role=[],
-            scenarios=[],  # must create the project first
         )
 
     @staticmethod
@@ -73,7 +62,6 @@ class ProjectMapper:
             public=entity.public,
             end_date=entity.end_date,
             users=ProjectRoleMapper.to_outgoing_dtos(entity.project_role),
-            scenarios=ScenarioMapper.to_outgoing_dtos(entity.scenarios),
         )
 
     @staticmethod
@@ -85,7 +73,6 @@ class ProjectMapper:
             public=entity.public,
             end_date=entity.end_date,
             users=ProjectRoleMapper.to_outgoing_dtos(entity.project_role),
-            scenarios=ScenarioMapper.to_populated_dtos(entity.scenarios),
         )
 
     @staticmethod
@@ -98,7 +85,6 @@ class ProjectMapper:
             public=dto.public,
             end_date=dto.end_date,
             project_role=ProjectRoleMapper.to_project_role_entities(dto.users),
-            scenarios=ScenarioMapper.to_entities(dto.scenarios, user_id),
         )
 
     @staticmethod

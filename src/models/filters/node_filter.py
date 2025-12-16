@@ -1,7 +1,8 @@
 import uuid
 from typing import Optional
+from src.models.project import Project
 from src.models.filters.base_filter import BaseFilter
-from src.models import Node, Scenario
+from src.models import Node
 from sqlalchemy.sql import ColumnElement
 
 
@@ -16,7 +17,6 @@ class NodeFilter(BaseFilter):
         conditions: list[ColumnElement[bool]] = []
         self.add_condition_for_property(self.node_ids, self._node_id_condition, conditions)
         self.add_condition_for_property(self.issue_ids, self._issue_id_condition, conditions)
-        self.add_condition_for_property(self.scenario_ids, self._scenario_id_condition, conditions)
         self.add_condition_for_property(self.project_ids, self._project_id_condition, conditions)
         self.add_condition_for_property(self.names, self._name_condition, conditions)
         return conditions
@@ -31,12 +31,8 @@ class NodeFilter(BaseFilter):
         return Node.issue_id == issue_id
 
     @staticmethod
-    def _scenario_id_condition(scenario_id: uuid.UUID) -> ColumnElement[bool]:
-        return Node.scenario_id == scenario_id
-
-    @staticmethod
     def _project_id_condition(project_id: uuid.UUID) -> ColumnElement[bool]:
-        return Node.scenario.has(Scenario.project_id == project_id)
+        return Node.project.has(Project.id == project_id)
 
     @staticmethod
     def _name_condition(name: str) -> ColumnElement[bool]:
