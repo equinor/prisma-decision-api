@@ -32,11 +32,10 @@ from src.events import (
     after_commit_event_handler,  # noqa: F401
 )
 
-# dummy commit to supress the flake warning for unused imports
-before_flush_event_handler()
-after_flush_event_handler()
 before_commit_event_handler()
+before_flush_event_handler()
 after_commit_event_handler()
+after_flush_event_handler()
 
 
 class SessionManager:

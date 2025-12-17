@@ -127,7 +127,7 @@ class QueryExtensions:
             selectinload(Project.objectives),
             selectinload(Project.nodes),
             selectinload(Project.edges),
-            joinedload(Project.issues).options(*QueryExtensions.load_issue_with_relationships()),
+            selectinload(Project.issues).options(*QueryExtensions.load_issue_with_relationships()),
             selectinload(Project.project_role).options(*QueryExtensions.load_role_with_user()),
         ]
 

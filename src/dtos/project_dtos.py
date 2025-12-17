@@ -20,6 +20,7 @@ class ProjectDto(BaseModel):
     opportunityStatement: Annotated[
         str, Field(max_length=DatabaseConstants.MAX_LONG_STRING_LENGTH.value)
     ] = ""
+    parent_project_id: uuid.UUID | None = None
     public: bool = False
     end_date: datetime = Field(default_factory=default_endtime)
 

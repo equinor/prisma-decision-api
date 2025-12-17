@@ -24,7 +24,9 @@ class Edge(Base, BaseEntity):
     head_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("node.id"), index=True)
     project_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("project.id"), index=True)
 
-    project: Mapped["Project"] = relationship("Project", foreign_keys=[project_id])
+    project: Mapped["Project"] = relationship(
+        "Project", foreign_keys=[project_id], back_populates="edges"
+    )
 
     tail_node: Mapped["Node"] = relationship(
         "Node",
