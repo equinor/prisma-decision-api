@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.dtos.uncertainty_dtos import (
@@ -85,15 +85,15 @@ async def update_uncertainties(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/uncertainties/remake-probability-table")
+@router.post("/uncertainties/{id}/remake-probability-table")
 async def remake_probability_table(
-    ids: list[uuid.UUID] = Query([]),
+    id: uuid.UUID,
     uncertainty_service: UncertaintyService = Depends(get_uncertainty_service),
     session: AsyncSession = Depends(get_db),
 ):
     try:
-        await uncertainty_service.recalculate_discrete_probability_tables_async(session, ids)
+        await uncertainty_service.recalculate_discrete_probability_table_async(session, id)
         await session.commit()
-        return
+        return Response(None, status_code=204)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

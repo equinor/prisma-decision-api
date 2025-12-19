@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.dtos.utility_dtos import UtilityIncomingDto, UtilityOutgoingDto
@@ -82,15 +82,15 @@ async def update_utilities(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/utilities/remake-utility-table")
+@router.post("/utilities/{id}/remake-utility-table")
 async def remake_utility_table(
-    ids: list[uuid.UUID] = Query([]),
+    id: uuid.UUID,
     utility_service: UtilityService = Depends(get_utility_service),
     session: AsyncSession = Depends(get_db),
 ):
     try:
-        await utility_service.recalculate_discrete_utility_tables_async(session, ids)
+        await utility_service.recalculate_discrete_utility_table_async(session, id)
         await session.commit()
-        return
+        return Response(None, status_code=204)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -47,6 +47,5 @@ class UtilityService:
         result = UtilityMapper.to_outgoing_dtos(entities)
         return result
     
-    async def recalculate_discrete_utility_tables_async(self, session: AsyncSession, ids: list[uuid.UUID]):
-        for id in ids:
-            await UtilityRepository(session).recalculate_discrete_utility_table_async(id)
+    async def recalculate_discrete_utility_table_async(self, session: AsyncSession, id: uuid.UUID):
+        await UtilityRepository(session).recalculate_discrete_utility_table_async(id)
