@@ -114,7 +114,7 @@ class UtilityRepository(BaseRepository[Utility, uuid.UUID]):
         entity: Utility = (await self.session.scalars(query)).unique().first()
         if entity is None:
             return
-        perform_recalc(entity)    
+        perform_recalc(entity)
         await self.session.flush()
 
 def recalculate_discrete_utility_table(session: Session, id: uuid.UUID):
