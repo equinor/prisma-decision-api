@@ -79,7 +79,14 @@ class DiscreteTableEventHandler:
             if any(isinstance(entity, entity_type) for entity_type in self.subscribed_entities_new)
         ]
 
-        # special case for if edge has changed, because it is the only entity that needs to be checked for modifications after flush
+        # Edge is handled as a special case here: changes to its relationships or foreign keys
+        # can be applied implicitly by SQLAlchemy during the flush (e.g. via relationship
+        # synchronization or when related entities are reassigned), even if Edge was not
+        # considered "dirty" in the pre-flush pass. This means the final, persisted Edge
+        # state is only known after flush, so we must re-check it here. Other entities
+        # (Issue, Uncertainty, Decision) have all relevant recalculation triggers captured
+        # in process_session_changes_before_flush and therefore do not require post-flush
+        # modification handling.
         subscribed_dirty = [
             entity for entity in session.dirty
             if any(isinstance(entity, entity_type) for entity_type in self.subscribed_entities_modified_after_flush)
