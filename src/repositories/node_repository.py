@@ -1,10 +1,15 @@
 import uuid
+from sqlalchemy.orm import joinedload, Session
+from sqlalchemy.sql import select 
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories.query_extensions import QueryExtensions
 from src.repositories.base_repository import BaseRepository
+from src.constants import Type
 from src.models import (
     Node, 
+    Issue,
 )
+from src.utils.session_info_handler import SessionInfo
 
 class NodeRepository(BaseRepository[Node, uuid.UUID]):
     def __init__(self, session: AsyncSession):
@@ -39,3 +44,23 @@ class NodeRepository(BaseRepository[Node, uuid.UUID]):
             entity.issue.uncertainty.discrete_probabilities = []
 
         await self.session.flush()
+
+def add_effected_session_entities(session: Session, ids: set[uuid.UUID]) -> SessionInfo:
+    session_info = SessionInfo()
+    query = select(Node).where(Node.id.in_(ids)).options(
+        joinedload(Node.issue).options(
+            joinedload(Issue.utility),
+            joinedload(Issue.uncertainty),
+        )
+    )
+    entities = list((session.scalars(query)).unique().all())
+
+    for entity in entities:
+        if (entity.issue.type == Type.UNCERTAINTY.value and entity.issue.uncertainty):
+            session_info.affected_uncertainties.add(entity.issue.uncertainty.id)
+
+        if (entity.issue.type == Type.UTILITY.value and entity.issue.utility):
+            session_info.affected_utilities.add(entity.issue.utility.id)
+
+
+    return session_info

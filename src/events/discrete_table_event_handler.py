@@ -5,7 +5,7 @@ from typing import Any
 from typing import Any
 
 from sqlalchemy.orm import Session
-from sqlalchemy.orm.attributes import get_history
+from sqlalchemy.orm.attributes import get_history, History
 
 from src.models import (
     Edge, Issue, Outcome, Option, Uncertainty, Decision,
@@ -21,6 +21,7 @@ from src.repositories import (
     uncertainty_repository, 
     issue_repository,
     utility_repository,
+    node_repository,
 )
 from src.utils.session_info_handler import (
     SessionInfoHandler,
@@ -79,14 +80,6 @@ class DiscreteTableEventHandler:
             if any(isinstance(entity, entity_type) for entity_type in self.subscribed_entities_new)
         ]
 
-        # Edge is handled as a special case here: changes to its relationships or foreign keys
-        # can be applied implicitly by SQLAlchemy during the flush (e.g. via relationship
-        # synchronization or when related entities are reassigned), even if Edge was not
-        # considered "dirty" in the pre-flush pass. This means the final, persisted Edge
-        # state is only known after flush, so we must re-check it here. Other entities
-        # (Issue, Uncertainty, Decision) have all relevant recalculation triggers captured
-        # in process_session_changes_before_flush and therefore do not require post-flush
-        # modification handling.
         subscribed_dirty = [
             entity for entity in session.dirty
             if any(isinstance(entity, entity_type) for entity_type in self.subscribed_entities_modified_after_flush)
@@ -169,10 +162,17 @@ class DiscreteTableEventHandler:
         session_info = SessionInfo()
         issues_to_search: set[uuid.UUID] = set()
         changed_edges: set[uuid.UUID] = set()
+
+        head_ids: set[uuid.UUID] = set()
         
         for modified_entity in modified_entities:
             if isinstance(modified_entity, Edge):
                 changed_edges.add(modified_entity.id)
+                hist: History = get_history(modified_entity, Edge.head_id.name)
+                if isinstance(hist.added, list) and hist.added.__len__() == 1:
+                    head_ids.add(hist.added[0])
+                if isinstance(hist.deleted, list) and hist.deleted.__len__() == 1:
+                    head_ids.add(hist.deleted[0])
             elif isinstance(modified_entity, Issue):
                 if self._has_boundary_change(modified_entity):
                     issues_to_search.add(modified_entity.id)
@@ -194,9 +194,10 @@ class DiscreteTableEventHandler:
             session_info = SessionInfoHandler.add_to_session_info(session_info,
                 issue_repository.find_effected_session_entities(session, issues_to_search)
             )
-        if changed_edges:
+        
+        if head_ids:
             session_info = SessionInfoHandler.add_to_session_info(session_info,
-                edge_repository.find_effected_session_entities(session, changed_edges)
+                node_repository.add_effected_session_entities(session, head_ids)
             )
 
         return session_info
