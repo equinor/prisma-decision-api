@@ -168,11 +168,21 @@ class DiscreteTableEventHandler:
         for modified_entity in modified_entities:
             if isinstance(modified_entity, Edge):
                 changed_edges.add(modified_entity.id)
-                hist: History = get_history(modified_entity, Edge.head_id.name)
-                if isinstance(hist.added, list) and hist.added.__len__() == 1:
-                    head_ids.add(hist.added[0])
-                if isinstance(hist.deleted, list) and hist.deleted.__len__() == 1:
-                    head_ids.add(hist.deleted[0])
+                hist_head: History = get_history(modified_entity, Edge.head_id.name)
+                hist_tail: History = get_history(modified_entity, Edge.tail_id.name)
+
+                # handle head id updated
+                if isinstance(hist_head.added, list) and hist_head.added.__len__() == 1:
+                    head_ids.add(hist_head.added[0])
+                if isinstance(hist_head.deleted, list) and hist_head.deleted.__len__() == 1:
+                    head_ids.add(hist_head.deleted[0])
+
+                # handle tail id updated
+                if isinstance(hist_tail.added, list) and hist_tail.added.__len__() == 1:
+                    head_ids.add(modified_entity.head_id)
+                if isinstance(hist_tail.deleted, list) and hist_tail.deleted.__len__() == 1:
+                    head_ids.add(modified_entity.head_id)
+                    
             elif isinstance(modified_entity, Issue):
                 if self._has_boundary_change(modified_entity):
                     issues_to_search.add(modified_entity.id)
