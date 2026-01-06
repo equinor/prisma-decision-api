@@ -14,7 +14,6 @@ from sqlalchemy import or_
 
 class IssueFilter(BaseFilter):
     issue_ids: Optional[list[uuid.UUID]] = None
-    scenario_ids: Optional[list[uuid.UUID]] = None
     project_ids: Optional[list[uuid.UUID]] = None
     types: Optional[list[str]] = None
     names: Optional[list[str]] = None
@@ -30,7 +29,6 @@ class IssueFilter(BaseFilter):
 
         # Add conditions for each attribute
         self.add_condition_for_property(self.issue_ids, self._issue_id_condition, conditions)
-        self.add_condition_for_property(self.scenario_ids, self._scenario_id_condition, conditions)
         self.add_condition_for_property(self.project_ids, self._project_id_condition, conditions)
         self.add_condition_for_property(self.types, self._type_condition, conditions)
         self.add_condition_for_property(self.names, self._name_condition, conditions)
@@ -50,10 +48,6 @@ class IssueFilter(BaseFilter):
     @staticmethod
     def _issue_id_condition(issue_id: uuid.UUID) -> ColumnElement[bool]:
         return Issue.id == issue_id
-
-    @staticmethod
-    def _scenario_id_condition(project_id: uuid.UUID) -> ColumnElement[bool]:
-        return Issue.project.has(Project.id == project_id)
 
     @staticmethod
     def _project_id_condition(project_id: uuid.UUID) -> ColumnElement[bool]:

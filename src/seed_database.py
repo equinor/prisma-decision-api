@@ -185,6 +185,8 @@ async def create_single_project(conn: AsyncConnection):
         id=project_id,
         name="Test Project 1",
         opportunityStatement="A test project with minimal data",
+        parent_project_id=None,
+        parent_project_name="",
         user_id=user.id,
         project_role=[],
     )
@@ -481,6 +483,8 @@ async def create_decision_tree_symmetry_DT_from_ID(conn: AsyncConnection):
         id=project_id,
         name="Test Project decision tree symmetry",
         opportunityStatement="A test project with minimal data",
+        parent_project_id=None,
+        parent_project_name="",
         user_id=user.id,
         project_role=[],
     )
@@ -585,6 +589,8 @@ async def create_decision_tree_symmetry_DT(conn: AsyncConnection):
         name="Test Project decision tree symmetry",
         opportunityStatement="A test project with minimal data",
         user_id=user.id,
+        parent_project_id=None,
+        parent_project_name="",
         project_role=[],
     )
     project = add_auditable_fields(project, user)
@@ -731,6 +737,8 @@ async def seed_database(
             id=project_id,
             name=str(uuid4()),
             opportunityStatement=str(uuid4()),
+            parent_project_id=None,
+            parent_project_name="",
             user_id=user.id,
             project_role=[],
         )

@@ -36,8 +36,9 @@ class Project(Base, BaseEntity, BaseAuditableEntity):
     parent_project_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         GUID(), nullable=True, index=True
     )
-    parent_project_name: Mapped[str] = mapped_column(
+    parent_project_name: Mapped[Optional[str]] = mapped_column(
         String(DatabaseConstants.MAX_SHORT_STRING_LENGTH.value),
+        nullable=True,
     )
     opportunityStatement: Mapped[str] = mapped_column(
         String(DatabaseConstants.MAX_LONG_STRING_LENGTH.value)

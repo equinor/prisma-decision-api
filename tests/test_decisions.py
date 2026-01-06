@@ -22,7 +22,7 @@ async def test_get_decisions(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_get_decision(client: AsyncClient):
-    decision_id = GenerateUuid.as_string("test_single_decision")
+    decision_id = GenerateUuid.as_string(20)
     response = await client.get(f"/decisions/{decision_id}")
     assert response.status_code == 200, f"Response content: {response.content}"
 
@@ -32,8 +32,8 @@ async def test_get_decision(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_update_decision(client: AsyncClient):
     # Use completely unique IDs for this test
-    decision_id = GenerateUuid.as_uuid("update_test_decision")
-    issue_id = GenerateUuid.as_uuid("update_test_issue")
+    decision_id = GenerateUuid.as_uuid(1)  # Changed from "update_test_decision"
+    issue_id = GenerateUuid.as_uuid(1)  # Changed from "update_test_issue"
 
     new_alts = ["option_a", "option_b", "option_c"]
     new_options = [

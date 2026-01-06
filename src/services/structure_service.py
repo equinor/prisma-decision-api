@@ -10,43 +10,43 @@ class StructureService:
     def __init__(self, project_service: ProjectService):
         self.project_service = project_service
 
-    async def create_decision_tree(self, scenario_id: uuid.UUID) -> DecisionTreeGraph:
+    async def create_decision_tree(self, project_id: uuid.UUID) -> DecisionTreeGraph:
         issues = []
         edges = []
         async for session in sessionmanager.get_session():
             (
                 issues,
                 edges,
-            ) = await self.project_service.get_influence_diagram_data(session, scenario_id)
+            ) = await self.project_service.get_influence_diagram_data(session, project_id)
         decision_tree_creator = await DecisionTreeCreator.initialize(
-            scenario_id=scenario_id, nodes=issues, edges=edges
+            project_id=project_id, nodes=issues, edges=edges
         )
         return await decision_tree_creator.create_decision_tree()
 
-    async def create_decision_tree_dtos(self, scenario_id: uuid.UUID) -> Optional[DecisionTreeDTO]:
+    async def create_decision_tree_dtos(self, project_id: uuid.UUID) -> Optional[DecisionTreeDTO]:
         issues = []
         edges = []
         async for session in sessionmanager.get_session():
             (
                 issues,
                 edges,
-            ) = await self.project_service.get_influence_diagram_data(session, scenario_id)
+            ) = await self.project_service.get_influence_diagram_data(session, project_id)
         decision_tree_creator = await DecisionTreeCreator.initialize(
-            scenario_id=scenario_id, nodes=issues, edges=edges
+            project_id=project_id, nodes=issues, edges=edges
         )
         dt = await decision_tree_creator.create_decision_tree()
         return await dt.to_issue_dtos()
 
-    async def create_partial_order(self, scenario_id: uuid.UUID) -> Optional[PartialOrderDTO]:
+    async def create_partial_order(self, project_id: uuid.UUID) -> Optional[PartialOrderDTO]:
         issues = []
         edges = []
         async for session in sessionmanager.get_session():
             (
                 issues,
                 edges,
-            ) = await self.project_service.get_influence_diagram_data(session, scenario_id)
+            ) = await self.project_service.get_influence_diagram_data(session, project_id)
         decision_tree_creator = await DecisionTreeCreator.initialize(
-            scenario_id=scenario_id, nodes=issues, edges=edges
+            project_id=project_id, nodes=issues, edges=edges
         )
         uuid_list = await decision_tree_creator.calculate_partial_order()
         return PartialOrderDTO(issue_ids=uuid_list)

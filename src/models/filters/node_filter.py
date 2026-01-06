@@ -9,7 +9,6 @@ from sqlalchemy.sql import ColumnElement
 class NodeFilter(BaseFilter):
     node_ids: Optional[list[uuid.UUID]] = None
     issue_ids: Optional[list[uuid.UUID]] = None
-    scenario_ids: Optional[list[uuid.UUID]] = None
     project_ids: Optional[list[uuid.UUID]] = None
     names: Optional[list[str]] = None
 

@@ -90,7 +90,6 @@ class Node(Base, BaseEntity):
             return False
         return (
             self.id == other.id
-            and self.scenario_id == other.scenario_id
             and self.issue_id == other.issue_id
             and self.name == other.name
             and (
