@@ -25,17 +25,12 @@ from src.database import (
 from src.logger import get_dot_api_logger
 
 # import events to activate them
-from src.events import (
-    before_flush_event_handler,  # noqa: F401
-    after_flush_event_handler,  # noqa: F401
-    before_commit_event_handler,  # noqa: F401
-    after_commit_event_handler,  # noqa: F401
+from src.events import (  # noqa: F401
+    before_flush_event_handler,
+    after_flush_event_handler,
+    before_commit_event_handler,
+    after_commit_event_handler,
 )
-
-before_commit_event_handler()
-before_flush_event_handler()
-after_commit_event_handler()
-after_flush_event_handler()
 
 
 class SessionManager:

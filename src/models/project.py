@@ -30,11 +30,14 @@ class Project(Base, BaseEntity, BaseAuditableEntity):
     __tablename__ = "project"
 
     id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True)
+    name: Mapped[str] = mapped_column(
+        String(DatabaseConstants.MAX_SHORT_STRING_LENGTH.value), index=True
+    )
     parent_project_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         GUID(), nullable=True, index=True
     )
-    name: Mapped[str] = mapped_column(
-        String(DatabaseConstants.MAX_SHORT_STRING_LENGTH.value), index=True
+    parent_project_name: Mapped[str] = mapped_column(
+        String(DatabaseConstants.MAX_SHORT_STRING_LENGTH.value),
     )
     opportunityStatement: Mapped[str] = mapped_column(
         String(DatabaseConstants.MAX_LONG_STRING_LENGTH.value)
@@ -79,6 +82,8 @@ class Project(Base, BaseEntity, BaseAuditableEntity):
     def __init__(
         self,
         id: uuid.UUID,
+        parent_project_id: Optional[uuid.UUID],
+        parent_project_name: str,
         opportunityStatement: str,
         name: str,
         project_role: list["ProjectRole"],
@@ -87,6 +92,8 @@ class Project(Base, BaseEntity, BaseAuditableEntity):
         end_date: datetime = default_endtime(),
     ):
         self.id = id
+        self.parent_project_id = parent_project_id
+        self.parent_project_name = parent_project_name
         self.project_role = project_role
         self.name = name
         self.opportunityStatement = opportunityStatement

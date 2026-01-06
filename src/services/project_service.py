@@ -2,12 +2,15 @@ import asyncio
 import uuid
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
+from src.services.discrete_probability_service import DiscreteProbabilityService
+from src.services.edge_service import EdgeService
+from src.dtos.node_dtos import NodeIncomingDto
 from src.services.issue_service import IssueService
 from src.dtos.discrete_utility_dtos import DiscreteUtilityIncomingDto
 from src.dtos.utility_dtos import UtilityIncomingDto
 from src.dtos.node_style_dtos import NodeStyleIncomingDto
 from src.domain.influence_diagram import InfluenceDiagramDOT
-from src.dtos.edge_dtos import EdgeMapper, EdgeOutgoingDto
+from src.dtos.edge_dtos import EdgeIncomingDto, EdgeMapper, EdgeOutgoingDto
 from src.dtos.issue_dtos import IssueIncomingDto, IssueMapper, IssueOutgoingDto
 from src.models.filters.edge_filter import EdgeFilter
 from src.models.filters.issues_filter import IssueFilter
@@ -20,6 +23,9 @@ from src.repositories.project_role_repository import ProjectRoleRepository
 from src.models import (
     Project,
 )
+from src.dtos.uncertainty_dtos import UncertaintyIncomingDto
+from src.dtos.outcome_dtos import OutcomeIncomingDto
+from src.dtos.discrete_probability_dtos import DiscreteProbabilityIncomingDto
 from src.dtos.project_dtos import (
     ProjectMapper,
     ProjectIncomingDto,
@@ -181,7 +187,8 @@ class ProjectService:
         duplicate_project_dto = ProjectCreateDto(
             id=new_project_id,
             name=original_project.name,
-            parent_project_id=project[0].id,
+            parent_project_id=original_project.id,
+            parent_project_name=original_project.name,
             opportunityStatement=original_project.opportunityStatement,
             public=original_project.public,
             end_date=original_project.end_date,
@@ -207,32 +214,36 @@ class ProjectService:
         )
         # Create ID mapping for relationships
         id_mapping: dict[uuid.UUID, uuid.UUID] = {}
+        node_id_mapping: dict[uuid.UUID, uuid.UUID] = {}
         outcome_id_mapping: dict[uuid.UUID, uuid.UUID] = {}
         option_id_mapping: dict[uuid.UUID, uuid.UUID] = {}
 
-        # Duplicate issues with proper DTO conversion
-        duplicate_project_issue_dtos: list[IssueIncomingDto] = []
-
+        # Pre-generate all outcome and option IDs BEFORE processing
         for issue in original_project.issues:
+            node_dto = None
             new_issue_id = uuid.uuid4()
-            new_node_id = uuid.uuid4()
             id_mapping[issue.id] = new_issue_id
             if issue.node:
-                id_mapping[issue.node.id] = new_node_id
+                new_node_id = uuid.uuid4()
+                node_id_mapping[issue.node.id] = new_node_id
+            if issue.uncertainty and issue.type == Type.UNCERTAINTY:
+                for outcome in issue.uncertainty.outcomes:
+                    outcome_id_mapping[outcome.id] = uuid.uuid4()
 
-            # Convert decision to DTO if exists
-            decision_dto = None
-            if issue.decision:
+            if issue.decision and issue.type == Type.DECISION:
+                for option in issue.decision.options:
+                    option_id_mapping[option.id] = uuid.uuid4()
+
+        for issue in original_project.issues:
+            if issue.decision and issue.type == Type.DECISION:
                 from src.dtos.decision_dtos import DecisionIncomingDto
                 from src.dtos.option_dtos import OptionIncomingDto
 
                 new_decision_id = uuid.uuid4()
                 options_dtos: list[OptionIncomingDto] = []
                 for option in issue.decision.options:
-                    new_option_id = uuid.uuid4()
-                    option_id_mapping[option.id] = new_option_id
                     option_dto = OptionIncomingDto(
-                        id=new_option_id,
+                        id=option_id_mapping[option.id],
                         decision_id=new_decision_id,
                         name=option.name,
                         utility=option.utility,
@@ -241,141 +252,216 @@ class ProjectService:
 
                 decision_dto = DecisionIncomingDto(
                     id=new_decision_id,
-                    issue_id=new_issue_id,
+                    issue_id=id_mapping[issue.id],
                     type=DecisionHierarchy(issue.decision.type),
                     options=options_dtos,
                 )
-            # Convert uncertainty to DTO if exists
-            uncertainty_dto = None
-            if issue.uncertainty:
-                from src.dtos.uncertainty_dtos import UncertaintyIncomingDto
-                from src.dtos.outcome_dtos import OutcomeIncomingDto
-                from src.dtos.discrete_probability_dtos import DiscreteProbabilityIncomingDto
+                node_dto = None
+                if issue.node and hasattr(issue.node, "node_style") and issue.node.node_style:
+                    node_style_dto = NodeStyleIncomingDto(
+                        node_id=node_id_mapping[issue.node.id],
+                        x_position=issue.node.node_style.x_position,
+                        y_position=issue.node.node_style.y_position,
+                    )
+
+                    node_dto = NodeIncomingDto(
+                        id=node_id_mapping[issue.node.id],
+                        project_id=new_project_id,
+                        issue_id=id_mapping[issue.id],
+                        name=issue.node.name if issue.node else issue.name,
+                        node_style=node_style_dto,  # Add the missing field
+                    )
+
+                duplicate_project_decision_issue = IssueIncomingDto(
+                    id=id_mapping[issue.id],
+                    project_id=new_project_id,
+                    name=issue.name,
+                    description=issue.description,
+                    order=issue.order,
+                    type=Type(issue.type),
+                    boundary=Boundary(issue.boundary),
+                    node=node_dto,
+                    decision=decision_dto,
+                    uncertainty=None,
+                    utility=None,
+                )
+
+                await IssueService().create(
+                    session,
+                    [duplicate_project_decision_issue],
+                    UserIncomingDto(
+                        id=None, name=current_user.name, azure_id=current_user.azure_id
+                    ),
+                )
+
+        discrete_probability_dtos: list[DiscreteProbabilityIncomingDto] = []
+
+        for issue in original_project.issues:
+            if issue.uncertainty and issue.type == Type.UNCERTAINTY:
 
                 new_uncertainty_id = uuid.uuid4()
                 outcomes_dtos: list[OutcomeIncomingDto] = []
-                discrete_probability_dtos: list[DiscreteProbabilityIncomingDto] = []
-                for outcome in issue.uncertainty.outcomes:
-                    new_outcome_id = uuid.uuid4()
-                    outcome_id_mapping[outcome.id] = new_outcome_id
-                    outcomes_dto = OutcomeIncomingDto(
-                        id=new_outcome_id,
-                        name=outcome.name,
-                        uncertainty_id=new_uncertainty_id,
-                        utility=outcome.utility,
-                    )
-                    outcomes_dtos.append(outcomes_dto)
-
-                for discrete_probability in issue.uncertainty.discrete_probabilities:
-                    discrete_probability_dto = DiscreteProbabilityIncomingDto(
-                        id=uuid.uuid4(),
-                        uncertainty_id=new_uncertainty_id,
-                        outcome_id=outcome_id_mapping.get(
-                            discrete_probability.outcome_id, discrete_probability.outcome_id
-                        ),
-                        probability=discrete_probability.probability,
-                        parent_outcome_ids=[
-                            outcome_id_mapping.get(
-                                parent_outcome.parent_outcome_id, parent_outcome.parent_outcome_id
-                            )
-                            for parent_outcome in discrete_probability.parent_outcomes
-                        ],
-                        parent_option_ids=[
-                            option_id_mapping.get(
-                                parent_option.parent_option_id, parent_option.parent_option_id
-                            )
-                            for parent_option in discrete_probability.parent_options
-                        ],
-                    )
-
-                    discrete_probability_dtos.append(discrete_probability_dto)
-
+                # Step 1: Create Uncertainty DTO
                 uncertainty_dto = UncertaintyIncomingDto(
                     id=new_uncertainty_id,
-                    issue_id=new_issue_id,
+                    issue_id=id_mapping[issue.id],
+                    is_key=issue.uncertainty.is_key,
+                    outcomes=[],  # Initially empty
+                    discrete_probabilities=[],  # Initially empty
+                )
+
+                if len(issue.uncertainty.outcomes) > 0:
+                    for outcome in issue.uncertainty.outcomes:
+                        outcomes_dto = OutcomeIncomingDto(
+                            id=outcome_id_mapping[outcome.id],
+                            name=outcome.name,
+                            uncertainty_id=new_uncertainty_id,
+                            utility=outcome.utility,
+                        )
+                        outcomes_dtos.append(outcomes_dto)
+                    for discrete_probability in issue.uncertainty.discrete_probabilities:
+                        mapped_parent_outcome_ids = [
+                            outcome_id_mapping[parent_outcome.parent_outcome_id]
+                            for parent_outcome in discrete_probability.parent_outcomes
+                            if parent_outcome.parent_outcome_id in outcome_id_mapping
+                        ]
+
+                        mapped_parent_option_ids = [
+                            option_id_mapping[parent_option.parent_option_id]
+                            for parent_option in discrete_probability.parent_options
+                            if parent_option.parent_option_id in option_id_mapping
+                        ]
+
+                        discrete_probability_dto = DiscreteProbabilityIncomingDto(
+                            id=uuid.uuid4(),
+                            uncertainty_id=new_uncertainty_id,
+                            outcome_id=outcome_id_mapping.get(
+                                discrete_probability.outcome_id, discrete_probability.outcome_id
+                            ),
+                            probability=discrete_probability.probability,
+                            parent_outcome_ids=mapped_parent_outcome_ids,
+                            parent_option_ids=mapped_parent_option_ids,
+                        )
+                        discrete_probability_dtos.append(discrete_probability_dto)
+                uncertainty_dto = UncertaintyIncomingDto(
+                    id=new_uncertainty_id,
+                    issue_id=id_mapping[issue.id],
                     is_key=issue.uncertainty.is_key,
                     outcomes=outcomes_dtos,
-                    discrete_probabilities=discrete_probability_dtos,
+                    discrete_probabilities=[],
                 )
-                # Convert node to DTO with node_style
-            from src.dtos.node_dtos import NodeIncomingDto
+                node_dto = None
+                if issue.node and hasattr(issue.node, "node_style") and issue.node.node_style:
+                    node_style_dto = NodeStyleIncomingDto(
+                        node_id=node_id_mapping[issue.node.id],
+                        x_position=issue.node.node_style.x_position,
+                        y_position=issue.node.node_style.y_position,
+                    )
 
-            # Create node style DTO (copy from original if exists)
-            node_style_dto = None
-            node_dto = None
-            if issue.node and hasattr(issue.node, "node_style") and issue.node.node_style:
-                node_style_dto = NodeStyleIncomingDto(
-                    node_id=new_node_id,
-                    x_position=issue.node.node_style.x_position,
-                    y_position=issue.node.node_style.y_position,
-                )
+                    node_dto = NodeIncomingDto(
+                        id=node_id_mapping[issue.node.id],
+                        project_id=new_project_id,
+                        issue_id=id_mapping[issue.id],
+                        name=issue.node.name if issue.node else issue.name,
+                        node_style=node_style_dto,  # Add the missing field
+                    )
 
-                node_dto = NodeIncomingDto(
-                    id=new_node_id,
+                duplicate_project_uncertainty_issue = IssueIncomingDto(
+                    id=id_mapping[issue.id],
                     project_id=new_project_id,
-                    issue_id=new_issue_id,
-                    name=issue.node.name if issue.node else issue.name,
-                    node_style=node_style_dto,  # Add the missing field
+                    name=issue.name,
+                    description=issue.description,
+                    order=issue.order,
+                    type=Type(issue.type),
+                    boundary=Boundary(issue.boundary),
+                    node=node_dto,
+                    decision=None,
+                    uncertainty=uncertainty_dto,
+                    utility=None,
                 )
 
-            utility_dto = None
-            if issue.utility:
+                await IssueService().create(
+                    session,
+                    [duplicate_project_uncertainty_issue],
+                    UserIncomingDto(
+                        id=None, name=current_user.name, azure_id=current_user.azure_id
+                    ),
+                )
+
+        await DiscreteProbabilityService().create(session, discrete_probability_dtos)
+        for issue in original_project.issues:
+            if issue.utility and issue.type == Type.UTILITY:
                 new_utility_id = uuid.uuid4()
                 discrete_utility_dtos: list[DiscreteUtilityIncomingDto] = []
                 for discrete_utility in issue.utility.discrete_utilities:
+                    mapped_parent_outcome_ids = [
+                        outcome_id_mapping[parent_outcome.parent_outcome_id]
+                        for parent_outcome in discrete_utility.parent_outcomes
+                        if parent_outcome.parent_outcome_id in outcome_id_mapping
+                    ]
+                    mapped_parent_option_ids = [
+                        option_id_mapping[parent_option.parent_option_id]
+                        for parent_option in discrete_utility.parent_options
+                        if parent_option.parent_option_id in option_id_mapping
+                    ]
                     discrete_utility_dto = DiscreteUtilityIncomingDto(
                         id=uuid.uuid4(),
                         utility_id=new_utility_id,
                         utility_value=discrete_utility.utility_value,
-                        parent_option_ids=[
-                            option_id_mapping.get(
-                                parent_option.parent_option_id, parent_option.parent_option_id
-                            )
-                            for parent_option in discrete_utility.parent_options
-                        ],
-                        parent_outcome_ids=[
-                            outcome_id_mapping.get(
-                                parent_outcome.parent_outcome_id, parent_outcome.parent_outcome_id
-                            )
-                            for parent_outcome in discrete_utility.parent_outcomes
-                        ],
+                        parent_option_ids=mapped_parent_option_ids,
+                        parent_outcome_ids=mapped_parent_outcome_ids,  #
                         value_metric_id=discrete_utility.value_metric_id,
                     )
+
                     discrete_utility_dtos.append(discrete_utility_dto)
                 utility_dto = UtilityIncomingDto(
                     id=new_utility_id,
-                    issue_id=new_issue_id,
+                    issue_id=id_mapping[issue.id],
                     discrete_utilities=discrete_utility_dtos,
                 )
-            duplicate_project_issue = IssueIncomingDto(
-                id=uuid.uuid4(),
-                project_id=new_project_id,
-                name=issue.name,
-                description=issue.description,
-                order=issue.order,
-                type=Type(issue.type),
-                boundary=Boundary(issue.boundary),
-                node=node_dto,
-                decision=decision_dto,
-                uncertainty=uncertainty_dto,
-                utility=utility_dto,
-            )
-            duplicate_project_issue_dtos.append(duplicate_project_issue)
+                node_dto = None
 
-        await IssueService().create(
-            session,
-            duplicate_project_issue_dtos,
-            UserIncomingDto(id=None, name=current_user.name, azure_id=current_user.azure_id),
-        )
-        # Duplicate edges with updated node references
-        from src.dtos.edge_dtos import EdgeIncomingDto
+                if issue.node and hasattr(issue.node, "node_style") and issue.node.node_style:
+                    node_style_dto = NodeStyleIncomingDto(
+                        node_id=node_id_mapping[issue.node.id],
+                        x_position=issue.node.node_style.x_position,
+                        y_position=issue.node.node_style.y_position,
+                    )
+
+                    node_dto = NodeIncomingDto(
+                        id=node_id_mapping[issue.node.id],
+                        project_id=new_project_id,
+                        issue_id=id_mapping[issue.id],
+                        name=issue.node.name if issue.node else issue.name,
+                        node_style=node_style_dto,  # Add the missing field
+                    )
+                duplicate_project_issue = IssueIncomingDto(
+                    id=id_mapping[issue.id],
+                    project_id=new_project_id,
+                    name=issue.name,
+                    description=issue.description,
+                    order=issue.order,
+                    type=Type(issue.type),
+                    boundary=Boundary(issue.boundary),
+                    node=node_dto,
+                    decision=None,
+                    uncertainty=None,
+                    utility=utility_dto,
+                )
+
+                await IssueService().create(
+                    session,
+                    [duplicate_project_issue],
+                    UserIncomingDto(
+                        id=None, name=current_user.name, azure_id=current_user.azure_id
+                    ),
+                )
 
         duplicate_edge_dtos: list[EdgeIncomingDto] = []
 
         for edge in original_project.edges:
-            # Map old node IDs to new node IDs
-            new_tail_id = id_mapping.get(edge.tail_id)
-            new_head_id = id_mapping.get(edge.head_id)
+            new_tail_id = node_id_mapping[edge.tail_id]
+            new_head_id = node_id_mapping[edge.head_id]
 
             if new_tail_id and new_head_id:
                 edge_dto = EdgeIncomingDto(
@@ -385,10 +471,12 @@ class ProjectService:
                     project_id=new_project_id,
                 )
                 duplicate_edge_dtos.append(edge_dto)
-            # Create the duplicated edges (if you have EdgeService)
-        from src.services.edge_service import EdgeService
-
         await EdgeService().create(session, duplicate_edge_dtos)
+        id_mapping.clear()
+        node_id_mapping.clear()
+        outcome_id_mapping.clear()
+        option_id_mapping.clear()
+        return
 
     async def get_influence_diagram_data(
         self, session: AsyncSession, project_id: uuid.UUID

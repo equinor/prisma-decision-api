@@ -136,7 +136,7 @@ async def update_projects(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/projects/{id}")
+@router.post("/project/duplicate/{id}")
 async def duplicate_project(
     id: uuid.UUID,
     project_service: ProjectService = Depends(get_project_service),
@@ -148,6 +148,7 @@ async def duplicate_project(
     The duplicated Project will have a new Id.
     """
     try:
+        session.info["is_event_disabled"] = True
         result = await project_service.project_dupilcation(session, id, current_user)
         await session.commit()
         return result
