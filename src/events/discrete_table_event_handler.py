@@ -37,7 +37,6 @@ class DiscreteTableEventHandler:
         DiscreteUtilityParentOption, DiscreteUtilityParentOutcome,
     ]
     subscribed_entities_modified_before_flush = [Issue, Uncertainty, Decision, Edge]
-    subscribed_entities_modified_after_flush = [Edge]
     subscribed_entities_new = [Edge, Option, Outcome]
 
     def process_session_changes_before_flush(self, session: Session) -> None:
@@ -80,23 +79,12 @@ class DiscreteTableEventHandler:
             if any(isinstance(entity, entity_type) for entity_type in self.subscribed_entities_new)
         ]
 
-        subscribed_dirty = [
-            entity for entity in session.dirty
-            if any(isinstance(entity, entity_type) for entity_type in self.subscribed_entities_modified_after_flush)
-        ]
-        
         session_info = SessionInfoHandler.get_session_info(session)
 
         if subscribed_new:
             # Process changes in order of dependency
             session_info = SessionInfoHandler.add_to_session_info(session_info,
                 self._process_additions(session, subscribed_new)
-            )
-        
-        if subscribed_dirty:
-            session_info = SessionInfoHandler.add_to_session_info(
-                session_info,
-                self._process_modifications(session, subscribed_dirty)
             )
         
         SessionInfoHandler.update_session_info(session, session_info)
