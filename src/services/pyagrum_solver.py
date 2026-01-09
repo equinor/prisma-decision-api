@@ -1,3 +1,4 @@
+import uuid
 import pyagrum as gum # type: ignore
 import numpy as np
 from pydantic import BaseModel
@@ -11,26 +12,34 @@ from src.dtos.option_dtos import OptionOutgoingDto
 from src.dtos.outcome_dtos import OutcomeOutgoingDto
 from src.dtos.model_solution_dtos import SolutionDto
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator, DecisionTreeGraph
-from typing import TypeVar
+from typing import TypeVar, Optional
 
 T = TypeVar('T', OptionOutgoingDto, OutcomeOutgoingDto)
 
-class IssueToState(BaseModel):
-    issue: IssueOutgoingDto
+class ParentState(BaseModel):
+    parent_id: uuid.UUID
     state: OptionOutgoingDto|OutcomeOutgoingDto
 
-class PossibleConditionalSolutions(BaseModel):
-    solutions: list[IssueToState]
+class OptimalDecision(BaseModel):
+    parent_states: list[ParentState]
+    decision_id: uuid.UUID
+    state: OptionOutgoingDto
 
 class DecisionSolution(BaseModel):
-    decision_issue_id: str
-    state_matrix: list[PossibleConditionalSolutions]
+    optimal_decisions: list[OptimalDecision]
+    mean: float
 
+class Solution(BaseModel):
+    decision_solutions: list[DecisionSolution]
+
+# run for each optimal solution
 
 class PyagrumSolver:
     def __init__(self):
         self.node_lookup: dict[str, int] = {}
         self.diagram = gum.InfluenceDiagram()
+        self.issues: list[IssueOutgoingDto] = []
+        self.edges: list[EdgeOutgoingDto] = []
 
     def _reset_diagram(self):
         self.diagram = gum.InfluenceDiagram()
@@ -39,6 +48,8 @@ class PyagrumSolver:
         self.node_lookup[issue.id.__str__()] = node_id
 
     def build_influence_diagram(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]):
+        self.issues = issues
+        self.edges = edges
         self.add_nodes(issues)
         self.add_edges(edges)
         self.fill_cpts(issues)
@@ -48,15 +59,58 @@ class PyagrumSolver:
     def _sort_state_dtos(self, dtos: list[T]) -> list[T]:
         return sorted(dtos, key=lambda x: x.id.__str__())
     
-    def _find_state(self, issues: list[IssueOutgoingDto], state_id: str) -> OptionOutgoingDto|OutcomeOutgoingDto:
+    def _find_state(self, state_id: str, issues: Optional[list[IssueOutgoingDto]] = None) -> OptionOutgoingDto|OutcomeOutgoingDto:
         states: list[OptionOutgoingDto|OutcomeOutgoingDto] = []
-        [states.extend(issue.decision.options) for issue in issues if issue.decision is not None]
-        [states.extend(issue.uncertainty.outcomes) for issue in issues if issue.uncertainty is not None]
+        if issues:
+            [states.extend(issue.decision.options) for issue in self.issues if issue.decision is not None]
+            [states.extend(issue.uncertainty.outcomes) for issue in self.issues if issue.uncertainty is not None]    
+        else:
+            [states.extend(issue.decision.options) for issue in self.issues if issue.decision is not None]
+            [states.extend(issue.uncertainty.outcomes) for issue in self.issues if issue.uncertainty is not None]    
         
         return [state for state in states if str(state.id) == state_id][0]
+    
+    def _find_state_decision(self, state_id: str, issues: Optional[list[IssueOutgoingDto]] = None) -> OptionOutgoingDto:
+        states: list[OptionOutgoingDto] = []
+        if issues:
+            [states.extend(issue.decision.options) for issue in self.issues if issue.decision is not None]
+        else:
+            [states.extend(issue.decision.options) for issue in self.issues if issue.decision is not None]
+        
+        return [state for state in states if str(state.id) == state_id][0]
+    
+    def _pyagrum_optimal_decision_argmax(self, ie: gum.ShaferShenoyLIMIDInference, decision_issue_id: str) -> list[dict[str, int]]:
+        return ie.optimalDecision(decision_issue_id).argmax()[0]
+    
+    def _pyagrum_get_mean_utility(self, ie: gum.ShaferShenoyLIMIDInference, node_name: str) -> float:
+        return ie.meanVar(node_name)["mean"]
+    
+    def _pyagrum_get_node_labels(self, node_identifier: str|int) -> tuple[str]:
+        return self.diagram.variable(node_identifier).labels()
+    
+    def get_optimal_decisions(self, diag: gum.InfluenceDiagram, ie: gum.ShaferShenoyLIMIDInference, decision_issue_id: str):
+        pyagrum_result: list[dict[str, int]] = self._pyagrum_optimal_decision_argmax(ie, decision_issue_id)
+        optimal_decisions: list[OptimalDecision] = []
+        for result in pyagrum_result:
+            optimal_state: OptionOutgoingDto = self._find_state_decision(self._pyagrum_get_node_labels(decision_issue_id)[result[decision_issue_id]])
+            parent_states: list[ParentState] = []
 
+            for i, key in enumerate(result):
+                # skip the decision in question
+                if i == 0:
+                    continue
+                parent_state_id: str = diag.variable(key).labels()[result[key]]
+                parent_state = self._find_state(parent_state_id)
+                parent_states.append(ParentState(parent_id=uuid.UUID(key), state=parent_state))
 
-    async def find_optimal_decisions(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]) -> list[DecisionSolution]:
+            optimal_decisions.append(OptimalDecision(parent_states=parent_states,decision_id=uuid.UUID(decision_issue_id), state= optimal_state))
+
+        return DecisionSolution(optimal_decisions=optimal_decisions, mean=self._pyagrum_get_mean_utility(ie, decision_issue_id))
+
+    def get_solution(self, diag: gum.InfluenceDiagram, ie: gum.ShaferShenoyLIMIDInference, decisions: list[str]) -> Solution:
+        return Solution(decision_solutions=[self.get_optimal_decisions(diag, ie, x) for x in decisions])
+
+    async def find_optimal_decisions(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]) -> Solution:
         self.build_influence_diagram(issues, edges)
 
         decision_tree_creator = await DecisionTreeCreator.initialize(scenario_id = issues[0].scenario_id,
@@ -79,45 +133,7 @@ class PyagrumSolver:
             raise RuntimeError("Influence diagram is not solvable")
         ie.makeInference()
 
-        # decision_issue_ids = [x.id.__str__() for x in issues if x.type == Type.DECISION]
-        # if len(decision_issue_ids) == 0:
-        #     return SolutionDto(
-        #         utility_mean=ie.MEU()["mean"], # type: ignore
-        #         utility_variance=ie.MEU()["variance"], # type: ignore
-        #         optimal_options=[],
-        #     )
-
-        data: list[tuple[list[dict[str, int]], int]] = [
-            ie.optimalDecision(str(x)).argmax() for x in partial_order_decisions # type: ignore
-        ]
-
-        optimal_options: list[OptionOutgoingDto] = []
-        decision_solutions: list[DecisionSolution] = []
-        for array, decision_issue_id in zip(data, [str(x) for x in partial_order_decisions]):
-            results: list[dict[str, int]] = array[0]
-            current_decision: IssueOutgoingDto = [x for x in issues if x.id.__str__() == decision_issue_id][0]
-            var: list[PossibleConditionalSolutions] = []
-            for result in results:
-                state_matrix: list[IssueToState] = []
-                for issue_id in result.keys():
-                    issue = [x for x in issues if x.id.__str__() == issue_id][0]
-                    issue_labels = self.diagram.variable(issue_id).labels()
-                    current_label = issue_labels[result[issue_id]]
-                    state_matrix.append(IssueToState(issue=issue, state=self._find_state(issues=issues, state_id=current_label)))
-                var.append(PossibleConditionalSolutions(solutions=state_matrix))
-            decision_solutions.append(DecisionSolution(decision_issue_id=str(current_decision.id), state_matrix=var))
-
-        #     assert issue.decision is not None
-        #     sorted_options = self._sort_state_dtos(issue.decision.options)
-        #     optimal_options.append(sorted_options[array.argmax()])
-
-        # solution = SolutionDto(
-        #     utility_mean=ie.MEU()["mean"], # type: ignore
-        #     utility_variance=ie.MEU()["variance"], # type: ignore
-        #     optimal_options=optimal_options,
-        # )
-
-        return decision_solutions
+        return self.get_solution(self.diagram, ie, [x.__str__() for x in partial_order_decisions])
 
     def add_node(self, issue: IssueOutgoingDto):
         if issue.type == Type.DECISION:
