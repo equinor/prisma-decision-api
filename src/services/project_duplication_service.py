@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.constants import Boundary, DecisionHierarchy, ProjectRoleType, Type
@@ -13,7 +13,7 @@ from src.dtos.node_dtos import NodeIncomingDto
 from src.dtos.node_style_dtos import NodeStyleIncomingDto
 from src.dtos.option_dtos import OptionIncomingDto
 from src.dtos.outcome_dtos import OutcomeIncomingDto
-from src.dtos.project_dtos import ProjectCreateDto, ProjectOutgoingDto
+from src.dtos.project_dtos import ProjectCreateDto, ProjectOutgoingDto, ObjectiveViaProjectDto
 from src.dtos.project_roles_dtos import ProjectRoleCreateDto
 from src.dtos.uncertainty_dtos import UncertaintyIncomingDto
 from src.dtos.user_dtos import UserIncomingDto
@@ -41,7 +41,7 @@ class ProjectDuplicationService:
 
     async def project_duplication(
         self, session: AsyncSession, id: uuid.UUID, current_user: UserIncomingDto
-    ) -> ProjectOutgoingDto | None:
+    ) -> Optional[ProjectOutgoingDto]:
         """Duplicate a project with all its issues, nodes, and edges."""
         projects: list[Project] = await ProjectRepository(session).get([id])
         if not projects:
@@ -74,8 +74,7 @@ class ProjectDuplicationService:
         )
 
         await self.duplicate_edges(session, original_project, new_project_id, mappings)
-        if duplicated_project:
-            return duplicated_project
+        return duplicated_project
 
     def generate_id_mappings(self, issues: list[Issue], mappings: IdMappings) -> None:
         """Pre-generate all ID mappings for issues, nodes, outcomes, and options."""
@@ -99,13 +98,21 @@ class ProjectDuplicationService:
         original_project: Project,
         new_project_id: uuid.UUID,
         current_user: UserIncomingDto,
-    ) -> ProjectOutgoingDto | None:
+    ) -> Optional[ProjectOutgoingDto]:
         """Create a duplicate project with roles."""
+
         duplicate_project_dto = ProjectCreateDto(
             id=new_project_id,
             name=original_project.name,
             parent_project_id=original_project.id,
             parent_project_name=original_project.name,
+            objectives=[
+                ObjectiveViaProjectDto(
+                    description=objective.description,
+                    name=objective.name,
+                )
+                for objective in original_project.objectives
+            ],
             opportunityStatement=original_project.opportunityStatement,
             public=original_project.public,
             end_date=original_project.end_date,
@@ -126,18 +133,13 @@ class ProjectDuplicationService:
             [duplicate_project_dto],
             UserIncomingDto(id=None, name=current_user.name, azure_id=current_user.azure_id),
         )
-        if duplicated_project:
-            return duplicated_project[0]
+
+        return duplicated_project[0]
 
     def create_node_dto(
         self, issue: Issue, new_project_id: uuid.UUID, mappings: IdMappings
-    ) -> NodeIncomingDto | None:
+    ) -> Optional[NodeIncomingDto]:
         """Create a NodeIncomingDto if the issue has a node with style."""
-        if not issue.node:
-            return None
-
-        if not hasattr(issue.node, "node_style") or not issue.node.node_style:
-            return None
 
         new_node_id = mappings.node[issue.node.id]
         return NodeIncomingDto(
@@ -157,9 +159,9 @@ class ProjectDuplicationService:
         issue: Issue,
         new_project_id: uuid.UUID,
         mappings: IdMappings,
-        decision: DecisionIncomingDto | None = None,
-        uncertainty: UncertaintyIncomingDto | None = None,
-        utility: UtilityIncomingDto | None = None,
+        decision: Optional[DecisionIncomingDto] = None,
+        uncertainty: Optional[UncertaintyIncomingDto] = None,
+        utility: Optional[UtilityIncomingDto] = None,
     ) -> IssueIncomingDto:
         """Create an IssueIncomingDto with common fields."""
         return IssueIncomingDto(
@@ -233,6 +235,45 @@ class ProjectDuplicationService:
 
             issue_dto = self.create_issue_dto(
                 issue, new_project_id, mappings, decision=decision_dto
+            )
+            await self.create_issue(session, issue_dto, current_user)
+
+    async def duplicate_unassigned_issues(
+        self,
+        session: AsyncSession,
+        original_project: Project,
+        new_project_id: uuid.UUID,
+        mappings: IdMappings,
+        current_user: UserIncomingDto,
+    ) -> None:
+        """Duplicate all decision issues from the original project."""
+        for issue in original_project.issues:
+            if not (issue and issue.type == Type.UNASSIGNED.value):
+                continue
+            issue_dto = self.create_issue_dto(
+                issue,
+                new_project_id,
+                mappings,
+            )
+            await self.create_issue(session, issue_dto, current_user)
+
+    async def duplicate_fact_issues(
+        self,
+        session: AsyncSession,
+        original_project: Project,
+        new_project_id: uuid.UUID,
+        mappings: IdMappings,
+        current_user: UserIncomingDto,
+    ) -> None:
+        """Duplicate all decision issues from the original project."""
+        for issue in original_project.issues:
+            if not (issue and issue.type == Type.FACT.value):
+                continue
+
+            issue_dto = self.create_issue_dto(
+                issue,
+                new_project_id,
+                mappings,
             )
             await self.create_issue(session, issue_dto, current_user)
 

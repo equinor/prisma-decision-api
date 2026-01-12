@@ -15,7 +15,7 @@ class ObjectiveDto(BaseModel):
     description: Annotated[str, Field(max_length=DatabaseConstants.MAX_LONG_STRING_LENGTH.value)]
 
 
-class ObjectiveViaScenarioDto(ObjectiveDto):
+class ObjectiveViaProjectDto(ObjectiveDto):
     """
     Class should only be a property of project when creating the project with objective(s)
     """
@@ -37,8 +37,8 @@ class ObjectiveOutgoingDto(ObjectiveDto):
 
 class ObjectiveMapper:
     @staticmethod
-    def via_scenario_to_entity(
-        dto: ObjectiveViaScenarioDto, user_id: int, project_id: uuid.UUID
+    def via_project_to_entity(
+        dto: ObjectiveViaProjectDto, user_id: int, project_id: uuid.UUID
     ) -> Objective:
         return Objective(
             id=dto.id,
@@ -73,12 +73,12 @@ class ObjectiveMapper:
         )
 
     @staticmethod
-    def via_scenario_to_entities(
-        dtos: list[ObjectiveViaScenarioDto],
+    def via_project_to_entities(
+        dtos: list[ObjectiveViaProjectDto],
         user_id: int,
         project_id: uuid.UUID,
     ) -> list[Objective]:
-        return [ObjectiveMapper.via_scenario_to_entity(dto, user_id, project_id) for dto in dtos]
+        return [ObjectiveMapper.via_project_to_entity(dto, user_id, project_id) for dto in dtos]
 
     @staticmethod
     def to_outgoing_dtos(

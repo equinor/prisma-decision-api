@@ -141,18 +141,19 @@ class BaseRepository(Generic[T, IDType]):
 
         # Create a map of incoming discrete probabilities by ID for efficient lookup
         incoming_dps_by_id = {dp.id: dp for dp in incoming_entity.discrete_probabilities}
-        for existing_dp in existing_entity.discrete_probabilities:
-            if existing_dp.id in incoming_dps_by_id:
-                incoming_dp = incoming_dps_by_id[existing_dp.id]
-                # Only update the probability field
-                if existing_dp.probability != incoming_dp.probability:
-                    existing_dp.probability = incoming_dp.probability
-            # If no match, ignore and leave existing discrete probability unchanged
         if (
             existing_entity.discrete_probabilities.__len__()
             != incoming_entity.discrete_probabilities.__len__()
         ):
             existing_entity.discrete_probabilities = incoming_entity.discrete_probabilities
+        else:
+            for existing_dp in existing_entity.discrete_probabilities:
+                if existing_dp.id in incoming_dps_by_id:
+                    incoming_dp = incoming_dps_by_id[existing_dp.id]
+                    # Only update the probability field
+                    if existing_dp.probability != incoming_dp.probability:
+                        existing_dp.probability = incoming_dp.probability
+            # If no match, ignore and leave existing discrete probability unchanged
 
         return existing_entity
 

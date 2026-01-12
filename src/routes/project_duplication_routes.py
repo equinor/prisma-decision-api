@@ -29,7 +29,8 @@ async def duplicate_project(
     The duplicated Project will have a new Id.
     """
     try:
-        session.info["is_event_disabled"] = True
+        IS_EVENT_DISABLED = "is_event_disabled"
+        session.info[IS_EVENT_DISABLED] = True
         result = await project_duplication_service.project_duplication(session, id, current_user)
         await session.commit()
         return result

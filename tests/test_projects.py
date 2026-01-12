@@ -43,7 +43,11 @@ async def test_create_project(client: AsyncClient):
     test_project_id = uuid4()
     payload = [
         ProjectCreateDto(
-            id=test_project_id, name=str(uuid4()), opportunityStatement=str(uuid4()), users=[]
+            id=test_project_id,
+            name=str(uuid4()),
+            objectives=[],
+            opportunityStatement=str(uuid4()),
+            users=[],
         ).model_dump(mode="json")
     ]
 
@@ -56,7 +60,9 @@ async def test_create_project(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_create_project_with_objectives(client: AsyncClient):
 
-    project = ProjectCreateDto(name=str(uuid4()), opportunityStatement=str(uuid4()), users=[])
+    project = ProjectCreateDto(
+        name=str(uuid4()), objectives=[], opportunityStatement=str(uuid4()), users=[]
+    )
     payload = [project.model_dump(mode="json")]
 
     response = await client.post("/projects", json=payload)

@@ -42,7 +42,6 @@ class Project(Base, BaseEntity, BaseAuditableEntity):
     opportunityStatement: Mapped[str] = mapped_column(
         String(DatabaseConstants.MAX_LONG_STRING_LENGTH.value)
     )
-
     public: Mapped[bool] = mapped_column(Boolean, default=False)
 
     project_role: Mapped[list["ProjectRole"]] = relationship(
@@ -87,6 +86,7 @@ class Project(Base, BaseEntity, BaseAuditableEntity):
         opportunityStatement: str,
         name: str,
         project_role: list["ProjectRole"],
+        objectives: list["Objective"],
         user_id: int,
         public: bool = False,
         end_date: datetime = default_endtime(),
@@ -97,6 +97,7 @@ class Project(Base, BaseEntity, BaseAuditableEntity):
         self.project_role = project_role
         self.name = name
         self.opportunityStatement = opportunityStatement
+        self.objectives = objectives
         self.updated_by_id = user_id
         self.public = public
         self.end_date = end_date

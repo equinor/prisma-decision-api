@@ -105,8 +105,6 @@ def find_effected_session_entities(session: Session, issue_ids: set[uuid.UUID]) 
     issues: list[Issue] = list((session.scalars(query)).unique().all())
 
     for issue in issues:
-        if issue.uncertainty and len(issue.uncertainty.discrete_probabilities) == 0:
-            session_info.affected_uncertainties.add(issue.uncertainty.id)
         for edge in issue.node.tail_edges:
             if (
                 edge.head_node.issue.type == Type.UNCERTAINTY.value

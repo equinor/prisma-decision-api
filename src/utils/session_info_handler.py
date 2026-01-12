@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 class SessionInfo(BaseModel):
     affected_uncertainties: set[uuid.UUID] = Field(default_factory=set)  # type: ignore
     affected_utilities: set[uuid.UUID] = Field(default_factory=set)  # type: ignore
-    is_event_disabled: bool = True
+    is_event_disabled: bool = False
 
 
 class SessionInfoHandler:

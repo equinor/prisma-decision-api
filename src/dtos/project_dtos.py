@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import Annotated
+from src.dtos.objective_dtos import ObjectiveMapper, ObjectiveOutgoingDto, ObjectiveViaProjectDto
 from src.dtos.project_roles_dtos import (
     ProjectRoleCreateDto,
     ProjectRoleIncomingDto,
@@ -20,6 +21,7 @@ class ProjectDto(BaseModel):
     opportunityStatement: Annotated[
         str, Field(max_length=DatabaseConstants.MAX_LONG_STRING_LENGTH.value)
     ] = ""
+
     parent_project_id: uuid.UUID | None = None
     parent_project_name: Annotated[
         str | None, Field(max_length=DatabaseConstants.MAX_SHORT_STRING_LENGTH.value)
@@ -29,18 +31,22 @@ class ProjectDto(BaseModel):
 
 
 class ProjectCreateDto(ProjectDto):
+    objectives: list[ObjectiveViaProjectDto] = []
     users: list[ProjectRoleCreateDto]
 
 
 class ProjectIncomingDto(ProjectDto):
+    objectives: list[ObjectiveViaProjectDto] = []
     users: list[ProjectRoleIncomingDto]
 
 
 class ProjectOutgoingDto(ProjectDto):
+    objectives: list[ObjectiveOutgoingDto] = []
     users: list[ProjectRoleOutgoingDto]
 
 
 class PopulatedProjectDto(ProjectDto):
+    objectives: list[ObjectiveOutgoingDto] = []
     users: list[ProjectRoleOutgoingDto]
 
 
@@ -56,6 +62,7 @@ class ProjectMapper:
             user_id=user_id,
             public=dto.public,
             end_date=dto.end_date,
+            objectives=ObjectiveMapper.via_project_to_entities(dto.objectives, user_id, dto.id),
             project_role=[],
         )
 
@@ -67,6 +74,7 @@ class ProjectMapper:
             parent_project_id=entity.parent_project_id,
             parent_project_name=entity.parent_project_name,
             opportunityStatement=entity.opportunityStatement,
+            objectives=ObjectiveMapper.to_outgoing_dtos(entity.objectives),
             public=entity.public,
             end_date=entity.end_date,
             users=ProjectRoleMapper.to_outgoing_dtos(entity.project_role),
@@ -82,6 +90,7 @@ class ProjectMapper:
             opportunityStatement=entity.opportunityStatement,
             public=entity.public,
             end_date=entity.end_date,
+            objectives=ObjectiveMapper.to_outgoing_dtos(entity.objectives),
             users=ProjectRoleMapper.to_outgoing_dtos(entity.project_role),
         )
 
@@ -93,6 +102,7 @@ class ProjectMapper:
             parent_project_name=dto.parent_project_name,
             name=dto.name,
             opportunityStatement=dto.opportunityStatement,
+            objectives=ObjectiveMapper.via_project_to_entities(dto.objectives, user_id, dto.id),
             user_id=user_id,
             public=dto.public,
             end_date=dto.end_date,
