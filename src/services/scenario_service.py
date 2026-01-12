@@ -122,11 +122,11 @@ class ScenarioService:
         utility_issues = [issue for issue in issue_dtos if issue.type == Type.UTILITY.value]
         utilities_to_remove: list[IssueOutgoingDto] = []
         edges_to_remove: list[EdgeOutgoingDto] = []
-        for utility in utility_issues:
-            edges = [edge for edge in edge_dtos if edge.head_issue_id==utility.id]
-            edges_to_remove.extend([edge for edge in edge_dtos if edge.tail_issue_id==utility.id])
+        for utility_issue in utility_issues:
+            edges = [edge for edge in edge_dtos if edge.head_issue_id==utility_issue.id]
+            edges_to_remove.extend([edge for edge in edge_dtos if edge.tail_issue_id==utility_issue.id])
             if len(edges) < minimum_number_connections:
-                utilities_to_remove.append(utility)
+                utilities_to_remove.append(utility_issue)
                 edges_to_remove.extend(edges)
         for issue in utilities_to_remove: issue_dtos.remove(issue)
         for edge in edges_to_remove: edge_dtos.remove(edge)
@@ -170,4 +170,3 @@ class ScenarioService:
         # Return the validated (potentially filtered) issues and edges
         return influence_diagram.issues, influence_diagram.edges
     
-
