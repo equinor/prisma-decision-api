@@ -25,9 +25,12 @@ class EdgeRepository(BaseRepository[Edge, uuid.UUID]):
 
         for n, edge_to_update in enumerate(entities_to_update):
             edge = entities[n]
-            edge_to_update.tail_id = edge.tail_id
-            edge_to_update.head_id = edge.head_id
-            edge_to_update.project_id = edge.project_id
+            if edge_to_update.tail_id != edge.tail_id:
+                edge_to_update.tail_id = edge.tail_id
+            if edge_to_update.head_id != edge.head_id:
+                edge_to_update.head_id = edge.head_id
+            if edge_to_update.project_id != edge.project_id:
+                edge_to_update.project_id = edge.project_id
         await self.session.flush()
         return entities_to_update
 
