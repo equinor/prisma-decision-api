@@ -129,8 +129,7 @@ class DecisionTreeGraph():
             parent_id = await self.get_parent(treenode_id)
             count = 0
             while parent_id and count < 1000:
-                n = self.edge_names[(parent_id, treenode_id)]
-                parent_labels.append(uuid.UUID(n))
+                parent_labels.append(uuid.UUID(self.edge_names[(parent_id, treenode_id)]))
                 treenode_id = parent_id
                 parent_id = await self.get_parent(treenode_id)
                 count += 1
