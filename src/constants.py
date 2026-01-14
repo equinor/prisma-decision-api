@@ -2,8 +2,8 @@ import uuid
 from enum import Enum
 
 
-class DisableSessionEvent(str, Enum):
-    IS_EVENT_DISABLED = "is_session_disabled"
+class SessionInfoParameters(str, Enum):
+    IS_EVENT_DISABLED = "is_event_disabled"
 
 
 class Type(str, Enum):
