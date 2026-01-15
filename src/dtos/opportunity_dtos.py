@@ -30,7 +30,7 @@ class OpportunityOutgoingDto(OpportunityDto):
 
 class OpportunityMapper:
     @staticmethod
-    def via_scenario_to_entity(
+    def via_project_to_entity(
         dto: OpportunityViaProjectDto, user_id: int, project_id: uuid.UUID
     ) -> Opportunity:
         return Opportunity(
@@ -58,12 +58,12 @@ class OpportunityMapper:
         )
 
     @staticmethod
-    def via_scenario_to_entities(
+    def via_project_to_entities(
         dtos: list[OpportunityViaProjectDto],
         user_id: int,
         project_id: uuid.UUID,
     ) -> list[Opportunity]:
-        return [OpportunityMapper.via_scenario_to_entity(dto, user_id, project_id) for dto in dtos]
+        return [OpportunityMapper.via_project_to_entity(dto, user_id, project_id) for dto in dtos]
 
     @staticmethod
     def to_outgoing_dtos(
