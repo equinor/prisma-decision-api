@@ -111,9 +111,10 @@ class PyagrumSolver:
     async def find_optimal_decisions(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]) -> SolutionDto:
         self.build_influence_diagram(issues, edges)
 
-        decision_tree_creator = await DecisionTreeCreator.initialize(scenario_id = issues[0].scenario_id,
-                                            nodes = issues,
-                                            edges = edges)
+        decision_tree_creator = await DecisionTreeCreator.initialize(project_id = issues[0].project_id,
+            nodes = issues,
+            edges = edges
+        )
         
         partial_order = await decision_tree_creator.calculate_partial_order()
 
