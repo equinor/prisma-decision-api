@@ -20,6 +20,7 @@ from src.models import (
     ValueMetric,
     DiscreteProbability,
     DiscreteProbabilityParentOption,
+    DiscreteProbabilityParentOutcome,
     DiscreteUtility,
     DiscreteUtilityParentOption,
     DiscreteUtilityParentOutcome
@@ -750,8 +751,8 @@ async def create_decision_tree_with_utilities(
 
     # Create Decision A
     decision_A_id = GenerateUuid.as_uuid("decision_A_id")
-    decision_A_option1_id = GenerateUuid.as_uuid("decision_A_option1_id")
-    decision_A_option2_id = GenerateUuid.as_uuid("decision_A_option2_id")
+    decision_A1_option_id = GenerateUuid.as_uuid("decision_A1_option_id")
+    decision_A2_option_id = GenerateUuid.as_uuid("decision_A2_option_id")
     entities.extend(
         create_decision_issue(
             project_uuid, decision_A_id, decision_A_id, user_id, "Decision A", order=0
@@ -759,7 +760,7 @@ async def create_decision_tree_with_utilities(
     )
     entities.append(
         Option(
-            id=decision_A_option1_id,
+            id=decision_A1_option_id,
             decision_id=decision_A_id,
             name="A1",
             utility=1,
@@ -767,7 +768,7 @@ async def create_decision_tree_with_utilities(
     )
     entities.append(
         Option(
-            id=decision_A_option2_id,
+            id=decision_A2_option_id,
             decision_id=decision_A_id,
             name="A2",
             utility=2,
@@ -776,8 +777,8 @@ async def create_decision_tree_with_utilities(
 
     # Create Decision C
     decision_C_id = GenerateUuid.as_uuid("decision_C_id")
-    decision_C_option1_id = GenerateUuid.as_uuid("decision_C_option1_id")
-    decision_C_option2_id = GenerateUuid.as_uuid("decision_C_option2_id")
+    decision_C1_option_id = GenerateUuid.as_uuid("decision_C1_option_id")
+    decision_C2_option_id = GenerateUuid.as_uuid("decision_C2_option_id")
     entities.extend(
         create_decision_issue(
             project_uuid, decision_C_id, decision_C_id, user_id, "Decision C", order=0
@@ -785,7 +786,7 @@ async def create_decision_tree_with_utilities(
     )
     entities.append(
         Option(
-            id=decision_C_option1_id,
+            id=decision_C1_option_id,
             decision_id=decision_C_id,
             name="C1",
             utility=-1,
@@ -793,7 +794,7 @@ async def create_decision_tree_with_utilities(
     )
     entities.append(
         Option(
-            id=decision_C_option2_id,
+            id=decision_C2_option_id,
             decision_id=decision_C_id,
             name="C2",
             utility=-2,
@@ -802,8 +803,8 @@ async def create_decision_tree_with_utilities(
 
     # Create Decision F
     decision_F_id = GenerateUuid.as_uuid("decision_F_id")
-    decision_F_option1_id = GenerateUuid.as_uuid("decision_F_option1_id")
-    decision_F_option2_id = GenerateUuid.as_uuid("decision_F_option2_id")
+    decision_F1_option_id = GenerateUuid.as_uuid("decision_F1_option_id")
+    decision_F2_option_id = GenerateUuid.as_uuid("decision_F2_option_id")
     entities.extend(
         create_decision_issue(
             project_uuid, decision_F_id, decision_F_id, user_id, "Decision F", order=0
@@ -811,7 +812,7 @@ async def create_decision_tree_with_utilities(
     )
     entities.append(
         Option(
-            id=decision_F_option1_id,
+            id=decision_F1_option_id,
             decision_id=decision_F_id,
             name="F1",
             utility=-11,
@@ -819,7 +820,7 @@ async def create_decision_tree_with_utilities(
     )
     entities.append(
         Option(
-            id=decision_F_option2_id,
+            id=decision_F2_option_id,
             decision_id=decision_F_id,
             name="F2",
             utility=-21,
@@ -828,12 +829,12 @@ async def create_decision_tree_with_utilities(
 
     # Create Uncertainty B
     uncertainty_B_id = GenerateUuid.as_uuid("uncertainty_B_id")
-    uncertainty_B_outcome1_id = GenerateUuid.as_uuid("uncertainty_B_outcome1_id")
-    uncertainty_B_outcome2_id = GenerateUuid.as_uuid("uncertainty_B_outcome2_id")
-    uncertainty_B_discrete_prob1_id = GenerateUuid.as_uuid("uncertainty_B_discrete_prob1_id")
-    uncertainty_B_discrete_prob2_id = GenerateUuid.as_uuid("uncertainty_B_discrete_prob2_id")
-    uncertainty_B_discrete_prob3_id = GenerateUuid.as_uuid("uncertainty_B_discrete_prob3_id")
-    uncertainty_B_discrete_prob4_id = GenerateUuid.as_uuid("uncertainty_B_discrete_prob4_id")
+    uncertainty_B1_outcome_id = GenerateUuid.as_uuid("uncertainty_B1_outcome_id")
+    uncertainty_B2_outcome_id = GenerateUuid.as_uuid("uncertainty_B2_outcome_id")
+    uncertainty_B1_discrete_prob_id = GenerateUuid.as_uuid("uncertainty_B1_discrete_prob_id")
+    uncertainty_B2_discrete_prob_id = GenerateUuid.as_uuid("uncertainty_B2_discrete_prob_id")
+    uncertainty_B3_discrete_prob_id = GenerateUuid.as_uuid("uncertainty_B3_discrete_prob_id")
+    uncertainty_B4_discrete_prob_id = GenerateUuid.as_uuid("uncertainty_B4_discrete_prob_id")
     entities.extend(
         create_uncertainty_issue(
             project_uuid, uncertainty_B_id, uncertainty_B_id, user_id, "UncertaintyB", order=1
@@ -841,7 +842,7 @@ async def create_decision_tree_with_utilities(
     )
     entities.append(
         Outcome(
-            id=uncertainty_B_outcome1_id,
+            id=uncertainty_B1_outcome_id,
             uncertainty_id=uncertainty_B_id,
             name="B1",
             utility=-2,
@@ -849,7 +850,7 @@ async def create_decision_tree_with_utilities(
     )
     entities.append(
         Outcome(
-            id=uncertainty_B_outcome2_id,
+            id=uncertainty_B2_outcome_id,
             uncertainty_id=uncertainty_B_id,
             name="B2",
             utility=-3,
@@ -857,47 +858,47 @@ async def create_decision_tree_with_utilities(
     )
     entities.append(
         DiscreteProbability(
-            id=uncertainty_B_discrete_prob1_id,
+            id=uncertainty_B1_discrete_prob_id,
             uncertainty_id=uncertainty_B_id,
-            outcome_id=uncertainty_B_outcome1_id,
+            outcome_id=uncertainty_B1_outcome_id,
             probability=0.6,
-            parent_outcomes=[],
-            parent_options=[DiscreteProbabilityParentOption(discrete_probability_id=uncertainty_B_discrete_prob1_id, parent_option_id=decision_A_option1_id,)],
+            parent_outcomes=[DiscreteProbabilityParentOutcome(discrete_probability_id=uncertainty_B1_discrete_prob_id, parent_outcome_id=uncertainty_B1_outcome_id,)],
+            parent_options=[DiscreteProbabilityParentOption(discrete_probability_id=uncertainty_B1_discrete_prob_id, parent_option_id=decision_A1_option_id,)],
     ))
     entities.append(
         DiscreteProbability(
-            id=uncertainty_B_discrete_prob2_id,
+            id=uncertainty_B2_discrete_prob_id,
             uncertainty_id=uncertainty_B_id,
-            outcome_id=uncertainty_B_outcome2_id,
+            outcome_id=uncertainty_B2_outcome_id,
             probability=0.4,
-            parent_outcomes=[],
-            parent_options=[DiscreteProbabilityParentOption(discrete_probability_id=uncertainty_B_discrete_prob2_id, parent_option_id=decision_A_option1_id,)],
+            parent_outcomes=[DiscreteProbabilityParentOutcome(discrete_probability_id=uncertainty_B2_discrete_prob_id, parent_outcome_id=uncertainty_B2_outcome_id,)],
+            parent_options=[DiscreteProbabilityParentOption(discrete_probability_id=uncertainty_B2_discrete_prob_id, parent_option_id=decision_A1_option_id,)],
         ))
     entities.append(
         DiscreteProbability(
-            id=uncertainty_B_discrete_prob3_id,
+            id=uncertainty_B3_discrete_prob_id,
             uncertainty_id=uncertainty_B_id,
-            outcome_id=uncertainty_B_outcome1_id,
+            outcome_id=uncertainty_B1_outcome_id,
             probability=0.2,
-            parent_outcomes=[],
-            parent_options=[DiscreteProbabilityParentOption(discrete_probability_id=uncertainty_B_discrete_prob3_id, parent_option_id=decision_A_option2_id,)],
+            parent_outcomes=[DiscreteProbabilityParentOutcome(discrete_probability_id=uncertainty_B3_discrete_prob_id, parent_outcome_id=uncertainty_B1_outcome_id,)],
+            parent_options=[DiscreteProbabilityParentOption(discrete_probability_id=uncertainty_B3_discrete_prob_id, parent_option_id=decision_A2_option_id,)],
     ))
     entities.append(
         DiscreteProbability(
-            id=uncertainty_B_discrete_prob4_id,
+            id=uncertainty_B4_discrete_prob_id,
             uncertainty_id=uncertainty_B_id,
-            outcome_id=uncertainty_B_outcome2_id,
+            outcome_id=uncertainty_B2_outcome_id,
             probability=0.8,
-            parent_outcomes=[],
-            parent_options=[DiscreteProbabilityParentOption(discrete_probability_id=uncertainty_B_discrete_prob4_id, parent_option_id=decision_A_option2_id,)],
+            parent_outcomes=[DiscreteProbabilityParentOutcome(discrete_probability_id=uncertainty_B4_discrete_prob_id, parent_outcome_id=uncertainty_B2_outcome_id,)],
+            parent_options=[DiscreteProbabilityParentOption(discrete_probability_id=uncertainty_B4_discrete_prob_id, parent_option_id=decision_A2_option_id,)],
         ))
 
     # Create Utility D
     utility_D_id = GenerateUuid.as_uuid("utility_D_id")
-    utility_D_discrete1_id = GenerateUuid.as_uuid("utility_D_discrete1_id")
-    utility_D_discrete2_id = GenerateUuid.as_uuid("utility_D_discrete2_id")
-    utility_D_discrete3_id = GenerateUuid.as_uuid("utility_D_discrete3_id")
-    utility_D_discrete4_id = GenerateUuid.as_uuid("utility_D_discrete4_id")
+    utility_D1_discrete_id = GenerateUuid.as_uuid("utility_D1_discrete_id")
+    utility_D2_discrete_id = GenerateUuid.as_uuid("utility_D2_discrete_id")
+    utility_D3_discrete_id = GenerateUuid.as_uuid("utility_D3_discrete_id")
+    utility_D4_discrete_id = GenerateUuid.as_uuid("utility_D4_discrete_id")
     entities.extend(
         create_utility_issue(
             project_uuid, utility_D_id, utility_D_id, user_id, "Utility D", order=1
@@ -905,51 +906,51 @@ async def create_decision_tree_with_utilities(
     )
     entities.append(
         DiscreteUtility(
-            id=utility_D_discrete1_id,
+            id=utility_D1_discrete_id,
             utility_id=utility_D_id,
             value_metric_id=default_value_metric_id,
             utility_value=2,
-            parent_outcomes=[DiscreteUtilityParentOutcome(discrete_utility_id=utility_D_discrete1_id, parent_outcome_id=uncertainty_B_outcome1_id)],
-            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_D_discrete1_id, parent_option_id=decision_C_option1_id)],
+            parent_outcomes=[DiscreteUtilityParentOutcome(discrete_utility_id=utility_D1_discrete_id, parent_outcome_id=uncertainty_B1_outcome_id)],
+            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_D1_discrete_id, parent_option_id=decision_C1_option_id)],
         )
     )
     entities.append(
         DiscreteUtility(
-            id=utility_D_discrete2_id,
+            id=utility_D2_discrete_id,
             utility_id=utility_D_id,
             value_metric_id=default_value_metric_id,
             utility_value=3,
-            parent_outcomes=[DiscreteUtilityParentOutcome(discrete_utility_id=utility_D_discrete2_id, parent_outcome_id=uncertainty_B_outcome2_id)],
-            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_D_discrete2_id, parent_option_id=decision_C_option1_id)],
+            parent_outcomes=[DiscreteUtilityParentOutcome(discrete_utility_id=utility_D2_discrete_id, parent_outcome_id=uncertainty_B2_outcome_id)],
+            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_D2_discrete_id, parent_option_id=decision_C1_option_id)],
         )
     )
     entities.append(
         DiscreteUtility(
-            id=utility_D_discrete3_id,
+            id=utility_D3_discrete_id,
             utility_id=utility_D_id,
             value_metric_id=default_value_metric_id,
             utility_value=4,
-            parent_outcomes=[DiscreteUtilityParentOutcome(discrete_utility_id=utility_D_discrete3_id, parent_outcome_id=uncertainty_B_outcome1_id)],
-            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_D_discrete3_id, parent_option_id=decision_C_option2_id)],
+            parent_outcomes=[DiscreteUtilityParentOutcome(discrete_utility_id=utility_D3_discrete_id, parent_outcome_id=uncertainty_B1_outcome_id)],
+            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_D3_discrete_id, parent_option_id=decision_C2_option_id)],
         )
     )
     entities.append(
         DiscreteUtility(
-            id=utility_D_discrete4_id,
+            id=utility_D4_discrete_id,
             utility_id=utility_D_id,
             value_metric_id=default_value_metric_id,
             utility_value=5,
-            parent_outcomes=[DiscreteUtilityParentOutcome(discrete_utility_id=utility_D_discrete4_id, parent_outcome_id=uncertainty_B_outcome2_id)],
-            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_D_discrete4_id, parent_option_id=decision_C_option2_id)],
+            parent_outcomes=[DiscreteUtilityParentOutcome(discrete_utility_id=utility_D4_discrete_id, parent_outcome_id=uncertainty_B2_outcome_id)],
+            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_D4_discrete_id, parent_option_id=decision_C2_option_id)],
         )
     )
 
     # Create Utility E
     utility_E_id = GenerateUuid.as_uuid("utility_E_id")
-    utility_E_discrete1_id = GenerateUuid.as_uuid("utility_E_discrete1_id")
-    utility_E_discrete2_id = GenerateUuid.as_uuid("utility_E_discrete2_id")
-    utility_E_discrete3_id = GenerateUuid.as_uuid("utility_E_discrete3_id")
-    utility_E_discrete4_id = GenerateUuid.as_uuid("utility_E_discrete4_id")
+    utility_E1_discrete_id = GenerateUuid.as_uuid("utility_E1_discrete_id")
+    utility_E2_discrete_id = GenerateUuid.as_uuid("utility_E2_discrete_id")
+    utility_E3_discrete_id = GenerateUuid.as_uuid("utility_E3_discrete_id")
+    utility_E4_discrete_id = GenerateUuid.as_uuid("utility_E4_discrete_id")
     entities.extend(
         create_utility_issue(
             project_uuid, utility_E_id, utility_E_id, user_id, "Utility E", order=1
@@ -957,42 +958,42 @@ async def create_decision_tree_with_utilities(
     )
     entities.append(
         DiscreteUtility(
-            id=utility_E_discrete1_id,
+            id=utility_E1_discrete_id,
             utility_id=utility_E_id,
             value_metric_id=default_value_metric_id,
             utility_value=20,
-            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_E_discrete1_id, parent_option_id=decision_C_option1_id),
-                            DiscreteUtilityParentOption(discrete_utility_id=utility_E_discrete1_id, parent_option_id=decision_F_option1_id)],
+            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_E1_discrete_id, parent_option_id=decision_C1_option_id),
+                            DiscreteUtilityParentOption(discrete_utility_id=utility_E1_discrete_id, parent_option_id=decision_F1_option_id)],
         )
     )
     entities.append(
         DiscreteUtility(
-            id=utility_E_discrete2_id,
+            id=utility_E2_discrete_id,
             utility_id=utility_E_id,
             value_metric_id=default_value_metric_id,
             utility_value=30,
-            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_E_discrete2_id, parent_option_id=decision_C_option1_id),
-                            DiscreteUtilityParentOption(discrete_utility_id=utility_E_discrete2_id, parent_option_id=decision_F_option2_id)],
+            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_E2_discrete_id, parent_option_id=decision_C1_option_id),
+                            DiscreteUtilityParentOption(discrete_utility_id=utility_E2_discrete_id, parent_option_id=decision_F2_option_id)],
         )
     )
     entities.append(
         DiscreteUtility(
-            id=utility_E_discrete3_id,
+            id=utility_E3_discrete_id,
             utility_id=utility_E_id,
             value_metric_id=default_value_metric_id,
             utility_value=40,
-            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_E_discrete3_id, parent_option_id=decision_C_option2_id),
-                            DiscreteUtilityParentOption(discrete_utility_id=utility_E_discrete3_id, parent_option_id=decision_F_option1_id)],
+            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_E3_discrete_id, parent_option_id=decision_C2_option_id),
+                            DiscreteUtilityParentOption(discrete_utility_id=utility_E3_discrete_id, parent_option_id=decision_F1_option_id)],
         )
     )
     entities.append(
         DiscreteUtility(
-            id=utility_E_discrete4_id,
+            id=utility_E4_discrete_id,
             utility_id=utility_E_id,
             value_metric_id=default_value_metric_id,
             utility_value=50,
-            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_E_discrete4_id, parent_option_id=decision_C_option2_id),
-                            DiscreteUtilityParentOption(discrete_utility_id=utility_E_discrete4_id, parent_option_id=decision_F_option2_id)],
+            parent_options=[DiscreteUtilityParentOption(discrete_utility_id=utility_E4_discrete_id, parent_option_id=decision_C2_option_id),
+                            DiscreteUtilityParentOption(discrete_utility_id=utility_E4_discrete_id, parent_option_id=decision_F2_option_id)],
         )
     )
 

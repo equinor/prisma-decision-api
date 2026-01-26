@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from src.constants import Type
 from src.services.pyagrum_solver import SolutionDto, OptimalOption
 from src.services.decision_tree.decision_tree_creator import (
-    DecisionTreeDTO, 
+    DecisionTreeDto, 
     EndPointNodeDto, 
     ProbabilityDto
 )
@@ -37,28 +37,28 @@ class TreePruner(ABC):
     """Abstract base class for tree pruning visitors."""
     
     @abstractmethod
-    def visit_decision_node(self, node: DecisionTreeDTO, context: PruningContext) -> Optional[DecisionTreeDTO]:
+    def visit_decision_node(self, node: DecisionTreeDto, context: PruningContext) -> Optional[DecisionTreeDto]:
         """Visit and prune a decision node."""
         pass
     
     @abstractmethod
-    def visit_uncertainty_node(self, node: DecisionTreeDTO, context: PruningContext) -> Optional[DecisionTreeDTO]:
+    def visit_uncertainty_node(self, node: DecisionTreeDto, context: PruningContext) -> Optional[DecisionTreeDto]:
         """Visit and prune an uncertainty node."""
         pass
     
     @abstractmethod
-    def visit_endpoint_node(self, node: DecisionTreeDTO, context: PruningContext) -> Optional[DecisionTreeDTO]:
+    def visit_endpoint_node(self, node: DecisionTreeDto, context: PruningContext) -> Optional[DecisionTreeDto]:
         """Visit an endpoint node."""
         pass
     
-    def prune(self, node: DecisionTreeDTO, context: PruningContext) -> Optional[DecisionTreeDTO]:
+    def prune(self, node: DecisionTreeDto, context: PruningContext) -> Optional[DecisionTreeDto]:
         """Main entry point for pruning. Dispatches to appropriate visit method."""
         if isinstance(node.tree_node.issue, EndPointNodeDto):
             return self.visit_endpoint_node(node, context)
         
         if (node.tree_node.issue.type == Type.DECISION.value and 
             node.tree_node.issue.decision is not None and 
-            node.children):
+            node.tree_node.children):
             return self.visit_decision_node(node, context)
         else:
             return self.visit_uncertainty_node(node, context)
@@ -71,15 +71,15 @@ class DecisionTreePruningException(Exception):
 
 class OptimalDecisionTreePruner(TreePruner):
     
-    def visit_endpoint_node(self, node: DecisionTreeDTO, context: PruningContext) -> Optional[DecisionTreeDTO]:
+    def visit_endpoint_node(self, node: DecisionTreeDto, context: PruningContext) -> Optional[DecisionTreeDto]:
         """No action taken on endpoint nodes"""
         return node
     
-    def visit_decision_node(self, node: DecisionTreeDTO, context: PruningContext) -> Optional[DecisionTreeDTO]:
+    def visit_decision_node(self, node: DecisionTreeDto, context: PruningContext) -> Optional[DecisionTreeDto]:
         """Prune decision node to keep only the optimal option."""
         if (
             isinstance(node.tree_node.issue, EndPointNodeDto) or 
-            not node.children or 
+            not node.tree_node.children or 
             not node.tree_node.issue.decision
         ):
             raise DecisionTreePruningException("Invalid decision node visited")
@@ -101,17 +101,17 @@ class OptimalDecisionTreePruner(TreePruner):
         # Add decision to path and recurse
         context.add_to_path(optimal_decision.state.id)
         try:
-            self.prune(node.children[0], context)
+            self.prune(node.tree_node.children[0], context)
         finally:
             context.remove_from_path(optimal_decision.state.id)
         
         return node
     
-    def visit_uncertainty_node(self, node: DecisionTreeDTO, context: PruningContext) -> Optional[DecisionTreeDTO]:
+    def visit_uncertainty_node(self, node: DecisionTreeDto, context: PruningContext) -> Optional[DecisionTreeDto]:
         """Process uncertainty node by filtering zero probabilities and recursing."""
         if (
             isinstance(node.tree_node.issue, EndPointNodeDto) or 
-            not node.children or 
+            not node.tree_node.children or 
             not node.tree_node.issue.uncertainty
         ):
             raise DecisionTreePruningException("Invalid uncertainty node visited")
@@ -121,10 +121,10 @@ class OptimalDecisionTreePruner(TreePruner):
 
         
         # Recurse through all remaining outcomes
-        child: DecisionTreeDTO
+        child: DecisionTreeDto
         outcome: OutcomeOutgoingDto
         for child, outcome in zip(
-            node.children, 
+            node.tree_node.children,
             node.tree_node.issue.uncertainty.outcomes
         ):
             context.add_to_path(outcome.id)
@@ -135,7 +135,7 @@ class OptimalDecisionTreePruner(TreePruner):
         
         return node
     
-    def _find_optimal_decision(self, node: DecisionTreeDTO, optimal_decisions: list[OptimalOption], 
+    def _find_optimal_decision(self, node: DecisionTreeDto, optimal_decisions: list[OptimalOption],
                              context: PruningContext) -> Optional[OptimalOption]:
         """Find the optimal decision for the current node given the current path."""
         for decision in optimal_decisions:
@@ -144,7 +144,7 @@ class OptimalDecisionTreePruner(TreePruner):
                 return decision
         return None
     
-    def _find_option_index(self, node: DecisionTreeDTO, decision_state_id: uuid.UUID) -> int:
+    def _find_option_index(self, node: DecisionTreeDto, decision_state_id: uuid.UUID) -> int:
         """Find the index of the optimal option in the node's options list."""
         if (
             isinstance(node.tree_node.issue, EndPointNodeDto) or 
@@ -160,16 +160,16 @@ class OptimalDecisionTreePruner(TreePruner):
                 f"Optimal decision state {decision_state_id} not found in node options"
             )
     
-    def _prune_decision_branches(self, node: DecisionTreeDTO, option_index: int, decision_state_id: uuid.UUID) -> None:
+    def _prune_decision_branches(self, node: DecisionTreeDto, option_index: int, decision_state_id: uuid.UUID) -> None:
         """Remove non-optimal branches from the decision node."""
         if (
             isinstance(node.tree_node.issue, EndPointNodeDto) or 
-            not node.children or 
+            not node.tree_node.children or
             not node.tree_node.issue.decision
         ):
             raise DecisionTreePruningException("Invalid decision node visited")
         
-        node.children = [node.children[option_index]]
+        node.tree_node.children = [node.tree_node.children[option_index]]
         
         node.tree_node.issue.decision.options = [
             option for option in node.tree_node.issue.decision.options 
@@ -177,7 +177,7 @@ class OptimalDecisionTreePruner(TreePruner):
         ]
 
     @staticmethod
-    def _align_probabilities_with_outcomes(node: DecisionTreeDTO) -> None:
+    def _align_probabilities_with_outcomes(node: DecisionTreeDto) -> None:
         """Sort probabilities to match the order of outcomes."""
         if (
             isinstance(node.tree_node.issue, EndPointNodeDto) or 
@@ -194,26 +194,26 @@ class OptimalDecisionTreePruner(TreePruner):
             key=lambda prob: outcome_order.get(prob.outcome_id, float('inf'))
         )
     
-    def _remove_zero_probability_outcomes(self, node: DecisionTreeDTO) -> None:
+    def _remove_zero_probability_outcomes(self, node: DecisionTreeDto) -> None:
         """Remove outcomes with zero probability."""
         if (
             isinstance(node.tree_node.issue, EndPointNodeDto) or 
-            not node.children or
+            not node.tree_node.children or
             not node.tree_node.issue.uncertainty or
             not node.tree_node.probabilities
         ):
             raise DecisionTreePruningException("Invalid uncertainty node visited")
         
         items_to_remove: list[
-            tuple[DecisionTreeDTO, ProbabilityDto, OutcomeOutgoingDto]
+            tuple[DecisionTreeDto, ProbabilityDto, OutcomeOutgoingDto]
         ]  = []
 
-        child: DecisionTreeDTO
+        child: DecisionTreeDto
         prob: ProbabilityDto
         outcome: OutcomeOutgoingDto
 
         for child, prob, outcome in zip(
-            node.children, 
+            node.tree_node.children,
             node.tree_node.probabilities, 
             node.tree_node.issue.uncertainty.outcomes
         ):
@@ -222,7 +222,7 @@ class OptimalDecisionTreePruner(TreePruner):
         
         # Remove zero probability items
         for child, prob, outcome in items_to_remove:
-            node.children.remove(child)
+            node.tree_node.children.remove(child)
             node.tree_node.probabilities.remove(prob)
             node.tree_node.issue.uncertainty.outcomes.remove(outcome)
 
@@ -233,7 +233,7 @@ class DecisionTreePruningService:
     def __init__(self, pruner: TreePruner):
         self.pruner = pruner
     
-    def prune_tree_for_optimal_decisions(self, tree_root: DecisionTreeDTO, solution: SolutionDto) -> Optional[DecisionTreeDTO]:
+    def prune_tree_for_optimal_decisions(self, tree_root: DecisionTreeDto, solution: SolutionDto) -> Optional[DecisionTreeDto]:
         """Main method to prune a decision tree for optimal decisions."""
         context = PruningContext(current_path=set(), solution=solution)
         return self.pruner.prune(tree_root, context)

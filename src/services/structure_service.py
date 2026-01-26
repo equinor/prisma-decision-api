@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 from src.services.project_service import ProjectService
-from src.dtos.decision_tree_dtos import DecisionTreeDTO, PartialOrderDTO
+from src.dtos.decision_tree_dtos import DecisionTreeDto, PartialOrderDto, DecisionTreeDtoOld
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator, DecisionTreeGraph
 from src.session_manager import sessionmanager
 
@@ -23,7 +23,7 @@ class StructureService:
         )
         return await decision_tree_creator.create_decision_tree()
 
-    async def create_decision_tree_dtos(self, project_id: uuid.UUID) -> Optional[DecisionTreeDTO]:
+    async def create_decision_tree_dtos(self, project_id: uuid.UUID) -> Optional[DecisionTreeDto]:
         issues = []
         edges = []
         async for session in sessionmanager.get_session():
@@ -36,8 +36,8 @@ class StructureService:
         )
         dt = await decision_tree_creator.create_decision_tree()
         return await dt.to_issue_dtos()
-
-    async def create_partial_order(self, project_id: uuid.UUID) -> Optional[PartialOrderDTO]:
+    
+    async def create_partial_order(self, project_id: uuid.UUID) -> Optional[PartialOrderDto]:
         issues = []
         edges = []
         async for session in sessionmanager.get_session():
@@ -49,4 +49,18 @@ class StructureService:
             project_id=project_id, nodes=issues, edges=edges
         )
         uuid_list = await decision_tree_creator.calculate_partial_order_issues()
-        return PartialOrderDTO(issue_ids=uuid_list)
+        return PartialOrderDto(issue_ids=uuid_list)
+    
+    async def create_decision_tree_dtos_old(self, project_id: uuid.UUID) -> Optional[DecisionTreeDtoOld]:
+        issues = []
+        edges = []
+        async for session in sessionmanager.get_session():
+            (
+                issues,
+                edges,
+            ) = await self.project_service.get_influence_diagram_data(session, project_id)
+        decision_tree_creator = await DecisionTreeCreator.initialize(
+            project_id=project_id, nodes=issues, edges=edges
+        )
+        dt = await decision_tree_creator.create_decision_tree()
+        return await dt.to_issue_dtos_old()
