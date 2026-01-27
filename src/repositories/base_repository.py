@@ -407,6 +407,8 @@ class BaseRepository(Generic[T, IDType]):
             existing_entities.extend(new_roles)
             for role in new_roles:
                 self.session.add(role)
+                # ensure that the user is not updated or created while updating the role assignment
+                self.session.expunge(role.user)
 
         return existing_entities
 
