@@ -96,6 +96,7 @@ async def test_delete_project(client: AsyncClient):
 
     assert response.status_code == 200, f"Response content: {response.content}"
 
+@pytest.mark.first
 @pytest.mark.asyncio
 async def test_update_project_with_strategies(client: AsyncClient):
     new_name = str(uuid4())

@@ -5,6 +5,7 @@ from tests.utils import (
     parse_response_to_dto_test,
     parse_response_to_dtos_test,
 )
+from src.dtos.decision_dtos import DecisionOutgoingDto
 from src.dtos.strategy_dtos import (
     StrategyIncomingDto,
     StrategyOutgoingDto,
@@ -12,7 +13,7 @@ from src.dtos.strategy_dtos import (
 from src.dtos.option_dtos import OptionIncomingDto
 from src.seed_database import GenerateUuid
 
-
+@pytest.mark.first
 @pytest.mark.asyncio
 async def test_get_strategies(client: AsyncClient):
     response = await client.get("/strategies")
@@ -21,6 +22,7 @@ async def test_get_strategies(client: AsyncClient):
     parse_response_to_dtos_test(response, StrategyOutgoingDto)
 
 
+@pytest.mark.first
 @pytest.mark.asyncio
 async def test_get_strategy(client: AsyncClient):
     response = await client.get(f"/strategies/{GenerateUuid.as_string(1)}")
@@ -29,6 +31,7 @@ async def test_get_strategy(client: AsyncClient):
     parse_response_to_dto_test(response, StrategyOutgoingDto)
 
 
+@pytest.mark.first
 @pytest.mark.asyncio
 async def test_create_strategy(client: AsyncClient):
     test_strategy_id = GenerateUuid.as_uuid(5)
@@ -60,13 +63,14 @@ async def test_create_strategy(client: AsyncClient):
     parse_response_to_dtos_test(response, StrategyOutgoingDto)
 
 
+@pytest.mark.first
 @pytest.mark.asyncio
 async def test_update_strategy(client: AsyncClient):
     new_name = str(uuid4())
     new_description = "Updated strategy description"
     new_rationale = "Updated strategy rationale"
-    test_strategy_id = GenerateUuid.as_uuid(1)
-    test_option_id = GenerateUuid.as_uuid(1)
+    test_strategy_id = GenerateUuid.as_uuid(1001)
+    test_option_id = GenerateUuid.as_uuid(2)
 
     get_response = await client.get(f"/strategies/{test_strategy_id}")
 
@@ -82,7 +86,7 @@ async def test_update_strategy(client: AsyncClient):
         ),
         OptionIncomingDto(
             id=test_option_id,
-            decision_id=GenerateUuid.as_uuid(1),
+            decision_id=test_strategy_id,
             name="Updated Test Option",
             utility=75.0,
         )
@@ -106,6 +110,8 @@ async def test_update_strategy(client: AsyncClient):
     assert response_content[0].description == new_description
     assert response_content[0].rationale == new_rationale
     assert response_content[0].options.__len__() == len(options)
+    # test that the option was not updated
+    assert response_content[0].options[1].name != options[1].name
 
 
 @pytest.mark.last

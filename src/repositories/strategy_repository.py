@@ -4,7 +4,6 @@ import uuid
 from src.models import (
     Strategy,
     Option,
-    StrategyOption,
     Issue,
     Decision
 )
@@ -25,34 +24,10 @@ class StrategyRepository(BaseRepository[Strategy, uuid.UUID]):
 
         for n, entity_to_update in enumerate(entities_to_update):
             entity = entities[n]
-            entity_to_update.project_id = entity.project_id
-            entity_to_update.name = entity.name
-            entity_to_update.description = entity.description
-            entity_to_update.rationale = entity.rationale
-            entity_to_update.updated_by_id = entity.updated_by_id
-
-            # Clear existing strategy options and create new ones
-            # This ensures we only manage the relationship without updating Option or Strategy entities
-            await self._replace_strategy_options(entity_to_update, entity.strategy_options)
-            
+            await self._update_strategy(incoming_entity=entity, existing_entity=entity_to_update)
 
         await self.session.flush()
         return entities_to_update
-
-    async def _replace_strategy_options(self, strategy_to_update: Strategy, new_strategy_options: list[StrategyOption]) -> None:
-        """
-        Safely replace strategy options by managing only the StrategyOption join table relationships.
-        This approach prevents any updates to Option or Strategy entities themselves.
-        """
-        strategy_to_update.strategy_options.clear()
-        
-        for new_strategy_option in new_strategy_options:
-            strategy_option_to_add = StrategyOption(
-                strategy_id=strategy_to_update.id,
-                option_id=new_strategy_option.option_id
-            )
-            self.session.add(strategy_option_to_add)
-            strategy_to_update.strategy_options.append(strategy_option_to_add)
 
 def remove_options_out_of_scope(session: Session, issue_ids: set[uuid.UUID]):
 

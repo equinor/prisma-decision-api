@@ -26,6 +26,7 @@ from src.models import (
     Node,
     NodeStyle,
     StrategyOption,
+    Strategy,
     Outcome,
     Option,
     DiscreteProbability,
@@ -286,6 +287,76 @@ class BaseRepository(Generic[T, IDType]):
                 incoming_entity.options, existing_entity.options
             )
         return existing_entity
+    
+    async def _replace_strategy_options(self, strategy_to_update: Strategy, new_strategy_options: list[StrategyOption]) -> None:
+        """
+        Safely replace strategy options by managing only the StrategyOption join table relationships.
+        This approach prevents any updates to Option or Strategy entities themselves.
+        """
+        strategy_to_update.strategy_options.clear()
+        
+        for new_strategy_option in new_strategy_options:
+            strategy_option_to_add = StrategyOption(
+                strategy_id=strategy_to_update.id,
+                option_id=new_strategy_option.option_id
+            )
+            self.session.add(strategy_option_to_add)
+            strategy_to_update.strategy_options.append(strategy_option_to_add)
+    
+    async def _update_strategy(self, incoming_entity: Strategy, existing_entity: Strategy):
+        existing_entity.project_id = incoming_entity.project_id
+        existing_entity.name = incoming_entity.name
+        existing_entity.description = incoming_entity.description
+        existing_entity.rationale = incoming_entity.rationale
+        existing_entity.updated_by_id = incoming_entity.updated_by_id
+
+        # Clear existing strategy options and create new ones
+        # This ensures we only manage the relationship without updating Option or Strategy entities
+        await self._replace_strategy_options(existing_entity, incoming_entity.strategy_options)
+    
+    async def _update_strategies(
+        self, incoming_entities: list[Strategy], existing_entities: list[Strategy]
+    ):
+        """
+        Updates existing_entities to match incoming_entities by:
+        - Updating strategies that exist in both lists (matched by id)
+        - Creating new strategies from incoming that don't exist in existing
+        - Deleting strategies from existing that aren't in incoming
+        """
+        incoming_by_id = {strategy.id: strategy for strategy in incoming_entities}
+        existing_by_id = {strategy.id: strategy for strategy in existing_entities}
+
+        # Update existing strategies that are in incoming
+        common_ids = set(existing_by_id.keys()) & set(incoming_by_id.keys())
+        await asyncio.gather(
+            *[
+                self._update_strategy(
+                    incoming_entity=incoming_by_id[strategy_id], 
+                    existing_entity=existing_by_id[strategy_id],
+                )
+                for strategy_id in common_ids
+            ]
+        )
+
+        # Delete strategies that are in existing but not in incoming
+        strategies_to_delete = [
+            strategy for strategy in existing_entities if strategy.id not in incoming_by_id
+        ]
+        if strategies_to_delete:
+
+            # Remove strategies from existing_entities list and delete from session
+            [existing_entities.remove(strategy) for strategy in strategies_to_delete]
+            await asyncio.gather(*[self.session.delete(strategy) for strategy in strategies_to_delete])
+
+        # Create new strategies that are in incoming but not in existing
+        new_strategies = [
+            strategy for strategy in incoming_entities if strategy.id not in existing_by_id
+        ]
+        if new_strategies:
+            existing_entities.extend(new_strategies)
+            [self.session.add(strategy) for strategy in new_strategies]
+
+        return existing_entities
 
     def _update_node(self, incoming_entity: Node, existing_entity: Node):
         existing_entity.name = incoming_entity.name

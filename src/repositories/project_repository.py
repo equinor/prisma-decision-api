@@ -1,5 +1,5 @@
 import uuid
-from src.models.project import Project
+from src.models import Project
 from src.repositories.query_extensions import QueryExtensions
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories.base_repository import BaseRepository
