@@ -16,6 +16,8 @@ from typing import (
     Optional,
     Tuple,
     cast,
+    Coroutine,
+    Any
 )
 from odata_query.sqlalchemy.shorthand import apply_odata_query
 from src.constants import PageSize
@@ -43,6 +45,7 @@ class AlchemyModel(Protocol):
 
 
 T = TypeVar("T", bound=AlchemyModel)
+K = TypeVar("K", bound=AlchemyModel)
 IDType = TypeVar("IDType", int, uuid.UUID)
 
 
@@ -126,6 +129,61 @@ class BaseRepository(Generic[T, IDType]):
         for entity_list in entity_lists:
             entity_list.sort(key=lambda entity: entity.id)
 
+    async def _update_entities(
+            self, 
+            incoming_entities: List[K], 
+            existing_entities: List[K],
+            update_method: Callable[[K, K], Coroutine[Any, Any, K]]
+        ) -> List[K]:
+        """
+        Updates existing_entities to match incoming_entities by:
+        - Updating entities that exist in both lists (matched by id)
+        - Creating new entities from incoming that don't exist in existing
+        - Deleting entities from existing that aren't in incoming
+        """
+        incoming_by_id = {entity.id: entity for entity in incoming_entities}
+        existing_by_id = {entity.id: entity for entity in existing_entities}
+
+        # Update existing entities that are in incoming
+        common_ids = set(existing_by_id.keys()) & set(incoming_by_id.keys())
+        await asyncio.gather(
+            *[
+                update_method(incoming_by_id[entity_id], existing_by_id[entity_id])
+                for entity_id in common_ids
+            ]
+        )
+
+        # Delete entities that are in existing but not in incoming
+        entities_to_delete = [
+            entity for entity in existing_entities if entity.id not in incoming_by_id
+        ]
+        if entities_to_delete:
+            # delete discrete probabilities using ORM to trigger cascade delete operation
+            entity_ids_to_delete = [entity.id for entity in entities_to_delete]
+            if all([isinstance(x, Outcome) for x in entities_to_delete]):
+                discrete_probs = await self.session.scalars(
+                    select(DiscreteProbability).where(
+                        DiscreteProbability.outcome_id.in_(entity_ids_to_delete)
+                    )
+                )
+                await asyncio.gather(*[self.session.delete(dp) for dp in discrete_probs])
+
+            # Remove entities from existing_entities list and delete from session
+            [existing_entities.remove(entity) for entity in entities_to_delete]
+            await asyncio.gather(*[self.session.delete(entity) for entity in entities_to_delete])
+
+        # Create new entities that are in incoming but not in existing
+        new_entities = [
+            entity for entity in incoming_entities if entity.id not in existing_by_id
+        ]
+        if new_entities:
+            existing_entities.extend(new_entities)
+            [self.session.add(entity) for entity in new_entities]
+            if all([isinstance(x, ProjectRole) for x in new_entities]):
+                [self.session.expunge(role.user) for role in new_entities]
+
+        return existing_entities
+
     async def _update_uncertainty(
         self, incoming_entity: Uncertainty, existing_entity: Uncertainty
     ) -> Uncertainty:
@@ -186,7 +244,8 @@ class BaseRepository(Generic[T, IDType]):
         existing_entity.utility = incoming_entity.utility
         return existing_entity
 
-    async def _update_option(self, incoming_entity: Option, existing_entity: Option) -> Option:
+    @staticmethod
+    async def _update_option(incoming_entity: Option, existing_entity: Option) -> Option:
         existing_entity.name = incoming_entity.name
         existing_entity.utility = incoming_entity.utility
         return existing_entity
@@ -200,45 +259,7 @@ class BaseRepository(Generic[T, IDType]):
         - Creating new outcomes from incoming that don't exist in existing
         - Deleting outcomes from existing that aren't in incoming
         """
-        incoming_by_id = {outcome.id: outcome for outcome in incoming_entities}
-        existing_by_id = {outcome.id: outcome for outcome in existing_entities}
-
-        # Update existing outcomes that are in incoming
-        common_ids = set(existing_by_id.keys()) & set(incoming_by_id.keys())
-        await asyncio.gather(
-            *[
-                self._update_outcome(incoming_by_id[outcome_id], existing_by_id[outcome_id])
-                for outcome_id in common_ids
-            ]
-        )
-
-        # Delete outcomes that are in existing but not in incoming
-        outcomes_to_delete = [
-            outcome for outcome in existing_entities if outcome.id not in incoming_by_id
-        ]
-        if outcomes_to_delete:
-            # delete discrete probabilities using ORM to trigger cascade delete operation
-            outcome_ids_to_delete = [outcome.id for outcome in outcomes_to_delete]
-            discrete_probs = await self.session.scalars(
-                select(DiscreteProbability).where(
-                    DiscreteProbability.outcome_id.in_(outcome_ids_to_delete)
-                )
-            )
-            await asyncio.gather(*[self.session.delete(dp) for dp in discrete_probs])
-
-            # Remove outcomes from existing_entities list and delete from session
-            [existing_entities.remove(outcome) for outcome in outcomes_to_delete]
-            await asyncio.gather(*[self.session.delete(outcome) for outcome in outcomes_to_delete])
-
-        # Create new outcomes that are in incoming but not in existing
-        new_outcomes = [
-            outcome for outcome in incoming_entities if outcome.id not in existing_by_id
-        ]
-        if new_outcomes:
-            existing_entities.extend(new_outcomes)
-            [self.session.add(outcome) for outcome in new_outcomes]
-
-        return existing_entities
+        return await self._update_entities(incoming_entities, existing_entities, self._update_outcome)
 
     async def _update_options(
         self, incoming_entities: List[Option], existing_entities: List[Option]
@@ -249,34 +270,7 @@ class BaseRepository(Generic[T, IDType]):
         - Creating new options from incoming that don't exist in existing
         - Deleting options from existing that aren't in incoming
         """
-        incoming_by_id = {option.id: option for option in incoming_entities}
-        existing_by_id = {option.id: option for option in existing_entities}
-
-        # Update existing options that are in incoming
-        common_ids = set(existing_by_id.keys()) & set(incoming_by_id.keys())
-        await asyncio.gather(
-            *[
-                self._update_option(incoming_by_id[option_id], existing_by_id[option_id])
-                for option_id in common_ids
-            ]
-        )
-
-        # Delete options that are in existing but not in incoming
-        options_to_delete = [
-            option for option in existing_entities if option.id not in incoming_by_id
-        ]
-        if options_to_delete:
-            # Remove options from existing_entities list and delete from session
-            [existing_entities.remove(option) for option in options_to_delete]
-            await asyncio.gather(*[self.session.delete(option) for option in options_to_delete])
-
-        # Create new options that are in incoming but not in existing
-        new_options = [option for option in incoming_entities if option.id not in existing_by_id]
-        if new_options:
-            existing_entities.extend(new_options)
-            [self.session.add(option) for option in new_options]
-
-        return existing_entities
+        return await self._update_entities(incoming_entities, existing_entities, self._update_option)
 
     async def _update_decision(
         self, incoming_entity: Decision, existing_entity: Decision
@@ -323,40 +317,8 @@ class BaseRepository(Generic[T, IDType]):
         - Creating new strategies from incoming that don't exist in existing
         - Deleting strategies from existing that aren't in incoming
         """
-        incoming_by_id = {strategy.id: strategy for strategy in incoming_entities}
-        existing_by_id = {strategy.id: strategy for strategy in existing_entities}
 
-        # Update existing strategies that are in incoming
-        common_ids = set(existing_by_id.keys()) & set(incoming_by_id.keys())
-        await asyncio.gather(
-            *[
-                self._update_strategy(
-                    incoming_entity=incoming_by_id[strategy_id], 
-                    existing_entity=existing_by_id[strategy_id],
-                )
-                for strategy_id in common_ids
-            ]
-        )
-
-        # Delete strategies that are in existing but not in incoming
-        strategies_to_delete = [
-            strategy for strategy in existing_entities if strategy.id not in incoming_by_id
-        ]
-        if strategies_to_delete:
-
-            # Remove strategies from existing_entities list and delete from session
-            [existing_entities.remove(strategy) for strategy in strategies_to_delete]
-            await asyncio.gather(*[self.session.delete(strategy) for strategy in strategies_to_delete])
-
-        # Create new strategies that are in incoming but not in existing
-        new_strategies = [
-            strategy for strategy in incoming_entities if strategy.id not in existing_by_id
-        ]
-        if new_strategies:
-            existing_entities.extend(new_strategies)
-            [self.session.add(strategy) for strategy in new_strategies]
-
-        return existing_entities
+        return await self._update_entities(incoming_entities, existing_entities, self._update_strategy)
 
     def _update_node(self, incoming_entity: Node, existing_entity: Node):
         existing_entity.name = incoming_entity.name
@@ -367,7 +329,16 @@ class BaseRepository(Generic[T, IDType]):
                 incoming_entity.node_style, existing_entity.node_style
             )
         return existing_entity
-
+    
+    async def _update_project_role(self, incoming_entity: ProjectRole, existing_entity: ProjectRole):
+        existing_entity.role = incoming_entity.role
+        existing_entity.user_id = incoming_entity.user_id
+        if incoming_entity.user:
+            try:
+                self.session.expunge(incoming_entity.user)
+            except:
+                pass
+        return existing_entity
     
     async def _update_project_roles(
         self, incoming_entities: list[ProjectRole], existing_entities: list[ProjectRole]
@@ -378,40 +349,7 @@ class BaseRepository(Generic[T, IDType]):
         - Creating new project roles from incoming that don't exist in existing
         - Deleting project roles from existing that aren't in incoming
         """
-        
-        incoming_by_id = {role.id: role for role in incoming_entities}
-        existing_by_id = {role.id: role for role in existing_entities}
-
-        # Update existing project roles that are in incoming
-        common_ids = set(existing_by_id.keys()) & set(incoming_by_id.keys())
-        for role_id in common_ids:
-            existing_role = existing_by_id[role_id]
-            incoming_role = incoming_by_id[role_id]
-            existing_role.role = incoming_role.role
-            existing_role.user_id = incoming_role.user_id
-
-        # Delete project roles that are in existing but not in incoming
-        roles_to_delete = [
-            role for role in existing_entities if role.id not in incoming_by_id
-        ]
-        if roles_to_delete:
-            for role in roles_to_delete:
-                existing_entities.remove(role)
-                await self.session.delete(role)
-
-        # Create new project roles that are in incoming but not in existing
-        new_roles = [
-            role for role in incoming_entities if role.id not in existing_by_id
-        ]
-        if new_roles:
-            existing_entities.extend(new_roles)
-            for role in new_roles:
-                self.session.add(role)
-                # ensure that the user is not updated or created while updating the role assignment
-                self.session.expunge(role.user)
-
-        return existing_entities
-
+        return await self._update_entities(incoming_entities, existing_entities, self._update_project_role)
 
     @staticmethod
     def _update_node_style(incoming_entity: NodeStyle, existing_entity: NodeStyle):
