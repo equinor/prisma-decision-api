@@ -331,4 +331,4 @@ class DiscreteTableEventHandler:
     @staticmethod
     def remove_options_from_strategy_table(session: Session):
         session_info = SessionInfoHandler.get_session_info(session)
-        strategy_repository.remove_options_out_of_scope(session, session_info.issues_pending_strategy_removal)
+        strategy_repository.remove_strategy_options_out_of_scope(session, session_info.issues_pending_strategy_removal)

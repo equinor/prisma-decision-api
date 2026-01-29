@@ -29,7 +29,7 @@ class StrategyRepository(BaseRepository[Strategy, uuid.UUID]):
         await self.session.flush()
         return entities_to_update
 
-def remove_options_out_of_scope(session: Session, issue_ids: set[uuid.UUID]):
+def remove_strategy_options_out_of_scope(session: Session, issue_ids: set[uuid.UUID]):
 
     query = (
         select(Issue)

@@ -57,7 +57,7 @@ async def get_strategy(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    if len(strategies) > 0:
+    if strategies:
         return strategies[0]
     else:
         raise HTTPException(status_code=404)
