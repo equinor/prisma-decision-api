@@ -139,31 +139,17 @@ class ProjectDuplicationService:
 
     def generate_id_mappings(self, issues: list[Issue]) -> None:
         """Pre-generate all ID mappings for issues, nodes, outcomes, and options."""
-        optional_decision_issues = [issue for issue in issues if issue.type != Type.DECISION.value]
-        optional_uncertainty_issues = [
-            issue for issue in issues if issue.type != Type.UNCERTAINTY.value
-        ]
-        for optional_issue in optional_decision_issues:
-            if optional_issue.decision:
-                self.mappings.decision[optional_issue.decision.id] = uuid.uuid4()
-                for option in optional_issue.decision.options:
-                    self.mappings.option[option.id] = uuid.uuid4()
-        for optional_issue in optional_uncertainty_issues:
-            if optional_issue.uncertainty:
-                self.mappings.uncertainty[optional_issue.uncertainty.id] = uuid.uuid4()
-                for outcome in optional_issue.uncertainty.outcomes:
-                    self.mappings.outcome[outcome.id] = uuid.uuid4()
         for issue in issues:
             self.mappings.issue[issue.id] = uuid.uuid4()
             if issue.node:
                 self.mappings.node[issue.node.id] = uuid.uuid4()
 
-            if issue.uncertainty and issue.type == Type.UNCERTAINTY.value:
+            if issue.uncertainty:
                 self.mappings.uncertainty[issue.uncertainty.id] = uuid.uuid4()
                 for outcome in issue.uncertainty.outcomes:
                     self.mappings.outcome[outcome.id] = uuid.uuid4()
 
-            if issue.decision and issue.type == Type.DECISION.value:
+            if issue.decision:
                 self.mappings.decision[issue.decision.id] = uuid.uuid4()
                 for option in issue.decision.options:
                     self.mappings.option[option.id] = uuid.uuid4()
