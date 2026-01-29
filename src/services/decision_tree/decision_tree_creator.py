@@ -16,12 +16,14 @@ from src.dtos.outcome_dtos import OutcomeOutgoingDto
 from src.dtos.decision_tree_dtos import (
     EdgeUUIDDto,
     EndPointNodeDto,
-    DecisionTreeDTO,
+    DecisionTreeDto,
     TreeNodeDto,
     ProbabilityDto,
-    UtilityDTDto
+    UtilityDTDto,
+    DecisionTreeDtoOld #tmp due to backward compabilities, to be removed
 )
 from src.dtos.discrete_probability_dtos import DiscreteProbabilityOutgoingDto
+from src.services.decision_tree.decision_tree_utils import TreeNodeLookup
 
 logger = logging.getLogger(__name__)
 
@@ -34,10 +36,10 @@ class DecisionTreeGraph:
         self.root: Optional[Any] = root
         if self.root is not None:
             self.nx.add_node(self.root)  # type: ignore
-        self.treenode_lookup: Dict[str, TreeNodeDto] = {}
         self.outcomes_lookup: Dict[str, str] = {}
         self.edge_names: Dict[Tuple[uuid.UUID, uuid.UUID], str] = {}
         self.utility_lookup : Dict[tuple[str, ...], List[float]] = {}
+        self.treenode_lookup : TreeNodeLookup
 
     async def add_node(self, node: uuid.UUID) -> None:
         self.nx.add_node(node)  # type: ignore
@@ -50,7 +52,7 @@ class DecisionTreeGraph:
         return parents[0] if (parents and len(parents) > 0) else None  # type: ignore
 
     async def populate_utility_lookup(self) -> None:
-        for node in self.treenode_lookup.values():
+        for node in self.treenode_lookup.get_list_of_nodes():
             if isinstance(node.issue, EndPointNodeDto) or node.issue.type != Type.UTILITY.value:
                 continue
             utility = node.issue.utility
@@ -62,33 +64,85 @@ class DecisionTreeGraph:
                         )
                         self.utility_lookup.setdefault(parents, []).append(discrete_utility.utility_value)
 
-    async def to_issue_dtos(self) -> Optional[DecisionTreeDTO]:
+    async def populate_treenode_lookup(self, lookup: Dict[str, TreeNodeDto]) -> None:
+        self.treenode_lookup = TreeNodeLookup()
+        for id, node in lookup.items():
+            self.treenode_lookup.add_with_original_id(uuid.UUID(id), node)
+
+    async def to_issue_dtos(self) -> Optional[DecisionTreeDto]:
         await self.populate_utility_lookup()
         self.edge_names = nx.get_edge_attributes(self.nx, "name")  # type: ignore
         tg = nx.readwrite.json_graph.tree_data(self.nx, self.root)  # type: ignore
         tree_structure = await self.create_decision_tree_dto_from_treenode(tg)  # type: ignore
+        # calculate endpoint values after all tree_nodes have got their utility values 
+        await self.calculate_endpointnode_values(tree_structure)
         return tree_structure
 
+    async def calculate_endpointnode_values(self, decision_tree: DecisionTreeDto | None) -> None:
+        if not decision_tree:
+            return
+        await self.update_endpoint_nodes(decision_tree.tree_node)
+
+    async def update_endpoint_nodes(self, node: TreeNodeDto) -> None:
+        if node.issue and isinstance(node.issue, EndPointNodeDto):
+            node.issue.value = await self.calculate_endpoint_value(node)
+            return
+
+        # Loop through children recursively
+        if node.children:
+            for child in node.children:
+                await self.update_endpoint_nodes(child.tree_node)
+
+    async def calculate_endpoint_value(self, node: TreeNodeDto) -> float:
+        id = self.treenode_lookup.get_original_id(node.id)
+        if not id:
+            return 0
+        node_value = 0
+        # Add branch labels for predecessors to the treenode branch
+        parent_id = await self.get_parent(id)
+        count = 0
+        branch_id = None
+        while parent_id and count < 1000:
+            if branch_id:
+                parent_node = self.treenode_lookup.get_node_by_original_id(id) if id else None
+                node_value += await self.get_utility_for_tree_node(parent_node, branch_id) if parent_node else 0
+            branch_id = self.edge_names[(parent_id, id)]
+            id = parent_id
+            parent_id = await self.get_parent(id)
+            count += 1
+        return node_value
+
+    async def get_utility_for_tree_node(
+        self, node: TreeNodeDto, branch_id: str
+    ) -> float:
+        if node.utilities:
+            for utility in node.utilities:
+                if ((utility.option_id is not None and utility.option_id.__str__() == branch_id) or
+                    (utility.outcome_id is not None and utility.outcome_id.__str__() == branch_id)):
+                    return utility.utility_value
+        return 0
+
     async def get_decision_tree_dto(
-        self, issue: TreeNodeDto, children: list[DecisionTreeDTO] | None = None
-    ) -> DecisionTreeDTO:
-        return DecisionTreeDTO(tree_node=issue, children=children)
+        self, issue: TreeNodeDto, children: list[DecisionTreeDto] | None = None
+    ) -> DecisionTreeDto:
+        issue.children = children
+        return DecisionTreeDto(tree_node=issue)
 
     async def create_decision_tree_dto_from_treenode(
         self, tree_data: Dict[str, Any]
-    ) -> Optional[DecisionTreeDTO]:
+    ) -> Optional[DecisionTreeDto]:
         # Base case: if the tree data is empty, return None
         if not tree_data:
             return None
 
         # Create the DTO for the current node
-        node = self.treenode_lookup.get(str(tree_data["id"]), None)
+        node = self.treenode_lookup.get_node_by_original_id(tree_data["id"])
 
         if node is None:
             return None
 
         # Recursively create DTOs for child nodes
-        children_dtos: list[DecisionTreeDTO] = []
+        children_dtos: list[DecisionTreeDto] = []
         for child in tree_data.get("children", []):
             child_dto = await self.create_decision_tree_dto_from_treenode(child)
             if child_dto:
@@ -97,10 +151,12 @@ class DecisionTreeGraph:
         copy_node = copy.deepcopy(node)
         copy_node.probabilities = await self.get_probability_values(copy_node)
         copy_node.utilities = await self.get_utility_values(copy_node)
+        original_id = copy_node.id
         copy_node.id = await self.create_treenode_id(copy_node)
-        return await self.get_decision_tree_dto(
-            issue=copy_node, children=children_dtos if children_dtos else None
-        )
+
+        self.treenode_lookup.set_updated_node(original_id, copy_node)
+        copy_node.children = children_dtos if children_dtos else None
+        return DecisionTreeDto(tree_node=copy_node)
 
     async def create_treenode_id(self, node: TreeNodeDto) -> uuid.UUID:
         id_string = ""
@@ -128,7 +184,9 @@ class DecisionTreeGraph:
                 out_dtos.append(dto)
         return out_dtos
 
-    async def get_probability_values(self, node: TreeNodeDto) -> Optional[list[ProbabilityDto]]:
+    async def get_probability_values(
+        self, node: TreeNodeDto
+    ) -> Optional[list[ProbabilityDto]]:
         treenode_id = node.id
         issue = node.issue
         probability_dtos: list[ProbabilityDto] = []
@@ -164,7 +222,9 @@ class DecisionTreeGraph:
 
         return probability_dtos
 
-    async def get_utility_values(self, node: TreeNodeDto) -> Optional[list[UtilityDTDto]]:
+    async def get_utility_values(
+        self, node: TreeNodeDto
+    ) -> Optional[list[UtilityDTDto]]:
         issue = node.issue
         utility_dtos : list[UtilityDTDto] = []
         if (isinstance(issue, EndPointNodeDto)):
@@ -190,7 +250,9 @@ class DecisionTreeGraph:
 
         return utility_dtos
 
-    async def get_discrete_utility_value(self, node: TreeNodeDto, dto : OptionOutgoingDto | OutcomeOutgoingDto) -> float:
+    async def get_discrete_utility_value(
+        self, node: TreeNodeDto, dto : OptionOutgoingDto | OutcomeOutgoingDto
+    ) -> float:
         branch_label = dto.id.__str__()
         if not any(branch_label in key for key in self.utility_lookup.keys()):
             return 0
@@ -223,6 +285,48 @@ class DecisionTreeGraph:
 
         return total_discrete_utility_value
 
+    # start functionality for backward compatibility
+    # => must be removed after frontend start using new/updated decision tree structure
+    async def to_issue_dtos_old(self) -> Optional[DecisionTreeDtoOld]:
+        await self.populate_utility_lookup()
+        self.edge_names = nx.get_edge_attributes(self.nx, "name")  # type: ignore
+        tg = nx.readwrite.json_graph.tree_data(self.nx, self.root)  # type: ignore
+        tree_structure = await self.create_decision_tree_dto_from_treenode_old(tg)  # type: ignore
+        return tree_structure
+
+    async def get_decision_tree_dto_old(
+        self, issue: TreeNodeDto, children: list[DecisionTreeDtoOld] | None = None
+    ) -> DecisionTreeDtoOld:
+        return DecisionTreeDtoOld(tree_node=issue, children=children)
+
+    async def create_decision_tree_dto_from_treenode_old(
+        self, tree_data: Dict[str, Any]
+    ) -> Optional[DecisionTreeDtoOld]:
+        # Base case: if the tree data is empty, return None
+        if not tree_data:
+            return None
+
+        # Create the DTO for the current node
+        node = self.treenode_lookup.get_node_by_original_id(tree_data["id"])
+
+        if node is None:
+            return None
+
+        # Recursively create DTOs for child nodes
+        children_dtos: list[DecisionTreeDtoOld] = []
+        for child in tree_data.get("children", []):
+            child_dto = await self.create_decision_tree_dto_from_treenode_old(child)
+            if child_dto:
+                children_dtos.append(child_dto)
+
+        copy_node = copy.deepcopy(node)
+        copy_node.probabilities = await self.get_probability_values(copy_node)
+        copy_node.utilities = await self.get_utility_values(copy_node)
+        copy_node.id = await self.create_treenode_id(copy_node)
+        return await self.get_decision_tree_dto_old(
+            issue=copy_node, children=children_dtos if children_dtos else None
+        )
+    # end functionality for backward compatibility
 
 class DecisionTreeCreator:
     def __init__(self) -> None:
@@ -451,7 +555,7 @@ class DecisionTreeCreator:
                 element[0].head = endpoint_end
                 await decision_tree.add_edge(element[0])  # node is added when the branch is added
 
-        decision_tree.treenode_lookup = copy.deepcopy(self.treenode_lookup)
+        await decision_tree.populate_treenode_lookup(self.treenode_lookup)
         decision_tree.outcomes_lookup = copy.deepcopy(self.outcomes_lookup)
         return decision_tree
 
