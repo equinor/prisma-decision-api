@@ -3,6 +3,9 @@ from dataclasses import dataclass, field
 from typing import Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.services.uncertainty_service import UncertaintyService
+from src.services.utility_service import UtilityService
+from src.services.decision_service import DecisionService
 from src.constants import Boundary, DecisionHierarchy, ProjectRoleType, Type
 from src.dtos.decision_dtos import DecisionIncomingDto
 from src.dtos.discrete_probability_dtos import DiscreteProbabilityIncomingDto
@@ -55,49 +58,16 @@ class ProjectDuplicationService:
         duplicated_project = await self.create_duplicate_project(
             session, original_project, new_project_id, current_user
         )
-
-        # Generate all ID mappings upfront
         self.generate_id_mappings(list(original_project.issues), mappings)
-
-        await self.duplicate_unassigned_issues(
-            session, original_project, new_project_id, mappings, current_user
-        )
-        await self.duplicate_fact_issues(
-            session, original_project, new_project_id, mappings, current_user
-        )
-
-        # Duplicate all issue types
-        await self.duplicate_decision_issues(
-            session, original_project, new_project_id, mappings, current_user
+        await self.create_duplicate_issues(
+            session,
+            new_project_id,
+            original_project,
+            current_user,
+            mappings,
         )
 
-        discrete_prob_dtos = await self.duplicate_uncertainty_issues(
-            session, original_project, new_project_id, mappings, current_user
-        )
-        await DiscreteProbabilityService().create(session, discrete_prob_dtos)
-
-        await self.duplicate_utility_issues(
-            session, original_project, new_project_id, mappings, current_user
-        )
-
-        await self.duplicate_edges(session, original_project, new_project_id, mappings)
         return duplicated_project
-
-    def generate_id_mappings(self, issues: list[Issue], mappings: IdMappings) -> None:
-        """Pre-generate all ID mappings for issues, nodes, outcomes, and options."""
-        for issue in issues:
-            mappings.issue[issue.id] = uuid.uuid4()
-
-            if issue.node:
-                mappings.node[issue.node.id] = uuid.uuid4()
-
-            if issue.uncertainty and issue.type == Type.UNCERTAINTY.value:
-                for outcome in issue.uncertainty.outcomes:
-                    mappings.outcome[outcome.id] = uuid.uuid4()
-
-            if issue.decision and issue.type == Type.DECISION.value:
-                for option in issue.decision.options:
-                    mappings.option[option.id] = uuid.uuid4()
 
     async def create_duplicate_project(
         self,
@@ -143,6 +113,236 @@ class ProjectDuplicationService:
         )
 
         return duplicated_project[0]
+
+    async def create_duplicate_issues(
+        self,
+        session: AsyncSession,
+        new_project_id: uuid.UUID,
+        original_project: Project,
+        current_user: UserIncomingDto,
+        mappings: IdMappings,
+    ) -> None:
+        """Create duplicate issues for the new project, prioritizing decision issues first, then uncertainty, then utility."""
+        # Sort issues to process decision issues first, then uncertainty, then utility
+
+        original_issues = list(original_project.issues)
+        decision_type_issues = [
+            issue for issue in original_issues if issue.type == Type.DECISION.value
+        ]
+        uncertainity_issues = [
+            issue for issue in original_issues if issue.type == Type.UNCERTAINTY.value
+        ]
+        utility_issues = [issue for issue in original_issues if issue.type == Type.UTILITY.value]
+
+        await self.duplicate_unassigned_issues(
+            session, original_project, new_project_id, mappings, current_user
+        )
+        await self.duplicate_fact_issues(
+            session, original_project, new_project_id, mappings, current_user
+        )
+
+        # Duplicate all issue types
+        await self.duplicate_decision_issues(
+            session, decision_type_issues, new_project_id, mappings, current_user
+        )
+
+        discrete_prob_dtos = await self.duplicate_uncertainty_issues(
+            session, uncertainity_issues, new_project_id, mappings, current_user
+        )
+        await DiscreteProbabilityService().create(session, discrete_prob_dtos)
+
+        await self.duplicate_utility_issues(
+            session, utility_issues, new_project_id, mappings, current_user
+        )
+        await self.duplicate_edges(session, original_project, new_project_id, mappings)
+
+        optional_fact_and_unassigned_issues = [
+            issue
+            for issue in original_issues
+            if issue.type == Type.FACT.value or issue.type == Type.UNASSIGNED.value
+        ]
+        optional_decision_issues = [
+            issue for issue in original_issues if issue.type != Type.DECISION.value
+        ]
+        optional_uncertainty_issues = [
+            issue for issue in original_issues if issue.type != Type.UNCERTAINTY.value
+        ]
+        optional_utility_issues = [
+            issue for issue in original_issues if issue.type != Type.UTILITY.value
+        ]
+        for optional_fact_unassigned_issue in optional_fact_and_unassigned_issues:
+            if optional_fact_unassigned_issue.decision:
+                optional_decision_issues.append(optional_fact_unassigned_issue)
+            if optional_fact_unassigned_issue.uncertainty:
+                optional_uncertainty_issues.append(optional_fact_unassigned_issue)
+            if optional_fact_unassigned_issue.utility:
+                optional_utility_issues.append(optional_fact_unassigned_issue)
+
+        decision_dtos: list[DecisionIncomingDto] = []
+        for issue in [issue for issue in optional_decision_issues]:
+            decision = issue.decision
+            if decision:
+                decision_dto = self.create_decision_incoming_dto(issue, mappings)
+                if decision_dto:
+                    decision_dtos.append(decision_dto)
+                else:
+                    continue
+        await DecisionService().create(session, decision_dtos)
+
+        uncertainty_dtos: list[UncertaintyIncomingDto] = []
+        discrete_probabilities_dtos: list[DiscreteProbabilityIncomingDto] = []
+        for issue in optional_uncertainty_issues:
+            result = self.create_uncertainty_incoming_dto(issue, mappings)
+            if result is not None:
+                uncertainty_dto, discrete_prob_list = result
+                uncertainty_dtos.append(uncertainty_dto)
+                discrete_probabilities_dtos.extend(discrete_prob_list)
+
+        await UncertaintyService().create(session, uncertainty_dtos)
+        if len(discrete_probabilities_dtos) > 0:
+            await DiscreteProbabilityService().create(session, discrete_probabilities_dtos)
+
+        utility_dtos: list[UtilityIncomingDto] = []
+        for issue in optional_utility_issues:
+            utility_dto = self.create_utility_incoming_dto(issue, mappings)
+            if utility_dto:
+                utility_dtos.append(utility_dto)
+        await UtilityService().create(session, utility_dtos)
+
+    def generate_id_mappings(self, issues: list[Issue], mappings: IdMappings) -> None:
+        """Pre-generate all ID mappings for issues, nodes, outcomes, and options."""
+        optional_decision_issues = [issue for issue in issues if issue.type != Type.DECISION.value]
+        optional_uncertainty_issues = [
+            issue for issue in issues if issue.type != Type.UNCERTAINTY.value
+        ]
+        for optional_issue in optional_decision_issues:
+            if optional_issue.decision:
+                for option in optional_issue.decision.options:
+                    mappings.option[option.id] = uuid.uuid4()
+        for optional_issue in optional_uncertainty_issues:
+            if optional_issue.uncertainty:
+                for outcome in optional_issue.uncertainty.outcomes:
+                    mappings.outcome[outcome.id] = uuid.uuid4()
+        for issue in issues:
+            mappings.issue[issue.id] = uuid.uuid4()
+
+            if issue.node:
+                mappings.node[issue.node.id] = uuid.uuid4()
+
+            if issue.uncertainty and issue.type == Type.UNCERTAINTY.value:
+                for outcome in issue.uncertainty.outcomes:
+                    mappings.outcome[outcome.id] = uuid.uuid4()
+
+            if issue.decision and issue.type == Type.DECISION.value:
+                for option in issue.decision.options:
+                    mappings.option[option.id] = uuid.uuid4()
+
+    def create_decision_incoming_dto(
+        self,
+        issue: Issue,
+        mappings: IdMappings,
+    ) -> Optional[DecisionIncomingDto]:
+        """Create a DecisionIncomingDto if the issue has a decision."""
+        if not issue.decision:
+            return None
+
+        new_decision_id = uuid.uuid4()
+        return DecisionIncomingDto(
+            id=new_decision_id,
+            issue_id=mappings.issue[issue.id],
+            type=DecisionHierarchy(issue.decision.type),
+            options=(
+                [
+                    OptionIncomingDto(
+                        id=mappings.option[option.id],
+                        decision_id=new_decision_id,
+                        name=option.name,
+                        utility=option.utility,
+                    )
+                    for option in issue.decision.options
+                ]
+                if issue.decision.options and len(issue.decision.options) > 0
+                else []
+            ),
+        )
+
+    def create_uncertainty_incoming_dto(
+        self, issue: Issue, mappings: IdMappings
+    ) -> Optional[tuple[UncertaintyIncomingDto, list[DiscreteProbabilityIncomingDto]]]:
+        """Create an UncertaintyIncomingDto if the issue has an uncertainty."""
+        if not issue.uncertainty:
+            return None
+
+        new_uncertainty_id = uuid.uuid4()
+        uncertainty = issue.uncertainty
+        discrete_probabilities_dtos: list[DiscreteProbabilityIncomingDto] = []
+        outcomes_dtos: list[OutcomeIncomingDto] = [
+            OutcomeIncomingDto(
+                id=mappings.outcome[outcome.id],
+                name=outcome.name,
+                uncertainty_id=new_uncertainty_id,
+                utility=outcome.utility,
+            )
+            for outcome in uncertainty.outcomes
+        ]
+        if uncertainty.discrete_probabilities and len(uncertainty.discrete_probabilities) > 0:
+            for dp in uncertainty.discrete_probabilities:
+                mapped_outcome_ids, mapped_option_ids = self.map_parent_ids(
+                    list(dp.parent_outcomes), list(dp.parent_options), mappings
+                )
+                outcome_id = mappings.outcome.get(dp.outcome_id)
+                if outcome_id is None:
+                    outcome_id = dp.outcome_id
+
+                discrete_probabilities_dtos.append(
+                    DiscreteProbabilityIncomingDto(
+                        id=uuid.uuid4(),
+                        uncertainty_id=new_uncertainty_id,
+                        outcome_id=outcome_id,
+                        probability=dp.probability,
+                        parent_outcome_ids=mapped_outcome_ids,
+                        parent_option_ids=mapped_option_ids,
+                    )
+                )
+
+        uncertainty_dto = UncertaintyIncomingDto(
+            id=new_uncertainty_id,
+            issue_id=mappings.issue[issue.id],
+            is_key=uncertainty.is_key,
+            outcomes=outcomes_dtos,
+            discrete_probabilities=[],
+        )
+        return uncertainty_dto, discrete_probabilities_dtos
+
+    def create_utility_incoming_dto(
+        self, issue: Issue, mappings: IdMappings
+    ) -> Optional[UtilityIncomingDto]:
+        """Create a UtilityIncomingDto if the issue has a utility."""
+        if not issue.utility:
+            return None
+
+        new_utility_id = uuid.uuid4()
+        discrete_utilities: list[DiscreteUtilityIncomingDto] = []
+        for du in issue.utility.discrete_utilities:
+            mapped_outcome_ids, mapped_option_ids = self.map_parent_ids(
+                list(du.parent_outcomes), list(du.parent_options), mappings
+            )
+            discrete_utilities.append(
+                DiscreteUtilityIncomingDto(
+                    id=uuid.uuid4(),
+                    utility_id=new_utility_id,
+                    utility_value=du.utility_value,
+                    parent_option_ids=mapped_option_ids,
+                    parent_outcome_ids=mapped_outcome_ids,
+                    value_metric_id=du.value_metric_id,
+                )
+            )
+
+        return UtilityIncomingDto(
+            id=new_utility_id,
+            issue_id=mappings.issue[issue.id],
+            discrete_utilities=discrete_utilities,
+        )
 
     def create_node_dto(
         self, issue: Issue, new_project_id: uuid.UUID, mappings: IdMappings
@@ -200,49 +400,7 @@ class ProjectDuplicationService:
             for po in parent_options
             if po.parent_option_id in mappings.option
         ]
-        return mapped_outcome_ids, mapped_option_ids
-
-    def create_optional_issues_types(
-        self,
-        issue: Issue,
-        mappings: IdMappings,
-        new_uncertainty_id: Optional[uuid.UUID],
-        new_utility_id: Optional[uuid.UUID],
-        new_decision_id: Optional[uuid.UUID],
-    ) -> tuple[
-        Optional[UncertaintyIncomingDto],
-        Optional[UtilityIncomingDto],
-        Optional[DecisionIncomingDto],
-    ]:
-        """Create optional uncertainty and utility DTOs if they exist on the issue."""
-        uncertainty_dto = None
-        utility_dto = None
-        decision_dto = None
-
-        if issue.uncertainty and new_uncertainty_id is not None:
-            uncertainty_dto = UncertaintyIncomingDto(
-                id=new_uncertainty_id,
-                issue_id=mappings.issue[issue.id],
-                is_key=issue.uncertainty.is_key,
-                discrete_probabilities=[],
-                outcomes=[],
-            )
-
-        if issue.utility and new_utility_id is not None:
-            utility_dto = UtilityIncomingDto(
-                id=new_utility_id,
-                issue_id=mappings.issue[issue.id],
-                discrete_utilities=[],
-            )
-        if issue.decision and new_decision_id is not None:
-            decision_dto = DecisionIncomingDto(
-                id=new_decision_id,
-                issue_id=mappings.issue[issue.id],
-                type=DecisionHierarchy(issue.decision.type),
-                options=[],
-            )
-
-        return uncertainty_dto, utility_dto, decision_dto
+        return (mapped_outcome_ids, mapped_option_ids)
 
     async def create_issue(
         self, session: AsyncSession, issue_dto: IssueIncomingDto, current_user: UserIncomingDto
@@ -257,93 +415,24 @@ class ProjectDuplicationService:
     async def duplicate_decision_issues(
         self,
         session: AsyncSession,
-        original_project: Project,
+        decision_issues: list[Issue],
         new_project_id: uuid.UUID,
         mappings: IdMappings,
         current_user: UserIncomingDto,
     ) -> None:
         """Duplicate all decision issues from the original project."""
-        for issue in original_project.issues:
+        for issue in decision_issues:
             if not (issue.decision and issue.type == Type.DECISION.value):
                 continue
-
-            new_decision_id = uuid.uuid4()
-            new_uncertainty_id = uuid.uuid4()
-            new_utility_id = uuid.uuid4()
-            uncertainity_dto = None
-            utility_dto = None
-            decision_dto = DecisionIncomingDto(
-                id=new_decision_id,
-                issue_id=mappings.issue[issue.id],
-                type=DecisionHierarchy(issue.decision.type),
-                options=[
-                    OptionIncomingDto(
-                        id=mappings.option[option.id],
-                        decision_id=new_decision_id,
-                        name=option.name,
-                        utility=option.utility,
-                    )
-                    for option in issue.decision.options
-                ],
-            )
-            uncertainity_dto, utility_dto, _ = self.create_optional_issues_types(
-                issue, mappings, new_uncertainty_id, new_utility_id, None
-            )
+            decision_dto = self.create_decision_incoming_dto(issue, mappings)
 
             issue_dto = self.create_issue_dto(
                 issue,
                 new_project_id,
                 mappings,
                 decision=decision_dto,
-                uncertainty=uncertainity_dto,
-                utility=utility_dto,
             )
             await self.create_issue(session, issue_dto, current_user)
-
-    async def _duplicate_fact_unassigned_issue_type(
-        self,
-        session: AsyncSession,
-        original_project: Project,
-        new_project_id: uuid.UUID,
-        mappings: IdMappings,
-        current_user: UserIncomingDto,
-        issue_type: Type,
-    ) -> None:
-        """Duplicate issues of a basic type (UNASSIGNED or FACT) from the original project."""
-        for issue in original_project.issues:
-            if not (issue and issue.type == issue_type.value):
-                continue
-
-            new_uncertainty_id = uuid.uuid4()
-            new_utility_id = uuid.uuid4()
-            new_decision_id = uuid.uuid4()
-
-            uncertainity_dto, utility_dto, decision_dto = self.create_optional_issues_types(
-                issue, mappings, new_uncertainty_id, new_utility_id, new_decision_id
-            )
-
-            issue_dto = self.create_issue_dto(
-                issue,
-                new_project_id,
-                mappings,
-                decision=decision_dto,
-                uncertainty=uncertainity_dto,
-                utility=utility_dto,
-            )
-            await self.create_issue(session, issue_dto, current_user)
-
-    async def duplicate_unassigned_issues(
-        self,
-        session: AsyncSession,
-        original_project: Project,
-        new_project_id: uuid.UUID,
-        mappings: IdMappings,
-        current_user: UserIncomingDto,
-    ) -> None:
-        """Duplicate all unassigned issues from the original project."""
-        await self._duplicate_fact_unassigned_issue_type(
-            session, original_project, new_project_id, mappings, current_user, Type.UNASSIGNED
-        )
 
     async def duplicate_fact_issues(
         self,
@@ -354,83 +443,11 @@ class ProjectDuplicationService:
         current_user: UserIncomingDto,
     ) -> None:
         """Duplicate all fact issues from the original project."""
-        await self._duplicate_fact_unassigned_issue_type(
+        await self._duplicate_basic_issue_type(
             session, original_project, new_project_id, mappings, current_user, Type.FACT
         )
 
-    async def duplicate_uncertainty_issues(
-        self,
-        session: AsyncSession,
-        original_project: Project,
-        new_project_id: uuid.UUID,
-        mappings: IdMappings,
-        current_user: UserIncomingDto,
-    ) -> list[DiscreteProbabilityIncomingDto]:
-        """Duplicate all uncertainty issues and return discrete probability DTOs."""
-        discrete_probability_dtos: list[DiscreteProbabilityIncomingDto] = []
-
-        for issue in original_project.issues:
-            if not (issue.uncertainty and issue.type == Type.UNCERTAINTY.value):
-                continue
-
-            new_uncertainty_id = uuid.uuid4()
-            new_decision_id = uuid.uuid4()
-            new_utility_id = uuid.uuid4()
-            # Create outcomes
-            outcomes_dtos: list[OutcomeIncomingDto] = [
-                OutcomeIncomingDto(
-                    id=mappings.outcome[outcome.id],
-                    name=outcome.name,
-                    uncertainty_id=new_uncertainty_id,
-                    utility=outcome.utility,
-                )
-                for outcome in issue.uncertainty.outcomes
-            ]
-
-            # Create discrete probabilities (to be added later)
-            for dp in issue.uncertainty.discrete_probabilities:
-                mapped_outcome_ids, mapped_option_ids = self.map_parent_ids(
-                    list(dp.parent_outcomes), list(dp.parent_options), mappings
-                )
-                outcome_id = mappings.outcome.get(dp.outcome_id)
-                if outcome_id is None:
-                    outcome_id = dp.outcome_id
-
-                discrete_probability_dtos.append(
-                    DiscreteProbabilityIncomingDto(
-                        id=uuid.uuid4(),
-                        uncertainty_id=new_uncertainty_id,
-                        outcome_id=outcome_id,
-                        probability=dp.probability,
-                        parent_outcome_ids=mapped_outcome_ids,
-                        parent_option_ids=mapped_option_ids,
-                    )
-                )
-
-            uncertainty_dto = UncertaintyIncomingDto(
-                id=new_uncertainty_id,
-                issue_id=mappings.issue[issue.id],
-                is_key=issue.uncertainty.is_key,
-                outcomes=outcomes_dtos,
-                discrete_probabilities=[],
-            )
-            _, utility_dto, decision_dto = self.create_optional_issues_types(
-                issue, mappings, new_uncertainty_id, new_utility_id, new_decision_id
-            )
-
-            issue_dto = self.create_issue_dto(
-                issue,
-                new_project_id,
-                mappings,
-                uncertainty=uncertainty_dto,
-                decision=decision_dto,
-                utility=utility_dto,
-            )
-            await self.create_issue(session, issue_dto, current_user)
-
-        return discrete_probability_dtos
-
-    async def duplicate_utility_issues(
+    async def duplicate_unassigned_issues(
         self,
         session: AsyncSession,
         original_project: Project,
@@ -438,14 +455,72 @@ class ProjectDuplicationService:
         mappings: IdMappings,
         current_user: UserIncomingDto,
     ) -> None:
-        """Duplicate all utility issues from the original project."""
+        """Duplicate all unassigned issues from the original project."""
+        await self._duplicate_basic_issue_type(
+            session, original_project, new_project_id, mappings, current_user, Type.UNASSIGNED
+        )
+
+    async def _duplicate_basic_issue_type(
+        self,
+        session: AsyncSession,
+        original_project: Project,
+        new_project_id: uuid.UUID,
+        mappings: IdMappings,
+        current_user: UserIncomingDto,
+        issue_type: Type,
+    ) -> None:
+        """Duplicate issues of a basic type (FACT or UNASSIGNED) from the original project."""
         for issue in original_project.issues:
+            if issue.type == issue_type.value:
+                issue_dto = self.create_issue_dto(
+                    issue,
+                    new_project_id,
+                    mappings,
+                )
+                await self.create_issue(session, issue_dto, current_user)
+
+    async def duplicate_uncertainty_issues(
+        self,
+        session: AsyncSession,
+        uncertainity_issues: list[Issue],
+        new_project_id: uuid.UUID,
+        mappings: IdMappings,
+        current_user: UserIncomingDto,
+    ) -> list[DiscreteProbabilityIncomingDto]:
+        """Duplicate all uncertainty issues and return discrete probability DTOs."""
+        discrete_probabilities_dtos: list[DiscreteProbabilityIncomingDto] = []
+        for issue in uncertainity_issues:
+            if not (issue.uncertainty and issue.type == Type.UNCERTAINTY.value):
+                continue
+            result = self.create_uncertainty_incoming_dto(issue, mappings)
+            if result is not None:
+                uncertainty_dto, discrete_prob_list = result
+                issue_dto = self.create_issue_dto(
+                    issue,
+                    new_project_id,
+                    mappings,
+                    uncertainty=uncertainty_dto,
+                    decision=None,
+                    utility=None,
+                )
+                await self.create_issue(session, issue_dto, current_user)
+                discrete_probabilities_dtos.extend(discrete_prob_list)
+        return discrete_probabilities_dtos
+
+    async def duplicate_utility_issues(
+        self,
+        session: AsyncSession,
+        utility_issues: list[Issue],
+        new_project_id: uuid.UUID,
+        mappings: IdMappings,
+        current_user: UserIncomingDto,
+    ) -> None:
+        """Duplicate all utility issues from the original project."""
+        for issue in utility_issues:
             if not (issue.utility and issue.type == Type.UTILITY.value):
                 continue
 
             new_utility_id = uuid.uuid4()
-            new_decision_id = uuid.uuid4()
-            new_uncertainty_id = uuid.uuid4()
 
             discrete_utility_dtos: list[DiscreteUtilityIncomingDto] = []
             for du in issue.utility.discrete_utilities:
@@ -468,17 +543,14 @@ class ProjectDuplicationService:
                 issue_id=mappings.issue[issue.id],
                 discrete_utilities=discrete_utility_dtos,
             )
-            uncertainity_dto, _, decision_dto = self.create_optional_issues_types(
-                issue, mappings, new_uncertainty_id, new_utility_id, new_decision_id
-            )
 
             issue_dto = self.create_issue_dto(
                 issue,
                 new_project_id,
                 mappings,
                 utility=utility_dto,
-                decision=decision_dto,
-                uncertainty=uncertainity_dto,
+                decision=None,
+                uncertainty=None,
             )
             await self.create_issue(session, issue_dto, current_user)
 
