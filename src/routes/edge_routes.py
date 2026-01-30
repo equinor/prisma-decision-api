@@ -11,21 +11,22 @@ from src.dtos.edge_dtos import (
 from src.services.edge_service import EdgeService
 from src.dependencies import get_edge_service
 from src.constants import SwaggerDocumentationConstants
-from src.dependencies import get_db, get_scenario_lock_manager, ScenarioQueueManager
+from src.dependencies import get_db, get_project_lock_manager, ProjectQueueManager
 
 router = APIRouter(tags=["edges"])
 
-scenario_id = uuid.UUID("bd3f303b-b7f3-4ffc-bf8a-7356e970a17c")
+# example projectid
+project_id = uuid.UUID("0c0e7dd2-e683-4e14-bd5b-92d588d72f93")
 
 @router.post("/edges")
 async def create_edges(
     dtos: list[EdgeIncomingDto],
     edge_service: EdgeService = Depends(get_edge_service),
     session: AsyncSession = Depends(get_db),
-    lock_manager: ScenarioQueueManager = Depends(get_scenario_lock_manager),
+    lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ) -> list[EdgeOutgoingDto]:
     try:
-        async with lock_manager.aquire_scenario_lock(scenario_id):
+        async with lock_manager.aquire_project_lock(project_id):
             await asyncio.sleep(5)
             result = list(await edge_service.create(session, dtos))
             await session.commit()
@@ -70,10 +71,10 @@ async def delete_edge(
     id: uuid.UUID,
     edge_service: EdgeService = Depends(get_edge_service),
     session: AsyncSession = Depends(get_db),
-    lock_manager: ScenarioQueueManager = Depends(get_scenario_lock_manager),
+    lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ):
     try:
-        async with lock_manager.aquire_scenario_lock(scenario_id):
+        async with lock_manager.aquire_project_lock(project_id):
             await asyncio.sleep(5)
             await edge_service.delete(session, [id])
             await session.commit()
@@ -87,10 +88,10 @@ async def delete_edges(
     ids: list[uuid.UUID] = Query([]),
     edge_service: EdgeService = Depends(get_edge_service),
     session: AsyncSession = Depends(get_db),
-    lock_manager: ScenarioQueueManager = Depends(get_scenario_lock_manager),
+    lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ):
     try:
-        async with lock_manager.aquire_scenario_lock(scenario_id):
+        async with lock_manager.aquire_project_lock(project_id):
             await edge_service.delete(session, ids)
             await session.commit()
     except Exception as e:
@@ -101,10 +102,10 @@ async def update_edges(
     dtos: list[EdgeIncomingDto],
     edge_service: EdgeService = Depends(get_edge_service),
     session: AsyncSession = Depends(get_db),
-    lock_manager: ScenarioQueueManager = Depends(get_scenario_lock_manager),
+    lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ) -> list[EdgeOutgoingDto]:
     try:
-        async with lock_manager.aquire_scenario_lock(scenario_id):
+        async with lock_manager.aquire_project_lock(project_id):
             result = list(await edge_service.update(session, dtos))
             await session.commit()
             return result
