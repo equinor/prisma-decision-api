@@ -1,7 +1,7 @@
 apiVersion: radix.equinor.com/v1
 kind: RadixApplication
 metadata:
-  name: dot-api
+  name: prisma-decision-api
 spec:
   environments:
     - name: prod
