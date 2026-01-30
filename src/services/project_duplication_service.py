@@ -19,13 +19,14 @@ from src.dtos.project_roles_dtos import ProjectRoleCreateDto
 from src.dtos.uncertainty_dtos import UncertaintyIncomingDto
 from src.dtos.user_dtos import UserIncomingDto
 from src.dtos.utility_dtos import UtilityIncomingDto
+from src.dtos.strategy_dtos import StrategyIncomingDto
 from src.models import Project, Issue
 from src.repositories.project_repository import ProjectRepository
 from src.services.discrete_probability_service import DiscreteProbabilityService
 from src.services.edge_service import EdgeService
 from src.services.issue_service import IssueService
 from src.services.project_service import ProjectService
-
+from src.services.strategy_service import StrategyService
 
 @dataclass
 class IdMappings:
@@ -87,6 +88,8 @@ class ProjectDuplicationService:
                 session,
                 duplicate_incoming_discrete_utilities_dtos,
             )
+
+        await self.duplicate_strategies(session, original_project, new_project_id, current_user)
 
         # Duplicate edges
         await self.duplicate_edges(session, original_project, new_project_id, self.mappings)
@@ -366,3 +369,30 @@ class ProjectDuplicationService:
 
         if duplicate_edge_dtos:
             await EdgeService().create(session, duplicate_edge_dtos)
+
+    async def duplicate_strategies(
+        self,
+        session: AsyncSession,
+        original_project: Project,
+        new_project_id: uuid.UUID,
+        user_dto: UserIncomingDto
+    ) -> None:
+        strategies_to_create = [
+            StrategyIncomingDto(
+                id=uuid.uuid4(),
+                name=strategy.name,
+                description=strategy.description,
+                rationale=strategy.rationale,
+                project_id=new_project_id,
+                options = [
+                    OptionIncomingDto(
+                        id=self.mappings.option[strategy_option.option.id],
+                        name = strategy_option.option.name,
+                        decision_id=self.mappings.decision[strategy_option.option.decision_id],
+                        utility=strategy_option.option.utility,
+                    ) for strategy_option in strategy.strategy_options
+                ]
+            ) for strategy in original_project.strategies
+        ]
+        if strategies_to_create:
+            await StrategyService().create(session, strategies_to_create, user_dto)
