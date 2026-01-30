@@ -4,6 +4,7 @@ import requests
 from authlib.jose.errors import JoseError
 from authlib.jose import JsonWebToken
 import time
+from src.constants import AccessRoles
 from src.config import config
 from src.utils.timed_cache import timed_lru_cache
 
@@ -27,6 +28,7 @@ def get_claims_options() -> dict[str, dict[str, object]]:
         "iat": {"essential": True},
     }
 
+
 @timed_lru_cache(seconds=config.CACHE_DURATION, maxsize=config.CACHE_MAX_SIZE)
 def verify_token(token: str = Depends(oauth2_scheme)) -> dict[str, str]:
     try:
@@ -38,7 +40,7 @@ def verify_token(token: str = Depends(oauth2_scheme)) -> dict[str, str]:
         claims = jwt.decode(token, jwks, claims_options=claims_options)
         claims.validate(now=time.time(), leeway=1)
         roles = claims.get("roles", [])
-        if "DecisionOptimizationUser" not in roles:
+        if AccessRoles.User not in roles:
             raise HTTPException(status_code=403, detail="Forbidden: Insufficient role")
         return token
     except JoseError as e:

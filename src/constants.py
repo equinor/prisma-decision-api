@@ -6,6 +6,10 @@ class SessionInfoParameters(str, Enum):
     IS_EVENT_DISABLED = "is_event_disabled"
 
 
+class AccessRoles(str, Enum):
+    User = "PrismaDecisionUser"
+
+
 class Type(str, Enum):
     UNASSIGNED = "Unassigned"
     DECISION = "Decision"
