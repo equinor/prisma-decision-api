@@ -42,11 +42,11 @@ spec:
           replicas: 1
           variables:
             CLIENT_ID: '706ace43-0266-478e-a047-942162b6e1ff'
-            REDIRECT_URL: 'https://api-dot-api-prod.radix.equinor.com/docs/oauth2-redirect'
+            REDIRECT_URL: 'https://api-prisma-decision-api-prod.radix.equinor.com/docs/oauth2-redirect'
             AUDIENCE: "706ace43-0266-478e-a047-942162b6e1ff"
             SCOPE: '706ace43-0266-478e-a047-942162b6e1ff/Read'
             APP_ENV: 'prod'
-            DATABASE_CONN_PROD: 'DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=decision-optimization-sqlserver-prod.database.windows.net;Database=decision-optimization-sqldb-prod;'
+            DATABASE_CONN_PROD: 'DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-prod.database.windows.net;Database=sqldb-prisma-decision-prod;'
           identity:
             azure:
                 clientId: 250cbdac-bb6d-42f2-a9f2-a8b312d3cf12
@@ -54,11 +54,11 @@ spec:
           replicas: 1
           variables:
             CLIENT_ID: '945882c1-69f4-41cd-a42a-22516ca01868'
-            REDIRECT_URL: 'https://api-dot-api-test.radix.equinor.com/docs/oauth2-redirect'
+            REDIRECT_URL: 'https://api-prisma-decision-api-test.radix.equinor.com/docs/oauth2-redirect'
             AUDIENCE: "945882c1-69f4-41cd-a42a-22516ca01868"
             APP_ENV: 'test'
             SCOPE: '945882c1-69f4-41cd-a42a-22516ca01868/Read'
-            DATABASE_CONN_TEST: 'DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=decision-optimization-sqlserver-test.database.windows.net;Database=decision-optimization-sqldb-test;'
+            DATABASE_CONN_TEST: 'DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-test.database.windows.net;Database=sqldb-prisma-decision-test;'
           identity:
             azure:
               clientId: 2fdc6cea-f798-4bf1-8b61-5de06ace057f
@@ -66,10 +66,10 @@ spec:
           replicas: 1
           variables:
             CLIENT_ID: '4251833c-b9c3-4013-afda-cbfd2cc50f3f'
-            REDIRECT_URL: 'https://api-dot-api-dev.radix.equinor.com/docs/oauth2-redirect'
+            REDIRECT_URL: 'https://api-prisma-decision-api-dev.radix.equinor.com/docs/oauth2-redirect'
             AUDIENCE: "4251833c-b9c3-4013-afda-cbfd2cc50f3f"
             APP_ENV: 'dev'
-            DATABASE_CONN_DEV: 'DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=decision-optimization-sqlserver-dev.database.windows.net;Database=decision-optimization-sqldb-dev;'
+            DATABASE_CONN_DEV: 'DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-dev.database.windows.net;Database=sqldb-prisma-decision-dev;'
             SCOPE: '4251833c-b9c3-4013-afda-cbfd2cc50f3f/Read'
           identity:
             azure:
