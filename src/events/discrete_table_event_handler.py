@@ -5,7 +5,7 @@ from typing import Any
 from typing import Any
 
 from sqlalchemy.orm import Session
-from sqlalchemy.orm.attributes import get_history
+from sqlalchemy.orm.attributes import get_history, History
 
 from src.models import (
     Edge, Issue, Outcome, Option, Uncertainty, Decision,
@@ -21,6 +21,8 @@ from src.repositories import (
     uncertainty_repository, 
     issue_repository,
     utility_repository,
+    node_repository,
+    strategy_repository,
 )
 from src.utils.session_info_handler import (
     SessionInfoHandler,
@@ -35,7 +37,7 @@ class DiscreteTableEventHandler:
         DiscreteProbabilityParentOption, DiscreteProbabilityParentOutcome,
         DiscreteUtilityParentOption, DiscreteUtilityParentOutcome,
     ]
-    subscribed_entities_modified = [Issue, Uncertainty, Decision]
+    subscribed_entities_modified_before_flush = [Issue, Uncertainty, Decision, Edge]
     subscribed_entities_new = [Edge, Option, Outcome]
 
     def process_session_changes_before_flush(self, session: Session) -> None:
@@ -43,7 +45,7 @@ class DiscreteTableEventHandler:
         # Filter to only subscribed entities
         subscribed_dirty = [
             entity for entity in session.dirty
-            if any(isinstance(entity, entity_type) for entity_type in self.subscribed_entities_modified)
+            if any(isinstance(entity, entity_type) for entity_type in self.subscribed_entities_modified_before_flush)
         ]
         subscribed_deleted = [
             entity for entity in session.deleted
@@ -77,16 +79,14 @@ class DiscreteTableEventHandler:
             entity for entity in session.new 
             if any(isinstance(entity, entity_type) for entity_type in self.subscribed_entities_new)
         ]
-        
-        if not subscribed_new:
-            return
-        
+
         session_info = SessionInfoHandler.get_session_info(session)
-        
-        # Process changes in order of dependency
-        session_info = SessionInfoHandler.add_to_session_info(session_info,
-            self._process_additions(session, subscribed_new)
-        )
+
+        if subscribed_new:
+            # Process changes in order of dependency
+            session_info = SessionInfoHandler.add_to_session_info(session_info,
+                self._process_additions(session, subscribed_new)
+            )
         
         SessionInfoHandler.update_session_info(session, session_info)
     
@@ -150,15 +150,46 @@ class DiscreteTableEventHandler:
         """Process modified entities and find affected tables."""
         session_info = SessionInfo()
         issues_to_search: set[uuid.UUID] = set()
+        issues_pending_strategy_removal: set[uuid.UUID] = set()
+        changed_edges: set[uuid.UUID] = set()
+
+        head_ids: set[uuid.UUID] = set()
+        edge_tail_to_head_mapping: dict[uuid.UUID, uuid.UUID] = {}
         
+
         for modified_entity in modified_entities:
-            if isinstance(modified_entity, Issue):
+            if isinstance(modified_entity, Edge):
+                changed_edges.add(modified_entity.id)
+                hist_head: History = get_history(modified_entity, Edge.head_id.name)
+                hist_tail: History = get_history(modified_entity, Edge.tail_id.name)
+
+                # handle head id updated
+                if isinstance(hist_head.added, list) and hist_head.added.__len__() == 1:
+                    head_ids.add(hist_head.added[0])
+
+                if isinstance(hist_head.deleted, list) and hist_head.deleted.__len__() == 1:
+                    head_ids.add(hist_head.deleted[0])
+
+                # handle tail id updated
+                if isinstance(hist_tail.added, list) and hist_tail.added.__len__() == 1:
+                    head_ids.add(modified_entity.head_id)
+                    edge_tail_to_head_mapping[hist_tail.added[0]] = modified_entity.head_id
+                    
+                if isinstance(hist_tail.deleted, list) and hist_tail.deleted.__len__() == 1:
+                    head_ids.add(modified_entity.head_id)
+                    edge_tail_to_head_mapping[hist_tail.deleted[0]] = modified_entity.head_id
+                    
+            elif isinstance(modified_entity, Issue):
                 if self._has_boundary_change(modified_entity):
                     issues_to_search.add(modified_entity.id)
+                if self._has_boundary_changed_from_in(modified_entity):
+                    issues_pending_strategy_removal.add(modified_entity.id)
                 
                 if self._has_type_change_to_or_from_uncertainty_decision(modified_entity):
                     session_info.affected_uncertainties.add(modified_entity.id)
                     issues_to_search.add(modified_entity.id)
+                if self._has_type_change_from_decision(modified_entity):
+                    issues_pending_strategy_removal.add(modified_entity.id)
             
             elif isinstance(modified_entity, Uncertainty):
                 if self._has_key_change(modified_entity):
@@ -167,12 +198,24 @@ class DiscreteTableEventHandler:
             elif isinstance(modified_entity, Decision):
                 if self._has_focus_type_change(modified_entity):
                     issues_to_search.add(modified_entity.issue_id)
+                if self._has_focus_type_change_from_focus(modified_entity):
+                    issues_pending_strategy_removal.add(modified_entity.issue_id)
+        
+        # Find the head node issues that are affected by the edge updates
+        if edge_tail_to_head_mapping or head_ids:
+            session_info = SessionInfoHandler.add_to_session_info(
+                session_info,
+                node_repository.add_effected_session_enities_by_nodes(session, head_ids, edge_tail_to_head_mapping)
+            )
         
         # Find affected uncertainties from issue changes
         if issues_to_search:
             session_info = SessionInfoHandler.add_to_session_info(session_info,
                 issue_repository.find_effected_session_entities(session, issues_to_search)
             )
+
+        if issues_pending_strategy_removal:
+            session_info.issues_pending_strategy_removal = issues_pending_strategy_removal
         
         return session_info
     
@@ -218,6 +261,12 @@ class DiscreteTableEventHandler:
         return (Boundary.OUT.value in (history.added or []) or 
                 Boundary.OUT.value in (history.deleted or []))
     
+    def _has_boundary_changed_from_in(self, issue: Issue):
+        history = get_history(issue, Issue.boundary.name)
+        if not history.has_changes():
+            return False
+        return Boundary.IN.value in (history.deleted or [])
+    
     def _has_type_change_to_or_from_uncertainty_decision(self, issue: Issue) -> bool:
         """Check if issue type changed to/from UNCERTAINTY or DECISION."""
         history = get_history(issue, Issue.type.name)
@@ -229,6 +278,14 @@ class DiscreteTableEventHandler:
         deleted = set(history.deleted or [])
         
         return bool(relevant_types.intersection(added) or relevant_types.intersection(deleted))
+    
+    def _has_type_change_from_decision(self, issue: Issue) -> bool:
+        """Check if issue type changed to/from UNCERTAINTY or DECISION."""
+        history = get_history(issue, Issue.type.name)
+        if not history.has_changes():
+            return False
+        
+        return Type.DECISION.value in (history.deleted or [])
     
     def _has_key_change(self, uncertainty: Uncertainty) -> bool:
         """Check if uncertainty key status changed."""
@@ -242,7 +299,15 @@ class DiscreteTableEventHandler:
         return (DecisionHierarchy.FOCUS.value in (history.added or []) or 
                 DecisionHierarchy.FOCUS.value in (history.deleted or []))
     
-    def recalculate_affected_probabilities(self, session: Session) -> None:
+    def _has_focus_type_change_from_focus(self, decision: Decision) -> bool:
+        """Check if decision type changed to/from FOCUS."""
+        history = get_history(decision, Decision.type.name)
+        if not history.has_changes():
+            return False
+        return DecisionHierarchy.FOCUS.value in (history.deleted or [])
+    
+    @staticmethod
+    def recalculate_affected_probabilities(session: Session) -> None:
         """Recalculate discrete probability tables for all affected uncertainties."""
         session_info = SessionInfoHandler.get_session_info(session)
 
@@ -252,7 +317,8 @@ class DiscreteTableEventHandler:
         for uncertainty_id in session_info.affected_uncertainties:
             uncertainty_repository.recalculate_discrete_probability_table(session, uncertainty_id)
 
-    def recalculate_affected_utilities(self, session: Session) -> None:
+    @staticmethod
+    def recalculate_affected_utilities(session: Session) -> None:
         """Recalculate discrete utility tables for all affected utilities."""
         session_info = SessionInfoHandler.get_session_info(session)
 
@@ -261,3 +327,8 @@ class DiscreteTableEventHandler:
         
         for utility_id in session_info.affected_utilities:
             utility_repository.recalculate_discrete_utility_table(session, utility_id)
+
+    @staticmethod
+    def remove_options_from_strategy_table(session: Session):
+        session_info = SessionInfoHandler.get_session_info(session)
+        strategy_repository.remove_strategy_options_out_of_scope(session, session_info.issues_pending_strategy_removal)

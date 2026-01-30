@@ -22,7 +22,9 @@ if TYPE_CHECKING:
 class Decision(Base, BaseEntity):
     __tablename__ = "decision"
     id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True)
-    issue_id: Mapped[uuid.UUID] = mapped_column(GUID(), ForeignKey("issue.id"), index=True)
+    issue_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("issue.id", ondelete="CASCADE"), index=True
+    )
 
     issue: Mapped["Issue"] = relationship("Issue", back_populates="decision")
     options: Mapped[list[Option]] = relationship("Option", cascade="all, delete-orphan")
@@ -31,7 +33,13 @@ class Decision(Base, BaseEntity):
         default=DecisionHierarchy.FOCUS.value,
     )
 
-    def __init__(self, id: uuid.UUID, options: list[Option], issue_id: uuid.UUID, type: str = DecisionHierarchy.FOCUS.value):
+    def __init__(
+        self,
+        id: uuid.UUID,
+        options: list[Option],
+        issue_id: uuid.UUID,
+        type: str = DecisionHierarchy.FOCUS.value,
+    ):
         self.id = id
         self.issue_id = issue_id
         self.options = options
@@ -41,11 +49,17 @@ class Decision(Base, BaseEntity):
         if not isinstance(other, Decision):
             return False
         return (
-            self.id == other.id and
-            self.issue_id == other.issue_id and
-            self.type == other.type and
-            len(self.options) == len(other.options) and
-            all(opt1 == opt2 for opt1, opt2 in zip(sorted(self.options, key=lambda x: x.id), sorted(other.options, key=lambda x: x.id)))
+            self.id == other.id
+            and self.issue_id == other.issue_id
+            and self.type == other.type
+            and len(self.options) == len(other.options)
+            and all(
+                opt1 == opt2
+                for opt1, opt2 in zip(
+                    sorted(self.options, key=lambda x: x.id),
+                    sorted(other.options, key=lambda x: x.id),
+                )
+            )
         )
 
     def __hash__(self) -> int:

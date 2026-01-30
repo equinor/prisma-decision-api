@@ -5,7 +5,6 @@ from src.models import (
     Node,
     Edge,
     Project,
-    Scenario,
     Decision,
     Uncertainty,
     Utility,
@@ -13,7 +12,10 @@ from src.models import (
     User,
     DiscreteProbability,
     DiscreteUtility,
+    StrategyOption,
+    Strategy,
 )
+
 
 # Use joinedload for single relationships
 # Use selectinload for collections
@@ -31,9 +33,9 @@ class QueryExtensions:
                 joinedload(DiscreteProbability.outcome),
                 selectinload(DiscreteProbability.parent_options),
                 selectinload(DiscreteProbability.parent_outcomes),
-            )
+            ),
         ]
-    
+
     @staticmethod
     def load_utility_with_relationships() -> list[_AbstractLoad]:
         return [
@@ -52,7 +54,7 @@ class QueryExtensions:
             selectinload(DiscreteProbability.parent_options),
             selectinload(DiscreteProbability.parent_outcomes),
         ]
-    
+
     @staticmethod
     def load_discrete_utility_with_relationships() -> list[_AbstractLoad]:
         return [
@@ -91,45 +93,26 @@ class QueryExtensions:
             ),
             joinedload(Node.node_style),
         ]
-    
+
     @staticmethod
     def load_node_with_edge_relationships() -> list[_AbstractLoad]:
         return [
             selectinload(Node.head_edges).options(
                 joinedload(Edge.tail_node).options(
                     joinedload(Node.issue).options(
-                    joinedload(Issue.decision).options(
-                        selectinload(Decision.options)
+                        joinedload(Issue.decision).options(selectinload(Decision.options)),
+                        joinedload(Issue.uncertainty).options(selectinload(Uncertainty.outcomes)),
                     ),
-                    joinedload(Issue.uncertainty).options(
-                        selectinload(Uncertainty.outcomes)
-                    ),
-                ),
-            )
+                )
             ),
             selectinload(Node.tail_edges).options(
                 joinedload(Edge.head_node).options(
                     joinedload(Node.issue).options(
-                    joinedload(Issue.decision).options(
-                        selectinload(Decision.options)
+                        joinedload(Issue.decision).options(selectinload(Decision.options)),
+                        joinedload(Issue.uncertainty).options(selectinload(Uncertainty.outcomes)),
                     ),
-                    joinedload(Issue.uncertainty).options(
-                        selectinload(Uncertainty.outcomes)
-                    ),
-                ),
                 )
-            )
-        ]
-
-    @staticmethod
-    def load_scenario_with_relationships() -> list[_AbstractLoad]:
-        return [
-            joinedload(Scenario.project),
-            selectinload(Scenario.opportunities),
-            selectinload(Scenario.objectives),
-            selectinload(Scenario.nodes),
-            selectinload(Scenario.edges),
-            joinedload(Scenario.issues).options(*QueryExtensions.load_issue_with_relationships()),
+            ),
         ]
 
     @staticmethod
@@ -142,12 +125,22 @@ class QueryExtensions:
     @staticmethod
     def load_project_with_relationships() -> list[_AbstractLoad]:
         return [
-            selectinload(Project.scenarios).options(
-                *QueryExtensions.load_scenario_with_relationships()
-            ),
+            selectinload(Project.objectives),
+            selectinload(Project.nodes),
+            selectinload(Project.edges),
+            selectinload(Project.issues).options(*QueryExtensions.load_issue_with_relationships()),
             selectinload(Project.project_role).options(*QueryExtensions.load_role_with_user()),
+            selectinload(Project.strategies).options(*QueryExtensions.load_strategy()),
         ]
-
+    
+    @staticmethod
+    def load_strategy() -> list[_AbstractLoad]:
+        return [
+            selectinload(Strategy.strategy_options).options(
+                joinedload(StrategyOption.option)
+            )
+        ]
+    
     @staticmethod
     def empty_load() -> list[_AbstractLoad]:
         """
