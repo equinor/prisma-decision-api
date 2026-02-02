@@ -4,7 +4,7 @@ from itertools import product, chain
 from src.models.utility import Utility
 from src.models import DiscreteUtility, DiscreteUtilityParentOption, DiscreteUtilityParentOutcome
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload, Session
+from sqlalchemy.orm import joinedload, subqueryload, Session
 from sqlalchemy.sql import select
 from src.repositories.base_repository import BaseRepository
 from src.repositories.query_extensions import QueryExtensions
@@ -15,21 +15,21 @@ from src.constants import default_value_metric_id
 
 def utility_table_load_query(id: uuid.UUID):
     return select(Utility).where(Utility.id == id).options(
-            selectinload(Utility.discrete_utilities).options(
-                selectinload(DiscreteUtility.parent_options),
-                selectinload(DiscreteUtility.parent_outcomes),
+            subqueryload(Utility.discrete_utilities).options(
+                subqueryload(DiscreteUtility.parent_options),
+                subqueryload(DiscreteUtility.parent_outcomes),
                 joinedload(DiscreteUtility.value_metric),
             ),
             joinedload(Utility.issue).options(
                 joinedload(Issue.node).options(
-                    selectinload(Node.head_edges).options(
+                    subqueryload(Node.head_edges).options(
                         joinedload(Edge.tail_node).options(
                             joinedload(Node.issue).options(
                                 joinedload(Issue.uncertainty).options(
-                                    selectinload(Uncertainty.outcomes)
+                                    subqueryload(Uncertainty.outcomes)
                                 ),
                                 joinedload(Issue.decision).options(
-                                    selectinload(Decision.options)
+                                    subqueryload(Decision.options)
                                 )
                             )
                         )
@@ -37,7 +37,7 @@ def utility_table_load_query(id: uuid.UUID):
                 ),
                 joinedload(Issue.utility),
                 joinedload(Issue.decision).options(
-                    selectinload(Decision.options)
+                    subqueryload(Decision.options)
                 ),            
             )
         )
