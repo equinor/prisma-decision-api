@@ -97,18 +97,20 @@ class DecisionTreeGraph:
         id = self.treenode_lookup.get_original_id(node.id)
         if not id:
             return 0
-        node_value = 0
-        # Add branch labels for predecessors to the treenode branch
+
         parent_id = await self.get_parent(id)
+        if not parent_id:
+            return 0
         count = 0
-        branch_id = None
+        node_value = 0
+        branch_id = self.edge_names[(parent_id, id)]
         while parent_id and count < 1000:
-            if branch_id:
-                parent_node = self.treenode_lookup.get_node_by_original_id(id) if id else None
-                node_value += await self.get_utility_for_tree_node(parent_node, branch_id) if parent_node else 0
-            branch_id = self.edge_names[(parent_id, id)]
+            parent_node = self.treenode_lookup.get_node_by_original_id(parent_id) if id else None
+            node_value += await self.get_utility_for_tree_node(parent_node, branch_id) if parent_node else 0
             id = parent_id
             parent_id = await self.get_parent(id)
+            if parent_id:
+                branch_id = self.edge_names[(parent_id, id)]
             count += 1
         return node_value
 
