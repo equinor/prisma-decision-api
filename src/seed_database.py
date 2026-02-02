@@ -10,6 +10,8 @@ from src.models import (
     Node,
     NodeStyle,
     Objective,
+    Strategy,
+    StrategyOption,
     Uncertainty,
     Utility,
     Decision,
@@ -192,6 +194,7 @@ async def create_single_project(conn: AsyncConnection):
         objectives=[],
         user_id=user.id,
         project_role=[],
+        strategies=[],
     )
     project = add_auditable_fields(project, user)
     entities.append(project)
@@ -491,6 +494,7 @@ async def create_decision_tree_symmetry_DT_from_ID(conn: AsyncConnection):
         parent_project_name="",
         user_id=user.id,
         project_role=[],
+        strategies=[],
     )
     project = add_auditable_fields(project, user)
     entities.append(project)
@@ -597,6 +601,7 @@ async def create_decision_tree_symmetry_DT(conn: AsyncConnection):
         objectives=[],
         parent_project_name="",
         project_role=[],
+        strategies=[],
     )
     project = add_auditable_fields(project, user)
     entities.append(project)
@@ -743,6 +748,7 @@ async def create_decision_tree_with_utilities(conn: AsyncConnection):
         parent_project_name="",
         user_id=user.id,
         project_role=[],
+        strategies=[],
     )
     project = add_auditable_fields(project, user)
     entities.append(project)
@@ -1154,6 +1160,7 @@ async def seed_database(
             objectives=[],
             user_id=user.id,
             project_role=[],
+            strategies=[],
         )
         project = add_auditable_fields(project, user)
         entities.append(project)
@@ -1183,6 +1190,7 @@ async def seed_database(
             issue_node_id = GenerateUuid.as_uuid(
                 project_index * num_projects * num_nodes + issue_node_index + 1
             )
+            option_id = uuid4()
             decision = Decision(
                 id=issue_node_id,
                 issue_id=issue_node_id,
@@ -1194,7 +1202,7 @@ async def seed_database(
                         utility=-3,
                     ),
                     Option(
-                        id=uuid4(),
+                        id=option_id,
                         decision_id=issue_node_id,
                         name="no",
                         utility=30,
@@ -1202,6 +1210,27 @@ async def seed_database(
                 ],
             )
             entities.append(decision)
+
+            # make 1 strategies for every project
+            if issue_node_index == 0:
+                strategy = Strategy(
+                    id=issue_node_id,
+                    project_id=project_id,
+                    name="",
+                    description="",
+                    rationale="",
+                    user_id=user.id,
+                    strategy_options=[
+                        StrategyOption(
+                            strategy_id=issue_node_id,
+                            option_id=option_id,
+                        )
+                    ]
+                )
+
+                strategy = add_auditable_fields(strategy, user)
+
+                entities.append(strategy)
 
             # Create outcome IDs to reference consistently
             outcome1_id = issue_node_id
