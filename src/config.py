@@ -10,9 +10,9 @@ class Config(BaseSettings):
 
     ORIGINS: List[str] = [
         "http://localhost:5004",
-        "https://frontend-prisma-decision-web-dev.radix.equinor.com/",
-        "https://frontend-prisma-decision-web-test.radix.equinor.com/",
-        "https://frontend-prisma-decision-web-prod.radix.equinor.com/",
+        "https://frontend-prisma-decision-web-dev.radix.equinor.com",
+        "https://frontend-prisma-decision-web-test.radix.equinor.com",
+        "https://frontend-prisma-decision-web-prod.radix.equinor.com",
     ]
 
     CLIENT_ID: str = Field(default=os.getenv("CLIENT_ID", "4251833c-b9c3-4013-afda-cbfd2cc50f3f"))
