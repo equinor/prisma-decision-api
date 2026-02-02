@@ -1,5 +1,5 @@
 from sqlalchemy.orm.strategy_options import _AbstractLoad  # type: ignore
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload, subqueryload
 from src.models import (
     Issue,
     Node,
@@ -18,31 +18,31 @@ from src.models import (
 
 
 # Use joinedload for single relationships
-# Use selectinload for collections
+# Use subqueryload for collections
 class QueryExtensions:
 
     @staticmethod
     def load_decision_with_relationships() -> list[_AbstractLoad]:
-        return [selectinload(Decision.options)]
+        return [subqueryload(Decision.options)]
 
     @staticmethod
     def load_uncertainty_with_relationships() -> list[_AbstractLoad]:
         return [
-            selectinload(Uncertainty.outcomes),
-            selectinload(Uncertainty.discrete_probabilities).options(
+            subqueryload(Uncertainty.outcomes),
+            subqueryload(Uncertainty.discrete_probabilities).options(
                 joinedload(DiscreteProbability.outcome),
-                selectinload(DiscreteProbability.parent_options),
-                selectinload(DiscreteProbability.parent_outcomes),
+                subqueryload(DiscreteProbability.parent_options),
+                subqueryload(DiscreteProbability.parent_outcomes),
             ),
         ]
 
     @staticmethod
     def load_utility_with_relationships() -> list[_AbstractLoad]:
         return [
-            selectinload(Utility.discrete_utilities).options(
+            subqueryload(Utility.discrete_utilities).options(
                 joinedload(DiscreteUtility.value_metric),
-                selectinload(DiscreteUtility.parent_options),
-                selectinload(DiscreteUtility.parent_outcomes),
+                subqueryload(DiscreteUtility.parent_options),
+                subqueryload(DiscreteUtility.parent_outcomes),
             )
         ]
 
@@ -51,8 +51,8 @@ class QueryExtensions:
         return [
             joinedload(DiscreteProbability.outcome),
             joinedload(DiscreteProbability.uncertainty),
-            selectinload(DiscreteProbability.parent_options),
-            selectinload(DiscreteProbability.parent_outcomes),
+            subqueryload(DiscreteProbability.parent_options),
+            subqueryload(DiscreteProbability.parent_outcomes),
         ]
 
     @staticmethod
@@ -60,8 +60,8 @@ class QueryExtensions:
         return [
             joinedload(DiscreteUtility.value_metric),
             joinedload(DiscreteUtility.utility),
-            selectinload(DiscreteUtility.parent_options),
-            selectinload(DiscreteUtility.parent_outcomes),
+            subqueryload(DiscreteUtility.parent_options),
+            subqueryload(DiscreteUtility.parent_outcomes),
         ]
 
     @staticmethod
@@ -97,19 +97,19 @@ class QueryExtensions:
     @staticmethod
     def load_node_with_edge_relationships() -> list[_AbstractLoad]:
         return [
-            selectinload(Node.head_edges).options(
+            subqueryload(Node.head_edges).options(
                 joinedload(Edge.tail_node).options(
                     joinedload(Node.issue).options(
-                        joinedload(Issue.decision).options(selectinload(Decision.options)),
-                        joinedload(Issue.uncertainty).options(selectinload(Uncertainty.outcomes)),
+                        joinedload(Issue.decision).options(subqueryload(Decision.options)),
+                        joinedload(Issue.uncertainty).options(subqueryload(Uncertainty.outcomes)),
                     ),
                 )
             ),
-            selectinload(Node.tail_edges).options(
+            subqueryload(Node.tail_edges).options(
                 joinedload(Edge.head_node).options(
                     joinedload(Node.issue).options(
-                        joinedload(Issue.decision).options(selectinload(Decision.options)),
-                        joinedload(Issue.uncertainty).options(selectinload(Uncertainty.outcomes)),
+                        joinedload(Issue.decision).options(subqueryload(Decision.options)),
+                        joinedload(Issue.uncertainty).options(subqueryload(Uncertainty.outcomes)),
                     ),
                 )
             ),
@@ -125,18 +125,18 @@ class QueryExtensions:
     @staticmethod
     def load_project_with_relationships() -> list[_AbstractLoad]:
         return [
-            selectinload(Project.objectives),
-            selectinload(Project.nodes),
-            selectinload(Project.edges),
-            selectinload(Project.issues).options(*QueryExtensions.load_issue_with_relationships()),
-            selectinload(Project.project_role).options(*QueryExtensions.load_role_with_user()),
-            selectinload(Project.strategies).options(*QueryExtensions.load_strategy()),
+            subqueryload(Project.objectives),
+            subqueryload(Project.nodes),
+            subqueryload(Project.edges),
+            subqueryload(Project.issues).options(*QueryExtensions.load_issue_with_relationships()),
+            subqueryload(Project.project_role).options(*QueryExtensions.load_role_with_user()),
+            subqueryload(Project.strategies).options(*QueryExtensions.load_strategy()),
         ]
     
     @staticmethod
     def load_strategy() -> list[_AbstractLoad]:
         return [
-            selectinload(Strategy.strategy_options).options(
+            subqueryload(Strategy.strategy_options).options(
                 joinedload(StrategyOption.option)
             )
         ]
@@ -165,5 +165,5 @@ class QueryExtensions:
         """
 
         return [
-            selectinload(User.project_role),
+            subqueryload(User.project_role),
         ]

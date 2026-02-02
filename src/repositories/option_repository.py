@@ -1,7 +1,7 @@
 import uuid
 from src.models import Option, Issue, Node, Edge, Decision
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload, Session
+from sqlalchemy.orm import joinedload, subqueryload, Session
 from sqlalchemy.sql import select
 from src.repositories.base_repository import BaseRepository
 from src.repositories.query_extensions import QueryExtensions
@@ -35,7 +35,7 @@ def find_effected_session_entities(session: Session, entities: set[Option]) -> S
     query = select(Decision).where(Decision.id.in_(parent_decision_ids)).options(
         joinedload(Decision.issue).options(
             joinedload(Issue.node).options(
-                selectinload(Node.tail_edges).options(
+                subqueryload(Node.tail_edges).options(
                     joinedload(Edge.head_node).options(
                         joinedload(Node.issue).options(
                             joinedload(Issue.uncertainty),

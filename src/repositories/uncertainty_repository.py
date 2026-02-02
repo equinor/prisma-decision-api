@@ -3,7 +3,7 @@ from typing import List, Optional
 from itertools import product, chain
 from src.models import Uncertainty, DiscreteProbability, DiscreteProbabilityParentOption, DiscreteProbabilityParentOutcome
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload, Session
+from sqlalchemy.orm import joinedload, subqueryload, Session
 from sqlalchemy.sql import select
 from src.repositories.base_repository import BaseRepository
 from src.repositories.query_extensions import QueryExtensions
@@ -14,24 +14,24 @@ from src.models import Issue, Node, Edge, Decision, Uncertainty
 
 def uncertainty_table_load_query(id: uuid.UUID):
     return select(Uncertainty).where(Uncertainty.id == id).options(
-        selectinload(Uncertainty.outcomes),
-        selectinload(Uncertainty.discrete_probabilities).options(
-            selectinload(DiscreteProbability.parent_options),
-            selectinload(DiscreteProbability.parent_outcomes),
+        subqueryload(Uncertainty.outcomes),
+        subqueryload(Uncertainty.discrete_probabilities).options(
+            subqueryload(DiscreteProbability.parent_options),
+            subqueryload(DiscreteProbability.parent_outcomes),
         ),
         joinedload(Uncertainty.issue).options(
             joinedload(Issue.node).options(
-                selectinload(Node.head_edges).options(
+                subqueryload(Node.head_edges).options(
                     joinedload(Edge.tail_node).options(
                         joinedload(Node.issue)
                     )
                 ),
             ),
             joinedload(Issue.uncertainty).options(
-                selectinload(Uncertainty.outcomes)
+                subqueryload(Uncertainty.outcomes)
             ),                    
             joinedload(Issue.decision).options(
-                selectinload(Decision.options)
+                subqueryload(Decision.options)
             ),            
         )
     )

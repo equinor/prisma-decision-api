@@ -1,6 +1,6 @@
 import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session, selectinload, joinedload
+from sqlalchemy.orm import Session, subqueryload, joinedload
 from sqlalchemy import select
 from src.models import (
     Issue,
@@ -90,7 +90,7 @@ def find_effected_session_entities(session: Session, issue_ids: set[uuid.UUID]) 
         .where(Issue.id.in_(issue_ids))
         .options(
             joinedload(Issue.node).options(
-                selectinload(Node.tail_edges).options(
+                subqueryload(Node.tail_edges).options(
                     joinedload(Edge.head_node).options(
                         joinedload(Node.issue).options(
                             joinedload(Issue.utility),
