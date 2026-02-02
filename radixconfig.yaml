@@ -49,7 +49,7 @@ spec:
             DATABASE_CONN_PROD: 'DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-prod.database.windows.net;Database=sqldb-prisma-decision-prod;'
           identity:
             azure:
-                clientId: 250cbdac-bb6d-42f2-a9f2-a8b312d3cf12
+                clientId: 4acc192d-fb5b-4c32-becb-5ab84231c033
         - environment: test
           replicas: 1
           variables:
@@ -61,7 +61,7 @@ spec:
             DATABASE_CONN_TEST: 'DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-test.database.windows.net;Database=sqldb-prisma-decision-test;'
           identity:
             azure:
-              clientId: 2fdc6cea-f798-4bf1-8b61-5de06ace057f
+              clientId: 5efd12e5-f713-4eb2-93a3-2cd466689a20
         - environment: dev
           replicas: 1
           variables:
@@ -73,4 +73,4 @@ spec:
             SCOPE: '4251833c-b9c3-4013-afda-cbfd2cc50f3f/Read'
           identity:
             azure:
-              clientId: c0d1f6a5-93b5-432b-8c2e-bf26583a7626
+              clientId: 9ddb8304-fd8c-4a35-8324-e0317a7fda45
