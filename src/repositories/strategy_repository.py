@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session, selectinload, joinedload
+from sqlalchemy.orm import Session, subqueryload, joinedload
 from sqlalchemy import select
 import uuid
 from src.models import (
@@ -36,8 +36,8 @@ def remove_strategy_options_out_of_scope(session: Session, issue_ids: set[uuid.U
         .where(Issue.id.in_(issue_ids))
         .options(
             joinedload(Issue.decision).options(
-                selectinload(Decision.options).options(
-                    selectinload(Option.strategy_options)
+                subqueryload(Decision.options).options(
+                    subqueryload(Option.strategy_options)
                 )
             )
         )

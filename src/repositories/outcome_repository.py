@@ -8,7 +8,7 @@ from src.models import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import joinedload, subqueryload
 from sqlalchemy.sql import select
 from src.repositories.base_repository import BaseRepository
 from src.repositories.query_extensions import QueryExtensions
@@ -43,7 +43,7 @@ def find_effected_session_entities(session: Session, entities: set[Outcome]) -> 
     query = select(Uncertainty).where(Uncertainty.id.in_(parent_uncertainty_ids)).options(
         joinedload(Uncertainty.issue).options(
             joinedload(Issue.node).options(
-                selectinload(Node.tail_edges).options(
+                subqueryload(Node.tail_edges).options(
                     joinedload(Edge.head_node).options(
                         joinedload(Node.issue).options(
                             joinedload(Issue.uncertainty),
