@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - "v*"
-    paths:
-      - "alembic/**"
   workflow_dispatch:
 
 permissions:
@@ -17,6 +15,7 @@ jobs:
     uses: ./.github/workflows/run-migration.yml
     with:
       env-name: prod
+      check-alembic-changes: true
     secrets:
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
