@@ -7,6 +7,7 @@ from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.dtos.option_dtos import OptionOutgoingDto
 from src.dtos.outcome_dtos import OutcomeOutgoingDto
+from src.dtos.evidence_dto import EvidenceDto
 from src.dtos.model_solution_dtos import (
     ParentState,
     OptimalOption,
@@ -108,7 +109,7 @@ class PyagrumSolver:
     def get_solution(self, ie: gum.ShaferShenoyLIMIDInference, decisions: list[str]) -> SolutionDto:
         return SolutionDto(decision_solutions=[self.get_optimal_decisions(ie, x) for x in decisions])
 
-    async def find_optimal_decisions(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]) -> SolutionDto:
+    async def find_optimal_decisions(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: Optional[EvidenceDto]) -> SolutionDto:
         self.build_influence_diagram(issues, edges)
 
         decision_tree_creator = await DecisionTreeCreator.initialize(project_id = issues[0].project_id,
@@ -132,6 +133,9 @@ class PyagrumSolver:
         ie = gum.ShaferShenoyLIMIDInference(self.diagram)
 
         ie.addNoForgettingAssumption([str(x) for x in partial_order_decisions]) # type: ignore
+
+        if evidence:
+            ie.addEvidence(evidence.to_dict_as_str())
 
         if not ie.isSolvable():
             raise RuntimeError("Influence diagram is not solvable")
