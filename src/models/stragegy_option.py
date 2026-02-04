@@ -26,7 +26,6 @@ class StrategyOption(Base):
 
     option: Mapped["Option"] = relationship(
         "Option",
-        back_populates="strategy_options"
     )
 
     def __init__(
@@ -49,4 +48,4 @@ class StrategyOption(Base):
         )
     
     def __hash__(self) -> int:
-        return hash(uuid.uuid4())
+        return hash((self.strategy_id, self.option_id))

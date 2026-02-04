@@ -46,7 +46,6 @@ class Project(Base, BaseEntity, BaseAuditableEntity):
 
     project_role: Mapped[list["ProjectRole"]] = relationship(
         "ProjectRole",
-        back_populates="project",
         cascade="all, delete-orphan",
     )
 
@@ -58,7 +57,6 @@ class Project(Base, BaseEntity, BaseAuditableEntity):
 
     strategies: Mapped[list["Strategy"]] = relationship(
         "Strategy",
-        back_populates="project",
         cascade="all, delete-orphan",
     )
 
