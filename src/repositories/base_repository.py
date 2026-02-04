@@ -312,6 +312,7 @@ class BaseRepository(Generic[T, IDType]):
 
         # Clear existing strategy options and create new ones
         # This ensures we only manage the relationship without updating Option or Strategy entities
+        
         await self._replace_strategy_options(existing_entity, incoming_entity.strategy_options)
     
     async def _update_strategies(
@@ -404,11 +405,7 @@ class BaseRepository(Generic[T, IDType]):
             role for role in incoming_entities if role.id not in existing_by_id
         ]
         if new_roles:
-            existing_entities.extend(new_roles)
-            for role in new_roles:
-                self.session.add(role)
-                # ensure that the user is not updated or created while updating the role assignment
-                self.session.expunge(role.user)
+            self.session.add_all(new_roles)
 
         return existing_entities
 

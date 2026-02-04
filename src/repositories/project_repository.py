@@ -3,7 +3,6 @@ from src.models import Project
 from src.repositories.query_extensions import QueryExtensions
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories.base_repository import BaseRepository
-from src.repositories.strategy_repository import StrategyRepository
 from src.repositories.objective_repository import ObjectiveRepository
 
 
@@ -24,12 +23,10 @@ class ProjectRepository(BaseRepository[Project, uuid.UUID]):
             entity = entities[n]
             entity_to_update.name = entity.name
             entity_to_update.opportunityStatement = entity.opportunityStatement
-            entity_to_update.project_role = [
-                await self.session.merge(role) for role in entity.project_role
-            ]
+            entity_to_update.project_role = await self._update_project_roles(entity.project_role, entity_to_update.project_role)
             entity_to_update.public = entity.public
             entity_to_update.end_date = entity.end_date
-            await StrategyRepository(session=self.session).update(entity.strategies)
+            entity_to_update.strategies = await self._update_strategies(entity.strategies, entity_to_update.strategies)
             await ObjectiveRepository(session=self.session).update(entity.objectives)
             
         await self.session.flush()
