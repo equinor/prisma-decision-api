@@ -16,6 +16,7 @@ from src.seed_database import (
     create_decision_tree_symmetry_DT_from_ID,
     create_decision_tree_symmetry_DT,
     create_decision_tree_with_utilities,
+    car_buyer_problem
 )
 from src.database import (
     DatabaseConnectionStrings,
@@ -61,6 +62,7 @@ class SessionManager:
             await create_decision_tree_symmetry_DT_from_ID(conn)
             await create_decision_tree_symmetry_DT(conn)
             await create_decision_tree_with_utilities(conn)
+            await car_buyer_problem(conn)
 
     async def _initialize_persistent_db(self) -> None:
         """Initialize a persistent database."""
