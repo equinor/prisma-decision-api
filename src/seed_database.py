@@ -1137,6 +1137,500 @@ async def create_decision_tree_with_utilities(conn: AsyncConnection):
         session.add_all(entities)
         await session.commit()
 
+async def car_buyer_problem(conn: AsyncConnection):
+    user_id = 21
+    user = User(id=user_id, name="car_buyer", azure_id=str(uuid4()))
+    value_metric_id = uuid.uuid5(uuid.NAMESPACE_DNS, "default value metric3")
+    default_value_metric = ValueMetric(id=value_metric_id, name="value")
+    entities: list[Any] = [user, default_value_metric]
+    project_uuid = GenerateUuid.as_uuid("car_buyer_problem_project")
+
+    # Create Project
+    project = Project(
+        id=project_uuid,
+        name="Test Project decision tree for car buyer problem",
+        opportunityStatement="A test project with minimal data",
+        parent_project_id=None,
+        objectives=[],
+        parent_project_name="",
+        user_id=user.id,
+        project_role=[],
+        strategies=[],
+    )
+    project = add_auditable_fields(project, user)
+    entities.append(project)
+
+    # Create Decision "Test"
+    decision__test__id = GenerateUuid.as_uuid("decision_test")
+    option__test__dont_test__id = GenerateUuid.as_uuid("option__test__dont_test__id")
+    option__test__test__id = GenerateUuid.as_uuid("option__test__test__id")
+    entities.extend(
+        create_decision_issue(
+            project_uuid, decision__test__id, decision__test__id, user_id, "Test", order=0
+        )
+    )
+    entities.append(
+        Option(
+            id=option__test__dont_test__id,
+            decision_id=decision__test__id,
+            name="Don't Test",
+            utility=0,
+        )
+    )
+    entities.append(
+        Option(
+            id=option__test__test__id,
+            decision_id=decision__test__id,
+            name="Test",
+            utility=-9,
+        )
+    )
+
+    # Create Decision "Buy"
+    decision__buy__id = GenerateUuid.as_uuid("decision_buy_id")
+    option__buy__dont_buy__id = GenerateUuid.as_uuid("option__buy__dont_buy__id")
+    option__buy__guarantee__id = GenerateUuid.as_uuid("option__buy__guarantee__id")
+    option__buy__buy__id = GenerateUuid.as_uuid("option__buy__buy__id")
+
+    entities.extend(
+        create_decision_issue(
+            project_uuid, decision__buy__id, decision__buy__id, user_id, "Buy", order=0
+        )
+    )
+    entities.append(
+        Option(
+            id=option__buy__dont_buy__id,
+            decision_id=decision__buy__id,
+            name="Don't Buy",
+            utility=0,
+        )
+    )
+    entities.append(
+        Option(
+            id=option__buy__guarantee__id,
+            decision_id=decision__buy__id,
+            name="Buy With Guarantee",
+            utility=40,
+        )
+    )
+    entities.append(
+        Option(
+            id=option__buy__buy__id,
+            decision_id=decision__buy__id,
+            name="Buy",
+            utility=100,
+        )
+    )
+
+    # Create Uncertainty "Test"
+    uncertainty__test__id = GenerateUuid.as_uuid("uncertainty_test_id")
+    outcome__test__no_test__id = GenerateUuid.as_uuid("outcome__test__no_test__id")
+    outcome__test__no_defect__id = GenerateUuid.as_uuid("outcome__test__no_defect__id")
+    outcome__test__defect__id = GenerateUuid.as_uuid("outcome__test__defect__id")
+    disc_prob__no_test__dont_test__id = GenerateUuid.as_uuid("disc_prob__no_test__dont_test__id")
+    disc_prob__no_defect__dont_test__id = GenerateUuid.as_uuid("disc_prob__no_defect__dont_test__id")
+    disc_prob__defect__dont_test__id = GenerateUuid.as_uuid("disc_prob__defect__dont_test__id")
+    disc_prob__no_test__test__id = GenerateUuid.as_uuid("disc_prob__no_test__test__id")
+    disc_prob__no_defect__test__id = GenerateUuid.as_uuid("disc_prob__no_defect__test__id")
+    disc_prob__defect__test__id = GenerateUuid.as_uuid("disc_prob__defect__test__id")
+
+    entities.extend(
+        create_uncertainty_issue(
+            project_uuid, uncertainty__test__id, uncertainty__test__id, user_id, "Test", order=1
+        )
+    )
+    entities.append(
+        Outcome(
+            id=outcome__test__no_test__id,
+            uncertainty_id=uncertainty__test__id,
+            name="No Test",
+            utility=0,
+        )
+    )
+    entities.append(
+        Outcome(
+            id=outcome__test__no_defect__id,
+            uncertainty_id=uncertainty__test__id,
+            name="No Defect",
+            utility=0,
+        )
+    )
+    entities.append(
+        Outcome(
+            id=outcome__test__defect__id,
+            uncertainty_id=uncertainty__test__id,
+            name="Defect",
+            utility=0,
+        )
+    )
+    entities.append(
+        DiscreteProbability(
+            id=disc_prob__no_test__dont_test__id,
+            uncertainty_id=uncertainty__test__id,
+            outcome_id=outcome__test__no_test__id,
+            probability=1,
+            parent_outcomes=[],
+            parent_options=[
+                DiscreteProbabilityParentOption(
+                    discrete_probability_id=disc_prob__no_test__dont_test__id,
+                    parent_option_id=option__test__dont_test__id,
+                )
+            ],
+        )
+    )
+    entities.append(
+        DiscreteProbability(
+            id=disc_prob__no_defect__dont_test__id,
+            uncertainty_id=uncertainty__test__id,
+            outcome_id=outcome__test__no_defect__id,
+            probability=0,
+            parent_outcomes=[],
+            parent_options=[
+                DiscreteProbabilityParentOption(
+                    discrete_probability_id=disc_prob__no_defect__dont_test__id,
+                    parent_option_id=option__test__dont_test__id,
+                )
+            ],
+        )
+    )
+    entities.append(
+        DiscreteProbability(
+            id=disc_prob__defect__dont_test__id,
+            uncertainty_id=uncertainty__test__id,
+            outcome_id=outcome__test__defect__id,
+            probability=0,
+            parent_outcomes=[],
+            parent_options=[
+                DiscreteProbabilityParentOption(
+                    discrete_probability_id=disc_prob__defect__dont_test__id,
+                    parent_option_id=option__test__dont_test__id,
+                )
+            ],
+        )
+    )
+    entities.append(
+        DiscreteProbability(
+            id=disc_prob__no_test__test__id,
+            uncertainty_id=uncertainty__test__id,
+            outcome_id=outcome__test__no_test__id,
+            probability=0,
+            parent_outcomes=[],
+            parent_options=[
+                DiscreteProbabilityParentOption(
+                    discrete_probability_id=disc_prob__no_test__test__id,
+                    parent_option_id=option__test__test__id,
+                )
+            ],
+        )
+    )
+    entities.append(
+        DiscreteProbability(
+            id=disc_prob__no_defect__test__id,
+            uncertainty_id=uncertainty__test__id,
+            outcome_id=outcome__test__no_defect__id,
+            probability=0.8,
+            parent_outcomes=[],
+            parent_options=[
+                DiscreteProbabilityParentOption(
+                    discrete_probability_id=disc_prob__no_defect__test__id,
+                    parent_option_id=option__test__test__id,
+                )
+            ],
+        )
+    )
+    entities.append(
+        DiscreteProbability(
+            id=disc_prob__defect__test__id,
+            uncertainty_id=uncertainty__test__id,
+            outcome_id=outcome__test__defect__id,
+            probability=0.2,
+            parent_outcomes=[],
+            parent_options=[
+                DiscreteProbabilityParentOption(
+                    discrete_probability_id=disc_prob__defect__test__id,
+                    parent_option_id=option__test__test__id,
+                )
+            ],
+        )
+    )
+
+    # Create Uncertainty "Car State"
+    uncertainty__car_state__id = GenerateUuid.as_uuid("uncertainty__car_state__id")
+    outcome__car_state__lemon__id = GenerateUuid.as_uuid("outcome__car_state__lemon__id")
+    outcome__car_state__peach__id = GenerateUuid.as_uuid("outcome__car_state__peach__id")
+    disc_prob__lemon__defect__id = GenerateUuid.as_uuid("disc_prob__lemon__defect__id")
+    disc_prob__lemon__no_defect__id = GenerateUuid.as_uuid("disc_prob__lemon__no_defect__id")
+    disc_prob__lemon__no_test__id = GenerateUuid.as_uuid("disc_prob__lemon__no_test__id")
+    disc_prob__peach__defect__id = GenerateUuid.as_uuid("disc_prob__peach__defect__id")
+    disc_prob__peach__no_defect__id = GenerateUuid.as_uuid("disc_prob__peach__no_defect__id")
+    disc_prob__peach__no_test__id = GenerateUuid.as_uuid("disc_prob__peach__no_test__id")
+
+    entities.extend(
+        create_uncertainty_issue(
+            project_uuid, uncertainty__car_state__id, uncertainty__car_state__id, user_id, "Car State", order=1
+        )
+    )
+    entities.append(
+        Outcome(
+            id=outcome__car_state__lemon__id,
+            uncertainty_id=uncertainty__car_state__id,
+            name="Lemon",
+            utility=0,
+        )
+    )
+    entities.append(
+        Outcome(
+            id=outcome__car_state__peach__id,
+            uncertainty_id=uncertainty__car_state__id,
+            name="Peach",
+            utility=0,
+        )
+    )
+    entities.append(
+        DiscreteProbability(
+            id=disc_prob__lemon__defect__id,
+            uncertainty_id=uncertainty__car_state__id,
+            outcome_id=outcome__car_state__lemon__id,
+            probability=0.6,
+            parent_outcomes=[
+                DiscreteProbabilityParentOutcome(
+                    discrete_probability_id=disc_prob__lemon__defect__id,
+                    parent_outcome_id=outcome__test__defect__id)
+            ],
+            parent_options=[],
+        )
+    )
+    entities.append(
+        DiscreteProbability(
+            id=disc_prob__lemon__no_defect__id,
+            uncertainty_id=uncertainty__car_state__id,
+            outcome_id=outcome__car_state__lemon__id,
+            probability=0.1,
+            parent_outcomes=[
+                DiscreteProbabilityParentOutcome(
+                    discrete_probability_id=disc_prob__lemon__no_defect__id,
+                    parent_outcome_id=outcome__test__no_defect__id,
+                )
+            ],
+            parent_options=[],
+        )
+    )
+    entities.append(
+        DiscreteProbability(
+            id=disc_prob__lemon__no_test__id,
+            uncertainty_id=uncertainty__car_state__id,
+            outcome_id=outcome__car_state__lemon__id,
+            probability=0.2,
+            parent_outcomes=[
+                DiscreteProbabilityParentOutcome(
+                    discrete_probability_id=disc_prob__lemon__no_test__id,
+                    parent_outcome_id=outcome__test__no_test__id,
+                )
+            ],
+            parent_options=[],
+        )
+    )
+    entities.append(
+        DiscreteProbability(
+            id=disc_prob__peach__defect__id,
+            uncertainty_id=uncertainty__car_state__id,
+            outcome_id=outcome__car_state__peach__id,
+            probability=0.4,
+            parent_outcomes=[
+                DiscreteProbabilityParentOutcome(
+                    discrete_probability_id=disc_prob__peach__defect__id,
+                    parent_outcome_id=outcome__test__defect__id)
+            ],
+            parent_options=[],
+        )
+    )
+    entities.append(
+        DiscreteProbability(
+            id=disc_prob__peach__no_defect__id,
+            uncertainty_id=uncertainty__car_state__id,
+            outcome_id=outcome__car_state__peach__id,
+            probability=0.9,
+            parent_outcomes=[
+                DiscreteProbabilityParentOutcome(
+                    discrete_probability_id=disc_prob__peach__no_defect__id,
+                    parent_outcome_id=outcome__test__no_defect__id,
+                )
+            ],
+            parent_options=[],
+        )
+    )
+    entities.append(
+        DiscreteProbability(
+            id=disc_prob__peach__no_test__id,
+            uncertainty_id=uncertainty__car_state__id,
+            outcome_id=outcome__car_state__peach__id,
+            probability=0.8,
+            parent_outcomes=[
+                DiscreteProbabilityParentOutcome(
+                    discrete_probability_id=disc_prob__peach__no_test__id,
+                    parent_outcome_id=outcome__test__no_test__id,
+                )
+            ],
+            parent_options=[],
+        )
+    )
+
+    # Create Utility "State pluss guarantee"
+    utility__state_guarantee__id = GenerateUuid.as_uuid("utility_state_guarantee_id")
+    disc_utility__dont_buy__lemon_id = GenerateUuid.as_uuid("disc_utility__dont_buy__lemon_id")
+    disc_utility__dont_buy__peach_id = GenerateUuid.as_uuid("disc_utility__dont_buy__peach_id")
+    disc_utility__guarantee__lemon_id = GenerateUuid.as_uuid("disc_utility__guarantee__lemon_id")
+    disc_utility__guarantee__peach_id = GenerateUuid.as_uuid("disc_utility__guarantee__peach_id")
+    disc_utility__buy__lemon_id = GenerateUuid.as_uuid("disc_utility__buy__lemon_id")
+    disc_utility__buy__peach_id = GenerateUuid.as_uuid("disc_utility__buy__peach_id")
+    entities.extend(
+        create_utility_issue(
+            project_uuid, utility__state_guarantee__id, utility__state_guarantee__id, user_id, "State pluss guarantee", order=1
+        )
+    )
+    entities.append(
+        DiscreteUtility(
+            id=disc_utility__dont_buy__lemon_id,
+            utility_id=utility__state_guarantee__id,
+            value_metric_id=default_value_metric_id,
+            utility_value=0,
+            parent_outcomes=[
+                DiscreteUtilityParentOutcome(
+                    discrete_utility_id=disc_utility__dont_buy__lemon_id,
+                    parent_outcome_id=outcome__car_state__lemon__id,
+                )
+            ],
+            parent_options=[
+                DiscreteUtilityParentOption(
+                    discrete_utility_id=disc_utility__dont_buy__lemon_id,
+                    parent_option_id=option__buy__dont_buy__id,
+                )
+            ],
+        )
+    )
+    entities.append(
+        DiscreteUtility(
+            id=disc_utility__dont_buy__peach_id,
+            utility_id=utility__state_guarantee__id,
+            value_metric_id=default_value_metric_id,
+            utility_value=0,
+            parent_outcomes=[
+                DiscreteUtilityParentOutcome(
+                    discrete_utility_id=disc_utility__dont_buy__peach_id,
+                    parent_outcome_id=outcome__car_state__peach__id,
+                )
+            ],
+            parent_options=[
+                DiscreteUtilityParentOption(
+                    discrete_utility_id=disc_utility__dont_buy__peach_id,
+                    parent_option_id=option__buy__dont_buy__id,
+                )
+            ],
+        )
+    )
+    entities.append(
+        DiscreteUtility(
+            id=disc_utility__guarantee__lemon_id,
+            utility_id=utility__state_guarantee__id,
+            value_metric_id=default_value_metric_id,
+            utility_value=0,
+            parent_outcomes=[
+                DiscreteUtilityParentOutcome(
+                    discrete_utility_id=disc_utility__guarantee__lemon_id,
+                    parent_outcome_id=outcome__car_state__lemon__id,
+                )
+            ],
+            parent_options=[
+                DiscreteUtilityParentOption(
+                    discrete_utility_id=disc_utility__guarantee__lemon_id,
+                    parent_option_id=option__buy__guarantee__id,
+                )
+            ],
+        )
+    )
+    entities.append(
+        DiscreteUtility(
+            id=disc_utility__guarantee__peach_id,
+            utility_id=utility__state_guarantee__id,
+            value_metric_id=default_value_metric_id,
+            utility_value=-20,
+            parent_outcomes=[
+                DiscreteUtilityParentOutcome(
+                    discrete_utility_id=disc_utility__guarantee__peach_id,
+                    parent_outcome_id=outcome__car_state__peach__id,
+                )
+            ],
+            parent_options=[
+                DiscreteUtilityParentOption(
+                    discrete_utility_id=disc_utility__guarantee__peach_id,
+                    parent_option_id=option__buy__guarantee__id,
+                )
+            ],
+        )
+    )
+    entities.append(
+        DiscreteUtility(
+            id=disc_utility__buy__lemon_id,
+            utility_id=utility__state_guarantee__id,
+            value_metric_id=default_value_metric_id,
+            utility_value=-200,
+            parent_outcomes=[
+                DiscreteUtilityParentOutcome(
+                    discrete_utility_id=disc_utility__buy__lemon_id,
+                    parent_outcome_id=outcome__car_state__lemon__id,
+                )
+            ],
+            parent_options=[
+                DiscreteUtilityParentOption(
+                    discrete_utility_id=disc_utility__buy__lemon_id,
+                    parent_option_id=option__buy__buy__id,
+                )
+            ],
+        )
+    )
+    entities.append(
+        DiscreteUtility(
+            id=disc_utility__buy__peach_id,
+            utility_id=utility__state_guarantee__id,
+            value_metric_id=default_value_metric_id,
+            utility_value=-40,
+            parent_outcomes=[
+                DiscreteUtilityParentOutcome(
+                    discrete_utility_id=disc_utility__buy__peach_id,
+                    parent_outcome_id=outcome__car_state__peach__id,
+                )
+            ],
+            parent_options=[
+                DiscreteUtilityParentOption(
+                    discrete_utility_id=disc_utility__buy__peach_id,
+                    parent_option_id=option__buy__buy__id,
+                )
+            ],
+        )
+    )
+
+    # Create Edges
+    edges_data = [
+        (GenerateUuid.as_uuid("decision_test__uncertainty_test"), decision__test__id, uncertainty__test__id),
+        (GenerateUuid.as_uuid("uncertainty_test__decision_buy"), uncertainty__test__id, decision__buy__id),
+        (GenerateUuid.as_uuid("uncertainty_test__uncertainty_car_state"), uncertainty__test__id, uncertainty__car_state__id),
+        (GenerateUuid.as_uuid("uncertainty_car_state__utility"), uncertainty__car_state__id, utility__state_guarantee__id),
+        (GenerateUuid.as_uuid("decision_buy__utility"), decision__buy__id, utility__state_guarantee__id),
+    ]
+    for edge_id, tail_node_id, head_node_id in edges_data:
+        entities.append(
+            Edge(
+                id=edge_id,
+                tail_node_id=tail_node_id,
+                head_node_id=head_node_id,
+                project_id=project_uuid,
+            )
+        )
+
+        # Commit all entities to the database
+    async with AsyncSession(conn) as session:
+        session.add_all(entities)
+        await session.commit()
 
 async def seed_database(
     conn: AsyncConnection,

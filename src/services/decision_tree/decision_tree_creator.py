@@ -40,6 +40,7 @@ class DecisionTreeGraph:
         self.edge_names: Dict[Tuple[uuid.UUID, uuid.UUID], str] = {}
         self.utility_lookup : Dict[tuple[str, ...], List[float]] = {}
         self.treenode_lookup : TreeNodeLookup
+        self.final_expected_value : float = 0
 
     async def add_node(self, node: uuid.UUID) -> None:
         self.nx.add_node(node)  # type: ignore
@@ -74,9 +75,40 @@ class DecisionTreeGraph:
         self.edge_names = nx.get_edge_attributes(self.nx, "name")  # type: ignore
         tg = nx.readwrite.json_graph.tree_data(self.nx, self.root)  # type: ignore
         tree_structure = await self.create_decision_tree_dto_from_treenode(tg)  # type: ignore
-        # calculate endpoint values after all tree_nodes have got their utility values 
+        # calculate endpoint values after all tree_nodes have got their utility values
         await self.calculate_endpointnode_values(tree_structure)
+        # calculate expected values for the tree_nodes
+        self.final_expected_value = await self.calculate_expected_values(tree_structure)
         return tree_structure
+
+    async def calculate_expected_values(self, decision_tree: DecisionTreeDto | None) -> float:
+        if not decision_tree:
+            return 0
+        return await self.update_expected_values(decision_tree.tree_node)
+
+    async def update_expected_values(self, node: TreeNodeDto) -> float:
+        if node.issue and isinstance(node.issue, EndPointNodeDto):
+            return node.issue.value
+
+        # Loop through children recursively
+        return_value = 0
+        if node.children:
+            if node.issue.type == Type.UNCERTAINTY.value:
+                total_value = 0
+                for child in node.children:
+                    value = await self.update_expected_values(child.tree_node)
+                    probability = await self.get_probability_value(node, child.tree_node)
+                    total_value += probability * value
+                node.expected_value = total_value
+                return_value = total_value
+            if node.issue.type == Type.DECISION.value:
+                values: List[float] = []
+                for child in node.children:
+                    values.append(await self.update_expected_values(child.tree_node))
+                max_value = max(values)
+                node.expected_value = max_value
+                return_value = max_value
+        return return_value
 
     async def calculate_endpointnode_values(self, decision_tree: DecisionTreeDto | None) -> None:
         if not decision_tree:
@@ -85,7 +117,7 @@ class DecisionTreeGraph:
 
     async def update_endpoint_nodes(self, node: TreeNodeDto) -> None:
         if node.issue and isinstance(node.issue, EndPointNodeDto):
-            node.issue.value = await self.calculate_endpoint_value(node)
+            node.issue.value, node.issue.cumulative_probability = await self.calculate_endpoint_value(node)
             return
 
         # Loop through children recursively
@@ -93,28 +125,31 @@ class DecisionTreeGraph:
             for child in node.children:
                 await self.update_endpoint_nodes(child.tree_node)
 
-    async def calculate_endpoint_value(self, node: TreeNodeDto) -> float:
+    async def calculate_endpoint_value(self, node: TreeNodeDto) -> Tuple[float, float]:
         id = self.treenode_lookup.get_original_id(node.id)
         if not id:
-            return 0
+            return 0, 0
 
         parent_id = await self.get_parent(id)
         if not parent_id:
-            return 0
+            return 0, 0
         count = 0
         node_value = 0
+        cumulative_probability = 1
         branch_id = self.edge_names[(parent_id, id)]
         while parent_id and count < 1000:
             parent_node = self.treenode_lookup.get_node_by_original_id(parent_id) if id else None
-            node_value += await self.get_utility_for_tree_node(parent_node, branch_id) if parent_node else 0
+            node_value += await self.get_utility_for_branch(parent_node, branch_id) if parent_node else 0
+            if parent_node and parent_node.issue and parent_node.issue.type == Type.UNCERTAINTY.value:
+                cumulative_probability *= await self.get_probability_for_branch(parent_node, branch_id)
             id = parent_id
             parent_id = await self.get_parent(id)
             if parent_id:
                 branch_id = self.edge_names[(parent_id, id)]
             count += 1
-        return node_value
+        return node_value, cumulative_probability
 
-    async def get_utility_for_tree_node(
+    async def get_utility_for_branch(
         self, node: TreeNodeDto, branch_id: str
     ) -> float:
         if node.utilities:
@@ -122,6 +157,27 @@ class DecisionTreeGraph:
                 if ((utility.option_id is not None and utility.option_id.__str__() == branch_id) or
                     (utility.outcome_id is not None and utility.outcome_id.__str__() == branch_id)):
                     return utility.utility_value
+        return 0
+
+    async def get_probability_value(
+            self, parent_node: TreeNodeDto, child_node: TreeNodeDto
+    ) -> float:
+        probability = 0
+        id = self.treenode_lookup.get_original_id(child_node.id)
+        if id:
+            parent_id = await self.get_parent(id)
+            if parent_id:
+                branch_id = self.edge_names[(parent_id, id)]
+                probability = await self.get_probability_for_branch(parent_node, branch_id)
+        return probability
+
+    async def get_probability_for_branch(
+        self, node: TreeNodeDto, branch_id: str
+    ) -> float:
+        if node.probabilities:
+            for probability in node.probabilities:
+                if (probability.outcome_id.__str__() == branch_id):
+                    return probability.probability_value
         return 0
 
     async def get_decision_tree_dto(

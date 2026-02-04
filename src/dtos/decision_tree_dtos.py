@@ -15,6 +15,7 @@ class EndPointNodeDto(BaseModel):
     project_id: uuid.UUID
     type: str = "EndPoint"
     value: float = 0
+    cumulative_probability: float = 0
 
 
 class ProbabilityDto(BaseModel):
@@ -34,6 +35,7 @@ class UtilityDTDto(BaseModel):
 
 class TreeNodeDto(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
+    expected_value: Optional[float] = None
     issue: IssueOutgoingDto | EndPointNodeDto
     probabilities: Optional[list[ProbabilityDto]] = None
     utilities: Optional[list[UtilityDTDto]] = None
