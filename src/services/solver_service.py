@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 from concurrent.futures import ThreadPoolExecutor
 from src.session_manager import sessionmanager
 from src.services.pyagrum_solver import PyagrumSolver
@@ -6,6 +7,7 @@ from src.services.project_service import ProjectService
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator
 from src.services.decision_tree_pruning_service import DecisionTreePruningService, OptimalDecisionTreePruner
 from src.services.decision_tree_pruning_service import DecisionTreePruningServiceOld, OptimalDecisionTreePrunerOld
+from src.dtos.evidence_dto import EvidenceDto
 
 executor = ThreadPoolExecutor()
 
@@ -16,14 +18,14 @@ class SolverService:
     ):
         self.project_service = project_service
 
-    async def find_optimal_decision_pyagrum(self, project_id: uuid.UUID):
+    async def find_optimal_decision_pyagrum(self, project_id: uuid.UUID, evidence: Optional[EvidenceDto] = None):
         async for session in sessionmanager.get_session():
             (
                 issues,
                 edges,
             ) = await self.project_service.get_influence_diagram_data(session, project_id)
 
-        solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
+        solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges, evidence=evidence)
 
         return solution
     
@@ -46,14 +48,14 @@ class SolverService:
         return pruning_service.prune_tree_for_optimal_decisions(dt_dtos, solution)
 
 
-    async def get_decision_tree_for_optimal_decisions(self, project_id: uuid.UUID):
+    async def get_decision_tree_for_optimal_decisions(self, project_id: uuid.UUID, evidence: Optional[EvidenceDto] = None):
         async for session in sessionmanager.get_session():
             (
                 issues,
                 edges,
             ) = await self.project_service.get_influence_diagram_data(session, project_id)
 
-        solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
+        solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges, evidence=evidence)
 
         decision_tree_creator = await DecisionTreeCreator.initialize(project_id, nodes = issues, edges = edges)
         DT_partial_order = await decision_tree_creator.calculate_partial_order()

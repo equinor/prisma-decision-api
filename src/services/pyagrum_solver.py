@@ -135,7 +135,7 @@ class PyagrumSolver:
         ie.addNoForgettingAssumption([str(x) for x in partial_order_decisions]) # type: ignore
 
         if evidence:
-            ie.addEvidence(evidence.to_dict_as_str())
+            ie.setEvidence(evidence.to_dict_as_str())
 
         if not ie.isSolvable():
             raise RuntimeError("Influence diagram is not solvable")
