@@ -1,5 +1,7 @@
 name: Pass tests before merge to main branch
-
+permissions:
+  contents: read
+  
 on:
   pull_request:
     branches:
