@@ -49,7 +49,7 @@ async def test_create_project(client: AsyncClient):
             id=test_project_id,
             name=str(uuid4()),
             objectives=[],
-            opportunityStatement=str(uuid4()),
+            opportunity_statement=str(uuid4()),
             users=[],
         ).model_dump(mode="json")
     ]
@@ -64,7 +64,10 @@ async def test_create_project(client: AsyncClient):
 async def test_create_project_with_objectives(client: AsyncClient):
 
     project = ProjectCreateDto(
-        name=str(uuid4()), objectives=[], opportunityStatement=str(uuid4()), users=[],
+        name=str(uuid4()),
+        objectives=[],
+        opportunity_statement=str(uuid4()),
+        users=[],
     )
     payload = [project.model_dump(mode="json")]
 
@@ -80,7 +83,11 @@ async def test_update_project(client: AsyncClient):
     new_name = str(uuid4())
     payload = [
         ProjectIncomingDto(
-            id=GenerateUuid.as_uuid(6), name=new_name, opportunityStatement="", users=[], strategies=[]
+            id=GenerateUuid.as_uuid(6),
+            name=new_name,
+            opportunity_statement=" ",
+            users=[],
+            strategies=[],
         ).model_dump(mode="json")
     ]
     response = await client.put("/projects", json=payload)
@@ -97,6 +104,7 @@ async def test_delete_project(client: AsyncClient):
 
     assert response.status_code == 200, f"Response content: {response.content}"
 
+
 @pytest.mark.first
 @pytest.mark.asyncio
 async def test_update_project_with_strategies(client: AsyncClient):
@@ -108,8 +116,7 @@ async def test_update_project_with_strategies(client: AsyncClient):
     response = await client.get(f"/projects/{project_id}")
 
     example_project = parse_response_to_dto_test(response, ProjectOutgoingDto)
-    
-    
+
     strategy = StrategyIncomingDto(
         id=test_strategy_id,
         project_id=project_id,
@@ -125,12 +132,12 @@ async def test_update_project_with_strategies(client: AsyncClient):
             )
         ],
     )
-    
+
     payload = [
         ProjectIncomingDto(
             id=project_id,
             name=new_name,
-            opportunityStatement="Updated opportunity statement",
+            opportunity_statement="Updated opportunity statement",
             users=[
                 ProjectRoleIncomingDto(
                     id=user.id,
@@ -138,9 +145,9 @@ async def test_update_project_with_strategies(client: AsyncClient):
                     user_name=user.user_name,
                     project_id=user.project_id,
                     azure_id=user.azure_id,
-                    role=user.role, # type: ignore
+                    role=user.role,  # type: ignore
                 )
-                for user in example_project.users   
+                for user in example_project.users
             ],
             strategies=[strategy],
         ).model_dump(mode="json")

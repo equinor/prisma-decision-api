@@ -39,7 +39,7 @@ class Project(Base, BaseEntity, BaseAuditableEntity):
     parent_project_name: Mapped[Optional[str]] = mapped_column(
         String(DatabaseConstants.MAX_SHORT_STRING_LENGTH.value), default=""
     )
-    opportunityStatement: Mapped[str] = mapped_column(
+    opportunity_statement: Mapped[str] = mapped_column(
         String(DatabaseConstants.MAX_LONG_STRING_LENGTH.value)
     )
     public: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -81,7 +81,7 @@ class Project(Base, BaseEntity, BaseAuditableEntity):
         id: uuid.UUID,
         parent_project_id: Optional[uuid.UUID],
         parent_project_name: Optional[str],
-        opportunityStatement: str,
+        opportunity_statement: str,
         name: str,
         project_role: list["ProjectRole"],
         objectives: list["Objective"],
@@ -95,7 +95,7 @@ class Project(Base, BaseEntity, BaseAuditableEntity):
         self.parent_project_name = parent_project_name
         self.project_role = project_role
         self.name = name
-        self.opportunityStatement = opportunityStatement
+        self.opportunity_statement = opportunity_statement
         self.objectives = objectives
         self.strategies = strategies
         self.updated_by_id = user_id

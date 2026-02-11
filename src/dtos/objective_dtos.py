@@ -25,7 +25,7 @@ class ObjectiveViaProjectDto(ObjectiveDto):
 
 class ObjectiveIncomingDto(ObjectiveDto):
     project_id: uuid.UUID
-    type: ObjectiveTypes = ObjectiveTypes.FUNDAMENTAL
+    type: ObjectiveTypes
 
 
 class ObjectiveOutgoingDto(ObjectiveDto):

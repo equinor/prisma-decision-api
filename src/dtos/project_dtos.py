@@ -23,7 +23,7 @@ from src.dtos.project_roles_dtos import ProjectRoleOutgoingDto
 class ProjectDto(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     name: Annotated[str, Field(max_length=DatabaseConstants.MAX_SHORT_STRING_LENGTH.value)] = ""
-    opportunityStatement: Annotated[
+    opportunity_statement: Annotated[
         str, Field(max_length=DatabaseConstants.MAX_LONG_STRING_LENGTH.value)
     ] = ""
 
@@ -66,7 +66,7 @@ class ProjectMapper:
             parent_project_name=dto.parent_project_name,
             parent_project_id=dto.parent_project_id,
             name=dto.name,
-            opportunityStatement=dto.opportunityStatement,
+            opportunity_statement=dto.opportunity_statement,
             user_id=user_id,
             public=dto.public,
             end_date=dto.end_date,
@@ -82,7 +82,7 @@ class ProjectMapper:
             name=entity.name,
             parent_project_id=entity.parent_project_id,
             parent_project_name=entity.parent_project_name,
-            opportunityStatement=entity.opportunityStatement,
+            opportunity_statement=entity.opportunity_statement,
             objectives=ObjectiveMapper.to_outgoing_dtos(entity.objectives),
             public=entity.public,
             end_date=entity.end_date,
@@ -97,7 +97,7 @@ class ProjectMapper:
             name=entity.name,
             parent_project_id=entity.parent_project_id,
             parent_project_name=entity.parent_project_name,
-            opportunityStatement=entity.opportunityStatement,
+            opportunity_statement=entity.opportunity_statement,
             public=entity.public,
             end_date=entity.end_date,
             objectives=ObjectiveMapper.to_outgoing_dtos(entity.objectives),
@@ -111,7 +111,7 @@ class ProjectMapper:
             parent_project_id=dto.parent_project_id,
             parent_project_name=dto.parent_project_name,
             name=dto.name,
-            opportunityStatement=dto.opportunityStatement,
+            opportunity_statement=dto.opportunity_statement,
             objectives=ObjectiveMapper.via_project_to_entities(dto.objectives, user_id, dto.id),
             user_id=user_id,
             public=dto.public,

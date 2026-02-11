@@ -28,6 +28,7 @@ from src.services.issue_service import IssueService
 from src.services.project_service import ProjectService
 from src.services.strategy_service import StrategyService
 
+
 @dataclass
 class IdMappings:
     """Container for all ID mappings during project duplication."""
@@ -116,7 +117,7 @@ class ProjectDuplicationService:
                 )
                 for objective in original_project.objectives
             ],
-            opportunityStatement=original_project.opportunityStatement,
+            opportunity_statement=original_project.opportunity_statement,
             public=original_project.public,
             end_date=original_project.end_date,
             users=[
@@ -375,7 +376,7 @@ class ProjectDuplicationService:
         session: AsyncSession,
         original_project: Project,
         new_project_id: uuid.UUID,
-        user_dto: UserIncomingDto
+        user_dto: UserIncomingDto,
     ) -> None:
         strategies_to_create = [
             StrategyIncomingDto(
@@ -384,15 +385,17 @@ class ProjectDuplicationService:
                 description=strategy.description,
                 rationale=strategy.rationale,
                 project_id=new_project_id,
-                options = [
+                options=[
                     OptionIncomingDto(
                         id=self.mappings.option[strategy_option.option.id],
-                        name = strategy_option.option.name,
+                        name=strategy_option.option.name,
                         decision_id=self.mappings.decision[strategy_option.option.decision_id],
                         utility=strategy_option.option.utility,
-                    ) for strategy_option in strategy.strategy_options
-                ]
-            ) for strategy in original_project.strategies
+                    )
+                    for strategy_option in strategy.strategy_options
+                ],
+            )
+            for strategy in original_project.strategies
         ]
         if strategies_to_create:
             await StrategyService().create(session, strategies_to_create, user_dto)
