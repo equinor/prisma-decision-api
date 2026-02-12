@@ -11,7 +11,6 @@ from src.repositories.edge_repository import EdgeRepository
 from src.repositories.issue_repository import IssueRepository
 from src.constants import Boundary, DecisionHierarchy, ProjectRoleType, Type
 from src.dtos.project_roles_dtos import ProjectRoleCreateDto, ProjectRoleMapper
-from src.models.project_role import ProjectRole
 from src.repositories.project_role_repository import ProjectRoleRepository
 from src.models import (
     Project,
@@ -73,11 +72,9 @@ class ProjectService:
         )
         for dto in dtos:
             if len(dto.users) > 0:
-                await self._create_role_for_project(
-                    session, dto.users
-                )
+                await self._create_role_for_project(session, dto.users)
 
-        return await self.get(session, ids = [dto.id for dto in dtos])
+        return await self.get(session, ids=[dto.id for dto in dtos])
 
     async def update(
         self,
@@ -86,11 +83,9 @@ class ProjectService:
         user_dto: UserIncomingDto,
     ) -> list[ProjectOutgoingDto]:
         user = await UserRepository(session).get_or_create(UserMapper.to_entity(user_dto))
-        await ProjectRepository(session).update(
-            ProjectMapper.to_project_entities(dtos, user.id)
-        )
-        return await self.get(session, ids = [dto.id for dto in dtos])
-    
+        await ProjectRepository(session).update(ProjectMapper.to_project_entities(dtos, user.id))
+        return await self.get(session, ids=[dto.id for dto in dtos])
+
     async def delete(
         self,
         session: AsyncSession,

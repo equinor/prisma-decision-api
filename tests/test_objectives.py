@@ -5,7 +5,7 @@ from tests.utils import (
     parse_response_to_dto_test,
     parse_response_to_dtos_test,
 )
-from src.dtos.objective_dtos import ObjectiveIncomingDto, ObjectiveOutgoingDto
+from src.dtos.objective_dtos import ObjectiveIncomingDto, ObjectiveOutgoingDto, ObjectiveTypes
 from src.seed_database import GenerateUuid
 
 
@@ -29,7 +29,10 @@ async def test_get_objective(client: AsyncClient):
 async def test_create_objective(client: AsyncClient):
     payload = [
         ObjectiveIncomingDto(
-            project_id=GenerateUuid.as_uuid(1), name=str(uuid4()), description=str(uuid4())
+            project_id=GenerateUuid.as_uuid(1),
+            name=str(uuid4()),
+            description=str(uuid4()),
+            type=ObjectiveTypes.FUNDAMENTAL,
         ).model_dump(mode="json")
     ]
 
@@ -49,6 +52,7 @@ async def test_update_objective(client: AsyncClient):
             description=str(uuid4()),
             name=new_name,
             project_id=new_project_id,
+            type=ObjectiveTypes.FUNDAMENTAL,
         ).model_dump(mode="json")
     ]
 

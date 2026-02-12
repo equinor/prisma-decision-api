@@ -5,13 +5,13 @@ from tests.utils import (
     parse_response_to_dto_test,
     parse_response_to_dtos_test,
 )
-from src.dtos.decision_dtos import DecisionOutgoingDto
 from src.dtos.strategy_dtos import (
     StrategyIncomingDto,
     StrategyOutgoingDto,
 )
 from src.dtos.option_dtos import OptionIncomingDto
 from src.seed_database import GenerateUuid
+
 
 @pytest.mark.first
 @pytest.mark.asyncio
@@ -77,7 +77,7 @@ async def test_update_strategy(client: AsyncClient):
     strat_to_update = parse_response_to_dto_test(get_response, StrategyOutgoingDto)
     existing_option = strat_to_update.options[0]
 
-    options=[
+    options = [
         OptionIncomingDto(
             id=existing_option.id,
             decision_id=existing_option.decision_id,
@@ -89,7 +89,7 @@ async def test_update_strategy(client: AsyncClient):
             decision_id=test_strategy_id,
             name="Updated Test Option",
             utility=75.0,
-        )
+        ),
     ]
 
     payload = [

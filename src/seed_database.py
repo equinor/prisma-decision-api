@@ -188,7 +188,7 @@ async def create_single_project(conn: AsyncConnection):
     project = Project(
         id=project_id,
         name="Test Project 1",
-        opportunityStatement="A test project with minimal data",
+        opportunity_statement="A test project with minimal data",
         parent_project_id=None,
         parent_project_name="",
         objectives=[],
@@ -488,7 +488,7 @@ async def create_decision_tree_symmetry_DT_from_ID(conn: AsyncConnection):
     project = Project(
         id=project_id,
         name="Test Project decision tree symmetry",
-        opportunityStatement="A test project with minimal data",
+        opportunity_statement="A test project with minimal data",
         parent_project_id=None,
         objectives=[],
         parent_project_name="",
@@ -595,7 +595,7 @@ async def create_decision_tree_symmetry_DT(conn: AsyncConnection):
     project = Project(
         id=project_uuid,
         name="Test Project decision tree symmetry",
-        opportunityStatement="A test project with minimal data",
+        opportunity_statement="A test project with minimal data",
         user_id=user.id,
         parent_project_id=None,
         objectives=[],
@@ -742,7 +742,7 @@ async def create_decision_tree_with_utilities(conn: AsyncConnection):
     project = Project(
         id=project_uuid,
         name="Test Project decision tree with utilities",
-        opportunityStatement="A test project with minimal data",
+        opportunity_statement="A test project with minimal data",
         parent_project_id=None,
         objectives=[],
         parent_project_name="",
@@ -869,7 +869,8 @@ async def create_decision_tree_with_utilities(conn: AsyncConnection):
             parent_outcomes=[
                 DiscreteProbabilityParentOutcome(
                     discrete_probability_id=uncertainty_B1_discrete_prob_id,
-                    parent_outcome_id=uncertainty_B1_outcome_id,)
+                    parent_outcome_id=uncertainty_B1_outcome_id,
+                )
             ],
             parent_options=[
                 DiscreteProbabilityParentOption(
@@ -888,7 +889,9 @@ async def create_decision_tree_with_utilities(conn: AsyncConnection):
             parent_outcomes=[
                 DiscreteProbabilityParentOutcome(
                     discrete_probability_id=uncertainty_B2_discrete_prob_id,
-                    parent_outcome_id=uncertainty_B2_outcome_id,)],
+                    parent_outcome_id=uncertainty_B2_outcome_id,
+                )
+            ],
             parent_options=[
                 DiscreteProbabilityParentOption(
                     discrete_probability_id=uncertainty_B2_discrete_prob_id,
@@ -906,7 +909,8 @@ async def create_decision_tree_with_utilities(conn: AsyncConnection):
             parent_outcomes=[
                 DiscreteProbabilityParentOutcome(
                     discrete_probability_id=uncertainty_B3_discrete_prob_id,
-                    parent_outcome_id=uncertainty_B1_outcome_id,)
+                    parent_outcome_id=uncertainty_B1_outcome_id,
+                )
             ],
             parent_options=[
                 DiscreteProbabilityParentOption(
@@ -925,7 +929,8 @@ async def create_decision_tree_with_utilities(conn: AsyncConnection):
             parent_outcomes=[
                 DiscreteProbabilityParentOutcome(
                     discrete_probability_id=uncertainty_B4_discrete_prob_id,
-                    parent_outcome_id=uncertainty_B2_outcome_id,)
+                    parent_outcome_id=uncertainty_B2_outcome_id,
+                )
             ],
             parent_options=[
                 DiscreteProbabilityParentOption(
@@ -1030,10 +1035,10 @@ async def create_decision_tree_with_utilities(conn: AsyncConnection):
 
     # Create Utility E
     utility_E_id = GenerateUuid.as_uuid("utility_E_id")
-    utility_E1_discrete_id  = GenerateUuid.as_uuid("utility_E1_discrete_id ")
-    utility_E2_discrete_id  = GenerateUuid.as_uuid("utility_E2_discrete_id ")
-    utility_E3_discrete_id  = GenerateUuid.as_uuid("utility_E3_discrete_id ")
-    utility_E4_discrete_id  = GenerateUuid.as_uuid("utility_E4_discrete_id ")
+    utility_E1_discrete_id = GenerateUuid.as_uuid("utility_E1_discrete_id ")
+    utility_E2_discrete_id = GenerateUuid.as_uuid("utility_E2_discrete_id ")
+    utility_E3_discrete_id = GenerateUuid.as_uuid("utility_E3_discrete_id ")
+    utility_E4_discrete_id = GenerateUuid.as_uuid("utility_E4_discrete_id ")
     entities.extend(
         create_utility_issue(
             project_uuid, utility_E_id, utility_E_id, user_id, "Utility E", order=1
@@ -1041,17 +1046,17 @@ async def create_decision_tree_with_utilities(conn: AsyncConnection):
     )
     entities.append(
         DiscreteUtility(
-            id=utility_E1_discrete_id ,
+            id=utility_E1_discrete_id,
             utility_id=utility_E_id,
             value_metric_id=default_value_metric_id,
             utility_value=20,
             parent_options=[
                 DiscreteUtilityParentOption(
-                    discrete_utility_id=utility_E1_discrete_id ,
+                    discrete_utility_id=utility_E1_discrete_id,
                     parent_option_id=decision_C1_option_id,
                 ),
                 DiscreteUtilityParentOption(
-                    discrete_utility_id=utility_E1_discrete_id ,
+                    discrete_utility_id=utility_E1_discrete_id,
                     parent_option_id=decision_F1_option_id,
                 ),
             ],
@@ -1059,17 +1064,17 @@ async def create_decision_tree_with_utilities(conn: AsyncConnection):
     )
     entities.append(
         DiscreteUtility(
-            id=utility_E2_discrete_id ,
+            id=utility_E2_discrete_id,
             utility_id=utility_E_id,
             value_metric_id=default_value_metric_id,
             utility_value=30,
             parent_options=[
                 DiscreteUtilityParentOption(
-                    discrete_utility_id=utility_E2_discrete_id ,
+                    discrete_utility_id=utility_E2_discrete_id,
                     parent_option_id=decision_C1_option_id,
                 ),
                 DiscreteUtilityParentOption(
-                    discrete_utility_id=utility_E2_discrete_id ,
+                    discrete_utility_id=utility_E2_discrete_id,
                     parent_option_id=decision_F2_option_id,
                 ),
             ],
@@ -1077,17 +1082,17 @@ async def create_decision_tree_with_utilities(conn: AsyncConnection):
     )
     entities.append(
         DiscreteUtility(
-            id=utility_E3_discrete_id ,
+            id=utility_E3_discrete_id,
             utility_id=utility_E_id,
             value_metric_id=default_value_metric_id,
             utility_value=40,
             parent_options=[
                 DiscreteUtilityParentOption(
-                    discrete_utility_id=utility_E3_discrete_id ,
+                    discrete_utility_id=utility_E3_discrete_id,
                     parent_option_id=decision_C2_option_id,
                 ),
                 DiscreteUtilityParentOption(
-                    discrete_utility_id=utility_E3_discrete_id ,
+                    discrete_utility_id=utility_E3_discrete_id,
                     parent_option_id=decision_F1_option_id,
                 ),
             ],
@@ -1095,17 +1100,17 @@ async def create_decision_tree_with_utilities(conn: AsyncConnection):
     )
     entities.append(
         DiscreteUtility(
-            id=utility_E4_discrete_id ,
+            id=utility_E4_discrete_id,
             utility_id=utility_E_id,
             value_metric_id=default_value_metric_id,
             utility_value=50,
             parent_options=[
                 DiscreteUtilityParentOption(
-                    discrete_utility_id=utility_E4_discrete_id ,
+                    discrete_utility_id=utility_E4_discrete_id,
                     parent_option_id=decision_C2_option_id,
                 ),
                 DiscreteUtilityParentOption(
-                    discrete_utility_id=utility_E4_discrete_id ,
+                    discrete_utility_id=utility_E4_discrete_id,
                     parent_option_id=decision_F2_option_id,
                 ),
             ],
@@ -1137,6 +1142,7 @@ async def create_decision_tree_with_utilities(conn: AsyncConnection):
         session.add_all(entities)
         await session.commit()
 
+
 async def car_buyer_problem(conn: AsyncConnection):
     user_id = 21
     user = User(id=user_id, name="car_buyer", azure_id=str(uuid4()))
@@ -1149,7 +1155,7 @@ async def car_buyer_problem(conn: AsyncConnection):
     project = Project(
         id=project_uuid,
         name="Test Project decision tree for car buyer problem",
-        opportunityStatement="A test project with minimal data",
+        opportunity_statement="A test project with minimal data",
         parent_project_id=None,
         objectives=[],
         parent_project_name="",
@@ -1228,7 +1234,9 @@ async def car_buyer_problem(conn: AsyncConnection):
     outcome__test__no_defect__id = GenerateUuid.as_uuid("outcome__test__no_defect__id")
     outcome__test__defect__id = GenerateUuid.as_uuid("outcome__test__defect__id")
     disc_prob__no_test__dont_test__id = GenerateUuid.as_uuid("disc_prob__no_test__dont_test__id")
-    disc_prob__no_defect__dont_test__id = GenerateUuid.as_uuid("disc_prob__no_defect__dont_test__id")
+    disc_prob__no_defect__dont_test__id = GenerateUuid.as_uuid(
+        "disc_prob__no_defect__dont_test__id"
+    )
     disc_prob__defect__dont_test__id = GenerateUuid.as_uuid("disc_prob__defect__dont_test__id")
     disc_prob__no_test__test__id = GenerateUuid.as_uuid("disc_prob__no_test__test__id")
     disc_prob__no_defect__test__id = GenerateUuid.as_uuid("disc_prob__no_defect__test__id")
@@ -1367,7 +1375,12 @@ async def car_buyer_problem(conn: AsyncConnection):
 
     entities.extend(
         create_uncertainty_issue(
-            project_uuid, uncertainty__car_state__id, uncertainty__car_state__id, user_id, "Car State", order=1
+            project_uuid,
+            uncertainty__car_state__id,
+            uncertainty__car_state__id,
+            user_id,
+            "Car State",
+            order=1,
         )
     )
     entities.append(
@@ -1395,7 +1408,8 @@ async def car_buyer_problem(conn: AsyncConnection):
             parent_outcomes=[
                 DiscreteProbabilityParentOutcome(
                     discrete_probability_id=disc_prob__lemon__defect__id,
-                    parent_outcome_id=outcome__test__defect__id)
+                    parent_outcome_id=outcome__test__defect__id,
+                )
             ],
             parent_options=[],
         )
@@ -1439,7 +1453,8 @@ async def car_buyer_problem(conn: AsyncConnection):
             parent_outcomes=[
                 DiscreteProbabilityParentOutcome(
                     discrete_probability_id=disc_prob__peach__defect__id,
-                    parent_outcome_id=outcome__test__defect__id)
+                    parent_outcome_id=outcome__test__defect__id,
+                )
             ],
             parent_options=[],
         )
@@ -1485,7 +1500,12 @@ async def car_buyer_problem(conn: AsyncConnection):
     disc_utility__buy__peach_id = GenerateUuid.as_uuid("disc_utility__buy__peach_id")
     entities.extend(
         create_utility_issue(
-            project_uuid, utility__state_guarantee__id, utility__state_guarantee__id, user_id, "State pluss guarantee", order=1
+            project_uuid,
+            utility__state_guarantee__id,
+            utility__state_guarantee__id,
+            user_id,
+            "State pluss guarantee",
+            order=1,
         )
     )
     entities.append(
@@ -1611,11 +1631,31 @@ async def car_buyer_problem(conn: AsyncConnection):
 
     # Create Edges
     edges_data = [
-        (GenerateUuid.as_uuid("decision_test__uncertainty_test"), decision__test__id, uncertainty__test__id),
-        (GenerateUuid.as_uuid("uncertainty_test__decision_buy"), uncertainty__test__id, decision__buy__id),
-        (GenerateUuid.as_uuid("uncertainty_test__uncertainty_car_state"), uncertainty__test__id, uncertainty__car_state__id),
-        (GenerateUuid.as_uuid("uncertainty_car_state__utility"), uncertainty__car_state__id, utility__state_guarantee__id),
-        (GenerateUuid.as_uuid("decision_buy__utility"), decision__buy__id, utility__state_guarantee__id),
+        (
+            GenerateUuid.as_uuid("decision_test__uncertainty_test"),
+            decision__test__id,
+            uncertainty__test__id,
+        ),
+        (
+            GenerateUuid.as_uuid("uncertainty_test__decision_buy"),
+            uncertainty__test__id,
+            decision__buy__id,
+        ),
+        (
+            GenerateUuid.as_uuid("uncertainty_test__uncertainty_car_state"),
+            uncertainty__test__id,
+            uncertainty__car_state__id,
+        ),
+        (
+            GenerateUuid.as_uuid("uncertainty_car_state__utility"),
+            uncertainty__car_state__id,
+            utility__state_guarantee__id,
+        ),
+        (
+            GenerateUuid.as_uuid("decision_buy__utility"),
+            decision__buy__id,
+            utility__state_guarantee__id,
+        ),
     ]
     for edge_id, tail_node_id, head_node_id in edges_data:
         entities.append(
@@ -1631,6 +1671,7 @@ async def car_buyer_problem(conn: AsyncConnection):
     async with AsyncSession(conn) as session:
         session.add_all(entities)
         await session.commit()
+
 
 async def seed_database(
     conn: AsyncConnection,
@@ -1648,7 +1689,7 @@ async def seed_database(
         project = Project(
             id=project_id,
             name=str(uuid4()),
-            opportunityStatement=str(uuid4()),
+            opportunity_statement=str(uuid4()),
             parent_project_id=None,
             parent_project_name="",
             objectives=[],
@@ -1719,7 +1760,7 @@ async def seed_database(
                             strategy_id=issue_node_id,
                             option_id=option_id,
                         )
-                    ]
+                    ],
                 )
 
                 strategy = add_auditable_fields(strategy, user)
