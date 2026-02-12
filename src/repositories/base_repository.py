@@ -1,10 +1,12 @@
 import asyncio
 import uuid
 from datetime import datetime
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.sql import ColumnElement, Select, select, desc
 from sqlalchemy.orm.strategy_options import _AbstractLoad  # type: ignore
+from sqlalchemy.dialects.sqlite import insert
 from typing import (
     Type,
     TypeVar,
@@ -288,20 +290,60 @@ class BaseRepository(Generic[T, IDType]):
             )
         return existing_entity
     
+    async def _update_helper_table(self, entities: list[T]) -> list[T]:
+        if entities.__len__() == 0:
+            return []
+        
+        # assert that all entities do not have their parents populated
+
+        return [
+            await self.session.merge(entity)
+            for entity in entities
+        ]
+    
     async def _replace_strategy_options(self, strategy_to_update: Strategy, new_strategy_options: list[StrategyOption]) -> None:
         """
         Safely replace strategy options by managing only the StrategyOption join table relationships.
         This approach prevents any updates to Option or Strategy entities themselves.
         """
-        strategy_to_update.strategy_options.clear()
+        # strategy_to_update.strategy_options.clear()
+        for strategy_option in strategy_to_update.strategy_options:
+            await self.session.delete(strategy_option)
         
         for new_strategy_option in new_strategy_options:
             strategy_option_to_add = StrategyOption(
                 strategy_id=strategy_to_update.id,
                 option_id=new_strategy_option.option_id
             )
-            self.session.add(strategy_option_to_add)
+            strategy_option_to_add = await self.session.merge(strategy_option_to_add)
+            # if self.session.bind.dialect.name == "sqlite":
+            #     # SQLite: Use `on_conflict_do_nothing`
+            #     stmt = insert(StrategyOption).values(
+            #         strategy_id=strategy_option_to_add.strategy_id,
+            #         option_id=strategy_option_to_add.option_id
+            #     ).on_conflict_do_nothing()
+            #     await self.session.execute(stmt)
+
+            # elif self.session.bind.dialect.name == "mssql":
+            #     merge_sql = text(f"""
+            #         MERGE INTO {StrategyOption.__tablename__} AS target
+            #         USING (VALUES (:strategy_id, :option_id)) AS source (strategy_id, option_id)
+            #         ON target.strategy_id = source.strategy_id AND target.option_id = source.option_id
+            #         WHEN NOT MATCHED BY TARGET THEN
+            #             INSERT (strategy_id, option_id) VALUES (source.strategy_id, source.option_id);
+            #     """)
+            #     await self.session.execute(
+            #         merge_sql,
+            #         {
+            #             "strategy_id": strategy_option_to_add.strategy_id,
+            #             "option_id": strategy_option_to_add.option_id,
+            #         }
+            #     )
+            # else:
+            #     raise Exception(fr"Dialect {self.session.bind.dialect.name} is not supported")
+
             strategy_to_update.strategy_options.append(strategy_option_to_add)
+            # await self.session.refresh(strategy_to_update, ['strategy_options'])
     
     async def _update_strategy(self, incoming_entity: Strategy, existing_entity: Strategy):
         existing_entity.project_id = incoming_entity.project_id
@@ -310,10 +352,12 @@ class BaseRepository(Generic[T, IDType]):
         existing_entity.rationale = incoming_entity.rationale
         existing_entity.updated_by_id = incoming_entity.updated_by_id
 
-        # Clear existing strategy options and create new ones
-        # This ensures we only manage the relationship without updating Option or Strategy entities
-        
-        await self._replace_strategy_options(existing_entity, incoming_entity.strategy_options)
+        existing_entity.strategy_options = [
+            await self.session.merge(strat_option) 
+            for strat_option in incoming_entity.strategy_options
+        ]
+        return
+        # await self._replace_strategy_options(existing_entity, incoming_entity.strategy_options)
     
     async def _update_strategies(
         self, incoming_entities: list[Strategy], existing_entities: list[Strategy]

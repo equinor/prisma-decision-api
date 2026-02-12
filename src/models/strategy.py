@@ -47,7 +47,6 @@ class Strategy(Base, BaseEntity, BaseAuditableEntity):
 
     strategy_options: Mapped[list["StrategyOption"]] = relationship(
         "StrategyOption",
-        back_populates="strategy",
         cascade="all, delete-orphan",
     )
 
