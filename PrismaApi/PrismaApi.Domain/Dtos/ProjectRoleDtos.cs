@@ -11,7 +11,7 @@ public class UserInfoDto
 public class ProjectRoleDto
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid UserId { get; set; }
+    public int UserId { get; set; }
     public Guid ProjectId { get; set; }
 }
 

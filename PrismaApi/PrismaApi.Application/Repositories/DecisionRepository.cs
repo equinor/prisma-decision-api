@@ -5,7 +5,7 @@ using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class DecisionRepository : BaseRepository<Decision, System.Guid>
+public class DecisionRepository : BaseRepository<Decision, Guid>
 {
     public DecisionRepository(AppDbContext dbContext) : base(dbContext)
     {

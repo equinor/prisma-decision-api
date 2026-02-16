@@ -1,9 +1,10 @@
+using PrismaApi.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 
 namespace PrismaApi.Domain.Entities;
 
-public class Option : BaseEntity
+public class Option : BaseEntity, IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
     public Guid DecisionId { get; set; }

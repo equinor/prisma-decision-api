@@ -25,12 +25,18 @@ public static class UserMappingExtensions
 
     public static User ToEntity(this UserIncomingDto dto)
     {
-        return new User
+        var user = new User
         {
-            Id = dto.Id ?? System.Guid.NewGuid(),
             Name = dto.Name,
             AzureId = dto.AzureId,
             ProjectRoles = dto.ProjectRoles.ToEntities()
         };
+
+        if (dto?.Id.HasValue == true)
+        {
+            user.Id = dto.Id.Value;
+        }
+
+        return user;
     }
 }

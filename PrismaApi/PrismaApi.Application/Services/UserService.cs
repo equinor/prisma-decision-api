@@ -16,7 +16,7 @@ public class UserService
         _userRepository = userRepository;
     }
 
-    public async Task<List<UserOutgoingDto>> GetAsync(List<Guid> ids)
+    public async Task<List<UserOutgoingDto>> GetAsync(List<int> ids)
     {
         var users = await _userRepository.GetByIdsAsync(ids);
         return users.ToOutgoingDtos();

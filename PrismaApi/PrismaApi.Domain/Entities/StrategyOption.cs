@@ -1,3 +1,4 @@
+using PrismaApi.Domain.Interfaces;
 using System;
 
 namespace PrismaApi.Domain.Entities;

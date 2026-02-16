@@ -5,7 +5,7 @@ using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class NodeRepository : BaseRepository<Node, System.Guid>
+public class NodeRepository : BaseRepository<Node, Guid>
 {
     public NodeRepository(AppDbContext dbContext) : base(dbContext)
     {
@@ -15,13 +15,13 @@ public class NodeRepository : BaseRepository<Node, System.Guid>
     {
         return DbContext.Nodes
             .Include(n => n.NodeStyle)
-            .Include(n => n.Issue)
-                .ThenInclude(i => i.Decision)
+            .Include(n => n.Issue!)
+                .ThenInclude(i => i.Decision!)
                 .ThenInclude(d => d.Options)
-            .Include(n => n.Issue)
-                .ThenInclude(i => i.Uncertainty)
+            .Include(n => n.Issue!)
+                .ThenInclude(i => i.Uncertainty!)
                 .ThenInclude(u => u.Outcomes)
-            .Include(n => n.Issue)
+            .Include(n => n.Issue!)
                 .ThenInclude(i => i.Utility);
     }
 }

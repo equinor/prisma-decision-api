@@ -1,11 +1,12 @@
+using PrismaApi.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 
 namespace PrismaApi.Domain.Entities;
 
-public class User : BaseEntity
+public class User : BaseEntity, IBaseEntity<int>
 {
-    public Guid Id { get; set; }
+    public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string AzureId { get; set; } = string.Empty;
 

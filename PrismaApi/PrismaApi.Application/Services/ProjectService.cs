@@ -109,17 +109,11 @@ public class ProjectService
             {
                 user = new User
                 {
-                    Id = dto.UserId == Guid.Empty ? Guid.NewGuid() : dto.UserId,
                     Name = dto.UserName,
                     AzureId = dto.AzureId
                 };
 
                 await _userRepository.AddAsync(user);
-            }
-            else if (user.Name != dto.UserName)
-            {
-                user.Name = dto.UserName;
-                await _userRepository.UpdateRangeAsync(new[] { user });
             }
 
             result.Add(new ProjectRole
@@ -148,17 +142,11 @@ public class ProjectService
             {
                 user = new User
                 {
-                    Id = dto.UserId == Guid.Empty ? Guid.NewGuid() : dto.UserId,
                     Name = dto.UserName,
                     AzureId = dto.AzureId
                 };
 
                 await _userRepository.AddAsync(user);
-            }
-            else if (user.Name != dto.UserName)
-            {
-                user.Name = dto.UserName;
-                await _userRepository.UpdateRangeAsync(new[] { user });
             }
 
             result.Add(new ProjectRole

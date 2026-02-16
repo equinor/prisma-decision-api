@@ -15,8 +15,8 @@ public static class EdgeMappingExtensions
             TailId = entity.TailId,
             HeadId = entity.HeadId,
             ProjectId = entity.ProjectId,
-            HeadIssueId = entity.HeadNode?.IssueId ?? System.Guid.Empty,
-            TailIssueId = entity.TailNode?.IssueId ?? System.Guid.Empty,
+            HeadIssueId = entity.HeadNode?.IssueId ?? Guid.Empty,
+            TailIssueId = entity.TailNode?.IssueId ?? Guid.Empty,
             HeadNode = entity.HeadNode != null ? entity.HeadNode.ToOutgoingDto() : new NodeOutgoingDto(),
             TailNode = entity.TailNode != null ? entity.TailNode.ToOutgoingDto() : new NodeOutgoingDto()
         };

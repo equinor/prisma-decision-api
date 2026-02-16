@@ -3,7 +3,7 @@ using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class NodeStyleRepository : BaseRepository<NodeStyle, System.Guid>
+public class NodeStyleRepository : BaseRepository<NodeStyle, Guid>
 {
     public NodeStyleRepository(AppDbContext dbContext) : base(dbContext)
     {

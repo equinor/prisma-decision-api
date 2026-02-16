@@ -5,7 +5,7 @@ using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class ProjectRoleRepository : BaseRepository<ProjectRole, System.Guid>
+public class ProjectRoleRepository : BaseRepository<ProjectRole, Guid>
 {
     public ProjectRoleRepository(AppDbContext dbContext) : base(dbContext)
     {

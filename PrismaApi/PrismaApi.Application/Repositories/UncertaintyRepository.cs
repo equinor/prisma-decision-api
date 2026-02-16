@@ -5,7 +5,7 @@ using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class UncertaintyRepository : BaseRepository<Uncertainty, System.Guid>
+public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>
 {
     public UncertaintyRepository(AppDbContext dbContext) : base(dbContext)
     {

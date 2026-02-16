@@ -5,7 +5,7 @@ using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class StrategyRepository : BaseRepository<Strategy, System.Guid>
+public class StrategyRepository : BaseRepository<Strategy, Guid>
 {
     public StrategyRepository(AppDbContext dbContext) : base(dbContext)
     {

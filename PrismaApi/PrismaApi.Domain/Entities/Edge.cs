@@ -1,8 +1,9 @@
+using PrismaApi.Domain.Interfaces;
 using System;
 
 namespace PrismaApi.Domain.Entities;
 
-public class Edge : BaseEntity
+public class Edge : BaseEntity, IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
     public Guid TailId { get; set; }

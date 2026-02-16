@@ -3,7 +3,7 @@ using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class ValueMetricRepository : BaseRepository<ValueMetric, System.Guid>
+public class ValueMetricRepository : BaseRepository<ValueMetric, Guid>
 {
     public ValueMetricRepository(AppDbContext dbContext) : base(dbContext)
     {

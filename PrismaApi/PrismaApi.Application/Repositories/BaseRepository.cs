@@ -1,14 +1,13 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces;
+using PrismaApi.Domain.Interfaces;
 using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
 public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
-    where TEntity : class
+    where TEntity : class, IBaseEntity<TId>
+    where TId : struct
 {
     protected readonly AppDbContext DbContext;
     protected readonly DbSet<TEntity> Set;
@@ -27,8 +26,7 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
     public virtual Task<TEntity?> GetByIdAsync(TId id)
     {
         return Query()
-            .Where(e => EF.Property<TId>(e, "Id") == id)
-            .ToListAsync();
+            .FirstOrDefaultAsync(e => e.Id.Equals(id));
     }
 
     public virtual Task<List<TEntity>> GetByIdsAsync(IEnumerable<TId> ids)
@@ -40,7 +38,7 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         }
 
         return Query()
-            .Where(e => idList.Contains(EF.Property<TId>(e, "Id")))
+            .Where(e => idList.Contains(e.Id))
             .ToListAsync();
     }
 
@@ -64,9 +62,15 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         return list;
     }
 
-    public virtual async Task<TEntity> GetOrAddAsync(TEntity entity)
+    public virtual async Task<TEntity?> GetOrAddAsync(TEntity entity)
     {
-        existingEntity = GetByIdsAsync
+        var existingEntity = await GetByIdAsync(entity.Id);
+        if (existingEntity != null)
+        {
+            return existingEntity;
+        }
+
+        return await AddAsync(entity);
     }
 
     public virtual async Task UpdateRangeAsync(IEnumerable<TEntity> entities)

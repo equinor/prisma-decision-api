@@ -22,14 +22,9 @@ public class UsersController : ControllerBase
     [HttpGet("user/me")]
     public ActionResult<UserIncomingDto> GetMe()
     {
-        var dto = new UserIncomingDto
-        {
-            Id = Guid.Empty,
-            Name = "Local User",
-            AzureId = "local-user"
-        };
+        throw new NotImplementedException();
 
-        return Ok(dto);
+        //return Ok(dto);
     }
 
     [HttpGet("users")]
@@ -39,10 +34,10 @@ public class UsersController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("users/{id:guid}")]
-    public async Task<ActionResult<UserOutgoingDto>> GetUser(Guid id)
+    [HttpGet("users/{id:int}")]
+    public async Task<ActionResult<UserOutgoingDto>> GetUser(int id)
     {
-        var result = await _userService.GetAsync(new List<Guid> { id });
+        var result = await _userService.GetAsync(new List<int> { id });
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 

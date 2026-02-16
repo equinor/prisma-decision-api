@@ -1,9 +1,10 @@
+using PrismaApi.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 
 namespace PrismaApi.Domain.Entities;
 
-public class Project : AuditableEntity
+public class Project : AuditableEntity, IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

@@ -5,6 +5,7 @@ namespace PrismaApi.Application.Interfaces;
 
 public interface ICrudRepository<TEntity, TId>
     where TEntity : class
+    where TId : struct
 {
     Task<List<TEntity>> GetByIdsAsync(IEnumerable<TId> ids);
     Task<List<TEntity>> GetAllAsync();

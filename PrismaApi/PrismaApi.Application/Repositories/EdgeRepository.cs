@@ -5,7 +5,7 @@ using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class EdgeRepository : BaseRepository<Edge, System.Guid>
+public class EdgeRepository : BaseRepository<Edge, Guid>
 {
     public EdgeRepository(AppDbContext dbContext) : base(dbContext)
     {

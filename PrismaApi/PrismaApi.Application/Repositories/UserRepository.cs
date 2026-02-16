@@ -7,7 +7,7 @@ using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class UserRepository : BaseRepository<User, Guid>
+public class UserRepository : BaseRepository<User, int>
 {
     public UserRepository(AppDbContext dbContext) : base(dbContext)
     {

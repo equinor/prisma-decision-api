@@ -38,7 +38,7 @@ public static class ObjectiveMappingExtensions
         };
     }
 
-    public static Objective ToEntity(this ObjectiveViaProjectDto dto, System.Guid projectId)
+    public static Objective ToEntity(this ObjectiveViaProjectDto dto, Guid projectId)
     {
         return new Objective
         {
@@ -55,7 +55,7 @@ public static class ObjectiveMappingExtensions
         return dtos.Select(ToEntity).ToList();
     }
 
-    public static List<Objective> ToEntities(this IEnumerable<ObjectiveViaProjectDto> dtos, System.Guid projectId)
+    public static List<Objective> ToEntities(this IEnumerable<ObjectiveViaProjectDto> dtos, Guid projectId)
     {
         return dtos.Select(dto => dto.ToEntity(projectId)).ToList();
     }

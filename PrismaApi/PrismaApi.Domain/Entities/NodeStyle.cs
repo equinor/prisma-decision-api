@@ -1,8 +1,9 @@
+using PrismaApi.Domain.Interfaces;
 using System;
 
 namespace PrismaApi.Domain.Entities;
 
-public class NodeStyle : BaseEntity
+public class NodeStyle : BaseEntity, IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
     public Guid NodeId { get; set; }

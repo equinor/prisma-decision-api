@@ -1,8 +1,9 @@
+using PrismaApi.Domain.Interfaces;
 using System;
 
 namespace PrismaApi.Domain.Entities;
 
-public class Issue : AuditableEntity
+public class Issue : AuditableEntity, IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
     public Guid ProjectId { get; set; }
