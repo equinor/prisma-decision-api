@@ -1,0 +1,94 @@
+using System.Collections.Generic;
+using System.Linq;
+using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Entities;
+
+namespace PrismaApi.Application.Mapping;
+
+public static class ProjectMappingExtensions
+{
+    public static ProjectOutgoingDto ToOutgoingDto(this Project entity)
+    {
+        return new ProjectOutgoingDto
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            ParentProjectId = entity.ParentProjectId,
+            ParentProjectName = entity.ParentProjectName,
+            OpportunityStatement = entity.OpportunityStatement,
+            Public = entity.Public,
+            EndDate = entity.EndDate,
+            Objectives = entity.Objectives.ToOutgoingDtos(),
+            Strategies = entity.Strategies.ToOutgoingDtos(),
+            Users = entity.ProjectRoles.ToOutgoingDtos()
+        };
+    }
+
+    public static PopulatedProjectDto ToPopulatedDto(this Project entity)
+    {
+        return new PopulatedProjectDto
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            ParentProjectId = entity.ParentProjectId,
+            ParentProjectName = entity.ParentProjectName,
+            OpportunityStatement = entity.OpportunityStatement,
+            Public = entity.Public,
+            EndDate = entity.EndDate,
+            Objectives = entity.Objectives.ToOutgoingDtos(),
+            Strategies = entity.Strategies.ToOutgoingDtos(),
+            Users = entity.ProjectRoles.ToOutgoingDtos()
+        };
+    }
+
+    public static List<ProjectOutgoingDto> ToOutgoingDtos(this IEnumerable<Project> entities)
+    {
+        return entities.Select(ToOutgoingDto).ToList();
+    }
+
+    public static List<PopulatedProjectDto> ToPopulatedDtos(this IEnumerable<Project> entities)
+    {
+        return entities.Select(ToPopulatedDto).ToList();
+    }
+
+    public static Project ToEntity(this ProjectCreateDto dto)
+    {
+        return new Project
+        {
+            Id = dto.Id,
+            ParentProjectId = dto.ParentProjectId,
+            ParentProjectName = dto.ParentProjectName,
+            Name = dto.Name,
+            OpportunityStatement = dto.OpportunityStatement,
+            Public = dto.Public,
+            EndDate = dto.EndDate,
+            Objectives = dto.Objectives.ToEntities(dto.Id)
+        };
+    }
+
+    public static Project ToEntity(this ProjectIncomingDto dto)
+    {
+        return new Project
+        {
+            Id = dto.Id,
+            ParentProjectId = dto.ParentProjectId,
+            ParentProjectName = dto.ParentProjectName,
+            Name = dto.Name,
+            OpportunityStatement = dto.OpportunityStatement,
+            Public = dto.Public,
+            EndDate = dto.EndDate,
+            Objectives = dto.Objectives.ToEntities(dto.Id),
+            Strategies = dto.Strategies.ToEntities()
+        };
+    }
+
+    public static List<Project> ToEntities(this IEnumerable<ProjectCreateDto> dtos)
+    {
+        return dtos.Select(ToEntity).ToList();
+    }
+
+    public static List<Project> ToEntities(this IEnumerable<ProjectIncomingDto> dtos)
+    {
+        return dtos.Select(ToEntity).ToList();
+    }
+}

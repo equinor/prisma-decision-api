@@ -1,0 +1,11 @@
+using PrismaApi.Domain.Entities;
+using PrismaApi.Infrastructure;
+
+namespace PrismaApi.Application.Repositories;
+
+public class OutcomeRepository : BaseRepository<Outcome, System.Guid>
+{
+    public OutcomeRepository(AppDbContext dbContext) : base(dbContext)
+    {
+    }
+}

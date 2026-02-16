@@ -172,3 +172,13 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# .NET / Visual Studio (PrismaApi)
+.vs/
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userprefs
+
+
