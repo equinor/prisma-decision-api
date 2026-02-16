@@ -12,7 +12,8 @@ public static class UtilityMappingExtensions
         return new UtilityOutgoingDto
         {
             Id = entity.Id,
-            IssueId = entity.IssueId
+            IssueId = entity.IssueId,
+            DiscreteUtilities = entity.DiscreteUtilities.ToDtos()
         };
     }
 

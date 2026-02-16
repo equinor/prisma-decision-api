@@ -4,16 +4,18 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [Route("")]
-public class ValueMetricsController : ControllerBase
+public class ValueMetricsController : PrismaBaseEntityController
 {
     private readonly ValueMetricService _valueMetricService;
 
-    public ValueMetricsController(ValueMetricService valueMetricService)
+    public ValueMetricsController(ValueMetricService valueMetricService, AppDbContext dbContext)
+        : base(dbContext)
     {
         _valueMetricService = valueMetricService;
     }
@@ -35,21 +37,51 @@ public class ValueMetricsController : ControllerBase
     [HttpPut("value-metrics")]
     public async Task<ActionResult<List<ValueMetricOutgoingDto>>> UpdateValueMetrics([FromBody] List<ValueMetricIncomingDto> dtos)
     {
-        var result = await _valueMetricService.UpdateAsync(dtos);
-        return Ok(result);
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            var result = await _valueMetricService.UpdateAsync(dtos);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return Ok(result);
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("value-metrics/{id:guid}")]
     public async Task<IActionResult> DeleteValueMetric(Guid id)
     {
-        await _valueMetricService.DeleteAsync(new List<Guid> { id });
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _valueMetricService.DeleteAsync(new List<Guid> { id });
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("value-metrics")]
     public async Task<IActionResult> DeleteValueMetrics([FromQuery] List<Guid> ids)
     {
-        await _valueMetricService.DeleteAsync(ids);
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _valueMetricService.DeleteAsync(ids);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 }

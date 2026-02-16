@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using PrismaApi.Infrastructure;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
 
@@ -9,11 +10,12 @@ namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [Route("")]
-public class DecisionsController : ControllerBase
+public class DecisionsController : PrismaBaseEntityController
 {
     private readonly DecisionService _decisionService;
 
-    public DecisionsController(DecisionService decisionService)
+    public DecisionsController(DecisionService decisionService, AppDbContext dbContext)
+        : base(dbContext)
     {
         _decisionService = decisionService;
     }
@@ -35,21 +37,51 @@ public class DecisionsController : ControllerBase
     [HttpPut("decisions")]
     public async Task<ActionResult<List<DecisionOutgoingDto>>> UpdateDecisions([FromBody] List<DecisionIncomingDto> dtos)
     {
-        var result = await _decisionService.UpdateAsync(dtos);
-        return Ok(result);
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            var result = await _decisionService.UpdateAsync(dtos);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return Ok(result);
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("decisions/{id:guid}")]
     public async Task<IActionResult> DeleteDecision(Guid id)
     {
-        await _decisionService.DeleteAsync(new List<Guid> { id });
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _decisionService.DeleteAsync(new List<Guid> { id });
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("decisions")]
     public async Task<IActionResult> DeleteDecisions([FromQuery] List<Guid> ids)
     {
-        await _decisionService.DeleteAsync(ids);
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _decisionService.DeleteAsync(ids);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 }

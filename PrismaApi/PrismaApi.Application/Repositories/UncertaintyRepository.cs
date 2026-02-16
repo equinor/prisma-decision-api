@@ -14,6 +14,10 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>
     protected override IQueryable<Uncertainty> Query()
     {
         return DbContext.Uncertainties
-            .Include(u => u.Outcomes);
+            .Include(u => u.Outcomes)
+            .Include(u => u.DiscreteProbabilities)
+                .ThenInclude(dp => dp.ParentOutcomes)
+            .Include(u => u.DiscreteProbabilities)
+                .ThenInclude(dp => dp.ParentOptions);
     }
 }

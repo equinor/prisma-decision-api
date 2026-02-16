@@ -5,16 +5,18 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [Route("")]
-public class IssuesController : ControllerBase
+public class IssuesController : PrismaBaseEntityController
 {
     private readonly IssueService _issueService;
 
-    public IssuesController(IssueService issueService)
+    public IssuesController(IssueService issueService, AppDbContext dbContext)
+        : base(dbContext)
     {
         _issueService = issueService;
     }
@@ -22,8 +24,18 @@ public class IssuesController : ControllerBase
     [HttpPost("issues")]
     public async Task<ActionResult<List<IssueOutgoingDto>>> CreateIssues([FromBody] List<IssueIncomingDto> dtos)
     {
-        var result = await _issueService.CreateAsync(dtos);
-        return Ok(result);
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            var result = await _issueService.CreateAsync(dtos);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return Ok(result);
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpGet("issues/{id:guid}")]
@@ -49,21 +61,51 @@ public class IssuesController : ControllerBase
     [HttpPut("issues")]
     public async Task<ActionResult<List<IssueOutgoingDto>>> UpdateIssues([FromBody] List<IssueIncomingDto> dtos)
     {
-        var result = await _issueService.UpdateAsync(dtos);
-        return Ok(result);
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            var result = await _issueService.UpdateAsync(dtos);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return Ok(result);
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("issues/{id:guid}")]
     public async Task<IActionResult> DeleteIssue(Guid id)
     {
-        await _issueService.DeleteAsync(new List<Guid> { id });
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _issueService.DeleteAsync(new List<Guid> { id });
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("issues")]
     public async Task<IActionResult> DeleteIssues([FromQuery] List<Guid> ids)
     {
-        await _issueService.DeleteAsync(ids);
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _issueService.DeleteAsync(ids);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 }

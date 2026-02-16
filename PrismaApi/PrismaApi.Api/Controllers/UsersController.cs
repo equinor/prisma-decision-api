@@ -5,16 +5,18 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [Route("")]
-public class UsersController : ControllerBase
+public class UsersController : PrismaBaseEntityController
 {
     private readonly UserService _userService;
 
-    public UsersController(UserService userService)
+    public UsersController(UserService userService, AppDbContext dbContext)
+        : base(dbContext)
     {
         _userService = userService;
     }

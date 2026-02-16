@@ -5,16 +5,18 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [Route("")]
-public class NodesController : ControllerBase
+public class NodesController : PrismaBaseEntityController
 {
     private readonly NodeService _nodeService;
 
-    public NodesController(NodeService nodeService)
+    public NodesController(NodeService nodeService, AppDbContext dbContext)
+        : base(dbContext)
     {
         _nodeService = nodeService;
     }
@@ -42,21 +44,51 @@ public class NodesController : ControllerBase
     [HttpPut("nodes")]
     public async Task<ActionResult<List<NodeOutgoingDto>>> UpdateNodes([FromBody] List<NodeIncomingDto> dtos)
     {
-        var result = await _nodeService.UpdateAsync(dtos);
-        return Ok(result);
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            var result = await _nodeService.UpdateAsync(dtos);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return Ok(result);
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("nodes/{id:guid}")]
     public async Task<IActionResult> DeleteNode(Guid id)
     {
-        await _nodeService.DeleteAsync(new List<Guid> { id });
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _nodeService.DeleteAsync(new List<Guid> { id });
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("nodes")]
     public async Task<IActionResult> DeleteNodes([FromQuery] List<Guid> ids)
     {
-        await _nodeService.DeleteAsync(ids);
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _nodeService.DeleteAsync(ids);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 }

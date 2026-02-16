@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Application.Services;
 using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.DiscreteTables;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,8 +11,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
+builder.Services.AddScoped<DiscreteTableSaveChangesInterceptor>();
+builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+{
+    options.UseSqlServer(connectionString);
+    options.AddInterceptors(serviceProvider.GetRequiredService<DiscreteTableSaveChangesInterceptor>());
+});
 
 builder.Services.AddScoped<ProjectRepository>();
 builder.Services.AddScoped<IssueRepository>();

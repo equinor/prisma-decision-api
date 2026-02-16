@@ -4,16 +4,18 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [Route("")]
-public class NodeStylesController : ControllerBase
+public class NodeStylesController : PrismaBaseEntityController
 {
     private readonly NodeStyleService _nodeStyleService;
 
-    public NodeStylesController(NodeStyleService nodeStyleService)
+    public NodeStylesController(NodeStyleService nodeStyleService, AppDbContext dbContext)
+        : base(dbContext)
     {
         _nodeStyleService = nodeStyleService;
     }
@@ -35,21 +37,51 @@ public class NodeStylesController : ControllerBase
     [HttpPut("node-styles")]
     public async Task<ActionResult<List<NodeStyleOutgoingDto>>> UpdateNodeStyles([FromBody] List<NodeStyleIncomingDto> dtos)
     {
-        var result = await _nodeStyleService.UpdateAsync(dtos);
-        return Ok(result);
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            var result = await _nodeStyleService.UpdateAsync(dtos);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return Ok(result);
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("node-styles/{id:guid}")]
     public async Task<IActionResult> DeleteNodeStyle(Guid id)
     {
-        await _nodeStyleService.DeleteAsync(new List<Guid> { id });
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _nodeStyleService.DeleteAsync(new List<Guid> { id });
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("node-styles")]
     public async Task<IActionResult> DeleteNodeStyles([FromQuery] List<Guid> ids)
     {
-        await _nodeStyleService.DeleteAsync(ids);
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _nodeStyleService.DeleteAsync(ids);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 }

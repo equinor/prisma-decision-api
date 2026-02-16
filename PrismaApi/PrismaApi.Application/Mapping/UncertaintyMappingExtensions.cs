@@ -14,7 +14,8 @@ public static class UncertaintyMappingExtensions
             Id = entity.Id,
             IssueId = entity.IssueId,
             IsKey = entity.IsKey,
-            Outcomes = entity.Outcomes.ToOutgoingDtos()
+            Outcomes = entity.Outcomes.ToOutgoingDtos(),
+            DiscreteProbabilities = entity.DiscreteProbabilities.ToDtos()
         };
     }
 

@@ -12,4 +12,5 @@ public class Uncertainty : BaseEntity, IBaseEntity<Guid>
 
     public Issue? Issue { get; set; }
     public ICollection<Outcome> Outcomes { get; set; } = new List<Outcome>();
+    public ICollection<DiscreteProbability> DiscreteProbabilities { get; set; } = new List<DiscreteProbability>();
 }

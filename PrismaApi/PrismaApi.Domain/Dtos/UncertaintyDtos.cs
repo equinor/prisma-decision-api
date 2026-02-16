@@ -18,4 +18,5 @@ public class UncertaintyIncomingDto : UncertaintyDto
 public class UncertaintyOutgoingDto : UncertaintyDto
 {
     public List<OutcomeOutgoingDto> Outcomes { get; set; } = new();
+    public List<DiscreteProbabilityDto> DiscreteProbabilities { get; set; } = new();
 }

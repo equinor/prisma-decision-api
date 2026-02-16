@@ -5,16 +5,18 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [Route("")]
-public class ObjectivesController : ControllerBase
+public class ObjectivesController : PrismaBaseEntityController
 {
     private readonly ObjectiveService _objectiveService;
 
-    public ObjectivesController(ObjectiveService objectiveService)
+    public ObjectivesController(ObjectiveService objectiveService, AppDbContext dbContext)
+        : base(dbContext)
     {
         _objectiveService = objectiveService;
     }
@@ -22,8 +24,18 @@ public class ObjectivesController : ControllerBase
     [HttpPost("objectives")]
     public async Task<ActionResult<List<ObjectiveOutgoingDto>>> CreateObjectives([FromBody] List<ObjectiveIncomingDto> dtos)
     {
-        var result = await _objectiveService.CreateAsync(dtos);
-        return Ok(result);
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            var result = await _objectiveService.CreateAsync(dtos);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return Ok(result);
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpGet("objectives/{id:guid}")]
@@ -49,21 +61,51 @@ public class ObjectivesController : ControllerBase
     [HttpPut("objectives")]
     public async Task<ActionResult<List<ObjectiveOutgoingDto>>> UpdateObjectives([FromBody] List<ObjectiveIncomingDto> dtos)
     {
-        var result = await _objectiveService.UpdateAsync(dtos);
-        return Ok(result);
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            var result = await _objectiveService.UpdateAsync(dtos);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return Ok(result);
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("objectives/{id:guid}")]
     public async Task<IActionResult> DeleteObjective(Guid id)
     {
-        await _objectiveService.DeleteAsync(new List<Guid> { id });
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _objectiveService.DeleteAsync(new List<Guid> { id });
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("objectives")]
     public async Task<IActionResult> DeleteObjectives([FromQuery] List<Guid> ids)
     {
-        await _objectiveService.DeleteAsync(ids);
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _objectiveService.DeleteAsync(ids);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 }

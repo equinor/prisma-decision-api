@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using PrismaApi.Infrastructure;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
 
@@ -10,11 +11,12 @@ namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [Route("")]
-public class ProjectsController : ControllerBase
+public class ProjectsController : PrismaBaseEntityController
 {
     private readonly ProjectService _projectService;
 
-    public ProjectsController(ProjectService projectService)
+    public ProjectsController(ProjectService projectService, AppDbContext dbContext)
+        : base(dbContext)
     {
         _projectService = projectService;
     }
@@ -22,8 +24,18 @@ public class ProjectsController : ControllerBase
     [HttpPost("projects")]
     public async Task<ActionResult<List<ProjectOutgoingDto>>> CreateProjects([FromBody] List<ProjectCreateDto> dtos)
     {
-        var result = await _projectService.CreateAsync(dtos);
-        return Ok(result);
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            var result = await _projectService.CreateAsync(dtos);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return Ok(result);
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpGet("projects/{id:guid}")]
@@ -43,15 +55,35 @@ public class ProjectsController : ControllerBase
     [HttpPut("projects")]
     public async Task<ActionResult<List<ProjectOutgoingDto>>> UpdateProjects([FromBody] List<ProjectIncomingDto> dtos)
     {
-        var result = await _projectService.UpdateAsync(dtos);
-        return Ok(result);
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            var result = await _projectService.UpdateAsync(dtos);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return Ok(result);
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("projects/{id:guid}")]
     public async Task<IActionResult> DeleteProject(Guid id)
     {
-        await _projectService.DeleteAsync(new List<Guid> { id });
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _projectService.DeleteAsync(new List<Guid> { id });
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpGet("projects-populated/{id:guid}")]

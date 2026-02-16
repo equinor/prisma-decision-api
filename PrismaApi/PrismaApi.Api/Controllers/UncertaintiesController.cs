@@ -5,16 +5,18 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [Route("")]
-public class UncertaintiesController : ControllerBase
+public class UncertaintiesController : PrismaBaseEntityController
 {
     private readonly UncertaintyService _uncertaintyService;
 
-    public UncertaintiesController(UncertaintyService uncertaintyService)
+    public UncertaintiesController(UncertaintyService uncertaintyService, AppDbContext dbContext)
+        : base(dbContext)
     {
         _uncertaintyService = uncertaintyService;
     }
@@ -36,22 +38,52 @@ public class UncertaintiesController : ControllerBase
     [HttpPut("uncertainties")]
     public async Task<ActionResult<List<UncertaintyOutgoingDto>>> UpdateUncertainties([FromBody] List<UncertaintyIncomingDto> dtos)
     {
-        var result = await _uncertaintyService.UpdateAsync(dtos);
-        return Ok(result);
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            var result = await _uncertaintyService.UpdateAsync(dtos);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return Ok(result);
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("uncertainties/{id:guid}")]
     public async Task<IActionResult> DeleteUncertainty(Guid id)
     {
-        await _uncertaintyService.DeleteAsync(new List<Guid> { id });
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _uncertaintyService.DeleteAsync(new List<Guid> { id });
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpDelete("uncertainties")]
     public async Task<IActionResult> DeleteUncertainties([FromQuery] List<Guid> ids)
     {
-        await _uncertaintyService.DeleteAsync(ids);
-        return NoContent();
+        await BeginTransactionAsync(HttpContext.RequestAborted);
+        try
+        {
+            await _uncertaintyService.DeleteAsync(ids);
+            await CommitTransactionAsync(HttpContext.RequestAborted);
+            return NoContent();
+        }
+        catch
+        {
+            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            throw;
+        }
     }
 
     [HttpPost("uncertainties/{id:guid}/remake-probability-table")]

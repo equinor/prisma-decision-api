@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace PrismaApi.Domain.Dtos;
 
@@ -14,4 +15,5 @@ public class UtilityIncomingDto : UtilityDto
 
 public class UtilityOutgoingDto : UtilityDto
 {
+    public List<DiscreteUtilityDto> DiscreteUtilities { get; set; } = new();
 }
