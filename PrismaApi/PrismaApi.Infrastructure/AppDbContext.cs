@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
@@ -47,10 +43,21 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Project>(entity =>
         {
+            entity.ToTable("project");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.Property(e => e.ParentProjectName).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.Property(e => e.OpportunityStatement).HasMaxLength(DomainConstants.MaxLongStringLength);
+
+            entity.HasOne(e => e.CreatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasMany(e => e.ProjectRoles)
                 .WithOne(e => e.Project)
@@ -85,11 +92,22 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Issue>(entity =>
         {
+            entity.ToTable("issue");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.Property(e => e.Description).HasMaxLength(DomainConstants.MaxLongStringLength);
             entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.Property(e => e.Boundary).HasMaxLength(DomainConstants.MaxShortStringLength);
+
+            entity.HasOne(e => e.CreatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.Node)
                 .WithOne(e => e.Issue)
@@ -114,6 +132,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Node>(entity =>
         {
+            entity.ToTable("node");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
 
@@ -135,11 +154,13 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Edge>(entity =>
         {
+            entity.ToTable("edge");
             entity.HasKey(e => e.Id);
         });
 
         modelBuilder.Entity<Decision>(entity =>
         {
+            entity.ToTable("decision");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
 
@@ -151,18 +172,21 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Option>(entity =>
         {
+            entity.ToTable("option");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
         });
 
         modelBuilder.Entity<Outcome>(entity =>
         {
+            entity.ToTable("outcome");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
         });
 
         modelBuilder.Entity<Uncertainty>(entity =>
         {
+            entity.ToTable("uncertainty");
             entity.HasKey(e => e.Id);
 
             entity.HasMany(e => e.Outcomes)
@@ -173,6 +197,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Utility>(entity =>
         {
+            entity.ToTable("utility");
             entity.HasKey(e => e.Id);
         });
 
@@ -280,13 +305,24 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<ValueMetric>(entity =>
         {
+            entity.ToTable("value_metric");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
         });
 
         modelBuilder.Entity<Strategy>(entity =>
         {
+            entity.ToTable("strategy");
             entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.CreatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.Property(e => e.Description).HasMaxLength(DomainConstants.MaxLongStringLength);
             entity.Property(e => e.Rationale).HasMaxLength(DomainConstants.MaxLongStringLength);
@@ -299,6 +335,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<StrategyOption>(entity =>
         {
+            entity.ToTable("strategy_option");
             entity.HasKey(e => new { e.StrategyId, e.OptionId });
 
             entity.HasOne(e => e.Option)
@@ -309,7 +346,17 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Objective>(entity =>
         {
+            entity.ToTable("objective");
             entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.CreatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.Property(e => e.Description).HasMaxLength(DomainConstants.MaxLongStringLength);
@@ -317,12 +364,23 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<ProjectRole>(entity =>
         {
+            entity.ToTable("project_role");
             entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.CreatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.Property(e => e.Role).HasMaxLength(DomainConstants.MaxShortStringLength);
         });
 
         modelBuilder.Entity<User>(entity =>
         {
+            entity.ToTable("user");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.Property(e => e.AzureId).HasMaxLength(DomainConstants.MaxShortStringLength);
@@ -357,10 +415,10 @@ public class AppDbContext : DbContext
         {
             if (entry.State == EntityState.Added)
             {
-                entry.Entity.CreatedAt = DateTime.UtcNow;
+                entry.Entity.CreatedAt = DateTimeOffset.UtcNow;
             }
 
-            entry.Entity.UpdatedAt = DateTime.UtcNow;
+            entry.Entity.UpdatedAt = DateTimeOffset.UtcNow;
         }
     }
 }

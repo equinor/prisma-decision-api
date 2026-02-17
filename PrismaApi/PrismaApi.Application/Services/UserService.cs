@@ -33,4 +33,11 @@ public class UserService
         var user = await _userRepository.GetByAzureIdAsync(azureId);
         return user != null ? user.ToOutgoingDto() : null;
     }
+
+    public async Task<UserOutgoingDto> GetOrCreateUserByAzureIdAsync(UserIncomingDto dto)
+    {
+        var user = await GetByAzureIdAsync(dto.AzureId);
+        user ??= (await _userRepository.AddAsync(dto.ToEntity())).ToOutgoingDto();
+        return user;
+    }
 }

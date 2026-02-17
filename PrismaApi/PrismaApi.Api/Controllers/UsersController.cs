@@ -22,11 +22,15 @@ public class UsersController : PrismaBaseEntityController
     }
 
     [HttpGet("user/me")]
-    public ActionResult<UserIncomingDto> GetMe()
+    public async Task<ActionResult<UserOutgoingDto>> GetMe()
     {
-        throw new NotImplementedException();
+        var mockUser = new UserIncomingDto
+        {
+            AzureId = "28652cc8-c5ed-43c7-a6b0-c2a4ce3d7185",
+            Name = "Einar Salomonsen (Bouvet Norge AS)"
+        };
 
-        //return Ok(dto);
+        return Ok(await _userService.GetOrCreateUserByAzureIdAsync(mockUser));
     }
 
     [HttpGet("users")]

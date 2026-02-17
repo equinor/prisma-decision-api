@@ -11,7 +11,7 @@ public class ProjectDto
     public Guid? ParentProjectId { get; set; }
     public string? ParentProjectName { get; set; }
     public bool Public { get; set; }
-    public DateTime EndDate { get; set; } = DateTime.UtcNow.AddDays(30);
+    public DateTimeOffset EndDate { get; set; } = DateTimeOffset.UtcNow.AddDays(30);
 }
 
 public class ProjectCreateDto : ProjectDto

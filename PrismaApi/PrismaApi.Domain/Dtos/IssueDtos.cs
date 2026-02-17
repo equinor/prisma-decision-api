@@ -29,8 +29,8 @@ public class IssueOutgoingDto : IssueDto
     public DecisionOutgoingDto? Decision { get; set; }
     public UncertaintyOutgoingDto? Uncertainty { get; set; }
     public UtilityOutgoingDto? Utility { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
 }
 
 public class IssueViaNodeOutgoingDto : IssueDto

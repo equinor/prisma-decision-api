@@ -24,6 +24,6 @@ public class ObjectiveOutgoingDto : ObjectiveDto
 {
     public Guid ProjectId { get; set; }
     public string Type { get; set; } = "Fundamental";
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
 }
