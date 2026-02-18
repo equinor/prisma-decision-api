@@ -20,6 +20,12 @@ public class IssueRepository : BaseRepository<Issue, Guid>
                 .ThenInclude(d => d.Options)
             .Include(i => i.Uncertainty!)
                 .ThenInclude(u => u.Outcomes)
+            //.Include(i => i.Uncertainty!)
+            //    .ThenInclude(u => u.DiscreteProbabilities)
+            //    .ThenInclude(d => d.ParentOptions)
+            //.Include(i => i.Uncertainty!)
+            //    .ThenInclude(u => u.DiscreteProbabilities)
+            //    .ThenInclude(d => d.ParentOutcomes)
             .Include(i => i.Utility);
     }
 }

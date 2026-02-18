@@ -22,7 +22,7 @@ public class NodeStyleService
         var entities = dtos.ToEntities();
         await _nodeStyleRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _nodeStyleRepository.GetByIdsAsync(ids);
+        var updated = await _nodeStyleRepository.GetByIdsAsync(ids, withTracking: false);
         return updated.ToOutgoingDtos();
     }
 
@@ -33,13 +33,13 @@ public class NodeStyleService
 
     public async Task<List<NodeStyleOutgoingDto>> GetAsync(List<Guid> ids)
     {
-        var entities = await _nodeStyleRepository.GetByIdsAsync(ids);
+        var entities = await _nodeStyleRepository.GetByIdsAsync(ids, withTracking: false);
         return entities.ToOutgoingDtos();
     }
 
     public async Task<List<NodeStyleOutgoingDto>> GetAllAsync()
     {
-        var entities = await _nodeStyleRepository.GetAllAsync();
+        var entities = await _nodeStyleRepository.GetAllAsync(withTracking: false);
         return entities.ToOutgoingDtos();
     }
 }

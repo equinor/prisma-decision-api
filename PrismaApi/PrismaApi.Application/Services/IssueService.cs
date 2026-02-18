@@ -31,7 +31,7 @@ public class IssueService
         var entities = dtos.ToEntities();
         await _issueRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _issueRepository.GetByIdsAsync(ids);
+        var updated = await _issueRepository.GetByIdsAsync(ids, withTracking: false);
         return updated.ToOutgoingDtos();
     }
 
@@ -42,13 +42,13 @@ public class IssueService
 
     public async Task<List<IssueOutgoingDto>> GetAsync(List<Guid> ids)
     {
-        var issues = await _issueRepository.GetByIdsAsync(ids);
+        var issues = await _issueRepository.GetByIdsAsync(ids, withTracking: false);
         return issues.ToOutgoingDtos();
     }
 
     public async Task<List<IssueOutgoingDto>> GetAllAsync()
     {
-        var issues = await _issueRepository.GetAllAsync();
+        var issues = await _issueRepository.GetAllAsync(withTracking: false);
         return issues.ToOutgoingDtos();
     }
 

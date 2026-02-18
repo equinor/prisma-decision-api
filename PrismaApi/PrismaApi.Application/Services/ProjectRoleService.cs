@@ -18,13 +18,13 @@ public class ProjectRoleService
 
     public async Task<List<ProjectRoleOutgoingDto>> GetAsync(List<Guid> ids)
     {
-        var roles = await _projectRoleRepository.GetByIdsAsync(ids);
+        var roles = await _projectRoleRepository.GetByIdsAsync(ids, withTracking: false);
         return roles.ToOutgoingDtos();
     }
 
     public async Task<List<ProjectRoleOutgoingDto>> GetAllAsync()
     {
-        var roles = await _projectRoleRepository.GetAllAsync();
+        var roles = await _projectRoleRepository.GetAllAsync(withTracking: false);
         return roles.ToOutgoingDtos();
     }
 

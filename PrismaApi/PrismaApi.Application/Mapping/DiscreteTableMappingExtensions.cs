@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 
@@ -15,8 +13,33 @@ public static class DiscreteTableMappingExtensions
             OutcomeId = entity.OutcomeId,
             UncertaintyId = entity.UncertaintyId,
             Probability = entity.Probability,
-            ParentOutcomes = entity.ParentOutcomes.Select(ToDto).ToList(),
-            ParentOptions = entity.ParentOptions.Select(ToDto).ToList()
+            ParentOptionIds = entity.ParentOptions.Select(x => x.ParentOptionId).ToList(),
+            ParentOutcomeIds = entity.ParentOutcomes.Select(x => x.ParentOutcomeId).ToList(),
+            //ParentOutcomes = entity.ParentOutcomes.Select(ToDto).ToList(),
+            //ParentOptions = entity.ParentOptions.Select(ToDto).ToList()
+        };
+    }
+
+    public static DiscreteProbability ToEntity(this DiscreteProbabilityDto dto)
+    {
+        return new DiscreteProbability
+        {
+            Id = dto.Id,
+            OutcomeId = dto.OutcomeId,
+            UncertaintyId = dto.UncertaintyId,
+            Probability = dto.Probability,
+            ParentOptions = dto.ParentOptionIds
+                .Select(x => new DiscreteProbabilityParentOption
+                {
+                    DiscreteProbabilityId = dto.Id,
+                    ParentOptionId = x
+                }).ToList(),
+            ParentOutcomes = dto.ParentOutcomeIds
+                .Select(x => new DiscreteProbabilityParentOutcome
+                {
+                    DiscreteProbabilityId = dto.Id,
+                    ParentOutcomeId = x
+                }).ToList()
         };
     }
 

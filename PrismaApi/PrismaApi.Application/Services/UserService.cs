@@ -18,13 +18,13 @@ public class UserService
 
     public async Task<List<UserOutgoingDto>> GetAsync(List<int> ids)
     {
-        var users = await _userRepository.GetByIdsAsync(ids);
+        var users = await _userRepository.GetByIdsAsync(ids, withTracking: false);
         return users.ToOutgoingDtos();
     }
 
     public async Task<List<UserOutgoingDto>> GetAllAsync()
     {
-        var users = await _userRepository.GetAllAsync();
+        var users = await _userRepository.GetAllAsync(withTracking: false);
         return users.ToOutgoingDtos();
     }
 

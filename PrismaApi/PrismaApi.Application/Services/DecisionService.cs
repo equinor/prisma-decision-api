@@ -22,7 +22,7 @@ public class DecisionService
         var entities = dtos.ToEntities();
         await _decisionRepository.AddRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var created = await _decisionRepository.GetByIdsAsync(ids);
+        var created = await _decisionRepository.GetByIdsAsync(ids, withTracking: false);
         return created.ToOutgoingDtos();
     }
 
@@ -31,7 +31,7 @@ public class DecisionService
         var entities = dtos.ToEntities();
         await _decisionRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _decisionRepository.GetByIdsAsync(ids);
+        var updated = await _decisionRepository.GetByIdsAsync(ids, withTracking: false);
         return updated.ToOutgoingDtos();
     }
 
@@ -42,13 +42,13 @@ public class DecisionService
 
     public async Task<List<DecisionOutgoingDto>> GetAsync(List<Guid> ids)
     {
-        var entities = await _decisionRepository.GetByIdsAsync(ids);
+        var entities = await _decisionRepository.GetByIdsAsync(ids, withTracking: false);
         return entities.ToOutgoingDtos();
     }
 
     public async Task<List<DecisionOutgoingDto>> GetAllAsync()
     {
-        var entities = await _decisionRepository.GetAllAsync();
+        var entities = await _decisionRepository.GetAllAsync(withTracking: false);
         return entities.ToOutgoingDtos();
     }
 }

@@ -22,7 +22,7 @@ public class UncertaintyService
         var entities = dtos.ToEntities();
         await _uncertaintyRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _uncertaintyRepository.GetByIdsAsync(ids);
+        var updated = await _uncertaintyRepository.GetByIdsAsync(ids, withTracking: false);
         return updated.ToOutgoingDtos();
     }
 
@@ -33,13 +33,13 @@ public class UncertaintyService
 
     public async Task<List<UncertaintyOutgoingDto>> GetAsync(List<Guid> ids)
     {
-        var entities = await _uncertaintyRepository.GetByIdsAsync(ids);
+        var entities = await _uncertaintyRepository.GetByIdsAsync(ids, withTracking: false);
         return entities.ToOutgoingDtos();
     }
 
     public async Task<List<UncertaintyOutgoingDto>> GetAllAsync()
     {
-        var entities = await _uncertaintyRepository.GetAllAsync();
+        var entities = await _uncertaintyRepository.GetAllAsync(withTracking: false);
         return entities.ToOutgoingDtos();
     }
 }

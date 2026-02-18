@@ -21,6 +21,5 @@ public class Node : BaseEntity, IBaseEntity<Guid>
 
     public ICollection<Edge> HeadEdges { get; set; } = new List<Edge>();
     public ICollection<Edge> TailEdges { get; set; } = new List<Edge>();
-
     public NodeStyle? NodeStyle { get; set; }
 }

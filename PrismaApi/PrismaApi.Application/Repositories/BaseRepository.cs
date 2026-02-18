@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Graph.Models;
 using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Interfaces;
 using PrismaApi.Infrastructure;
@@ -23,13 +24,19 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         return Set.AsQueryable();
     }
 
-    public virtual Task<TEntity?> GetByIdAsync(TId id)
+    public virtual Task<TEntity?> GetByIdAsync(TId id, bool withTracking = true)
     {
-        return Query()
-            .FirstOrDefaultAsync(e => e.Id.Equals(id));
+        var query = Query();
+
+        if (!withTracking)
+        {
+            query = query.AsNoTracking();
+        }
+
+        return query.FirstOrDefaultAsync(e => e.Id.Equals(id));
     }
 
-    public virtual Task<List<TEntity>> GetByIdsAsync(IEnumerable<TId> ids)
+    public virtual Task<List<TEntity>> GetByIdsAsync(IEnumerable<TId> ids, bool withTracking = true)
     {
         var idList = ids.ToList();
         if (idList.Count == 0)
@@ -37,14 +44,27 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
             return Task.FromResult(new List<TEntity>());
         }
 
-        return Query()
+        var query = Query();
+
+        if (!withTracking)
+        {
+            query = query.AsNoTracking();
+        }
+
+        return query
             .Where(e => idList.Contains(e.Id))
             .ToListAsync();
     }
 
-    public virtual Task<List<TEntity>> GetAllAsync()
+    public virtual Task<List<TEntity>> GetAllAsync(bool withTracking = true)
     {
-        return Query().ToListAsync();
+        var query = Query();
+
+        if (!withTracking)
+        {
+            query = query.AsNoTracking();
+        }
+        return query.ToListAsync();
     }
 
     public virtual async Task<TEntity> AddAsync(TEntity entity)
@@ -62,7 +82,7 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         return list;
     }
 
-    public virtual async Task<TEntity?> GetOrAddAsync(TEntity entity)
+    public virtual async Task<TEntity> GetOrAddAsync(TEntity entity)
     {
         var existingEntity = await GetByIdAsync(entity.Id);
         if (existingEntity != null)
@@ -89,5 +109,29 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
 
         Set.RemoveRange(entities);
         await DbContext.SaveChangesAsync();
+    }
+
+}
+public static class RepositoryUtilities
+{
+    public static ICollection<TEntity> RemoveMissingFromCollection<TEntity, TId>(ICollection<TEntity> incommingEntities, ICollection<TEntity> entities) where TEntity : class, IBaseEntity<TId>
+    where TId : struct
+    {
+        var entitiesToRemove = entities.Where(e => !incommingEntities.Any(ie => EqualityComparer<TId>.Default.Equals(ie.Id, e.Id))).ToList();
+        foreach (var entityToRemove in entitiesToRemove)
+        {
+            entities.Remove(entityToRemove);
+        }
+        return entities;
+    }
+
+    public static ICollection<TEntity> AddMissingFromCollection<TEntity, TId>(ICollection<TEntity> incommingEntities, ICollection<TEntity> entities) where TEntity : class, IBaseEntity<TId>
+    {
+        var entitiesToAdd = incommingEntities.Where(ie => !entities.Any(e => EqualityComparer<TId>.Default.Equals(ie.Id, e.Id))).ToList();
+        foreach (var entityToAdd in entitiesToAdd)
+        {
+            entities.Add(entityToAdd);
+        }
+        return entities;
     }
 }

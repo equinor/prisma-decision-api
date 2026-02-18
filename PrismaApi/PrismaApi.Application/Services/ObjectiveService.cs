@@ -17,9 +17,9 @@ public class ObjectiveService
         _objectiveRepository = objectiveRepository;
     }
 
-    public async Task<List<ObjectiveOutgoingDto>> CreateAsync(List<ObjectiveIncomingDto> dtos)
+    public async Task<List<ObjectiveOutgoingDto>> CreateAsync(List<ObjectiveIncomingDto> dtos, UserOutgoingDto userDto)
     {
-        var entities = dtos.ToEntities();
+        var entities = dtos.ToEntities(userDto);
         await _objectiveRepository.AddRangeAsync(entities);
         return entities.ToOutgoingDtos();
     }
@@ -29,7 +29,7 @@ public class ObjectiveService
         var entities = dtos.ToEntities();
         await _objectiveRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _objectiveRepository.GetByIdsAsync(ids);
+        var updated = await _objectiveRepository.GetByIdsAsync(ids, withTracking: false);
         return updated.ToOutgoingDtos();
     }
 
@@ -40,13 +40,13 @@ public class ObjectiveService
 
     public async Task<List<ObjectiveOutgoingDto>> GetAsync(List<Guid> ids)
     {
-        var entities = await _objectiveRepository.GetByIdsAsync(ids);
+        var entities = await _objectiveRepository.GetByIdsAsync(ids, withTracking: false);
         return entities.ToOutgoingDtos();
     }
 
     public async Task<List<ObjectiveOutgoingDto>> GetAllAsync()
     {
-        var entities = await _objectiveRepository.GetAllAsync();
+        var entities = await _objectiveRepository.GetAllAsync(withTracking: false);
         return entities.ToOutgoingDtos();
     }
 }

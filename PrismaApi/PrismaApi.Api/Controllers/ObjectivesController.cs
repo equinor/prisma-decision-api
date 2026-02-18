@@ -1,22 +1,29 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Graph;
+using PrismaApi.Application.Repositories;
+using PrismaApi.Application.Services;
+using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Entities;
+using PrismaApi.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Application.Services;
-using PrismaApi.Domain.Dtos;
-using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Api.Controllers;
 
-[ApiController]
 [Route("")]
 public class ObjectivesController : PrismaBaseEntityController
 {
     private readonly ObjectiveService _objectiveService;
 
-    public ObjectivesController(ObjectiveService objectiveService, AppDbContext dbContext)
-        : base(dbContext)
+    public ObjectivesController(
+        ObjectiveService objectiveService, 
+        GraphServiceClient graphServiceClient,
+        UserRepository userRepository,
+        AppDbContext dbContext
+    )
+        : base(dbContext, graphServiceClient, userRepository)
     {
         _objectiveService = objectiveService;
     }
@@ -24,10 +31,12 @@ public class ObjectivesController : PrismaBaseEntityController
     [HttpPost("objectives")]
     public async Task<ActionResult<List<ObjectiveOutgoingDto>>> CreateObjectives([FromBody] List<ObjectiveIncomingDto> dtos)
     {
+        UserOutgoingDto user = await GetOrCreateUserFromGraphMeAsync();
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            var result = await _objectiveService.CreateAsync(dtos);
+            var result = await _objectiveService.CreateAsync(dtos, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }

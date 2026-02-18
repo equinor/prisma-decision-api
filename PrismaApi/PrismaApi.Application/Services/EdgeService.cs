@@ -22,7 +22,7 @@ public class EdgeService
         var entities = dtos.ToEntities();
         await _edgeRepository.AddRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var created = await _edgeRepository.GetByIdsAsync(ids);
+        var created = await _edgeRepository.GetByIdsAsync(ids, withTracking: false);
         return created.ToOutgoingDtos();
     }
 
@@ -31,7 +31,7 @@ public class EdgeService
         var entities = dtos.ToEntities();
         await _edgeRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _edgeRepository.GetByIdsAsync(ids);
+        var updated = await _edgeRepository.GetByIdsAsync(ids, withTracking: false);
         return updated.ToOutgoingDtos();
     }
 
@@ -42,13 +42,13 @@ public class EdgeService
 
     public async Task<List<EdgeOutgoingDto>> GetAsync(List<Guid> ids)
     {
-        var entities = await _edgeRepository.GetByIdsAsync(ids);
+        var entities = await _edgeRepository.GetByIdsAsync(ids, withTracking: false);
         return entities.ToOutgoingDtos();
     }
 
     public async Task<List<EdgeOutgoingDto>> GetAllAsync()
     {
-        var entities = await _edgeRepository.GetAllAsync();
+        var entities = await _edgeRepository.GetAllAsync(withTracking: false);
         return entities.ToOutgoingDtos();
     }
 }

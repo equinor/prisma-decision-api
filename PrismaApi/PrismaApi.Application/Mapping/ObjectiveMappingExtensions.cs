@@ -26,7 +26,7 @@ public static class ObjectiveMappingExtensions
         return entities.Select(ToOutgoingDto).ToList();
     }
 
-    public static Objective ToEntity(this ObjectiveIncomingDto dto)
+    public static Objective ToEntity(this ObjectiveIncomingDto dto, UserOutgoingDto userDto)
     {
         return new Objective
         {
@@ -34,11 +34,13 @@ public static class ObjectiveMappingExtensions
             ProjectId = dto.ProjectId,
             Name = dto.Name,
             Type = dto.Type,
-            Description = dto.Description
+            Description = dto.Description,
+            CreatedById = userDto.Id,
+            UpdatedById = userDto.Id,
         };
     }
 
-    public static Objective ToEntity(this ObjectiveViaProjectDto dto, Guid projectId)
+    public static Objective ToEntity(this ObjectiveViaProjectDto dto, Guid projectId, UserOutgoingDto userDto)
     {
         return new Objective
         {
@@ -46,17 +48,19 @@ public static class ObjectiveMappingExtensions
             ProjectId = projectId,
             Name = dto.Name,
             Type = dto.Type,
-            Description = dto.Description
+            Description = dto.Description,
+            CreatedById = userDto.Id,
+            UpdatedById = userDto.Id,
         };
     }
 
-    public static List<Objective> ToEntities(this IEnumerable<ObjectiveIncomingDto> dtos)
+    public static List<Objective> ToEntities(this IEnumerable<ObjectiveIncomingDto> dtos, UserOutgoingDto userDto)
     {
-        return dtos.Select(ToEntity).ToList();
+        return dtos.Select(x => ToEntity(x, userDto)).ToList();
     }
 
-    public static List<Objective> ToEntities(this IEnumerable<ObjectiveViaProjectDto> dtos, Guid projectId)
+    public static List<Objective> ToEntities(this IEnumerable<ObjectiveViaProjectDto> dtos, Guid projectId, UserOutgoingDto userDto)
     {
-        return dtos.Select(dto => dto.ToEntity(projectId)).ToList();
+        return dtos.Select(dto => dto.ToEntity(projectId, userDto)).ToList();
     }
 }

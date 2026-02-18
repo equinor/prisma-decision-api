@@ -42,7 +42,7 @@ public class ProjectService
         }
 
         var ids = projectEntities.Select(p => p.Id).ToList();
-        var projects = await _projectRepository.GetByIdsAsync(ids);
+        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false);
         return projects.ToOutgoingDtos();
     }
 
@@ -63,7 +63,7 @@ public class ProjectService
         }
 
         var ids = dtos.Select(d => d.Id).ToList();
-        var projects = await _projectRepository.GetByIdsAsync(ids);
+        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false);
         return projects.ToOutgoingDtos();
     }
 
@@ -74,25 +74,25 @@ public class ProjectService
 
     public async Task<List<ProjectOutgoingDto>> GetAsync(List<Guid> ids)
     {
-        var projects = await _projectRepository.GetByIdsAsync(ids);
+        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false);
         return projects.ToOutgoingDtos();
     }
 
     public async Task<List<ProjectOutgoingDto>> GetAllAsync()
     {
-        var projects = await _projectRepository.GetAllAsync();
+        var projects = await _projectRepository.GetAllAsync(withTracking: false);
         return projects.ToOutgoingDtos();
     }
 
     public async Task<List<PopulatedProjectDto>> GetPopulatedAsync(List<Guid> ids)
     {
-        var projects = await _projectRepository.GetByIdsAsync(ids);
+        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false);
         return projects.ToPopulatedDtos();
     }
 
     public async Task<List<PopulatedProjectDto>> GetAllPopulatedAsync()
     {
-        var projects = await _projectRepository.GetAllAsync();
+        var projects = await _projectRepository.GetAllAsync(withTracking: false);
         return projects.ToPopulatedDtos();
     }
 

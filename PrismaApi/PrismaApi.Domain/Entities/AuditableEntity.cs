@@ -6,9 +6,9 @@ namespace PrismaApi.Domain.Entities;
 public abstract class AuditableEntity : BaseEntity
 {
     [Column("created_by_id")]
-    public int? CreatedById { get; set; }
+    public required int CreatedById { get; set; }
     [Column("updated_by_id")]
-    public int? UpdatedById { get; set; }
+    public required int UpdatedById { get; set; }
 
     public User? CreatedBy { get; set; }
     public User? UpdatedBy { get; set; }

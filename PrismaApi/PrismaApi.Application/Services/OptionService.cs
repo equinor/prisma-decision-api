@@ -29,7 +29,7 @@ public class OptionService
         var entities = dtos.ToEntities();
         await _optionRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _optionRepository.GetByIdsAsync(ids);
+        var updated = await _optionRepository.GetByIdsAsync(ids, withTracking: false);
         return updated.ToOutgoingDtos();
     }
 
@@ -40,13 +40,13 @@ public class OptionService
 
     public async Task<List<OptionOutgoingDto>> GetAsync(List<Guid> ids)
     {
-        var entities = await _optionRepository.GetByIdsAsync(ids);
+        var entities = await _optionRepository.GetByIdsAsync(ids, withTracking: false);
         return entities.ToOutgoingDtos();
     }
 
     public async Task<List<OptionOutgoingDto>> GetAllAsync()
     {
-        var entities = await _optionRepository.GetAllAsync();
+        var entities = await _optionRepository.GetAllAsync(withTracking: false);
         return entities.ToOutgoingDtos();
     }
 }

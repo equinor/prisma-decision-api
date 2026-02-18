@@ -152,6 +152,12 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        modelBuilder.Entity<NodeStyle>(entity =>
+        {
+            entity.ToTable("node_style");
+            entity.HasKey(e => e.Id);
+        });
+
         modelBuilder.Entity<Edge>(entity =>
         {
             entity.ToTable("edge");

@@ -29,7 +29,7 @@ public class OutcomeService
         var entities = dtos.ToEntities();
         await _outcomeRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _outcomeRepository.GetByIdsAsync(ids);
+        var updated = await _outcomeRepository.GetByIdsAsync(ids, withTracking: false);
         return updated.ToOutgoingDtos();
     }
 
@@ -40,13 +40,13 @@ public class OutcomeService
 
     public async Task<List<OutcomeOutgoingDto>> GetAsync(List<Guid> ids)
     {
-        var entities = await _outcomeRepository.GetByIdsAsync(ids);
+        var entities = await _outcomeRepository.GetByIdsAsync(ids, withTracking: false);
         return entities.ToOutgoingDtos();
     }
 
     public async Task<List<OutcomeOutgoingDto>> GetAllAsync()
     {
-        var entities = await _outcomeRepository.GetAllAsync();
+        var entities = await _outcomeRepository.GetAllAsync(withTracking: false);
         return entities.ToOutgoingDtos();
     }
 }

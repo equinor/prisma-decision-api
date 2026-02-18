@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 
@@ -31,7 +29,8 @@ public static class UncertaintyMappingExtensions
             Id = dto.Id,
             IssueId = dto.IssueId,
             IsKey = dto.IsKey,
-            Outcomes = dto.Outcomes.ToEntities()
+            Outcomes = dto.Outcomes.ToEntities(),
+            DiscreteProbabilities = dto.DiscreteProbabilities.Select(x => x.ToEntity()).ToList()
         };
     }
 
