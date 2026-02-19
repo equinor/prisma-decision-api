@@ -27,6 +27,8 @@ from src.middleware.py_instrument_middle_ware import PyInstrumentMiddleWare
 from fastapi.middleware.cors import CORSMiddleware
 from azure.monitor.opentelemetry import configure_azure_monitor  # type: ignore
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor  # type: ignore
+from src.middleware.rate_limiter_middleware import limiter
+from slowapi.middleware import SlowAPIMiddleware
 
 from src.middleware.exception_handling_middleware import ExceptionFilterMiddleware
 from src.logger import DOT_API_LOGGER_NAME, get_dot_api_logger
@@ -62,6 +64,10 @@ if config.LOGGER:
     except Exception as e:
         logger.info("Error occurred while configuring telemetry: %s", e)
 
+# add rate limiter middleware
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
 # Adding CORS middleware to the FastAPI application
 app.add_middleware(
     CORSMiddleware,
@@ -70,11 +76,12 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all HTTP headers
 )
-app.add_middleware(ExceptionFilterMiddleware)
 
 if config.PROFILE:
     # this will generate a profile.html at repository root when running any endpoint
     app.add_middleware(PyInstrumentMiddleWare)
+
+app.add_middleware(ExceptionFilterMiddleware)
 
 
 @app.get("/", status_code=status.HTTP_200_OK)
