@@ -30,6 +30,8 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>
 
             entity.IssueId = incomingEntity.IssueId;
             entity.IsKey = incomingEntity.IsKey;
+            entity.Outcomes = entity.Outcomes.Update(incomingEntity.Outcomes);
+            entity.DiscreteProbabilities = entity.DiscreteProbabilities.Update(incomingEntity.DiscreteProbabilities);
         }
 
         await DbContext.SaveChangesAsync();

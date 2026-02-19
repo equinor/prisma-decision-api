@@ -33,6 +33,7 @@ public class StrategyRepository : BaseRepository<Strategy, Guid>
             entity.Description = incomingEntity.Description;
             entity.Rationale = incomingEntity.Rationale;
             entity.UpdatedById = incomingEntity.UpdatedById;
+            entity.StrategyOptions = entity.StrategyOptions.Update(incomingEntity.StrategyOptions);
         }
 
         await DbContext.SaveChangesAsync();
