@@ -17,18 +17,18 @@ public class StrategyService
         _strategyRepository = strategyRepository;
     }
 
-    public async Task<List<StrategyOutgoingDto>> CreateAsync(List<StrategyIncomingDto> dtos)
+    public async Task<List<StrategyOutgoingDto>> CreateAsync(List<StrategyIncomingDto> dtos, UserOutgoingDto userDto)
     {
-        var entities = dtos.ToEntities();
+        var entities = dtos.ToEntities(userDto);
         await _strategyRepository.AddRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
         var created = await _strategyRepository.GetByIdsAsync(ids);
         return created.ToOutgoingDtos();
     }
 
-    public async Task<List<StrategyOutgoingDto>> UpdateAsync(List<StrategyIncomingDto> dtos)
+    public async Task<List<StrategyOutgoingDto>> UpdateAsync(List<StrategyIncomingDto> dtos, UserOutgoingDto userDto)
     {
-        var entities = dtos.ToEntities();
+        var entities = dtos.ToEntities(userDto);
         await _strategyRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _strategyRepository.GetByIdsAsync(ids);

@@ -11,6 +11,30 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>
     {
     }
 
+    public override async Task UpdateRangeAsync(IEnumerable<Uncertainty> incommingEntities)
+    {
+        var incomingList = incommingEntities.ToList();
+        if (incomingList.Count == 0)
+        {
+            return;
+        }
+
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id));
+        foreach (var entity in entities)
+        {
+            var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
+            if (incomingEntity == null)
+            {
+                continue;
+            }
+
+            entity.IssueId = incomingEntity.IssueId;
+            entity.IsKey = incomingEntity.IsKey;
+        }
+
+        await DbContext.SaveChangesAsync();
+    }
+
     protected override IQueryable<Uncertainty> Query()
     {
         return DbContext.Uncertainties

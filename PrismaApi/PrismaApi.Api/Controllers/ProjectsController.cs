@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Graph;
 using PrismaApi.Infrastructure;
+using PrismaApi.Application.Repositories;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
 
@@ -14,20 +16,29 @@ namespace PrismaApi.Api.Controllers;
 public class ProjectsController : PrismaBaseEntityController
 {
     private readonly ProjectService _projectService;
+    private readonly UserService _userService;
 
-    public ProjectsController(ProjectService projectService, AppDbContext dbContext)
+    public ProjectsController(
+        ProjectService projectService,
+        AppDbContext dbContext,
+        UserService userService
+
+    )
         : base(dbContext)
     {
         _projectService = projectService;
+        _userService = userService;
     }
 
     [HttpPost("projects")]
     public async Task<ActionResult<List<ProjectOutgoingDto>>> CreateProjects([FromBody] List<ProjectCreateDto> dtos)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            var result = await _projectService.CreateAsync(dtos);
+            var result = await _projectService.CreateAsync(dtos, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }
@@ -55,10 +66,12 @@ public class ProjectsController : PrismaBaseEntityController
     [HttpPut("projects")]
     public async Task<ActionResult<List<ProjectOutgoingDto>>> UpdateProjects([FromBody] List<ProjectIncomingDto> dtos)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            var result = await _projectService.UpdateAsync(dtos);
+            var result = await _projectService.UpdateAsync(dtos, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }

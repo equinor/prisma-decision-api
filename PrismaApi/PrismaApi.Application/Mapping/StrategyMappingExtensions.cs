@@ -29,7 +29,7 @@ public static class StrategyMappingExtensions
         return entities.Select(ToOutgoingDto).ToList();
     }
 
-    public static Strategy ToEntity(this StrategyIncomingDto dto)
+    public static Strategy ToEntity(this StrategyIncomingDto dto, UserOutgoingDto userDto)
     {
         return new Strategy
         {
@@ -38,6 +38,8 @@ public static class StrategyMappingExtensions
             Name = dto.Name,
             Description = dto.Description,
             Rationale = dto.Rationale,
+            CreatedById = userDto.Id,
+            UpdatedById = userDto.Id,
             StrategyOptions = dto.Options.Select(option => new StrategyOption
             {
                 OptionId = option.Id,
@@ -46,8 +48,8 @@ public static class StrategyMappingExtensions
         };
     }
 
-    public static List<Strategy> ToEntities(this IEnumerable<StrategyIncomingDto> dtos)
+    public static List<Strategy> ToEntities(this IEnumerable<StrategyIncomingDto> dtos, UserOutgoingDto userDto)
     {
-        return dtos.Select(ToEntity).ToList();
+        return dtos.Select(dto => dto.ToEntity(userDto)).ToList();
     }
 }

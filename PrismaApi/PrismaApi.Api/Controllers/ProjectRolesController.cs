@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Graph;
 using PrismaApi.Infrastructure;
+using PrismaApi.Application.Repositories;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
 
@@ -13,11 +15,18 @@ namespace PrismaApi.Api.Controllers;
 public class ProjectRolesController : PrismaBaseEntityController
 {
     private readonly ProjectRoleService _projectRoleService;
+    private readonly UserService _userService;
 
-    public ProjectRolesController(ProjectRoleService projectRoleService, AppDbContext dbContext)
+    public ProjectRolesController(
+        ProjectRoleService projectRoleService,
+        AppDbContext dbContext,
+        UserService userService
+
+    )
         : base(dbContext)
     {
         _projectRoleService = projectRoleService;
+        _userService = userService;
     }
 
     [HttpGet("project-roles")]
@@ -37,10 +46,12 @@ public class ProjectRolesController : PrismaBaseEntityController
     [HttpPut("project-roles")]
     public async Task<ActionResult<List<ProjectRoleOutgoingDto>>> UpdateProjectRoles([FromBody] List<ProjectRoleIncomingDto> dtos)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            var result = await _projectRoleService.UpdateAsync(dtos);
+            var result = await _projectRoleService.UpdateAsync(dtos, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }

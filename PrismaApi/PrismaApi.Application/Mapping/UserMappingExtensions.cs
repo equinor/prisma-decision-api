@@ -29,7 +29,6 @@ public static class UserMappingExtensions
         {
             Name = dto.Name,
             AzureId = dto.AzureId,
-            ProjectRoles = dto.ProjectRoles.ToEntities()
         };
 
         if (dto?.Id.HasValue == true)

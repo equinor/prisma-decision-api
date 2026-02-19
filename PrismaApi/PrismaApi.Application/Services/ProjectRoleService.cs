@@ -28,9 +28,9 @@ public class ProjectRoleService
         return roles.ToOutgoingDtos();
     }
 
-    public async Task<List<ProjectRoleOutgoingDto>> UpdateAsync(List<ProjectRoleIncomingDto> dtos)
+    public async Task<List<ProjectRoleOutgoingDto>> UpdateAsync(List<ProjectRoleIncomingDto> dtos, UserOutgoingDto userDto)
     {
-        var entities = dtos.ToEntities();
+        var entities = dtos.ToEntities(userDto);
         await _projectRoleRepository.UpdateRangeAsync(entities);
         return entities.ToOutgoingDtos();
     }

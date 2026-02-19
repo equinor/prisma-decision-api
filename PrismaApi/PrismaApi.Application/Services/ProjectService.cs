@@ -25,9 +25,9 @@ public class ProjectService
         _userRepository = userRepository;
     }
 
-    public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos)
+    public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos, UserOutgoingDto userDto)
     {
-        var projectEntities = dtos.ToEntities();
+        var projectEntities = dtos.ToEntities(userDto);
         await _projectRepository.AddRangeAsync(projectEntities);
 
         foreach (var dto in dtos)
@@ -37,7 +37,7 @@ public class ProjectService
                 continue;
             }
 
-            var projectRoles = await BuildProjectRolesAsync(dto.Users, dto.Id);
+            var projectRoles = await BuildProjectRolesAsync(dto.Users, dto.Id, userDto);
             await _projectRoleRepository.AddRangeAsync(projectRoles);
         }
 
@@ -46,9 +46,9 @@ public class ProjectService
         return projects.ToOutgoingDtos();
     }
 
-    public async Task<List<ProjectOutgoingDto>> UpdateAsync(List<ProjectIncomingDto> dtos)
+    public async Task<List<ProjectOutgoingDto>> UpdateAsync(List<ProjectIncomingDto> dtos, UserOutgoingDto userDto)
     {
-        var projectEntities = dtos.ToEntities();
+        var projectEntities = dtos.ToEntities(userDto);
         await _projectRepository.UpdateRangeAsync(projectEntities);
 
         foreach (var dto in dtos)
@@ -58,7 +58,7 @@ public class ProjectService
                 continue;
             }
 
-            var projectRoles = await BuildProjectRolesAsync(dto.Users, dto.Id);
+            var projectRoles = await BuildProjectRolesAsync(dto.Users, dto.Id, userDto);
             await _projectRoleRepository.UpdateRangeAsync(projectRoles);
         }
 
@@ -98,7 +98,8 @@ public class ProjectService
 
     private async Task<List<ProjectRole>> BuildProjectRolesAsync(
         IEnumerable<ProjectRoleIncomingDto> dtos,
-        Guid projectId)
+        Guid projectId,
+        UserOutgoingDto userDto)
     {
         var result = new List<ProjectRole>();
 
@@ -122,7 +123,9 @@ public class ProjectService
                 ProjectId = projectId,
                 UserId = user.Id,
                 Role = dto.Role,
-                User = user
+                User = user,
+                CreatedById = userDto.Id,
+                UpdatedById = userDto.Id
             });
         }
 
@@ -131,7 +134,8 @@ public class ProjectService
 
     private async Task<List<ProjectRole>> BuildProjectRolesAsync(
         IEnumerable<ProjectRoleCreateDto> dtos,
-        Guid projectId)
+        Guid projectId,
+        UserOutgoingDto userDto)
     {
         var result = new List<ProjectRole>();
 
@@ -155,7 +159,9 @@ public class ProjectService
                 ProjectId = projectId,
                 UserId = user.Id,
                 Role = dto.Role,
-                User = user
+                User = user,
+                CreatedById = userDto.Id,
+                UpdatedById = userDto.Id
             });
         }
 

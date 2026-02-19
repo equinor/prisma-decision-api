@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Graph;
+using PrismaApi.Application.Repositories;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
@@ -14,20 +16,28 @@ namespace PrismaApi.Api.Controllers;
 public class StrategiesController : PrismaBaseEntityController
 {
     private readonly StrategyService _strategyService;
+    private readonly UserService _userService;
 
-    public StrategiesController(StrategyService strategyService, AppDbContext dbContext)
+    public StrategiesController(
+        StrategyService strategyService,
+        AppDbContext dbContext,
+        UserService userService
+    )
         : base(dbContext)
     {
         _strategyService = strategyService;
+        _userService = userService;
     }
 
     [HttpPost("strategies")]
     public async Task<ActionResult<List<StrategyOutgoingDto>>> CreateStrategies([FromBody] List<StrategyIncomingDto> dtos)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            var result = await _strategyService.CreateAsync(dtos);
+            var result = await _strategyService.CreateAsync(dtos, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }
@@ -41,10 +51,12 @@ public class StrategiesController : PrismaBaseEntityController
     [HttpPut("strategies")]
     public async Task<ActionResult<List<StrategyOutgoingDto>>> UpdateStrategies([FromBody] List<StrategyIncomingDto> dtos)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            var result = await _strategyService.UpdateAsync(dtos);
+            var result = await _strategyService.UpdateAsync(dtos, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }

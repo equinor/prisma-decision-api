@@ -11,6 +11,35 @@ public class IssueRepository : BaseRepository<Issue, Guid>
     {
     }
 
+    public override async Task UpdateRangeAsync(IEnumerable<Issue> incommingEntities)
+    {
+        var incomingList = incommingEntities.ToList();
+        if (incomingList.Count == 0)
+        {
+            return;
+        }
+
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id));
+        foreach (var entity in entities)
+        {
+            var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
+            if (incomingEntity == null)
+            {
+                continue;
+            }
+
+            entity.ProjectId = incomingEntity.ProjectId;
+            entity.Type = incomingEntity.Type;
+            entity.Boundary = incomingEntity.Boundary;
+            entity.Name = incomingEntity.Name;
+            entity.Description = incomingEntity.Description;
+            entity.Order = incomingEntity.Order;
+            entity.UpdatedById = incomingEntity.UpdatedById;
+        }
+
+        await DbContext.SaveChangesAsync();
+    }
+
     protected override IQueryable<Issue> Query()
     {
         return DbContext.Issues

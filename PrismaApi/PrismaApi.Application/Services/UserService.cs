@@ -1,19 +1,22 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Microsoft.Graph;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
 public class UserService
 {
     private readonly UserRepository _userRepository;
+    private readonly GraphServiceClient _graphServiceClient;
 
-    public UserService(UserRepository userRepository)
+    public UserService(UserRepository userRepository, GraphServiceClient graphServiceClient)
     {
         _userRepository = userRepository;
+        _graphServiceClient = graphServiceClient;
     }
 
     public async Task<List<UserOutgoingDto>> GetAsync(List<int> ids)
@@ -39,5 +42,18 @@ public class UserService
         var user = await GetByAzureIdAsync(dto.AzureId);
         user ??= (await _userRepository.AddAsync(dto.ToEntity())).ToOutgoingDto();
         return user;
+    }
+    public async Task<UserOutgoingDto> GetOrCreateUserFromGraphMeAsync()
+    {
+        var graphUser = await _graphServiceClient.Me.GetAsync();
+        if (graphUser == null || graphUser.Id == null) throw new Exception("User not found");
+        var userDto = new UserIncomingDto
+        {
+            AzureId = graphUser.Id,
+            Name = graphUser.DisplayName ?? "",
+        };
+
+        return (await _userRepository.GetOrAddByAzureIdAsync(userDto)).ToOutgoingDto();
+
     }
 }

@@ -36,7 +36,7 @@ builder.Services.AddScoped<DiscreteTableSaveChangesInterceptor>();
 builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
 {
     options.UseSqlServer(connectionString);
-    options.AddInterceptors(serviceProvider.GetRequiredService<DiscreteTableSaveChangesInterceptor>());
+    //options.AddInterceptors(serviceProvider.GetRequiredService<DiscreteTableSaveChangesInterceptor>());
 });
 
 builder.Services.AddScoped<ProjectRepository>();
@@ -79,6 +79,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
+    app.UseSwaggerWithAuth(builder.Configuration);
     app.UseSwaggerUI();
 }
 

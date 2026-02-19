@@ -16,35 +16,11 @@ public abstract class PrismaBaseEntityController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
     private IDbContextTransaction? _transaction;
-    private readonly GraphServiceClient _graphServiceClient;
-    private readonly UserRepository _userRepository;
 
-    protected PrismaBaseEntityController(
-        AppDbContext dbContext,
-        GraphServiceClient graphServiceClient,
-        UserRepository userRepository
-
-    )
+    protected PrismaBaseEntityController(AppDbContext dbContext)
     {
         _dbContext = dbContext;
-        _graphServiceClient = graphServiceClient;
-        _userRepository = userRepository;
     }
-
-    protected async Task<UserOutgoingDto> GetOrCreateUserFromGraphMeAsync()
-    {
-        var graphUser = await _graphServiceClient.Me.GetAsync();
-        if (graphUser == null || graphUser.Id == null) throw new Exception("User not found");
-        var userDto = new UserIncomingDto
-        {
-            AzureId = graphUser.Id,
-            Name = graphUser.DisplayName ?? "",
-        };
-
-        return (await _userRepository.GetOrAddByAzureIdAsync(userDto)).ToOutgoingDto();
-
-    }
-
     protected Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         if (_transaction != null)

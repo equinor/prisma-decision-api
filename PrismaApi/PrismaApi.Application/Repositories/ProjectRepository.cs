@@ -26,6 +26,7 @@ public class ProjectRepository : BaseRepository<Project, Guid>
             entity.ParentProjectId = incommingEntity.ParentProjectId;
             entity.ParentProjectName = incommingEntity.ParentProjectName;
             entity.EndDate = incommingEntity.EndDate;
+            entity.UpdatedById = incommingEntity.UpdatedById;
 
             entity.ProjectRoles = UpdateProjectRolesViaProject(incommingEntity.ProjectRoles, entity.ProjectRoles);
             entity.Objectives = UpdateObjectivesViaProject(incommingEntity.Objectives, entity.Objectives);
@@ -61,6 +62,7 @@ public class ProjectRepository : BaseRepository<Project, Guid>
             entity.ProjectId = inncommingEntity.ProjectId;
             entity.UserId = inncommingEntity.UserId;
             entity.Role = inncommingEntity.Role;
+            entity.UpdatedById = inncommingEntity.UpdatedById;
         }
         return entities;
     }
@@ -82,6 +84,7 @@ public class ProjectRepository : BaseRepository<Project, Guid>
             entity.Type = incommingEntity.Type;
             entity.ProjectId = incommingEntity.ProjectId;
             entity.Description = incommingEntity.Description;
+            entity.UpdatedById = incommingEntity.UpdatedById;
         }
         return entities;
     }
@@ -102,6 +105,7 @@ public class ProjectRepository : BaseRepository<Project, Guid>
 
             entity.ProjectId = incommingEntity.ProjectId;
             entity.Description = incommingEntity.Description;
+            entity.UpdatedById = incommingEntity.UpdatedById;
             entity.StrategyOptions = UpdateStrategyOptionsViaProject(incommingEntity.StrategyOptions, entity.StrategyOptions);
         }
         return entities;

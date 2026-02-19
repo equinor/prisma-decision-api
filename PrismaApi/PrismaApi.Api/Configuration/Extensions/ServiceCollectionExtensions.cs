@@ -10,12 +10,12 @@ public static class ServiceCollectionExtensions
         {
             var tenantId = configuration.GetValue<string>("AzureAd:TenantId");
             var audience = configuration.GetValue<string>("AzureAd:Audience");
-            const string scope = "access_as_user";
+            const string scope = "Read";
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Prisma API", Version = "v1" });
 
-            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            c.IncludeXmlComments(xmlPath);
+            //var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            //var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            //c.IncludeXmlComments(xmlPath);
 
             c.SupportNonNullableReferenceTypes();
             c.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
@@ -51,4 +51,14 @@ public static class ServiceCollectionExtensions
 
             c.AddSecurityRequirement(securityRequirement);
         });
+    public static void UseSwaggerWithAuth(this IApplicationBuilder app, IConfiguration configuration)
+    {
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Prisma API v1");
+            options.OAuthClientId(configuration.GetValue<string>("AzureAd:ClientId"));
+            //options.OAuthClientSecret(configuration.GetValue<string>("AzureAd:ClientSecret"));
+            options.OAuthUsePkce();
+        });
+    }
 }

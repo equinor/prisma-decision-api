@@ -51,7 +51,7 @@ public static class ProjectMappingExtensions
         return entities.Select(ToPopulatedDto).ToList();
     }
 
-    public static Project ToEntity(this ProjectCreateDto dto)
+    public static Project ToEntity(this ProjectCreateDto dto, UserOutgoingDto userDto)
     {
         return new Project
         {
@@ -62,11 +62,13 @@ public static class ProjectMappingExtensions
             OpportunityStatement = dto.OpportunityStatement,
             Public = dto.Public,
             EndDate = dto.EndDate,
-            Objectives = dto.Objectives.ToEntities(dto.Id)
+            CreatedById = userDto.Id,
+            UpdatedById = userDto.Id,
+            Objectives = dto.Objectives.ToEntities(dto.Id, userDto)
         };
     }
 
-    public static Project ToEntity(this ProjectIncomingDto dto)
+    public static Project ToEntity(this ProjectIncomingDto dto, UserOutgoingDto userDto)
     {
         return new Project
         {
@@ -77,18 +79,20 @@ public static class ProjectMappingExtensions
             OpportunityStatement = dto.OpportunityStatement,
             Public = dto.Public,
             EndDate = dto.EndDate,
-            Objectives = dto.Objectives.ToEntities(dto.Id),
-            Strategies = dto.Strategies.ToEntities()
+            CreatedById = userDto.Id,
+            UpdatedById = userDto.Id,
+            Objectives = dto.Objectives.ToEntities(dto.Id, userDto),
+            Strategies = dto.Strategies.ToEntities(userDto)
         };
     }
 
-    public static List<Project> ToEntities(this IEnumerable<ProjectCreateDto> dtos)
+    public static List<Project> ToEntities(this IEnumerable<ProjectCreateDto> dtos, UserOutgoingDto userDto)
     {
-        return dtos.Select(ToEntity).ToList();
+        return dtos.Select(dto => dto.ToEntity(userDto)).ToList();
     }
 
-    public static List<Project> ToEntities(this IEnumerable<ProjectIncomingDto> dtos)
+    public static List<Project> ToEntities(this IEnumerable<ProjectIncomingDto> dtos, UserOutgoingDto userDto)
     {
-        return dtos.Select(ToEntity).ToList();
+        return dtos.Select(dto => dto.ToEntity(userDto)).ToList();
     }
 }

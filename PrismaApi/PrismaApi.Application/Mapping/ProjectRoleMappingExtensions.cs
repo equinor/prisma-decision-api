@@ -25,35 +25,39 @@ public static class ProjectRoleMappingExtensions
         return entities.Select(ToOutgoingDto).ToList();
     }
 
-    public static ProjectRole ToEntity(this ProjectRoleIncomingDto dto)
+    public static ProjectRole ToEntity(this ProjectRoleIncomingDto dto, UserOutgoingDto userDto)
     {
         return new ProjectRole
         {
             Id = dto.Id,
             UserId = dto.UserId,
             ProjectId = dto.ProjectId,
-            Role = dto.Role
+            Role = dto.Role,
+            CreatedById = userDto.Id,
+            UpdatedById = userDto.Id
         };
     }
 
-    public static ProjectRole ToEntity(this ProjectRoleCreateDto dto)
+    public static ProjectRole ToEntity(this ProjectRoleCreateDto dto, UserOutgoingDto userDto)
     {
         return new ProjectRole
         {
             Id = dto.Id,
             UserId = dto.UserId,
             ProjectId = dto.ProjectId,
-            Role = dto.Role
+            Role = dto.Role,
+            CreatedById = userDto.Id,
+            UpdatedById = userDto.Id
         };
     }
 
-    public static List<ProjectRole> ToEntities(this IEnumerable<ProjectRoleIncomingDto> dtos)
+    public static List<ProjectRole> ToEntities(this IEnumerable<ProjectRoleIncomingDto> dtos, UserOutgoingDto userDto)
     {
-        return dtos.Select(ToEntity).ToList();
+        return dtos.Select(dto => dto.ToEntity(userDto)).ToList();
     }
 
-    public static List<ProjectRole> ToEntities(this IEnumerable<ProjectRoleCreateDto> dtos)
+    public static List<ProjectRole> ToEntities(this IEnumerable<ProjectRoleCreateDto> dtos, UserOutgoingDto userDto)
     {
-        return dtos.Select(ToEntity).ToList();
+        return dtos.Select(dto => dto.ToEntity(userDto)).ToList();
     }
 }

@@ -11,6 +11,31 @@ public class EdgeRepository : BaseRepository<Edge, Guid>
     {
     }
 
+    public override async Task UpdateRangeAsync(IEnumerable<Edge> incommingEntities)
+    {
+        var incomingList = incommingEntities.ToList();
+        if (incomingList.Count == 0)
+        {
+            return;
+        }
+
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id));
+        foreach (var entity in entities)
+        {
+            var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
+            if (incomingEntity == null)
+            {
+                continue;
+            }
+
+            entity.TailId = incomingEntity.TailId;
+            entity.HeadId = incomingEntity.HeadId;
+            entity.ProjectId = incomingEntity.ProjectId;
+        }
+
+        await DbContext.SaveChangesAsync();
+    }
+
     protected override IQueryable<Edge> Query()
     {
         return DbContext.Edges

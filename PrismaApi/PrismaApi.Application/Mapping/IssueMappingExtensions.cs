@@ -22,7 +22,7 @@ public static class IssueMappingExtensions
             Decision = entity.Decision != null ? entity.Decision.ToOutgoingDto() : null,
             Uncertainty = entity.Uncertainty != null ? entity.Uncertainty.ToOutgoingDto() : null,
             Utility = entity.Utility != null ? entity.Utility.ToOutgoingDto() : null,
-            CreatedAt = entity.CreatedAt,
+            CreatedAt = entity.CreatedAt, //.ToString("O").Replace("+00:00", "Z"),
             UpdatedAt = entity.UpdatedAt
         };
     }
@@ -49,7 +49,7 @@ public static class IssueMappingExtensions
         return entities.Select(ToOutgoingDto).ToList();
     }
 
-    public static Issue ToEntity(this IssueIncomingDto dto)
+    public static Issue ToEntity(this IssueIncomingDto dto, UserOutgoingDto userDto)
     {
         return new Issue
         {
@@ -60,6 +60,8 @@ public static class IssueMappingExtensions
             Name = dto.Name,
             Description = dto.Description,
             Order = dto.Order,
+            CreatedById = userDto.Id,
+            UpdatedById = userDto.Id,
             Node = dto.Node != null ? dto.Node.ToEntity() : null,
             Decision = dto.Decision != null ? dto.Decision.ToEntity() : null,
             Uncertainty = dto.Uncertainty != null ? dto.Uncertainty.ToEntity() : null,
@@ -67,8 +69,8 @@ public static class IssueMappingExtensions
         };
     }
 
-    public static List<Issue> ToEntities(this IEnumerable<IssueIncomingDto> dtos)
+    public static List<Issue> ToEntities(this IEnumerable<IssueIncomingDto> dtos, UserOutgoingDto userDto)
     {
-        return dtos.Select(ToEntity).ToList();
+        return dtos.Select(dto => dto.ToEntity(userDto)).ToList();
     }
 }

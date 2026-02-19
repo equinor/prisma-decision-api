@@ -17,18 +17,18 @@ public class IssueService
         _issueRepository = issueRepository;
     }
 
-    public async Task<List<IssueOutgoingDto>> CreateAsync(List<IssueIncomingDto> dtos)
+    public async Task<List<IssueOutgoingDto>> CreateAsync(List<IssueIncomingDto> dtos, UserOutgoingDto userDto)
     {
         EnsureNodeDefaults(dtos);
-        var entities = dtos.ToEntities();
+        var entities = dtos.ToEntities(userDto);
         await _issueRepository.AddRangeAsync(entities);
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<IssueOutgoingDto>> UpdateAsync(List<IssueIncomingDto> dtos)
+    public async Task<List<IssueOutgoingDto>> UpdateAsync(List<IssueIncomingDto> dtos, UserOutgoingDto userDto)
     {
         EnsureNodeDefaults(dtos);
-        var entities = dtos.ToEntities();
+        var entities = dtos.ToEntities(userDto);
         await _issueRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _issueRepository.GetByIdsAsync(ids, withTracking: false);
