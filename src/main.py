@@ -53,8 +53,7 @@ app = FastAPI(
     swagger_ui_parameters={"syntaxHighlight": False},
     lifespan=lifespan,
 )
-app.state.limiter = limiter
-app.add_middleware(SlowAPIMiddleware)
+
 if config.LOGGER:
     try:
         configure_azure_monitor(
@@ -64,6 +63,10 @@ if config.LOGGER:
         logger.info("Successfully configured telemetry after starting application")
     except Exception as e:
         logger.info("Error occurred while configuring telemetry: %s", e)
+
+# add rate limiter middleware
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
 
 # Adding CORS middleware to the FastAPI application
 app.add_middleware(
