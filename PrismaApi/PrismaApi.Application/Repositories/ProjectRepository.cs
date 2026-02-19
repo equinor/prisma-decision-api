@@ -28,107 +28,16 @@ public class ProjectRepository : BaseRepository<Project, Guid>
             entity.EndDate = incommingEntity.EndDate;
             entity.UpdatedById = incommingEntity.UpdatedById;
 
-            entity.ProjectRoles = UpdateProjectRolesViaProject(incommingEntity.ProjectRoles, entity.ProjectRoles);
-            entity.Objectives = UpdateObjectivesViaProject(incommingEntity.Objectives, entity.Objectives);
-            entity.Strategies = UpdateStrategiesViaProject(incommingEntity.Strategies, entity.Strategies);
+            entity.ProjectRoles = entity.ProjectRoles.Update(incommingEntity.ProjectRoles);
+            entity.Objectives = entity.Objectives.Update(incommingEntity.Objectives);
+            entity.Strategies = entity.Strategies.Update(incommingEntity.Strategies);
         }
 
         await DbContext.SaveChangesAsync();
         return incommingEntities;
     }
 
-    private ICollection<ProjectRole> UpdateProjectRolesViaProject(ICollection<ProjectRole> incommingEntities, ICollection<ProjectRole> entities)
-    {
-        // delete
-        var entitiesToRemove = entities.Where(e => !incommingEntities.Any(ie => ie.Id == e.Id)).ToList();
-        foreach (var entityToRemove in entitiesToRemove)
-        {
-            entities.Remove(entityToRemove);
-        }
-
-        // create
-        var entitiesToAdd = incommingEntities.Where(ie => !entities.Any(e => e.Id == ie.Id)).ToList();
-        foreach (var entityToAdd in entitiesToAdd)
-        {
-            entities.Add(entityToAdd);
-        }
-
-        // Update
-        foreach (var entity in entities)
-        {
-            var inncommingEntity = incommingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
-            if (inncommingEntity == null) continue;
-
-            entity.ProjectId = inncommingEntity.ProjectId;
-            entity.UserId = inncommingEntity.UserId;
-            entity.Role = inncommingEntity.Role;
-            entity.UpdatedById = inncommingEntity.UpdatedById;
-        }
-        return entities;
-    }
-
-    private ICollection<Objective> UpdateObjectivesViaProject(ICollection<Objective> incommingEntities,  ICollection<Objective> entities)
-    {
-        // delete
-        entities = RepositoryUtilities.RemoveMissingFromCollection<Objective, Guid>(incommingEntities, entities);
-
-        // create
-        entities = RepositoryUtilities.AddMissingFromCollection<Objective, Guid>(incommingEntities, entities);
-
-        // update
-        foreach (var entity in entities)
-        {
-            var incommingEntity = incommingEntities.Where(x => x.Id == entity.Id).First();
-
-            entity.Name = incommingEntity.Name;
-            entity.Type = incommingEntity.Type;
-            entity.ProjectId = incommingEntity.ProjectId;
-            entity.Description = incommingEntity.Description;
-            entity.UpdatedById = incommingEntity.UpdatedById;
-        }
-        return entities;
-    }
-
-    private ICollection<Strategy> UpdateStrategiesViaProject(ICollection<Strategy> incommingEntities, ICollection<Strategy> entities)
-    {
-        // delete
-        entities = RepositoryUtilities.RemoveMissingFromCollection<Strategy, Guid>(incommingEntities, entities);
-
-        // create
-        entities = RepositoryUtilities.AddMissingFromCollection<Strategy, Guid>(incommingEntities, entities);
-
-        // update
-        foreach (var entity in entities)
-        {
-            var incommingEntity = incommingEntities.Where(x => x.Id == entity.Id).First();
-
-
-            entity.ProjectId = incommingEntity.ProjectId;
-            entity.Description = incommingEntity.Description;
-            entity.UpdatedById = incommingEntity.UpdatedById;
-            entity.StrategyOptions = UpdateStrategyOptionsViaProject(incommingEntity.StrategyOptions, entity.StrategyOptions);
-        }
-        return entities;
-    }
-
-    private ICollection<StrategyOption> UpdateStrategyOptionsViaProject(ICollection<StrategyOption> incommingEntities, ICollection<StrategyOption> entities)
-    {
-        // delete
-        var entitiesToRemove = entities.Where(e => !incommingEntities.Any(ie => ie.OptionId == e.OptionId && ie.StrategyId == e.StrategyId)).ToList();
-        foreach (var entityToRemove in entitiesToRemove)
-        {
-            entities.Remove(entityToRemove);
-        }
-
-        // create
-        var entitiesToAdd = incommingEntities.Where(ie => !entities.Any(e => e.OptionId == ie.OptionId && e.StrategyId == ie.StrategyId)).ToList();
-        foreach (var entityToAdd in entitiesToAdd)
-        {
-            entities.Add(entityToAdd);
-        }
-
-        return entities;
-    }
+    
 
 
     protected override IQueryable<Project> Query()

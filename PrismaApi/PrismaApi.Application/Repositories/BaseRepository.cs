@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Graph.Models;
 using PrismaApi.Application.Interfaces;
+using PrismaApi.Domain.Entities;
 using PrismaApi.Domain.Interfaces;
 using PrismaApi.Infrastructure;
 
@@ -109,29 +110,5 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
 
         Set.RemoveRange(entities);
         await DbContext.SaveChangesAsync();
-    }
-
-}
-public static class RepositoryUtilities
-{
-    public static ICollection<TEntity> RemoveMissingFromCollection<TEntity, TId>(ICollection<TEntity> incommingEntities, ICollection<TEntity> entities) where TEntity : class, IBaseEntity<TId>
-    where TId : struct
-    {
-        var entitiesToRemove = entities.Where(e => !incommingEntities.Any(ie => EqualityComparer<TId>.Default.Equals(ie.Id, e.Id))).ToList();
-        foreach (var entityToRemove in entitiesToRemove)
-        {
-            entities.Remove(entityToRemove);
-        }
-        return entities;
-    }
-
-    public static ICollection<TEntity> AddMissingFromCollection<TEntity, TId>(ICollection<TEntity> incommingEntities, ICollection<TEntity> entities) where TEntity : class, IBaseEntity<TId>
-    {
-        var entitiesToAdd = incommingEntities.Where(ie => !entities.Any(e => EqualityComparer<TId>.Default.Equals(ie.Id, e.Id))).ToList();
-        foreach (var entityToAdd in entitiesToAdd)
-        {
-            entities.Add(entityToAdd);
-        }
-        return entities;
     }
 }

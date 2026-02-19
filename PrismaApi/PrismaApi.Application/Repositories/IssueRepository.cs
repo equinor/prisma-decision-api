@@ -1,4 +1,3 @@
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
@@ -35,10 +34,23 @@ public class IssueRepository : BaseRepository<Issue, Guid>
             entity.Description = incomingEntity.Description;
             entity.Order = incomingEntity.Order;
             entity.UpdatedById = incomingEntity.UpdatedById;
-        }
 
+            if (incomingEntity.Node != null && entity.Node != null)
+                entity.Node = entity.Node.Update(incomingEntity.Node);
+
+            if (incomingEntity.Decision != null && entity.Decision != null)
+                entity.Decision = entity.Decision.Update(incomingEntity.Decision);
+            
+            if (incomingEntity.Uncertainty != null && entity.Uncertainty != null)
+                entity.Uncertainty = entity.Uncertainty.Update(incomingEntity.Uncertainty);
+
+            if (incomingEntity.Utility != null && entity.Utility != null)
+                entity.Utility = entity.Utility.Update(incomingEntity.Utility);
+        }
         await DbContext.SaveChangesAsync();
     }
+
+    
 
     protected override IQueryable<Issue> Query()
     {
