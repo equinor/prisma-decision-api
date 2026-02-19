@@ -1,8 +1,9 @@
 import uuid
-from src.models.project import Project
+from src.models import Project
 from src.repositories.query_extensions import QueryExtensions
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.repositories.base_repository import BaseRepository
+from src.repositories.objective_repository import ObjectiveRepository
 
 
 class ProjectRepository(BaseRepository[Project, uuid.UUID]):
@@ -21,12 +22,16 @@ class ProjectRepository(BaseRepository[Project, uuid.UUID]):
         for n, entity_to_update in enumerate(entities_to_update):
             entity = entities[n]
             entity_to_update.name = entity.name
-            entity_to_update.opportunityStatement = entity.opportunityStatement
-            entity_to_update.project_role = [
-                await self.session.merge(role) for role in entity.project_role
-            ]
+            entity_to_update.opportunity_statement = entity.opportunity_statement
+            entity_to_update.project_role = await self._update_project_roles(
+                entity.project_role, entity_to_update.project_role
+            )
             entity_to_update.public = entity.public
             entity_to_update.end_date = entity.end_date
+            entity_to_update.strategies = await self._update_strategies(
+                entity.strategies, entity_to_update.strategies
+            )
+            await ObjectiveRepository(session=self.session).update(entity.objectives)
 
         await self.session.flush()
         return entities_to_update

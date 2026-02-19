@@ -46,7 +46,6 @@ class ProjectRoleMapper:
             user_id=dto.user_id,
             project_id=dto.project_id,
             role=dto.role,
-            user=User(id=dto.user_id, name=dto.user_name, azure_id=dto.azure_id),
         )
 
     @staticmethod

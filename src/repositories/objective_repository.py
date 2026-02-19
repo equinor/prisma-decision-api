@@ -14,14 +14,15 @@ class ObjectiveRepository(BaseRepository[Objective, uuid.UUID]):
         )
 
     async def update(self, entities: list[Objective]) -> list[Objective]:
-        entities_to_update = await self.get([decision.id for decision in entities])
+        entities_to_update = await self.get([objective.id for objective in entities])
         # sort the entity lists to share the same order according to the entity.id
         self.prepare_entities_for_update([entities, entities_to_update])
 
         for n, entity_to_update in enumerate(entities_to_update):
             entity = entities[n]
             entity_to_update.name = entity.name
-            entity_to_update.scenario_id = entity.scenario_id
+            entity_to_update.type = entity.type
+            entity_to_update.project_id = entity.project_id
             entity_to_update.description = entity.description
 
         await self.session.flush()

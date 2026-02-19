@@ -9,6 +9,7 @@ from src.dependencies import get_outcome_service
 from src.constants import SwaggerDocumentationConstants
 from src.dependencies import get_db
 
+
 router = APIRouter(tags=["outcomes"])
 
 
@@ -19,7 +20,9 @@ async def create_outcomes(
     session: AsyncSession = Depends(get_db),
 ) -> list[OutcomeOutgoingDto]:
     try:
-        return list(await outcome_service.create(session, dtos))
+        result = list(await outcome_service.create(session, dtos))
+        await session.commit()
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -64,6 +67,7 @@ async def delete_outcome(
 ):
     try:
         await outcome_service.delete(session, [id])
+        await session.commit()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -75,6 +79,7 @@ async def delete_outcomes(
 ):
     try:
         await outcome_service.delete(session, ids)
+        await session.commit()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -85,6 +90,8 @@ async def update_outcomes(
     session: AsyncSession = Depends(get_db),
 ) -> list[OutcomeOutgoingDto]:
     try:
-        return list(await outcome_service.update(session, dtos))
+        result = list(await outcome_service.update(session, dtos))
+        await session.commit()
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

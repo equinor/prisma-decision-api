@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.dtos.utility_dtos import UtilityIncomingDto, UtilityOutgoingDto
@@ -8,6 +8,7 @@ from src.services.utility_service import UtilityService
 from src.constants import SwaggerDocumentationConstants
 from src.dependencies import get_utility_service
 from src.dependencies import get_db
+
 
 router = APIRouter(tags=["utilities"])
 
@@ -52,6 +53,7 @@ async def delete_utility(
 ):
     try:
         await utility_service.delete(session, [id])
+        await session.commit()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -63,6 +65,7 @@ async def delete_utilities(
 ):
     try:
         await utility_service.delete(session, ids)
+        await session.commit()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -73,6 +76,24 @@ async def update_utilities(
     session: AsyncSession = Depends(get_db),
 ) -> list[UtilityOutgoingDto]:
     try:
-        return list(await utility_service.update(session, dtos))
+        result = list(await utility_service.update(session, dtos))
+        await session.commit()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/utilities/{id}/remake-utility-table")
+async def remake_utility_table(
+    id: uuid.UUID,
+    utility_service: UtilityService = Depends(get_utility_service),
+    session: AsyncSession = Depends(get_db),
+):
+    try:
+        dto = await utility_service.recalculate_discrete_utility_table_async(session, id)
+        if dto is None:
+            await session.rollback()
+            return HTTPException(status_code=404)
+        await session.commit()
+        return Response(status_code=204)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

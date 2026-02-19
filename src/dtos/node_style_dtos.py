@@ -1,16 +1,24 @@
 import uuid
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from src.models import NodeStyle
-
+from src.constants import DtoConstants
 
 class NodeStyleDto(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     node_id: uuid.UUID
-    x_position: int = 0
-    y_position: int = 0
-    width: int = 200
-    height: int = 150
+    x_position: float = 0.
+    y_position: float = 0.
+
+    @field_validator('x_position')
+    @classmethod
+    def x_position_validator(cls, value: float) -> float:
+        return round(value, DtoConstants.DECIMAL_PLACES.value)
+    
+    @field_validator('y_position')
+    @classmethod
+    def y_position_validator(cls, value: float) -> float:
+        return round(value, DtoConstants.DECIMAL_PLACES.value)
 
 
 class NodeStyleIncomingDto(NodeStyleDto):
@@ -29,8 +37,6 @@ class NodeStyleMapper:
             node_id=entity.node_id,
             x_position=entity.x_position,
             y_position=entity.y_position,
-            width=entity.width,
-            height=entity.height,
         )
 
     @staticmethod
@@ -40,8 +46,6 @@ class NodeStyleMapper:
             node_id=dto.node_id if dto.node_id else None,
             x_position=dto.x_position,
             y_position=dto.y_position,
-            width=dto.width,
-            height=dto.height,
         )
 
     @staticmethod

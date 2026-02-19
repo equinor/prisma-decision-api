@@ -1,6 +1,5 @@
-from __future__ import annotations
-
-from typing import AsyncGenerator, Optional
+import asyncio
+from typing import AsyncGenerator, Optional, Any
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -8,21 +7,31 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from src.models.base import Base
 from sqlalchemy.pool import AsyncAdaptedQueuePool
 
+from src.models.base import Base
 from src.config import config
 from src.seed_database import (
     seed_database,
-    create_single_project_with_scenario,
     create_decision_tree_symmetry_DT_from_ID,
     create_decision_tree_symmetry_DT,
+    create_decision_tree_with_utilities,
+    car_buyer_problem
 )
 from src.database import (
     DatabaseConnectionStrings,
     get_connection_string_and_token,
     build_connection_url,
-    validate_default_scenarios,
+    ensure_default_value_metric_exists,
+)
+from src.logger import get_dot_api_logger
+
+# import events to activate them
+from src.events import (  # noqa: F401
+    before_flush_event_handler,
+    after_flush_event_handler,
+    before_commit_event_handler,
+    after_commit_event_handler,
 )
 
 
@@ -32,6 +41,9 @@ class SessionManager:
     def __init__(self) -> None:
         self.engine: Optional[AsyncEngine] = None
         self.session_factory: Optional[async_sessionmaker[AsyncSession]] = None
+        self._token_refresh_task: Optional[asyncio.Task[Any]] = None
+        self._shutdown_event = asyncio.Event()
+        self._logger = get_dot_api_logger()
 
     async def _initialize_in_memory_db(self, db_connection_string: str) -> None:
         """Initialize an in-memory database, and populate with test data."""
@@ -46,10 +58,11 @@ class SessionManager:
         )
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-            await seed_database(conn, num_projects=10, num_scenarios=10, num_nodes=50)
-            await create_single_project_with_scenario(conn)
+            await seed_database(conn, num_projects=10, num_nodes=50)
             await create_decision_tree_symmetry_DT_from_ID(conn)
             await create_decision_tree_symmetry_DT(conn)
+            await create_decision_tree_with_utilities(conn)
+            await car_buyer_problem(conn)
 
     async def _initialize_persistent_db(self) -> None:
         """Initialize a persistent database."""
@@ -109,10 +122,50 @@ class SessionManager:
             # implyes that a different thread is performing the start task
             pass
 
-    async def close(self) -> None:
-        """Dispose of the database engine."""
+        if config.APP_ENV != "local" and ":memory:" not in db_connection_string:
+            self._token_refresh_task = asyncio.create_task(self._token_refresh_loop())
+
+    async def dispose_engine(self) -> None:
         if self.engine:
             await self.engine.dispose()
+
+    async def close(self) -> None:
+        """Dispose of the database engine."""
+        self._shutdown_event.set()
+        if self._token_refresh_task:
+            self._token_refresh_task.cancel()
+            try:
+                await self._token_refresh_task
+            except asyncio.CancelledError:
+                # Task cancellation is expected during shutdown; no action needed.
+                pass
+            except Exception as e:
+                self._logger.warning(f"Error while cancelling token refresh task: {e}")
+
+        await self.dispose_engine()
+
+    async def _refresh_database_engine(self) -> None:
+        """Refresh database engine with new token."""
+        await self.dispose_engine()
+
+        # Recreate engine with fresh token
+        await self._initialize_persistent_db()
+        self._initialize_session_factory()
+
+    async def _token_refresh_loop(self) -> None:
+        """Background task to refresh database tokens periodically."""
+        while not self._shutdown_event.is_set():
+            try:
+                await asyncio.wait_for(
+                    self._shutdown_event.wait(), timeout=config.DB_TOKEN_DURATION
+                )
+            except asyncio.TimeoutError:
+                try:
+                    print("Refreshing database engine")
+                    await self._refresh_database_engine()
+                except Exception as e:
+                    # Log error but continue the loop
+                    self._logger.warning(f"Refreshing database engine failed: {e}")
 
     async def run_start_task(self) -> None:
         """Run the database start task."""
@@ -120,7 +173,10 @@ class SessionManager:
             raise RuntimeError("Database session factory is not initialized.")
 
         async for session in self.get_session():
-            await validate_default_scenarios(session)
+            try:
+                await ensure_default_value_metric_exists(session)
+            except Exception as e:
+                print(e)
 
     async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
         """Yield a database session with the correct schema set."""
@@ -130,7 +186,8 @@ class SessionManager:
         async with self.session_factory() as session:
             try:
                 yield session
-                await session.commit()
+                if session.deleted or session.new or session.dirty:
+                    await session.commit()
             except Exception as e:
                 await session.rollback()
                 raise e

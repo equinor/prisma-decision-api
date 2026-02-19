@@ -1,15 +1,16 @@
 import uvicorn
 from fastapi import FastAPI, status, Depends
 from contextlib import asynccontextmanager
+from src.routes import project_duplication_routes
 from src.routes import project_role_routes
 from src.auth.auth import verify_token
 import src.routes.decision_routes as decision_routes
 import src.routes.edge_routes as edge_routes
-import src.routes.scenario_routes as scenario_routes
 import src.routes.node_routes as node_routes
 import src.routes.objective_routes as objective_routes
-import src.routes.opportunity_routes as opportunity_routes
 import src.routes.uncertainty_routes as uncertainty_routes
+import src.routes.discrete_probability_routes as discrete_probability_routes
+import src.routes.discrete_utility_routes as discrete_utility_routes
 import src.routes.utility_routes as utility_routes
 import src.routes.value_metric_routes as value_metric_routes
 import src.routes.project_routes as project_routes
@@ -17,6 +18,7 @@ import src.routes.issue_routes as issue_routes
 import src.routes.user_routes as user_routes
 import src.routes.outcome_routes as outcome_routes
 import src.routes.option_routes as option_routes
+import src.routes.strategy_routes as strategy_routes
 import src.routes.solver_routes as solver_routes
 import src.routes.structure_routes as structure_routes
 from src.config import config
@@ -86,19 +88,21 @@ async def root():
 app.include_router(user_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(project_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(project_role_routes.router, dependencies=[Depends(verify_token)])
-app.include_router(scenario_routes.router, dependencies=[Depends(verify_token)])
+app.include_router(project_duplication_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(solver_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(issue_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(objective_routes.router, dependencies=[Depends(verify_token)])
-app.include_router(opportunity_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(node_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(uncertainty_routes.router, dependencies=[Depends(verify_token)])
+app.include_router(discrete_utility_routes.router, dependencies=[Depends(verify_token)])
+app.include_router(discrete_probability_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(utility_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(value_metric_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(decision_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(edge_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(outcome_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(option_routes.router, dependencies=[Depends(verify_token)])
+app.include_router(strategy_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(structure_routes.router, dependencies=[Depends(verify_token)])
 
 if __name__ == "__main__":

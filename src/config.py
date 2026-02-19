@@ -10,9 +10,9 @@ class Config(BaseSettings):
 
     ORIGINS: List[str] = [
         "http://localhost:5004",
-        "https://frontend-dot-web-dev.radix.equinor.com",
-        "https://frontend-dot-web-test.radix.equinor.com",
-        "https://frontend-dot-web-prod.radix.equinor.com",
+        "https://frontend-prisma-decision-web-dev.radix.equinor.com",
+        "https://frontend-prisma-decision-web-test.radix.equinor.com",
+        "https://frontend-prisma-decision-web-prod.radix.equinor.com",
     ]
 
     CLIENT_ID: str = Field(default=os.getenv("CLIENT_ID", "4251833c-b9c3-4013-afda-cbfd2cc50f3f"))
@@ -39,25 +39,27 @@ class Config(BaseSettings):
     DATABASE_CONN_DEV: str = Field(
         default=os.getenv(
             "DATABASE_CONN_DEV",
-            "DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=decision-optimization-sqlserver-dev.database.windows.net;Database=decision-optimization-sqldb-dev;",
+            "DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-dev.database.windows.net;Database=sqldb-prisma-decision-dev;",
         )
     )
     DATABASE_CONN_TEST: str = Field(
         default=os.getenv(
             "DATABASE_CONN_TEST",
-            "DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=decision-optimization-sqlserver-test.database.windows.net;Database=decision-optimization-sqldb-test;",
+            "DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-test.database.windows.net;Database=sqldb-prisma-decision-test;",
         )
     )
     DATABASE_CONN_PROD: str = Field(
         default=os.getenv(
             "DATABASE_CONN_PROD",
-            "DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=decision-optimization-sqlserver-prod.database.windows.net;Database=decision-optimization-sqldb-prod;",
+            "DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-prod.database.windows.net;Database=sqldb-prisma-decision-prod;",
         )
     )
 
     POOL_SIZE: int = 10
     MAX_OVERFLOW: int = 20
     POOL_RECYCLE: int = 1800
+    # Database token duration in seconds (default: 50 minutes)
+    DB_TOKEN_DURATION: int = 3000
     DEBUG: bool = False
 
     # Cache for 60 minutes

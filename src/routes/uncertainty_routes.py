@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.dtos.uncertainty_dtos import (
@@ -11,6 +11,7 @@ from src.services.uncertainty_service import UncertaintyService
 from src.dependencies import get_uncertainty_service
 from src.constants import SwaggerDocumentationConstants
 from src.dependencies import get_db
+
 
 router = APIRouter(tags=["uncertainties"])
 
@@ -55,6 +56,7 @@ async def delete_uncertainty(
 ):
     try:
         await uncertainty_service.delete(session, [id])
+        await session.commit()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -66,6 +68,7 @@ async def delete_uncertainties(
 ):
     try:
         await uncertainty_service.delete(session, ids)
+        await session.commit()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -76,6 +79,24 @@ async def update_uncertainties(
     session: AsyncSession = Depends(get_db),
 ) -> list[UncertaintyOutgoingDto]:
     try:
-        return list(await uncertainty_service.update(session, dtos))
+        result = list(await uncertainty_service.update(session, dtos))
+        await session.commit()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/uncertainties/{id}/remake-probability-table")
+async def remake_probability_table(
+    id: uuid.UUID,
+    uncertainty_service: UncertaintyService = Depends(get_uncertainty_service),
+    session: AsyncSession = Depends(get_db),
+):
+    try:
+        dto = await uncertainty_service.recalculate_discrete_probability_table_async(session, id)
+        if dto is None:
+            await session.rollback()
+            return HTTPException(status_code=404)
+        await session.commit()
+        return Response(status_code=204)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

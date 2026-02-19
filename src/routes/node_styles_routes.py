@@ -9,6 +9,7 @@ from src.dependencies import get_node_style_service
 from src.constants import SwaggerDocumentationConstants
 from src.dependencies import get_db
 
+
 router = APIRouter(tags=["node_styles"])
 
 
@@ -52,6 +53,7 @@ async def delete_node_style(
 ):
     try:
         await node_style_service.delete(session, [id])
+        await session.commit()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -63,6 +65,7 @@ async def delete_node_styles(
 ):
     try:
         await node_style_service.delete(session, ids)
+        await session.commit()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -73,6 +76,8 @@ async def update_node_styles(
     session: AsyncSession = Depends(get_db),
 ) -> list[NodeStyleOutgoingDto]:
     try:
-        return list(await node_style_service.update(session, dtos))
+        result = list(await node_style_service.update(session, dtos))
+        await session.commit()
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

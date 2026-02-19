@@ -1,3 +1,4 @@
+from datetime import datetime
 import uuid
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, Annotated
@@ -18,11 +19,6 @@ from src.dtos.utility_dtos import (
     UtilityIncomingDto,
     UtilityOutgoingDto,
 )
-from src.dtos.value_metric_dtos import (
-    ValueMetricMapper,
-    ValueMetricOutgoingDto,
-    ValueMetricIncomingDto,
-)
 from src.dtos.node_dtos import (
     NodeMapper,
     NodeIncomingDto,
@@ -35,7 +31,7 @@ from src.constants import DatabaseConstants, DepricatedIssueTypes
 
 class IssueDto(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    scenario_id: uuid.UUID
+    project_id: uuid.UUID
     name: Annotated[str, Field(max_length=DatabaseConstants.MAX_SHORT_STRING_LENGTH.value)] = ""
     description: Annotated[
         str, Field(max_length=DatabaseConstants.MAX_LONG_STRING_LENGTH.value)
@@ -52,7 +48,6 @@ class IssueIncomingDto(IssueDto):
     decision: Optional[DecisionIncomingDto]
     uncertainty: Optional[UncertaintyIncomingDto]
     utility: Optional[UtilityIncomingDto]
-    value_metric: Optional[ValueMetricIncomingDto]
 
 
 class IssueOutgoingDto(IssueDto):
@@ -62,7 +57,8 @@ class IssueOutgoingDto(IssueDto):
     decision: Optional[DecisionOutgoingDto]
     uncertainty: Optional[UncertaintyOutgoingDto]
     utility: Optional[UtilityOutgoingDto]
-    value_metric: Optional[ValueMetricOutgoingDto]
+    created_at: datetime
+    updated_at: datetime
 
 
 class IssueViaNodeOutgoingDto(IssueDto):
@@ -71,7 +67,6 @@ class IssueViaNodeOutgoingDto(IssueDto):
     decision: Optional[DecisionOutgoingDto]
     uncertainty: Optional[UncertaintyOutgoingDto]
     utility: Optional[UtilityOutgoingDto]
-    value_metric: Optional[ValueMetricOutgoingDto]
 
 
 class IssueMapper:
@@ -82,7 +77,7 @@ class IssueMapper:
 
         return IssueOutgoingDto(
             id=entity.id,
-            scenario_id=entity.scenario_id,
+            project_id=entity.project_id,
             type=entity.type,
             boundary=entity.boundary,
             name=entity.name,
@@ -90,13 +85,14 @@ class IssueMapper:
             order=entity.order,
             node=NodeMapper.to_outgoing_dto_via_issue(entity.node),
             decision=DecisionMapper.to_outgoing_dto(entity.decision) if entity.decision else None,
-            uncertainty=UncertaintyMapper.to_outgoing_dto(entity.uncertainty)
-            if entity.uncertainty
-            else None,
+            uncertainty=(
+                UncertaintyMapper.to_outgoing_dto(entity.uncertainty)
+                if entity.uncertainty
+                else None
+            ),
             utility=UtilityMapper.to_outgoing_dto(entity.utility) if entity.utility else None,
-            value_metric=ValueMetricMapper.to_outgoing_dto(entity.value_metric)
-            if entity.value_metric
-            else None,
+            created_at=entity.created_at,
+            updated_at=entity.updated_at,
         )
 
     @staticmethod
@@ -106,20 +102,19 @@ class IssueMapper:
 
         return IssueViaNodeOutgoingDto(
             id=entity.id,
-            scenario_id=entity.scenario_id,
+            project_id=entity.project_id,
             type=entity.type,
             boundary=entity.boundary,
             name=entity.name,
             description=entity.description,
             order=entity.order,
             decision=DecisionMapper.to_outgoing_dto(entity.decision) if entity.decision else None,
-            uncertainty=UncertaintyMapper.to_outgoing_dto(entity.uncertainty)
-            if entity.uncertainty
-            else None,
+            uncertainty=(
+                UncertaintyMapper.to_outgoing_dto(entity.uncertainty)
+                if entity.uncertainty
+                else None
+            ),
             utility=UtilityMapper.to_outgoing_dto(entity.utility) if entity.utility else None,
-            value_metric=ValueMetricMapper.to_outgoing_dto(entity.value_metric)
-            if entity.value_metric
-            else None,
         )
 
     @staticmethod
@@ -127,7 +122,7 @@ class IssueMapper:
         # decision and uncertainty ids are not assigned here as the issue controls the decisions and uncertainties
         return Issue(
             id=dto.id,
-            scenario_id=dto.scenario_id,
+            project_id=dto.project_id,
             type=dto.type,
             boundary=dto.boundary,
             order=dto.order,
@@ -138,9 +133,6 @@ class IssueMapper:
             decision=DecisionMapper.to_entity(dto.decision) if dto.decision else None,
             uncertainty=UncertaintyMapper.to_entity(dto.uncertainty) if dto.uncertainty else None,
             utility=UtilityMapper.to_entity(dto.utility) if dto.utility else None,
-            value_metric=ValueMetricMapper.to_entity(dto.value_metric)
-            if dto.value_metric
-            else None,
         )
 
     @staticmethod

@@ -12,15 +12,46 @@ class EdgeUUIDDto(BaseModel):
 
 class EndPointNodeDto(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    scenario_id: uuid.UUID
+    project_id: uuid.UUID
     type: str = "EndPoint"
+    value: float = 0
+    cumulative_probability: float = 0
+
+
+class ProbabilityDto(BaseModel):
+    outcome_name: str
+    outcome_id: uuid.UUID
+    probability_value: float
+    discrete_probability_id: uuid.UUID
+
+
+class UtilityDTDto(BaseModel):
+    option_name: Optional[str] = None
+    option_id: Optional[uuid.UUID] = None
+    outcome_name: Optional[str] = None
+    outcome_id: Optional[uuid.UUID] = None
+    utility_value: float
 
 
 class TreeNodeDto(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
+    expected_value: Optional[float] = None
     issue: IssueOutgoingDto | EndPointNodeDto
+    probabilities: Optional[list[ProbabilityDto]] = None
+    utilities: Optional[list[UtilityDTDto]] = None
+    children: Optional[List["DecisionTreeDto"]] = None
 
 
-class DecisionTreeDTO(BaseModel):
+class DecisionTreeDto(BaseModel):
     tree_node: TreeNodeDto
-    children: Optional[List["DecisionTreeDTO"]] = None
+
+
+class PartialOrderDto(BaseModel):
+    # list of issue ids
+    issue_ids: Optional[List[uuid.UUID]] = None
+
+
+# 26 jan: tmp for backward comaptibility, to be removed
+class DecisionTreeDtoOld(BaseModel):
+    tree_node: TreeNodeDto
+    children: Optional[List["DecisionTreeDtoOld"]] = None

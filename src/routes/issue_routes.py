@@ -12,6 +12,7 @@ from src.models.filters.issues_filter import IssueFilter
 from src.constants import SwaggerDocumentationConstants
 from src.dependencies import get_db
 
+
 router = APIRouter(tags=["issues"])
 
 
@@ -28,7 +29,9 @@ async def create_issues(
     If node is not supplied an empty node will be created.
     """
     try:
-        return list(await issue_service.create(session, dtos, current_user))
+        result = list(await issue_service.create(session, dtos, current_user))
+        await session.commit()
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -79,24 +82,6 @@ async def get_all_issues_from_project(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/scenarios/{scenario_id}/issues")
-async def get_all_issues_from_scenario(
-    scenario_id: uuid.UUID,
-    issue_service: IssueService = Depends(get_issue_service),
-    filter: Optional[str] = Query(None, description=SwaggerDocumentationConstants.FILTER_DOC),
-    session: AsyncSession = Depends(get_db),
-) -> list[IssueOutgoingDto]:
-    try:
-        issues: list[IssueOutgoingDto] = await issue_service.get_all(
-            session,
-            IssueFilter(scenario_ids=[scenario_id]),
-            odata_query=filter,
-        )
-        return issues
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.delete("/issues/{id}")
 async def delete_issue(
     id: uuid.UUID,
@@ -105,8 +90,10 @@ async def delete_issue(
 ):
     try:
         await issue_service.delete(session, [id])
+        await session.commit()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.delete("/issues")
 async def delete_issues(
@@ -116,8 +103,10 @@ async def delete_issues(
 ):
     try:
         await issue_service.delete(session, ids)
+        await session.commit()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.put("/issues")
 async def update_issues(
@@ -127,6 +116,8 @@ async def update_issues(
     session: AsyncSession = Depends(get_db),
 ) -> list[IssueOutgoingDto]:
     try:
-        return list(await issue_service.update(session, dtos, current_user))
+        result = list(await issue_service.update(session, dtos, current_user))
+        await session.commit()
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
