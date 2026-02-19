@@ -1,5 +1,6 @@
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 from src.logger import get_dot_api_logger
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -15,6 +16,18 @@ class ExceptionFilterMiddleware(BaseHTTPMiddleware):
             # Process request and response
             response = await call_next(request)
             return response
+        except RateLimitExceeded as exc:
+            # Handle rate limit exceeded
+            logger.warning(
+                f"Rate limit exceeded for {request.client.host if request.client else 'unknown'}"
+            )
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "detail": "Rate limit exceeded. Please try again later.",
+                    "retry_after": exc.detail,
+                },
+            )
         except HTTPException as exc:
             # Log and return custom message for HTTP exceptions
             logger.error(f"HTTPException: {exc}")

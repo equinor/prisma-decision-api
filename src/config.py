@@ -73,7 +73,7 @@ class Config(BaseSettings):
 
     ##ratelimiter settings
     RATE_LIMIT_WINDOW: int = 60  # in seconds
-    MAX_REQUESTS_PER_WINDOW: int = 100
+    MAX_REQUESTS_PER_WINDOW: int = 100  # max requests per window
 
 
 config = Config()
