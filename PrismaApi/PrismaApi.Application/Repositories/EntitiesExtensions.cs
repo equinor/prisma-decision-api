@@ -1,4 +1,5 @@
-﻿using PrismaApi.Domain.Entities;
+﻿using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Entities;
 
 namespace PrismaApi.Application.Repositories;
 
@@ -6,12 +7,6 @@ public static class EntitiesExtensions
 {
     public static ICollection<ProjectRole> Update(this ICollection<ProjectRole> entities, ICollection<ProjectRole> incommingEntities)
     {
-        // delete
-        entities = RepositoryUtilities.RemoveMissingFromCollection<ProjectRole, Guid>(incommingEntities, entities);
-
-        // create
-        entities = RepositoryUtilities.AddMissingFromCollection<ProjectRole, Guid>(incommingEntities, entities);
-
         // Update
         foreach (var entity in entities)
         {
@@ -23,6 +18,13 @@ public static class EntitiesExtensions
             entity.Role = inncommingEntity.Role;
             entity.UpdatedById = inncommingEntity.UpdatedById;
         }
+
+        // delete
+        entities = RepositoryUtilities.RemoveMissingFromCollection<ProjectRole, Guid>(incommingEntities, entities);
+
+        // create
+        entities = RepositoryUtilities.AddMissingFromCollection<ProjectRole, Guid>(incommingEntities, entities);
+
         return entities;
     }
 

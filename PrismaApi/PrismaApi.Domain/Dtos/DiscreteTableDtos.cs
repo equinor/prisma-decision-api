@@ -48,10 +48,12 @@ public class DiscreteUtilityDto
     public Guid UtilityId { get; set; }
     [JsonPropertyName("utility_value")]
     public double? UtilityValue { get; set; }
-    [JsonPropertyName("parent_outcomes")]
-    public List<DiscreteUtilityParentOutcomeDto> ParentOutcomes { get; set; } = new();
-    [JsonPropertyName("parent_options")]
-    public List<DiscreteUtilityParentOptionDto> ParentOptions { get; set; } = new();
+    [JsonPropertyName("parent_outcome_ids")]
+    public List<Guid> ParentOutcomeIds { get; set; } = new();
+    //public List<DiscreteUtilityParentOutcomeDto> ParentOutcomes { get; set; } = new();
+    [JsonPropertyName("parent_option_ids")]
+    public List<Guid> ParentOptionIds { get; set; } = new();
+    //public List<DiscreteUtilityParentOptionDto> ParentOptions { get; set; } = new();
 }
 
 public class DiscreteUtilityParentOutcomeDto

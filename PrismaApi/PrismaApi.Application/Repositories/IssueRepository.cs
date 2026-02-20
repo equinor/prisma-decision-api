@@ -57,16 +57,26 @@ public class IssueRepository : BaseRepository<Issue, Guid>
         return DbContext.Issues
             .Include(i => i.Node!)
                 .ThenInclude(n => n.NodeStyle)
+            .Include(i => i.Node!)
+                .ThenInclude(n => n.HeadEdges)
+            .Include(i => i.Node!)
+                .ThenInclude(n => n.TailEdges)
             .Include(i => i.Decision!)
                 .ThenInclude(d => d.Options)
             .Include(i => i.Uncertainty!)
                 .ThenInclude(u => u.Outcomes)
-            //.Include(i => i.Uncertainty!)
-            //    .ThenInclude(u => u.DiscreteProbabilities)
-            //    .ThenInclude(d => d.ParentOptions)
-            //.Include(i => i.Uncertainty!)
-            //    .ThenInclude(u => u.DiscreteProbabilities)
-            //    .ThenInclude(d => d.ParentOutcomes)
-            .Include(i => i.Utility);
+            .Include(i => i.Uncertainty!)
+                .ThenInclude(u => u.DiscreteProbabilities)
+                    .ThenInclude(d => d.ParentOptions)
+            .Include(i => i.Uncertainty!)
+                .ThenInclude(u => u.DiscreteProbabilities)
+                    .ThenInclude(d => d.ParentOutcomes)
+            .Include(i => i.Utility)
+                .ThenInclude(u => u!.DiscreteUtilities)
+                    .ThenInclude(d => d.ParentOptions)
+            .Include(i => i.Utility)
+                .ThenInclude(u => u!.DiscreteUtilities)
+                    .ThenInclude(d => d.ParentOutcomes);
+
     }
 }

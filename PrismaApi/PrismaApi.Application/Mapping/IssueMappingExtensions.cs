@@ -22,8 +22,8 @@ public static class IssueMappingExtensions
             Decision = entity.Decision != null ? entity.Decision.ToOutgoingDto() : null,
             Uncertainty = entity.Uncertainty != null ? entity.Uncertainty.ToOutgoingDto() : null,
             Utility = entity.Utility != null ? entity.Utility.ToOutgoingDto() : null,
-            CreatedAt = entity.CreatedAt, //.ToString("O").Replace("+00:00", "Z"),
-            UpdatedAt = entity.UpdatedAt
+            CreatedAt = entity.CreatedAt ?? DateTimeOffset.UtcNow, //.ToString("O").Replace("+00:00", "Z"),
+            UpdatedAt = entity.UpdatedAt ?? DateTimeOffset.UtcNow
         };
     }
 

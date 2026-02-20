@@ -74,8 +74,8 @@ public static class DiscreteTableMappingExtensions
             UtilityId = entity.UtilityId,
             ValueMetricId = entity.ValueMetricId,
             UtilityValue = entity.UtilityValue,
-            ParentOutcomes = entity.ParentOutcomes.Select(ToDto).ToList(),
-            ParentOptions = entity.ParentOptions.Select(ToDto).ToList()
+            ParentOptionIds = entity.ParentOptions.Select(x => x.ParentOptionId).ToList(),
+            ParentOutcomeIds = entity.ParentOutcomes.Select(x => x.ParentOutcomeId).ToList(),
         };
     }
 

@@ -44,6 +44,8 @@ public class NodeRepository : BaseRepository<Node, Guid>
     {
         return DbContext.Nodes
             .Include(n => n.NodeStyle)
+            .Include(n => n.HeadEdges)
+            .Include(n => n.TailEdges)
             .Include(n => n.Issue!)
                 .ThenInclude(i => i.Decision!)
                 .ThenInclude(d => d.Options)
