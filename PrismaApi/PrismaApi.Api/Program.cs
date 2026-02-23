@@ -36,7 +36,7 @@ builder.Services.AddScoped<DiscreteTableSaveChangesInterceptor>();
 builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
 {
     options.UseSqlServer(connectionString);
-    //options.AddInterceptors(serviceProvider.GetRequiredService<DiscreteTableSaveChangesInterceptor>());
+    options.AddInterceptors(serviceProvider.GetRequiredService<DiscreteTableSaveChangesInterceptor>());
 });
 
 builder.Services.AddScoped<ProjectRepository>();

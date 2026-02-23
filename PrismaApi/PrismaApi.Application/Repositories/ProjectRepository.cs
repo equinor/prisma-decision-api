@@ -32,22 +32,12 @@ public class ProjectRepository : BaseRepository<Project, Guid>
             entity.EndDate = incommingEntity.EndDate;
             entity.UpdatedById = incommingEntity.UpdatedById;
 
-            entity.ProjectRoles = entity.ProjectRoles.Update(incommingEntity.ProjectRoles);
-            //await UpdateProjectRoles(entity, incommingEntity);
-            entity.Objectives = entity.Objectives.Update(incommingEntity.Objectives);
-            entity.Strategies = entity.Strategies.Update(incommingEntity.Strategies);
-            //await DbContext.SaveChangesAsync();
+            entity.ProjectRoles.Update(incommingEntity.ProjectRoles, DbContext);
+            entity.Objectives.Update(incommingEntity.Objectives, DbContext);
+            entity.Strategies.Update(incommingEntity.Strategies, DbContext);
         }
 
-        try
-        {
-            await DbContext.SaveChangesAsync();
-        }
-        catch (Exception e)
-        {
-            // Reload entities from database to get latest values and retry
-            throw e;
-        }
+        await DbContext.SaveChangesAsync();
         return incommingEntities;
     }
 

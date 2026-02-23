@@ -31,8 +31,8 @@ public class NodeRepository : BaseRepository<Node, Guid>
             entity.ProjectId = incomingEntity.ProjectId;
             entity.IssueId = incomingEntity.IssueId;
             entity.Name = incomingEntity.Name;
-            entity.HeadEdges = entity.HeadEdges.Update(incomingEntity.HeadEdges);
-            entity.TailEdges = entity.TailEdges.Update(incomingEntity.TailEdges);
+            //entity.HeadEdges.Update(incomingEntity.HeadEdges, DbContext);
+            //entity.TailEdges.Update(incomingEntity.TailEdges, DbContext);
             if (entity.NodeStyle != null && incomingEntity.NodeStyle != null)
                 entity.NodeStyle = entity.NodeStyle.Update(incomingEntity.NodeStyle);
         }

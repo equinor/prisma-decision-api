@@ -29,7 +29,7 @@ public class UtilityRepository : BaseRepository<Utility, Guid>
             }
 
             entity.IssueId = incomingEntity.IssueId;
-            entity.DiscreteUtilities = entity.DiscreteUtilities.Update(incomingEntity.DiscreteUtilities);
+            entity.DiscreteUtilities.Update(incomingEntity.DiscreteUtilities, DbContext);
         }
 
         await DbContext.SaveChangesAsync();

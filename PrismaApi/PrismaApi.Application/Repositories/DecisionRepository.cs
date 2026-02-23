@@ -30,7 +30,7 @@ public class DecisionRepository : BaseRepository<Decision, Guid>
 
             entity.IssueId = incomingEntity.IssueId;
             entity.Type = incomingEntity.Type;
-            entity.Options = entity.Options.Update(incomingEntity.Options);
+            entity.Options.Update(incomingEntity.Options, DbContext);
         }
 
         await DbContext.SaveChangesAsync();

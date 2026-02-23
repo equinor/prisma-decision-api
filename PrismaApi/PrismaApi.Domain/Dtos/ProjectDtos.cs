@@ -15,7 +15,7 @@ public class ProjectDto
     [JsonPropertyName("parent_project_id")]
     public Guid? ParentProjectId { get; set; }
     [JsonPropertyName("parent_project_name")]
-    public string? ParentProjectName { get; set; }
+    public string ParentProjectName { get; set; } = string.Empty;
     [JsonPropertyName("public")]
     public bool Public { get; set; }
     [JsonPropertyName("end_date")]

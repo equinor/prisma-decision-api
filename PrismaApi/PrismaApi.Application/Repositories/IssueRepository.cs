@@ -36,16 +36,16 @@ public class IssueRepository : BaseRepository<Issue, Guid>
             entity.UpdatedById = incomingEntity.UpdatedById;
 
             if (incomingEntity.Node != null && entity.Node != null)
-                entity.Node = entity.Node.Update(incomingEntity.Node);
+                entity.Node = entity.Node.Update(incomingEntity.Node, DbContext);
 
             if (incomingEntity.Decision != null && entity.Decision != null)
-                entity.Decision = entity.Decision.Update(incomingEntity.Decision);
+                entity.Decision = entity.Decision.Update(incomingEntity.Decision, DbContext);
             
             if (incomingEntity.Uncertainty != null && entity.Uncertainty != null)
-                entity.Uncertainty = entity.Uncertainty.Update(incomingEntity.Uncertainty);
+                entity.Uncertainty = entity.Uncertainty.Update(incomingEntity.Uncertainty, DbContext);
 
             if (incomingEntity.Utility != null && entity.Utility != null)
-                entity.Utility = entity.Utility.Update(incomingEntity.Utility);
+                entity.Utility = entity.Utility.Update(incomingEntity.Utility, DbContext);
         }
         await DbContext.SaveChangesAsync();
     }
