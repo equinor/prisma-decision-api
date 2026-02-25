@@ -7,8 +7,10 @@ namespace PrismaApi.Application.Repositories;
 
 public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>
 {
-    public UncertaintyRepository(AppDbContext dbContext) : base(dbContext)
+    public readonly IDiscreteTableRuleTrigger _ruleTrigger;
+    public UncertaintyRepository(AppDbContext dbContext, IDiscreteTableRuleTrigger ruleTrigger) : base(dbContext)
     {
+        _ruleTrigger = ruleTrigger;
     }
 
     public override async Task UpdateRangeAsync(IEnumerable<Uncertainty> incommingEntities)
@@ -20,6 +22,7 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>
         }
 
         var entities = await GetByIdsAsync(incomingList.Select(e => e.Id));
+        List<Guid> issuesIdsTriggers = [];
         foreach (var entity in entities)
         {
             var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
@@ -27,13 +30,15 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>
             {
                 continue;
             }
-
+            if (entity.IsKey != incomingEntity.IsKey)
+                issuesIdsTriggers.Add(entity.IssueId);
             entity.IssueId = incomingEntity.IssueId;
             entity.IsKey = incomingEntity.IsKey;
-            entity.Outcomes.Update(incomingEntity.Outcomes, DbContext);
+            await entity.Outcomes.Update(incomingEntity.Outcomes, DbContext);
             entity.DiscreteProbabilities.Update(incomingEntity.DiscreteProbabilities, DbContext);
         }
 
+        await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers);
         await DbContext.SaveChangesAsync();
     }
 

@@ -7,8 +7,10 @@ namespace PrismaApi.Application.Repositories;
 
 public class DecisionRepository : BaseRepository<Decision, Guid>
 {
-    public DecisionRepository(AppDbContext dbContext) : base(dbContext)
+    public readonly IDiscreteTableRuleTrigger _ruleTrigger;
+    public DecisionRepository(AppDbContext dbContext, IDiscreteTableRuleTrigger ruleTrigger) : base(dbContext)
     {
+        _ruleTrigger = ruleTrigger;
     }
 
     public override async Task UpdateRangeAsync(IEnumerable<Decision> incommingEntities)
@@ -20,6 +22,7 @@ public class DecisionRepository : BaseRepository<Decision, Guid>
         }
 
         var entities = await GetByIdsAsync(incomingList.Select(e => e.Id));
+        List<Guid> issuesIdsTriggers = [];
         foreach (var entity in entities)
         {
             var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
@@ -28,11 +31,14 @@ public class DecisionRepository : BaseRepository<Decision, Guid>
                 continue;
             }
 
+            if (entity.Type != incomingEntity.Type && incomingEntity.Type != "Foucus")
+                issuesIdsTriggers.Add(entity.IssueId);
+
             entity.IssueId = incomingEntity.IssueId;
             entity.Type = incomingEntity.Type;
-            entity.Options.Update(incomingEntity.Options, DbContext);
+            await entity.Options.Update(incomingEntity.Options, DbContext);
         }
-
+        await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers);
         await DbContext.SaveChangesAsync();
     }
 

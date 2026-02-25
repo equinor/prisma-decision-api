@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Graph.Models;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 
@@ -6,8 +7,10 @@ namespace PrismaApi.Application.Repositories;
 
 public class IssueRepository : BaseRepository<Issue, Guid>
 {
-    public IssueRepository(AppDbContext dbContext) : base(dbContext)
+    public readonly IDiscreteTableRuleTrigger _ruleTrigger;
+    public IssueRepository(AppDbContext dbContext, IDiscreteTableRuleTrigger ruleTrigger) : base(dbContext)
     {
+        _ruleTrigger = ruleTrigger;
     }
 
     public override async Task UpdateRangeAsync(IEnumerable<Issue> incommingEntities)
@@ -19,6 +22,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>
         }
 
         var entities = await GetByIdsAsync(incomingList.Select(e => e.Id));
+        List<Guid> issuesIdsTriggers = [];
         foreach (var entity in entities)
         {
             var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
@@ -26,6 +30,9 @@ public class IssueRepository : BaseRepository<Issue, Guid>
             {
                 continue;
             }
+
+            if (WillIssueChangeTables(entity, incomingEntity))
+                issuesIdsTriggers.Add(entity.Id);
 
             entity.ProjectId = incomingEntity.ProjectId;
             entity.Type = incomingEntity.Type;
@@ -39,18 +46,24 @@ public class IssueRepository : BaseRepository<Issue, Guid>
                 entity.Node = entity.Node.Update(incomingEntity.Node, DbContext);
 
             if (incomingEntity.Decision != null && entity.Decision != null)
-                entity.Decision = entity.Decision.Update(incomingEntity.Decision, DbContext);
+                entity.Decision = await entity.Decision.Update(incomingEntity.Decision, DbContext, _ruleTrigger);
             
             if (incomingEntity.Uncertainty != null && entity.Uncertainty != null)
-                entity.Uncertainty = entity.Uncertainty.Update(incomingEntity.Uncertainty, DbContext);
+                entity.Uncertainty = await entity.Uncertainty.Update(incomingEntity.Uncertainty, DbContext, _ruleTrigger);
 
             if (incomingEntity.Utility != null && entity.Utility != null)
                 entity.Utility = entity.Utility.Update(incomingEntity.Utility, DbContext);
         }
+        await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers);
         await DbContext.SaveChangesAsync();
     }
 
-    
+    private bool WillIssueChangeTables(Issue entity, Issue incommingEntity)
+    {
+        if (entity.Type != incommingEntity.Type) return true;
+        if (entity.Boundary != incommingEntity.Boundary && (incommingEntity.Boundary == "out" || entity.Boundary == "out")) return true;
+        return false;
+    }
 
     protected override IQueryable<Issue> Query()
     {

@@ -6,8 +6,10 @@ namespace PrismaApi.Application.Repositories;
 
 public class OptionRepository : BaseRepository<Option, Guid>
 {
-    public OptionRepository(AppDbContext dbContext) : base(dbContext)
+    public readonly IDiscreteTableRuleTrigger _ruleTrigger;
+    public OptionRepository(AppDbContext dbContext, IDiscreteTableRuleTrigger ruleTrigger) : base(dbContext)
     {
+        _ruleTrigger = ruleTrigger;
     }
 
     public override async Task UpdateRangeAsync(IEnumerable<Option> incommingEntities)
@@ -33,5 +35,17 @@ public class OptionRepository : BaseRepository<Option, Guid>
         }
 
         await DbContext.SaveChangesAsync();
+    }
+
+    public override async Task<Option> AddAsync(Option entity)
+    {
+        await _ruleTrigger.ParentOptionsAddedAsync([entity.Id], default);
+        return await base.AddAsync(entity);
+    }
+
+    public override async Task<List<Option>> AddRangeAsync(IEnumerable<Option> entities)
+    {
+        await _ruleTrigger.ParentOptionsAddedAsync([.. entities.Select(e => e.Id)], default);
+        return await base.AddRangeAsync(entities);
     }
 }

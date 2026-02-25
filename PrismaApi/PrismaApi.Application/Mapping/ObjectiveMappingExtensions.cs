@@ -16,8 +16,8 @@ public static class ObjectiveMappingExtensions
             Name = entity.Name,
             Type = entity.Type,
             Description = entity.Description,
-            CreatedAt = entity.CreatedAt ?? DateTimeOffset.UtcNow,
-            UpdatedAt = entity.UpdatedAt ?? DateTimeOffset.UtcNow
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt
         };
     }
 

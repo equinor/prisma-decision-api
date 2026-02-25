@@ -38,6 +38,7 @@ public abstract class PrismaBaseEntityController : ControllerBase
             return;
         }
 
+        await _dbContext.RebuildTablesAsync();
         await _transaction.CommitAsync(cancellationToken);
         await _transaction.DisposeAsync();
         _transaction = null;

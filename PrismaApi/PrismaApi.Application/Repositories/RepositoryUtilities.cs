@@ -45,4 +45,11 @@ public static class RepositoryUtilities
             entities.Add(entityToAdd);
         }
     }
+
+    public static ICollection<TEntity> GetEntitiesToBeAdded<TEntity, TId>(ICollection<TEntity> incommingEntities, ICollection<TEntity> entities) where TEntity : class, IBaseEntity<TId>
+    {
+        return incommingEntities
+            .Where(ie => !entities.Any(e => EqualityComparer<TId>.Default.Equals(ie.Id, e.Id)))
+            .ToList();
+    }
 }

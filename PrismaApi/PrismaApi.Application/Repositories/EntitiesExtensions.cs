@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
+using PrismaApi.Infrastructure;
+using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Repositories;
 
@@ -117,16 +119,27 @@ public static class EntitiesExtensions
         return entity;
     }
 
-    public static Decision Update(this Decision entity, Decision incommingEntity, DbContext context)
+    public static async Task<Decision> Update(this Decision entity, Decision incommingEntity, DbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
     {
-        entity.Options.Update(incommingEntity.Options, context);
+        if (entity.Type != incommingEntity.Type && incommingEntity.Type != "Foucus" && ruleTrigger != null)
+            await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId]);
+        entity.Type = incommingEntity.Type;
+        await entity.Options.Update(incommingEntity.Options, context, ruleTrigger);
         return entity;
     }
 
-    public static void Update(this ICollection<Option> entities, ICollection<Option> incommingEntities, DbContext context)
+    public static async Task Update(this ICollection<Option> entities, ICollection<Option> incommingEntities, DbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
     {
         RepositoryUtilities.RemoveMissingFromCollectionMutate<Option, Guid>(incommingEntities, entities);
-        RepositoryUtilities.AddMissingFromCollectionMutate<Option, Guid>(incommingEntities, entities, context);
+        //RepositoryUtilities.AddMissingFromCollectionMutate<Option, Guid>(incommingEntities, entities, context);
+        var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Option, Guid>(incommingEntities, entities);
+        foreach (var entityToAdd in entitiesToAdd)
+        {
+            context.Entry(entityToAdd).State = EntityState.Added;
+            entities.Add(entityToAdd);
+        }
+        if (ruleTrigger != null)
+            await ruleTrigger.ParentOptionsAddedAsync([.. entitiesToAdd.Select(e => e.Id)]);
 
         foreach (var entity in entities)
         {
@@ -137,17 +150,28 @@ public static class EntitiesExtensions
         }
     }
 
-    public static Uncertainty Update(this Uncertainty entity, Uncertainty incommingEntity, DbContext context)
+    public static async Task<Uncertainty> Update(this Uncertainty entity, Uncertainty incommingEntity, DbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
     {
-        entity.Outcomes.Update(incommingEntity.Outcomes, context);
+        if (entity.IsKey != incommingEntity.IsKey && ruleTrigger != null)
+            await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId]);
+            
+        await entity.Outcomes.Update(incommingEntity.Outcomes, context, ruleTrigger);
+        entity.IsKey = incommingEntity.IsKey;
         entity.DiscreteProbabilities.Update(incommingEntity.DiscreteProbabilities, context);
         return entity;
     }
 
-    public static void Update(this ICollection<Outcome> entities, ICollection<Outcome> incommingEntities, DbContext context)
+    public static async Task Update(this ICollection<Outcome> entities, ICollection<Outcome> incommingEntities, DbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
     {
         RepositoryUtilities.RemoveMissingFromCollectionMutate<Outcome, Guid>(incommingEntities, entities);
-        RepositoryUtilities.AddMissingFromCollectionMutate<Outcome, Guid>(incommingEntities, entities, context);
+        var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Outcome, Guid>(incommingEntities, entities);
+        foreach (var entityToAdd in entitiesToAdd)
+        {
+            context.Entry(entityToAdd).State = EntityState.Added;
+            entities.Add(entityToAdd);
+        }
+        if (ruleTrigger != null)
+            await ruleTrigger.ParentOutcomesAddedAsync([.. entitiesToAdd.Select(e => e.Id)]);
 
         foreach (var entity in entities)
         {

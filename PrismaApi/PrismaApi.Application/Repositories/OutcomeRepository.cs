@@ -6,8 +6,10 @@ namespace PrismaApi.Application.Repositories;
 
 public class OutcomeRepository : BaseRepository<Outcome, Guid>
 {
-    public OutcomeRepository(AppDbContext dbContext) : base(dbContext)
+    public readonly IDiscreteTableRuleTrigger _ruleTrigger;
+    public OutcomeRepository(AppDbContext dbContext, IDiscreteTableRuleTrigger ruleTrigger) : base(dbContext)
     {
+        _ruleTrigger = ruleTrigger;
     }
 
     public override async Task UpdateRangeAsync(IEnumerable<Outcome> incommingEntities)
@@ -33,5 +35,16 @@ public class OutcomeRepository : BaseRepository<Outcome, Guid>
         }
 
         await DbContext.SaveChangesAsync();
+    }
+    public override async Task<Outcome> AddAsync(Outcome entity)
+    {
+        await _ruleTrigger.ParentOutcomesAddedAsync([entity.Id], default);
+        return await base.AddAsync(entity);
+    }
+
+    public override async Task<List<Outcome>> AddRangeAsync(IEnumerable<Outcome> entities)
+    {
+        await _ruleTrigger.ParentOutcomesAddedAsync([.. entities.Select(e => e.Id)], default);
+        return await base.AddRangeAsync(entities);
     }
 }
