@@ -13,11 +13,13 @@ namespace PrismaApi.Api.Controllers;
 public class EdgesController : PrismaBaseEntityController
 {
     private readonly EdgeService _edgeService;
+    private readonly TableRebuildingService _tableRebuildingService;
 
-    public EdgesController(EdgeService edgeService, AppDbContext dbContext)
+    public EdgesController(EdgeService edgeService, AppDbContext dbContext, TableRebuildingService tableRebuildingService)
         : base(dbContext)
     {
         _edgeService = edgeService;
+        _tableRebuildingService = tableRebuildingService;
     }
 
     [HttpPost("edges")]
@@ -27,6 +29,7 @@ public class EdgesController : PrismaBaseEntityController
         try
         {
             var result = await _edgeService.CreateAsync(dtos);
+            await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }
@@ -58,6 +61,7 @@ public class EdgesController : PrismaBaseEntityController
         try
         {
             var result = await _edgeService.UpdateAsync(dtos);
+            await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }
@@ -75,6 +79,7 @@ public class EdgesController : PrismaBaseEntityController
         try
         {
             await _edgeService.DeleteAsync(new List<Guid> { id });
+            await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }
@@ -92,6 +97,7 @@ public class EdgesController : PrismaBaseEntityController
         try
         {
             await _edgeService.DeleteAsync(ids);
+            await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }

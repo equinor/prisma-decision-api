@@ -32,7 +32,7 @@ public class StrategiesController : PrismaBaseEntityController
     [HttpPost("strategies")]
     public async Task<ActionResult<List<StrategyOutgoingDto>>> CreateStrategies([FromBody] List<StrategyIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -51,7 +51,7 @@ public class StrategiesController : PrismaBaseEntityController
     [HttpPut("strategies")]
     public async Task<ActionResult<List<StrategyOutgoingDto>>> UpdateStrategies([FromBody] List<StrategyIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try

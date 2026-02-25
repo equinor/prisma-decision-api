@@ -25,7 +25,7 @@ public class ObjectivesController : PrismaBaseEntityController
     [HttpPost("objectives")]
     public async Task<ActionResult<List<ObjectiveOutgoingDto>>> CreateObjectives([FromBody] List<ObjectiveIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -64,7 +64,7 @@ public class ObjectivesController : PrismaBaseEntityController
     [HttpPut("objectives")]
     public async Task<ActionResult<List<ObjectiveOutgoingDto>>> UpdateObjectives([FromBody] List<ObjectiveIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try

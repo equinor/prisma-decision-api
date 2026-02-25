@@ -17,22 +17,25 @@ public class IssuesController : PrismaBaseEntityController
 {
     private readonly IssueService _issueService;
     private readonly UserService _userService;
+    private readonly TableRebuildingService _tableRebuildingService;
 
     public IssuesController(
         IssueService issueService,
         UserService userService,
+        TableRebuildingService tableRebuildingService,
         AppDbContext dbContext
     )
         : base(dbContext)
     {
         _issueService = issueService;
         _userService = userService;
+        _tableRebuildingService = tableRebuildingService;
     }
 
     [HttpPost("issues")]
     public async Task<ActionResult<List<IssueOutgoingDto>>> CreateIssues([FromBody] List<IssueIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -71,12 +74,13 @@ public class IssuesController : PrismaBaseEntityController
     [HttpPut("issues")]
     public async Task<ActionResult<List<IssueOutgoingDto>>> UpdateIssues([FromBody] List<IssueIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
             var result = await _issueService.UpdateAsync(dtos, user);
+            await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }

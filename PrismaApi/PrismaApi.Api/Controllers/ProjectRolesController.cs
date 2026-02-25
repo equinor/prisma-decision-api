@@ -46,7 +46,7 @@ public class ProjectRolesController : PrismaBaseEntityController
     [HttpPut("project-roles")]
     public async Task<ActionResult<List<ProjectRoleOutgoingDto>>> UpdateProjectRoles([FromBody] List<ProjectRoleIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try

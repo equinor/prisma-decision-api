@@ -31,15 +31,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftGraph(builder.Configuration.GetSection("GraphApi"))
     .AddInMemoryTokenCaches();
 
+builder.Services.AddMemoryCache();
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddScoped<DiscreteTableSaveChangesInterceptor>();
 builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
 {
     options.UseSqlServer(connectionString);
-    //options.AddInterceptors(serviceProvider.GetRequiredService<DiscreteTableSaveChangesInterceptor>());
 });
 
 builder.Services.AddScoped<IDiscreteTableRuleTrigger, DiscreteTableRuleTrigger>();
+builder.Services.AddScoped<TableRebuildingService>();
 builder.Services.AddScoped<ProjectRepository>();
 builder.Services.AddScoped<IssueRepository>();
 builder.Services.AddScoped<NodeRepository>();

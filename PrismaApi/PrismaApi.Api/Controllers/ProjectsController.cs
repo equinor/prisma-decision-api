@@ -33,7 +33,7 @@ public class ProjectsController : PrismaBaseEntityController
     [HttpPost("projects")]
     public async Task<ActionResult<List<ProjectOutgoingDto>>> CreateProjects([FromBody] List<ProjectCreateDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -59,14 +59,16 @@ public class ProjectsController : PrismaBaseEntityController
     [HttpGet("projects")]
     public async Task<ActionResult<List<ProjectOutgoingDto>>> GetAllProjects()
     {
-        var result = await _projectService.GetAllAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
+        var result = await _projectService.GetAllAsync(user);
         return Ok(result);
     }
 
     [HttpPut("projects")]
     public async Task<ActionResult<List<ProjectOutgoingDto>>> UpdateProjects([FromBody] List<ProjectIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try

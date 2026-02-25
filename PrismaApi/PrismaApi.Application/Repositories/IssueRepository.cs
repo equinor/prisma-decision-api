@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Graph.Models;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
+using PrismaApi.Application.Repositories;
 
 namespace PrismaApi.Application.Repositories;
 
@@ -58,6 +60,11 @@ public class IssueRepository : BaseRepository<Issue, Guid>
         await DbContext.SaveChangesAsync();
     }
 
+    public async Task<ICollection<Issue>> GetIssuesInInfluenceDiagram(Guid projectId)
+    {
+        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId));
+    }
+
     private bool WillIssueChangeTables(Issue entity, Issue incommingEntity)
     {
         if (entity.Type != incommingEntity.Type) return true;
@@ -91,5 +98,23 @@ public class IssueRepository : BaseRepository<Issue, Guid>
                 .ThenInclude(u => u!.DiscreteUtilities)
                     .ThenInclude(d => d.ParentOutcomes);
 
+    }
+}
+
+public static class IssueQueryableExtensions
+{
+    public static IQueryable<Issue> IndluenceDiagramFilter(this IQueryable<Issue> query, Guid projectId)
+    {
+        return query
+            .Where(e =>
+                e.ProjectId == projectId &&
+                (e.Boundary == Boundary.In.ToString() || e.Boundary == Boundary.On.ToString()) &&
+                (e.Type == IssueType.Uncertainty.ToString() || e.Type == IssueType.Decision.ToString() || e.Type == IssueType.Utility.ToString()) &&
+                (
+                    (e.Type == IssueType.Uncertainty.ToString() && e.Uncertainty!.IsKey == true) ||
+                    (e.Type == IssueType.Decision.ToString() && e.Decision!.Type == "Foucus") ||
+                    (e.Type == IssueType.Utility.ToString())
+                )
+            );
     }
 }

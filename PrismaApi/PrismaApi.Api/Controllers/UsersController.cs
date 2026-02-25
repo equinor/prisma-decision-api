@@ -24,7 +24,7 @@ public class UsersController : PrismaBaseEntityController
     [HttpGet("user/me")]
     public async Task<ActionResult<UserOutgoingDto>> GetMe()
     {
-        return Ok(await _userService.GetOrCreateUserFromGraphMeAsync());
+        return Ok(await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims()));
     }
 
     [HttpGet("users")]

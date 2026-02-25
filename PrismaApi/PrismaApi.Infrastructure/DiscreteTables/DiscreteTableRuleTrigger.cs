@@ -42,8 +42,8 @@ public sealed class DiscreteTableRuleTrigger : IDiscreteTableRuleTrigger
         var headIssueIds = await _db.Edges
             .AsNoTracking()
             .Include(e => e.HeadNode)
-            .Where(e => e.TailNode.Issue.Decision.Options.Any(o => optionIds.Contains(o.Id)))
-            .Select(e => e.HeadNode.IssueId)
+            .Where(e => e.TailNode!.Issue!.Decision!.Options.Any(o => optionIds.Contains(o.Id)))
+            .Select(e => e.HeadNode!.IssueId)
             .Distinct()
             .ToListAsync(cancellationToken);
 
@@ -65,8 +65,8 @@ public sealed class DiscreteTableRuleTrigger : IDiscreteTableRuleTrigger
         var headIssueIds = await _db.Edges
             .AsNoTracking()
             .Include(e => e.HeadNode)
-            .Where(e => e.TailNode.Issue.Uncertainty.Outcomes.Any(o => outcomeIds.Contains(o.Id)))
-            .Select(e => e.HeadNode.IssueId)
+            .Where(e => e.TailNode!.Issue!.Uncertainty!.Outcomes.Any(o => outcomeIds.Contains(o.Id)))
+            .Select(e => e.HeadNode!.IssueId)
             .Distinct()
             .ToListAsync(cancellationToken);
 
@@ -88,8 +88,8 @@ public sealed class DiscreteTableRuleTrigger : IDiscreteTableRuleTrigger
         var headIssueIds = await _db.Edges
             .AsNoTracking()
             .Include(e => e.HeadNode)
-            .Where(e => issueIds.Contains(e.TailNode.IssueId))
-            .Select(e => e.HeadNode.IssueId)
+            .Where(e => issueIds.Contains(e.TailNode!.IssueId))
+            .Select(e => e.HeadNode!.IssueId)
             .Distinct()
             .ToListAsync(cancellationToken);
 
@@ -105,7 +105,7 @@ public sealed class DiscreteTableRuleTrigger : IDiscreteTableRuleTrigger
             .AsNoTracking()
             .Include(e => e.HeadNode)
             .Where(e => edgeIds.Contains(e.Id))
-            .Select(e => e.HeadNode.IssueId)
+            .Select(e => e.HeadNode!.IssueId)
             .Distinct()
             .ToListAsync(cancellationToken);
 

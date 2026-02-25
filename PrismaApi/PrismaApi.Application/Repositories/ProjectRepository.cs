@@ -41,9 +41,26 @@ public class ProjectRepository : BaseRepository<Project, Guid>
         return incommingEntities;
     }
 
+    public async Task<List<Project>> GetAllAsyncProjects(UserOutgoingDto user, bool withTracking = true)
+    {
+        return await base.GetAllAsync(withTracking, QueryWithUserFilter(user));
+    }
+
     protected override IQueryable<Project> Query()
     {
         return DbContext.Projects
+            .Include(p => p.Objectives)
+            .Include(p => p.ProjectRoles)
+                .ThenInclude(pr => pr.User)
+            .Include(p => p.Strategies)
+                .ThenInclude(s => s.StrategyOptions)
+                .ThenInclude(so => so.Option);
+    }
+
+    private IQueryable<Project> QueryWithUserFilter(UserOutgoingDto user)
+    {
+        return DbContext.Projects
+            .Where(e => e.ProjectRoles.Any(p => p.UserId == user.Id))
             .Include(p => p.Objectives)
             .Include(p => p.ProjectRoles)
                 .ThenInclude(pr => pr.User)

@@ -25,10 +25,10 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         return Set.AsQueryable();
     }
 
-    public virtual Task<TEntity?> GetByIdAsync(TId id, bool withTracking = true)
+    public virtual Task<TEntity?> GetByIdAsync(TId id, bool withTracking = true, IQueryable<TEntity>? customQuery = null)
     {
-        var query = Query();
-
+        IQueryable<TEntity> query = customQuery ?? Query();
+        
         if (!withTracking)
         {
             query = query.AsNoTracking();
@@ -37,7 +37,7 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         return query.FirstOrDefaultAsync(e => e.Id.Equals(id));
     }
 
-    public virtual Task<List<TEntity>> GetByIdsAsync(IEnumerable<TId> ids, bool withTracking = true)
+    public virtual Task<List<TEntity>> GetByIdsAsync(IEnumerable<TId> ids, bool withTracking = true, IQueryable<TEntity>? customQuery = null)
     {
         var idList = ids.ToList();
         if (idList.Count == 0)
@@ -45,7 +45,7 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
             return Task.FromResult(new List<TEntity>());
         }
 
-        var query = Query();
+        IQueryable<TEntity> query = customQuery ?? Query();
 
         if (!withTracking)
         {
@@ -57,9 +57,9 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
             .ToListAsync();
     }
 
-    public virtual Task<List<TEntity>> GetAllAsync(bool withTracking = true)
+    public virtual Task<List<TEntity>> GetAllAsync(bool withTracking = true, IQueryable<TEntity>? customQuery = null)
     {
-        var query = Query();
+        IQueryable<TEntity> query = customQuery ?? Query();
 
         if (!withTracking)
         {

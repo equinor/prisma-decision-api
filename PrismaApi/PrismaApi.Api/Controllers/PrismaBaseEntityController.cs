@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Graph;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Application.Repositories;
+using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
@@ -21,6 +22,12 @@ public abstract class PrismaBaseEntityController : ControllerBase
     {
         _dbContext = dbContext;
     }
+
+    protected string? GetUserCacheKeyFromClaims()
+    {
+        return User.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+    }
+
     protected Task BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         if (_transaction != null)
@@ -38,7 +45,6 @@ public abstract class PrismaBaseEntityController : ControllerBase
             return;
         }
 
-        await _dbContext.RebuildTablesAsync();
         await _transaction.CommitAsync(cancellationToken);
         await _transaction.DisposeAsync();
         _transaction = null;

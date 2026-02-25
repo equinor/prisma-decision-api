@@ -78,9 +78,9 @@ public class ProjectService
         return projects.ToOutgoingDtos();
     }
 
-    public async Task<List<ProjectOutgoingDto>> GetAllAsync()
+    public async Task<List<ProjectOutgoingDto>> GetAllAsync(UserOutgoingDto user)
     {
-        var projects = await _projectRepository.GetAllAsync(withTracking: false);
+        var projects = await _projectRepository.GetAllAsyncProjects(user, withTracking: false);
         return projects.ToOutgoingDtos();
     }
 

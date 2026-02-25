@@ -13,11 +13,13 @@ namespace PrismaApi.Api.Controllers;
 public class DecisionsController : PrismaBaseEntityController
 {
     private readonly DecisionService _decisionService;
+    private readonly TableRebuildingService _tableRebuildingService;
 
-    public DecisionsController(DecisionService decisionService, AppDbContext dbContext)
+    public DecisionsController(DecisionService decisionService, AppDbContext dbContext, TableRebuildingService tableRebuildingService)
         : base(dbContext)
     {
         _decisionService = decisionService;
+        _tableRebuildingService = tableRebuildingService;
     }
 
     [HttpGet("decisions/{id:guid}")]
@@ -41,6 +43,7 @@ public class DecisionsController : PrismaBaseEntityController
         try
         {
             var result = await _decisionService.UpdateAsync(dtos);
+            await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }

@@ -14,11 +14,12 @@ namespace PrismaApi.Api.Controllers;
 public class UncertaintiesController : PrismaBaseEntityController
 {
     private readonly UncertaintyService _uncertaintyService;
-
-    public UncertaintiesController(UncertaintyService uncertaintyService, AppDbContext dbContext)
+    private readonly TableRebuildingService _tableRebuildingService;
+    public UncertaintiesController(UncertaintyService uncertaintyService, AppDbContext dbContext, TableRebuildingService tableRebuildingService)
         : base(dbContext)
     {
         _uncertaintyService = uncertaintyService;
+        _tableRebuildingService = tableRebuildingService;
     }
 
     [HttpGet("uncertainties/{id:guid}")]
@@ -42,6 +43,7 @@ public class UncertaintiesController : PrismaBaseEntityController
         try
         {
             var result = await _uncertaintyService.UpdateAsync(dtos);
+            await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }
@@ -87,8 +89,9 @@ public class UncertaintiesController : PrismaBaseEntityController
     }
 
     [HttpPost("uncertainties/{id:guid}/remake-probability-table")]
-    public IActionResult RemakeProbabilityTable(Guid id)
+    public async Task<IActionResult> RemakeProbabilityTable(Guid id)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented);
+        await _tableRebuildingService.RebuildIssuesFromIssueIds([id]);
+        return Ok();
     }
 }

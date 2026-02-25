@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
@@ -13,11 +10,13 @@ namespace PrismaApi.Api.Controllers;
 public class OutcomesController : PrismaBaseEntityController
 {
     private readonly OutcomeService _outcomeService;
+    private readonly TableRebuildingService _tableRebuildingService;
 
-    public OutcomesController(OutcomeService outcomeService, AppDbContext dbContext)
+    public OutcomesController(OutcomeService outcomeService, AppDbContext dbContext, TableRebuildingService tableRebuildingService)
         : base(dbContext)
     {
         _outcomeService = outcomeService;
+        _tableRebuildingService = tableRebuildingService;
     }
 
     [HttpPost("outcomes")]
@@ -27,6 +26,7 @@ public class OutcomesController : PrismaBaseEntityController
         try
         {
             var result = await _outcomeService.CreateAsync(dtos);
+            await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }

@@ -13,11 +13,13 @@ namespace PrismaApi.Api.Controllers;
 public class OptionsController : PrismaBaseEntityController
 {
     private readonly OptionService _optionService;
+    private readonly TableRebuildingService _tableRebuildingService;
 
-    public OptionsController(OptionService optionService, AppDbContext dbContext)
+    public OptionsController(OptionService optionService, AppDbContext dbContext, TableRebuildingService tableRebuildingService)
         : base(dbContext)
     {
         _optionService = optionService;
+        _tableRebuildingService = tableRebuildingService;
     }
 
     [HttpPost("options")]
@@ -27,6 +29,7 @@ public class OptionsController : PrismaBaseEntityController
         try
         {
             var result = await _optionService.CreateAsync(dtos);
+            await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }
