@@ -2,7 +2,6 @@ import uuid
 from pydantic import BaseModel, Field
 
 from src.models.project_role import ProjectRole
-from src.models.user import User
 from src.constants import DatabaseConstants, ProjectRoleType
 
 
