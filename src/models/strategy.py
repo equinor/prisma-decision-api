@@ -43,6 +43,10 @@ class Strategy(Base, BaseEntity, BaseAuditableEntity):
         String(DatabaseConstants.MAX_LONG_STRING_LENGTH.value), default=""
     )
 
+    icon_color: Mapped[str] = mapped_column(
+        String(DatabaseConstants.MAX_LONG_STRING_LENGTH.value), default=""
+    )
+
     project: Mapped["Project"] = relationship(
         "Project",
         foreign_keys=[project_id],
@@ -62,6 +66,7 @@ class Strategy(Base, BaseEntity, BaseAuditableEntity):
         description: str,
         rationale: str,
         icon: str,
+        icon_color: str,
         name: str,
         user_id: int,
         strategy_options: list["StrategyOption"],
@@ -72,6 +77,7 @@ class Strategy(Base, BaseEntity, BaseAuditableEntity):
         self.description = description
         self.rationale = rationale
         self.icon = icon
+        self.icon_color = icon_color
         self.updated_by_id = user_id
 
         self.strategy_options = strategy_options
