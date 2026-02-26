@@ -69,6 +69,7 @@ async def test_update_strategy(client: AsyncClient):
     new_name = str(uuid4())
     new_description = "Updated strategy description"
     new_rationale = "Updated strategy rationale"
+    new_icon = "some icon"
     test_strategy_id = GenerateUuid.as_uuid(1001)
     test_option_id = GenerateUuid.as_uuid(2)
 
@@ -99,6 +100,7 @@ async def test_update_strategy(client: AsyncClient):
             name=new_name,
             description=new_description,
             rationale=new_rationale,
+            icon=new_icon,
             options=options,
         ).model_dump(mode="json")
     ]
@@ -109,6 +111,7 @@ async def test_update_strategy(client: AsyncClient):
     assert response_content[0].name == new_name
     assert response_content[0].description == new_description
     assert response_content[0].rationale == new_rationale
+    assert response_content[0].icon == new_icon
     assert response_content[0].options.__len__() == len(options)
     # test that the option was not updated
     assert response_content[0].options[1].name != options[1].name
