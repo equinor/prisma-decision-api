@@ -52,4 +52,11 @@ public static class RepositoryUtilities
             .Where(ie => !entities.Any(e => EqualityComparer<TId>.Default.Equals(ie.Id, e.Id)))
             .ToList();
     }
+
+    public static ICollection<TEntity> GetEntitiesToBeDeleted<TEntity, TId>(ICollection<TEntity> incommingEntities, ICollection<TEntity> entities) where TEntity : class, IBaseEntity<TId>
+    {
+        return entities
+            .Where(e => !incommingEntities.Any(ie => EqualityComparer<TId>.Default.Equals(ie.Id, e.Id)))
+            .ToList();
+    }
 }

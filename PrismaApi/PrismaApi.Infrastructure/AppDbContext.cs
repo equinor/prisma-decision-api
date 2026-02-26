@@ -399,7 +399,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ValueMetric>().HasData(new ValueMetric
         {
             Id = DomainConstants.DefaultValueMetricId,
-            Name = "default value metric"
+            Name = DomainConstants.DefaultValueMetricName,
         });
     }
 
@@ -409,10 +409,16 @@ public class AppDbContext : DbContext
         return base.SaveChanges();
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public async override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         UpdateTimestamps();
-        return base.SaveChangesAsync(cancellationToken);
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        // cleanup must happen after cascading effects have occured as a part of base.SaveChangesAsync
+        DiscreteProbabilityTableCleanup();
+        DiscreteUtilityTableCleanup();
+        await base.SaveChangesAsync(cancellationToken);
+        return result;
     }
 
     private void UpdateTimestamps()
@@ -429,6 +435,58 @@ public class AppDbContext : DbContext
 
             entry.Entity.UpdatedAt = DateTimeOffset.UtcNow;
         }
+    }
+
+    private void DiscreteProbabilityTableCleanup()
+    {
+        var probabilityParentOptions = ChangeTracker.Entries<DiscreteProbabilityParentOption>()
+            .Where(e => e.State == EntityState.Deleted).ToList();
+
+        var probabilityParentoutcomes = ChangeTracker.Entries<DiscreteProbabilityParentOutcome>()
+            .Where(e => e.State == EntityState.Deleted).ToList();
+        var deletedProbabilityIds = probabilityParentOptions
+            .Select(entry => entry.Entity.DiscreteProbabilityId)
+            .Concat(probabilityParentoutcomes.Select(entry => entry.Entity.DiscreteProbabilityId))
+            .Distinct()
+            .ToList();
+
+        if (deletedProbabilityIds.Count == 0)
+        {
+            return;
+        }
+
+        DiscreteProbabilities.RemoveRange(
+            DiscreteProbabilities.Where(x => deletedProbabilityIds.Contains(x.Id)));
+        DiscreteProbabilityParentOptions.RemoveRange(
+            DiscreteProbabilityParentOptions.Where(x => deletedProbabilityIds.Contains(x.DiscreteProbabilityId)));
+        DiscreteProbabilityParentOutcomes.RemoveRange(
+            DiscreteProbabilityParentOutcomes.Where(x => deletedProbabilityIds.Contains(x.DiscreteProbabilityId)));
+    }
+
+    private void DiscreteUtilityTableCleanup()
+    {
+        var utilityParentOptions = ChangeTracker.Entries<DiscreteUtilityParentOption>()
+            .Where(e => e.State == EntityState.Deleted);
+
+        var utilityParentoutcomes = ChangeTracker.Entries<DiscreteUtilityParentOutcome>()
+            .Where(e => e.State == EntityState.Deleted);
+        var deletedUtilityIds = utilityParentOptions
+            .Select(entry => entry.Entity.DiscreteUtilityId)
+            .Concat(utilityParentoutcomes.Select(entry => entry.Entity.DiscreteUtilityId))
+            .Distinct()
+            .ToList();
+
+        if (deletedUtilityIds.Count == 0)
+        {
+            return;
+        }
+
+        DiscreteUtilities.RemoveRange(
+            DiscreteUtilities.Where(x => deletedUtilityIds.Contains(x.Id)));
+        DiscreteUtilityParentOptions.RemoveRange(
+            DiscreteUtilityParentOptions.Where(x => deletedUtilityIds.Contains(x.DiscreteUtilityId)));
+        DiscreteUtilityParentOutcomes.RemoveRange(
+            DiscreteUtilityParentOutcomes.Where(x => deletedUtilityIds.Contains(x.DiscreteUtilityId)));
     }
 
     public EntityEntry<IBaseEntity<Guid>> CreateEntryFromCollectionAsAdded(IBaseEntity<Guid> entity)

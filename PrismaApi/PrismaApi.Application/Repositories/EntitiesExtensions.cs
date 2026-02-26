@@ -8,7 +8,7 @@ namespace PrismaApi.Application.Repositories;
 
 public static class EntitiesExtensions
 {
-    public static void Update(this ICollection<ProjectRole> entities, ICollection<ProjectRole> incommingEntities, DbContext context)
+    public static void Update(this ICollection<ProjectRole> entities, ICollection<ProjectRole> incommingEntities, AppDbContext context)
     {
         // Update
         foreach (var entity in entities)
@@ -29,7 +29,7 @@ public static class EntitiesExtensions
         RepositoryUtilities.AddMissingFromCollectionMutate<ProjectRole, Guid>(incommingEntities, entities, context);
     }
 
-    public static void Update(this ICollection<Objective> entities, ICollection<Objective> incommingEntities, DbContext context)
+    public static void Update(this ICollection<Objective> entities, ICollection<Objective> incommingEntities, AppDbContext context)
     {
         // delete
         RepositoryUtilities.RemoveMissingFromCollectionMutate<Objective, Guid>(incommingEntities, entities);
@@ -50,7 +50,7 @@ public static class EntitiesExtensions
         }
     }
 
-    public static void Update(this ICollection<Strategy> entities, ICollection<Strategy> incommingEntities, DbContext context)
+    public static void Update(this ICollection<Strategy> entities, ICollection<Strategy> incommingEntities, AppDbContext context)
     {
         // delete
         RepositoryUtilities.RemoveMissingFromCollectionMutate<Strategy, Guid>(incommingEntities, entities);
@@ -71,7 +71,7 @@ public static class EntitiesExtensions
         }
     }
 
-    public static void Update(this ICollection<StrategyOption> entities, ICollection<StrategyOption> incommingEntities, DbContext context)
+    public static void Update(this ICollection<StrategyOption> entities, ICollection<StrategyOption> incommingEntities, AppDbContext context)
     {
         // delete
         var entitiesToRemove = entities.Where(e => !incommingEntities.Any(ie => ie.OptionId == e.OptionId && ie.StrategyId == e.StrategyId)).ToList();
@@ -89,7 +89,7 @@ public static class EntitiesExtensions
         }
     }
 
-    public static Node Update(this Node entity, Node incommingEntity, DbContext context)
+    public static Node Update(this Node entity, Node incommingEntity, AppDbContext context)
     {
         entity.Name = incommingEntity.Name;
         //entity.HeadEdges.Update(incommingEntity.HeadEdges, context);
@@ -99,7 +99,7 @@ public static class EntitiesExtensions
         return entity;
     }
 
-    public static void Update(this ICollection<Edge> entities, ICollection<Edge> incommingEntities, DbContext context)
+    public static void Update(this ICollection<Edge> entities, ICollection<Edge> incommingEntities, AppDbContext context)
     {
         RepositoryUtilities.RemoveMissingFromCollectionMutate<Edge, Guid>(incommingEntities, entities);
         RepositoryUtilities.AddMissingFromCollectionMutate<Edge, Guid>(incommingEntities, entities, context);
@@ -119,7 +119,7 @@ public static class EntitiesExtensions
         return entity;
     }
 
-    public static async Task<Decision> Update(this Decision entity, Decision incommingEntity, DbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
+    public static async Task<Decision> Update(this Decision entity, Decision incommingEntity, AppDbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
     {
         if (entity.Type != incommingEntity.Type && incommingEntity.Type != "Foucus" && ruleTrigger != null)
             await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId]);
@@ -128,10 +128,15 @@ public static class EntitiesExtensions
         return entity;
     }
 
-    public static async Task Update(this ICollection<Option> entities, ICollection<Option> incommingEntities, DbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
+    public static async Task Update(this ICollection<Option> entities, ICollection<Option> incommingEntities, AppDbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
     {
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<Option, Guid>(incommingEntities, entities);
-        //RepositoryUtilities.AddMissingFromCollectionMutate<Option, Guid>(incommingEntities, entities, context);
+        //var entitiesToDelete = RepositoryUtilities.GetEntitiesToBeDeleted<Option, Guid>(incommingEntities, entities);
+        //foreach (var entityToDelete in entitiesToDelete)
+        //{
+        //    context.Options.Remove(entityToDelete);
+        //    entities.Remove(entityToDelete);
+        //}
+        RepositoryUtilities.AddMissingFromCollectionMutate<Option, Guid>(incommingEntities, entities, context);
         var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Option, Guid>(incommingEntities, entities);
         foreach (var entityToAdd in entitiesToAdd)
         {
@@ -150,7 +155,7 @@ public static class EntitiesExtensions
         }
     }
 
-    public static async Task<Uncertainty> Update(this Uncertainty entity, Uncertainty incommingEntity, DbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
+    public static async Task<Uncertainty> Update(this Uncertainty entity, Uncertainty incommingEntity, AppDbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
     {
         if (entity.IsKey != incommingEntity.IsKey && ruleTrigger != null)
             await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId]);
@@ -161,9 +166,15 @@ public static class EntitiesExtensions
         return entity;
     }
 
-    public static async Task Update(this ICollection<Outcome> entities, ICollection<Outcome> incommingEntities, DbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
+    public static async Task Update(this ICollection<Outcome> entities, ICollection<Outcome> incommingEntities, AppDbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
     {
         RepositoryUtilities.RemoveMissingFromCollectionMutate<Outcome, Guid>(incommingEntities, entities);
+        //var entitiesToDelete = RepositoryUtilities.GetEntitiesToBeDeleted<Outcome, Guid>(incommingEntities, entities);
+        //foreach (var entityToDelete in entitiesToDelete)
+        //{
+        //    context.Outcomes.Remove(entityToDelete);
+        //    entities.Remove(entityToDelete);
+        //}
         var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Outcome, Guid>(incommingEntities, entities);
         foreach (var entityToAdd in entitiesToAdd)
         {
@@ -182,7 +193,7 @@ public static class EntitiesExtensions
         }
     }
 
-    public static void Update(this ICollection<DiscreteProbability> entities, ICollection<DiscreteProbability> incommingEntities, DbContext context)
+    public static void Update(this ICollection<DiscreteProbability> entities, ICollection<DiscreteProbability> incommingEntities, AppDbContext context)
     {
         RepositoryUtilities.RemoveMissingFromCollectionMutate<DiscreteProbability, Guid>(incommingEntities, entities);
         RepositoryUtilities.AddMissingFromCollectionMutate<DiscreteProbability, Guid>(incommingEntities, entities, context);
@@ -194,13 +205,13 @@ public static class EntitiesExtensions
         }
     }
 
-    public static Utility Update(this Utility entity, Utility incommingEntity, DbContext context)
+    public static Utility Update(this Utility entity, Utility incommingEntity, AppDbContext context)
     {
         entity.DiscreteUtilities.Update(incommingEntity.DiscreteUtilities, context);
         return entity;
     }
 
-    public static void Update(this ICollection<DiscreteUtility> entities, ICollection<DiscreteUtility> incommingEntities, DbContext context)
+    public static void Update(this ICollection<DiscreteUtility> entities, ICollection<DiscreteUtility> incommingEntities, AppDbContext context)
     {
         RepositoryUtilities.RemoveMissingFromCollectionMutate<DiscreteUtility, Guid>(incommingEntities, entities);
         RepositoryUtilities.AddMissingFromCollectionMutate<DiscreteUtility, Guid>(incommingEntities, entities, context);

@@ -35,21 +35,21 @@ public sealed class DiscreteTableRuleTrigger : IDiscreteTableRuleTrigger
     {
         _db.DiscreteTableSessionInfo.EnqueueIssues(issueIds);
     }
-    private async Task EnqueueHeadIssuesByParentOptionAsync(ICollection<Guid> optionIds, CancellationToken cancellationToken = default)
+    private async Task EnqueueHeadIssuesByParentOptionAsync(ICollection<Guid> decisionIds, CancellationToken cancellationToken = default)
     {
         if (_db.IsDiscreteTableEventDisabled)
             return;
         var headIssueIds = await _db.Edges
             .AsNoTracking()
             .Include(e => e.HeadNode)
-            .Where(e => e.TailNode!.Issue!.Decision!.Options.Any(o => optionIds.Contains(o.Id)))
+            .Where(e => decisionIds.Contains(e.TailNode!.Issue!.Decision!.Id)) // all the edges that has this as a tail
             .Select(e => e.HeadNode!.IssueId)
             .Distinct()
             .ToListAsync(cancellationToken);
 
         var issueIds = await _db.Decisions
             .AsNoTracking()
-            .Where(e => e.Options.Any(o => optionIds.Contains(o.Id)))
+            .Where(e => decisionIds.Contains(e.Id))
             .Select(e => e.IssueId)
             .Distinct()
             .ToListAsync (cancellationToken);
@@ -58,21 +58,21 @@ public sealed class DiscreteTableRuleTrigger : IDiscreteTableRuleTrigger
         _db.DiscreteTableSessionInfo.EnqueueIssues(issueIds);
     }
 
-    private async Task EnqueueHeadIssuesByParentOutcomeAsync(ICollection<Guid> outcomeIds, CancellationToken cancellationToken = default)
+    private async Task EnqueueHeadIssuesByParentOutcomeAsync(ICollection<Guid> uncertaintyIds, CancellationToken cancellationToken = default)
     {
         if (_db.IsDiscreteTableEventDisabled)
             return;
         var headIssueIds = await _db.Edges
             .AsNoTracking()
             .Include(e => e.HeadNode)
-            .Where(e => e.TailNode!.Issue!.Uncertainty!.Outcomes.Any(o => outcomeIds.Contains(o.Id)))
+            .Where(e => uncertaintyIds.Contains(e.TailNode!.Issue!.Uncertainty!.Id)) // all the edges that has this as a tail
             .Select(e => e.HeadNode!.IssueId)
             .Distinct()
             .ToListAsync(cancellationToken);
 
         var issueIds = await _db.Uncertainties
             .AsNoTracking()
-            .Where(e => e.Outcomes.Any(o => outcomeIds.Contains(o.Id)))
+            .Where(e => uncertaintyIds.Contains(e.Id))
             .Select(e => e.IssueId)
             .Distinct()
             .ToListAsync(cancellationToken);
