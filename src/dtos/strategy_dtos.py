@@ -12,6 +12,7 @@ class StrategyDto(BaseModel):
     name: Annotated[str, Field(max_length=DatabaseConstants.MAX_SHORT_STRING_LENGTH.value)] = ""
     description: Annotated[str, Field(max_length=DatabaseConstants.MAX_LONG_STRING_LENGTH.value)] = ""
     rationale: Annotated[str, Field(max_length=DatabaseConstants.MAX_LONG_STRING_LENGTH.value)] = ""
+    icon: Annotated[str, Field(max_length=DatabaseConstants.MAX_LONG_STRING_LENGTH.value)] = ""
     
 class StrategyIncomingDto(StrategyDto):
     project_id: uuid.UUID
@@ -33,6 +34,7 @@ class StrategyMapper:
             name=entity.name,
             description=entity.description,
             rationale=entity.rationale,
+            icon=entity.icon,
             options=[
                 OptionMapper.to_outgoing_dto(strategy_option.option) 
                 for strategy_option in entity.strategy_options
@@ -47,6 +49,7 @@ class StrategyMapper:
             name=dto.name,
             description=dto.description,
             rationale=dto.rationale,
+            icon=dto.icon,
             user_id=user_id,
             strategy_options = [
                 StrategyOption(option_id=option.id, strategy_id=dto.id) 

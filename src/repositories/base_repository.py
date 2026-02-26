@@ -308,6 +308,7 @@ class BaseRepository(Generic[T, IDType]):
         existing_entity.name = incoming_entity.name
         existing_entity.description = incoming_entity.description
         existing_entity.rationale = incoming_entity.rationale
+        existing_entity.icon = incoming_entity.icon
         existing_entity.updated_by_id = incoming_entity.updated_by_id
 
         # Clear existing strategy options and create new ones
