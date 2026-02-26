@@ -32,6 +32,7 @@ public class StrategyRepository : BaseRepository<Strategy, Guid>
             entity.Name = incomingEntity.Name;
             entity.Description = incomingEntity.Description;
             entity.Rationale = incomingEntity.Rationale;
+            entity.Icon = incomingEntity.Icon;
             entity.UpdatedById = incomingEntity.UpdatedById;
             entity.StrategyOptions.Update(incomingEntity.StrategyOptions, DbContext);
         }

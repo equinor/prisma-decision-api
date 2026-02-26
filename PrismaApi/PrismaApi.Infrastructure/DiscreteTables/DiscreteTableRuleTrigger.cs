@@ -10,11 +10,11 @@ public sealed class DiscreteTableRuleTrigger : IDiscreteTableRuleTrigger
 
     public DiscreteTableRuleTrigger(AppDbContext db) => _db = db;
 
-    public Task ParentOptionsAddedAsync(ICollection<Guid> optionIds, CancellationToken cancellationToken = default)
-        => EnqueueHeadIssuesByParentOptionAsync(optionIds, cancellationToken);
+    public Task ParentOptionsAddedAsync(ICollection<Guid> decisionIds, CancellationToken cancellationToken = default)
+        => EnqueueHeadIssuesByParentOptionAsync(decisionIds, cancellationToken);
 
-    public Task ParentOutcomesAddedAsync(ICollection<Guid> outcomeIds, CancellationToken cancellationToken = default)
-        => EnqueueHeadIssuesByParentOutcomeAsync(outcomeIds, cancellationToken);
+    public Task ParentOutcomesAddedAsync(ICollection<Guid> uncertaintyIds, CancellationToken cancellationToken = default)
+        => EnqueueHeadIssuesByParentOutcomeAsync(uncertaintyIds, cancellationToken);
 
     public Task ParentIssuesChangedAsync(ICollection<Guid> parentIssueIds, CancellationToken cancellationToken = default)
         => EnqueueHeadIssuesByIssueAsync(parentIssueIds, cancellationToken);

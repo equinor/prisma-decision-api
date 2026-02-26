@@ -14,6 +14,8 @@ public class StrategyDto
     public string Description { get; set; } = string.Empty;
     [JsonPropertyName("rationale")]
     public string Rationale { get; set; } = string.Empty;
+    [JsonPropertyName("icon")]
+    public string Icon { get; set; } = string.Empty;
 }
 
 public class StrategyIncomingDto : StrategyDto

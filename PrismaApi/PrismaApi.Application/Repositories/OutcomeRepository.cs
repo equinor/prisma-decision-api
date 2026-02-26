@@ -38,13 +38,13 @@ public class OutcomeRepository : BaseRepository<Outcome, Guid>
     }
     public override async Task<Outcome> AddAsync(Outcome entity)
     {
-        await _ruleTrigger.ParentOutcomesAddedAsync([entity.Id], default);
+        await _ruleTrigger.ParentOutcomesAddedAsync([entity.UncertaintyId], default);
         return await base.AddAsync(entity);
     }
 
     public override async Task<List<Outcome>> AddRangeAsync(IEnumerable<Outcome> entities)
     {
-        await _ruleTrigger.ParentOutcomesAddedAsync([.. entities.Select(e => e.Id)], default);
+        await _ruleTrigger.ParentOutcomesAddedAsync([.. entities.Select(e => e.UncertaintyId)], default);
         return await base.AddRangeAsync(entities);
     }
 }

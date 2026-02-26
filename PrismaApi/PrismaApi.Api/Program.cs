@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 using PrismaApi.Api.Configuration.Extensions;
+using PrismaApi.Api.Configuration.JsonResponseOptions;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Application.Services;
 using PrismaApi.Infrastructure;
@@ -72,6 +73,13 @@ builder.Services.AddScoped<StrategyService>();
 builder.Services.AddScoped<ObjectiveService>();
 builder.Services.AddScoped<ProjectRoleService>();
 builder.Services.AddScoped<UserService>();
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new DateTimeOffsetJsonConverter());
+    });
 
 builder.Services.AddSwagger(builder.Configuration);
 

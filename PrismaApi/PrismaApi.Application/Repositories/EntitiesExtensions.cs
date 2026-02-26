@@ -144,7 +144,7 @@ public static class EntitiesExtensions
             entities.Add(entityToAdd);
         }
         if (ruleTrigger != null)
-            await ruleTrigger.ParentOptionsAddedAsync([.. entitiesToAdd.Select(e => e.Id)]);
+            await ruleTrigger.ParentOptionsAddedAsync([.. entitiesToAdd.Select(e => e.DecisionId)]);
 
         foreach (var entity in entities)
         {
@@ -182,7 +182,7 @@ public static class EntitiesExtensions
             entities.Add(entityToAdd);
         }
         if (ruleTrigger != null)
-            await ruleTrigger.ParentOutcomesAddedAsync([.. entitiesToAdd.Select(e => e.Id)]);
+            await ruleTrigger.ParentOutcomesAddedAsync([.. entitiesToAdd.Select(e => e.UncertaintyId)]);
 
         foreach (var entity in entities)
         {

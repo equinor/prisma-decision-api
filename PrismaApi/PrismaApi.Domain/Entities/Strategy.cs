@@ -17,6 +17,7 @@ public class Strategy : AuditableEntity, IBaseEntity<Guid>
     public string Description { get; set; } = string.Empty;
     [Column("rationale")]
     public string Rationale { get; set; } = string.Empty;
+    public string Icon { get; set; } = string.Empty;
 
     public Project? Project { get; set; }
     public ICollection<StrategyOption> StrategyOptions { get; set; } = new List<StrategyOption>();

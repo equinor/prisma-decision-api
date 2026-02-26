@@ -244,6 +244,11 @@ public class AppDbContext : DbContext
             entity.ToTable("discrete_probability_parent_outcome");
             entity.HasKey(e => new { e.DiscreteProbabilityId, e.ParentOutcomeId });
 
+            entity.HasOne(e => e.DiscreteProbability)
+                .WithMany(d => d.ParentOutcomes)
+                .HasForeignKey(e => e.DiscreteProbabilityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasOne(e => e.ParentOutcome)
                 .WithMany()
                 .HasForeignKey(e => e.ParentOutcomeId)
@@ -254,6 +259,11 @@ public class AppDbContext : DbContext
         {
             entity.ToTable("discrete_probability_parent_option");
             entity.HasKey(e => new { e.DiscreteProbabilityId, e.ParentOptionId });
+
+            entity.HasOne(e => e.DiscreteProbability)
+                .WithMany(d => d.ParentOptions)
+                .HasForeignKey(e => e.DiscreteProbabilityId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(e => e.ParentOption)
                 .WithMany()
@@ -295,6 +305,11 @@ public class AppDbContext : DbContext
             entity.ToTable("discrete_utility_parent_outcome");
             entity.HasKey(e => new { e.DiscreteUtilityId, e.ParentOutcomeId });
 
+            entity.HasOne(e => e.DiscreteUtility)
+                .WithMany(d => d.ParentOutcomes)
+                .HasForeignKey(e => e.DiscreteUtilityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasOne(e => e.ParentOutcome)
                 .WithMany()
                 .HasForeignKey(e => e.ParentOutcomeId)
@@ -305,6 +320,11 @@ public class AppDbContext : DbContext
         {
             entity.ToTable("discrete_utility_parent_option");
             entity.HasKey(e => new { e.DiscreteUtilityId, e.ParentOptionId });
+
+            entity.HasOne(e => e.DiscreteUtility)
+                .WithMany(d => d.ParentOptions)
+                .HasForeignKey(e => e.DiscreteUtilityId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(e => e.ParentOption)
                 .WithMany()
@@ -415,9 +435,9 @@ public class AppDbContext : DbContext
         var result = await base.SaveChangesAsync(cancellationToken);
 
         // cleanup must happen after cascading effects have occured as a part of base.SaveChangesAsync
-        DiscreteProbabilityTableCleanup();
-        DiscreteUtilityTableCleanup();
-        await base.SaveChangesAsync(cancellationToken);
+        //DiscreteProbabilityTableCleanup();
+        //DiscreteUtilityTableCleanup();
+        //await base.SaveChangesAsync(cancellationToken);
         return result;
     }
 
@@ -437,56 +457,44 @@ public class AppDbContext : DbContext
         }
     }
 
-    private void DiscreteProbabilityTableCleanup()
-    {
-        var probabilityParentOptions = ChangeTracker.Entries<DiscreteProbabilityParentOption>()
-            .Where(e => e.State == EntityState.Deleted).ToList();
-
-        var probabilityParentoutcomes = ChangeTracker.Entries<DiscreteProbabilityParentOutcome>()
-            .Where(e => e.State == EntityState.Deleted).ToList();
-        var deletedProbabilityIds = probabilityParentOptions
-            .Select(entry => entry.Entity.DiscreteProbabilityId)
-            .Concat(probabilityParentoutcomes.Select(entry => entry.Entity.DiscreteProbabilityId))
-            .Distinct()
-            .ToList();
-
-        if (deletedProbabilityIds.Count == 0)
-        {
-            return;
-        }
-
-        DiscreteProbabilities.RemoveRange(
-            DiscreteProbabilities.Where(x => deletedProbabilityIds.Contains(x.Id)));
-        DiscreteProbabilityParentOptions.RemoveRange(
-            DiscreteProbabilityParentOptions.Where(x => deletedProbabilityIds.Contains(x.DiscreteProbabilityId)));
-        DiscreteProbabilityParentOutcomes.RemoveRange(
-            DiscreteProbabilityParentOutcomes.Where(x => deletedProbabilityIds.Contains(x.DiscreteProbabilityId)));
-    }
-
     private void DiscreteUtilityTableCleanup()
     {
-        var utilityParentOptions = ChangeTracker.Entries<DiscreteUtilityParentOption>()
-            .Where(e => e.State == EntityState.Deleted);
-
-        var utilityParentoutcomes = ChangeTracker.Entries<DiscreteUtilityParentOutcome>()
-            .Where(e => e.State == EntityState.Deleted);
-        var deletedUtilityIds = utilityParentOptions
-            .Select(entry => entry.Entity.DiscreteUtilityId)
-            .Concat(utilityParentoutcomes.Select(entry => entry.Entity.DiscreteUtilityId))
-            .Distinct()
+        // Find DiscreteUtilities that have no parent outcomes or options
+        var orphanedUtilities = DiscreteUtilities
+            .Include(du => du.ParentOutcomes)
+            .Include(du => du.ParentOptions)
+            .AsEnumerable() // Switch to client-side evaluation
+            .Where(du => !du.ParentOutcomes.Any() && !du.ParentOptions.Any())
             .ToList();
 
-        if (deletedUtilityIds.Count == 0)
+        if (orphanedUtilities.Count == 0)
         {
             return;
         }
 
-        DiscreteUtilities.RemoveRange(
-            DiscreteUtilities.Where(x => deletedUtilityIds.Contains(x.Id)));
-        DiscreteUtilityParentOptions.RemoveRange(
-            DiscreteUtilityParentOptions.Where(x => deletedUtilityIds.Contains(x.DiscreteUtilityId)));
-        DiscreteUtilityParentOutcomes.RemoveRange(
-            DiscreteUtilityParentOutcomes.Where(x => deletedUtilityIds.Contains(x.DiscreteUtilityId)));
+        DiscreteUtilities.RemoveRange(orphanedUtilities);
+        DiscreteUtilityParentOptions.RemoveRange(orphanedUtilities.SelectMany(x => x.ParentOptions).ToList());
+        DiscreteUtilityParentOutcomes.RemoveRange(orphanedUtilities.SelectMany(x => x.ParentOutcomes).ToList());
+    }
+
+    private void DiscreteProbabilityTableCleanup()
+    {
+        // Find DiscreteProbabilities that have no parent outcomes or options
+        var orphanedProbabilities = DiscreteProbabilities
+            .Include(dp => dp.ParentOutcomes)
+            .Include(dp => dp.ParentOptions)
+            .AsEnumerable() // Switch to client-side evaluation
+            .Where(dp => !dp.ParentOutcomes.Any() && !dp.ParentOptions.Any())
+            .ToList();
+
+        if (orphanedProbabilities.Count == 0)
+        {
+            return;
+        }
+
+        DiscreteProbabilities.RemoveRange(orphanedProbabilities);
+        DiscreteProbabilityParentOptions.RemoveRange(orphanedProbabilities.SelectMany(x => x.ParentOptions).ToList());
+        DiscreteProbabilityParentOutcomes.RemoveRange(orphanedProbabilities.SelectMany(x => x.ParentOutcomes).ToList());
     }
 
     public EntityEntry<IBaseEntity<Guid>> CreateEntryFromCollectionAsAdded(IBaseEntity<Guid> entity)

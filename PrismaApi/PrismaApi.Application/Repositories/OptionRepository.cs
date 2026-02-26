@@ -39,13 +39,13 @@ public class OptionRepository : BaseRepository<Option, Guid>
 
     public override async Task<Option> AddAsync(Option entity)
     {
-        await _ruleTrigger.ParentOptionsAddedAsync([entity.Id], default);
+        await _ruleTrigger.ParentOptionsAddedAsync([entity.DecisionId], default);
         return await base.AddAsync(entity);
     }
 
     public override async Task<List<Option>> AddRangeAsync(IEnumerable<Option> entities)
     {
-        await _ruleTrigger.ParentOptionsAddedAsync([.. entities.Select(e => e.Id)], default);
+        await _ruleTrigger.ParentOptionsAddedAsync([.. entities.Select(e => e.DecisionId)], default);
         return await base.AddRangeAsync(entities);
     }
 }
