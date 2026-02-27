@@ -22,7 +22,7 @@ from src.services.strategy_service import StrategyService
 from src.services.user_service import UserService
 from src.services.solver_service import SolverService
 from src.services.structure_service import StructureService
-from project_lock_manager import ProjectQueueManager
+from src.project_lock_manager import ProjectQueueManager
 from src.config import config
 from src.database import get_connection_string_and_token, build_connection_url
 
