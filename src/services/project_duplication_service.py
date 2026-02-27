@@ -26,7 +26,7 @@ from src.dtos.project_dtos import (
     ProjectOutgoingDto,
     ObjectiveViaProjectDto,
 )
-from src.dtos.project_roles_dtos import ProjectRoleCreateDto
+from src.dtos.project_roles_dtos import ProjectRoleCreateDto, ProjectRoleIncomingDto
 from src.dtos.uncertainty_dtos import UncertaintyIncomingDto
 from src.dtos.user_dtos import UserIncomingDto
 from src.dtos.utility_dtos import UtilityIncomingDto
@@ -38,6 +38,10 @@ from src.services.edge_service import EdgeService
 from src.services.issue_service import IssueService
 from src.services.project_service import ProjectService
 from src.services.strategy_service import StrategyService
+from src.dtos.user_dtos import (
+    UserMapper,
+)
+from src.repositories.user_repository import UserRepository
 
 
 @dataclass
@@ -108,7 +112,7 @@ class ProjectDuplicationService:
 
         self.mappings.project[original_project.id] = new_project_id
         self.generate_id_mappings(list(original_project.issues))
-        await self.duplicate_incoming_issues(session, list(original_project.issues), current_user)
+        await self.duplicate_issues(session, list(original_project.issues), current_user)
 
         await self.duplicate_strategies(
             session, original_project.strategies, new_project_id, current_user
@@ -125,6 +129,20 @@ class ProjectDuplicationService:
         current_user: UserIncomingDto,
     ) -> Optional[ProjectOutgoingDto]:
         """Create a duplicate project with roles."""
+
+        # Extract and create users from project roles
+        if isinstance(original_project, ProjectIncomingDto):
+            users = [
+                UserIncomingDto(
+                    id=None,
+                    name=role.user_name,
+                    azure_id=role.azure_id,
+                )
+                for role in original_project.users
+                if isinstance(role, ProjectRoleIncomingDto)
+            ]
+            for user in users:
+                await UserRepository(session).get_or_create(UserMapper.to_entity(user))
 
         duplicate_project_dto = ProjectCreateDto(
             id=new_project_id,
@@ -182,7 +200,7 @@ class ProjectDuplicationService:
 
         return duplicated_project[0]
 
-    async def duplicate_incoming_issues(
+    async def duplicate_issues(
         self,
         session: AsyncSession,
         issues: list[Issue] | list[IssueIncomingDto],

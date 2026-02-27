@@ -41,7 +41,7 @@ class ProjectImportService:
                 new_project_id=project_id,
             )
             duplication_service.generate_id_mappings(dto.issues)
-            await duplication_service.duplicate_incoming_issues(
+            await duplication_service.duplicate_issues(
                 session=session, issues=dto.issues, current_user=user_dto
             )
             await duplication_service.duplicate_strategies(
