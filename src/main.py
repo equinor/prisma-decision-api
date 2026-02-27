@@ -71,8 +71,8 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all HTTP headers
 )
-app.add_middleware(ExceptionFilterMiddleware)
 app.add_middleware(LoadCheckMiddleware)
+app.add_middleware(ExceptionFilterMiddleware)
 
 if config.PROFILE:
     # this will generate a profile.html at repository root when running any endpoint
