@@ -205,6 +205,15 @@ class ProjectService:
             model_filter=edge_filter.construct_filters()
         )
 
+        connected_issue_ids: set[uuid.UUID] = set()
+
+        for edge in edges_entities:
+            connected_issue_ids.add(edge.head_node.issue_id)
+            connected_issue_ids.add(edge.tail_node.issue_id)
+
+        # remove issues that have no edges        
+        issues_entities = [issue for issue in issues_entities if issue.id in connected_issue_ids]
+
         issue_dtos = IssueMapper.to_outgoing_dtos(issues_entities)
         edge_dtos = EdgeMapper.to_outgoing_dtos(edges_entities)
         self._remove_utilities_with_too_few_connections(issue_dtos, edge_dtos)
