@@ -524,11 +524,12 @@ class DecisionTreeCreator:
 
     async def calculate_partial_order(self) -> list[uuid.UUID]:
         """Partial order algorithm
-        TODO: handle utility nodes
         """
 
-        # get all chance nodes
-        uncertainty_nodes = await self.get_uncertainty_nodes()
+        # get all chance nodes and sort according to child/parent relationship
+        uncertainty_subgraph = self.nx.subgraph(await self.get_uncertainty_nodes()) # type: ignore
+        uncertainty_nodes = list(nx.topological_sort(uncertainty_subgraph))   # type: ignore
+
         elimination_order = await self.decision_elimination_order()
         # TODO: Add utility nodes
         partial_order: list[uuid.UUID] = []
@@ -546,7 +547,7 @@ class DecisionTreeCreator:
                 partial_order += parent_decision_nodes
             partial_order.append(decision)
 
-        partial_order += uncertainty_nodes
+        partial_order += uncertainty_nodes # type: ignore
 
         return partial_order
 
