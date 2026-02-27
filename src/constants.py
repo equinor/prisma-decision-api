@@ -100,3 +100,5 @@ class PageSize:
 
 
 default_value_metric_id = uuid.uuid5(uuid.NAMESPACE_DNS, "default value metric")
+
+ALLOWED_IMPORT_ROUTE_ENVS = {"test", "dev", "local"}

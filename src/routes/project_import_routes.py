@@ -8,7 +8,8 @@ from src.dependencies import get_project_import_service
 from src.services.user_service import get_current_user
 from src.dtos.user_dtos import UserIncomingDto
 from src.dependencies import get_db
-from src.constants import SessionInfoParameters
+from src.constants import ALLOWED_IMPORT_ROUTE_ENVS, SessionInfoParameters
+from src.config import config
 
 router = APIRouter(tags=["project-import"])
 
@@ -23,7 +24,14 @@ async def import_project_with_duplication(
     """s
     Endpoint for importing Projects using full duplication service logic.
     Recommended for complex scenarios with discrete probabilities and utilities.
+    **Available only in dev/test environments.**
     """
+    if config.APP_ENV not in ALLOWED_IMPORT_ROUTE_ENVS:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Project import is only available in dev/test environments. Current: {config.APP_ENV}",
+        )
+
     try:
         session.info[SessionInfoParameters.IS_EVENT_DISABLED.value] = True
         result = await project_import_service.import_from_json_with_duplication_logic(
