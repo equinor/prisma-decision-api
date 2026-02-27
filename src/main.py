@@ -29,6 +29,7 @@ from azure.monitor.opentelemetry import configure_azure_monitor  # type: ignore
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor  # type: ignore
 
 from src.middleware.exception_handling_middleware import ExceptionFilterMiddleware
+from src.middleware.load_check_middleware import LoadCheckMiddleware
 from src.logger import DOT_API_LOGGER_NAME, get_dot_api_logger
 
 logger = get_dot_api_logger()
@@ -71,6 +72,7 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all HTTP headers
 )
 app.add_middleware(ExceptionFilterMiddleware)
+app.add_middleware(LoadCheckMiddleware)
 
 if config.PROFILE:
     # this will generate a profile.html at repository root when running any endpoint
