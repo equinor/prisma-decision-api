@@ -24,11 +24,11 @@ spec:
         - APPINSIGHTS_CONNECTIONSTRING
       resources:
         requests:
-          memory: '1000Mi'
-          cpu: '100m'
+          memory: '2000Mi'
+          cpu: '200m'
         limits:
-          memory: '6000Mi'
-          cpu: '600m'
+          memory: '10000Mi'
+          cpu: '1000m'
         horizontalScaling:
           resources:
             memory:
