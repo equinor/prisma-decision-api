@@ -1,8 +1,14 @@
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.models.stragegy_option import StrategyOption
+from src.models.discrete_probability import DiscreteProbability
+from src.models.discrete_utility import DiscreteUtility
+from src.models.project_role import ProjectRole
+from src.models.edge import Edge
+from src.models.strategy import Strategy
 from src.services.discrete_utility_service import DiscreteUtilityService
 from src.constants import Boundary, DecisionHierarchy, ProjectRoleType, Type
 from src.dtos.decision_dtos import DecisionIncomingDto
@@ -14,8 +20,13 @@ from src.dtos.node_dtos import NodeIncomingDto
 from src.dtos.node_style_dtos import NodeStyleIncomingDto
 from src.dtos.option_dtos import OptionIncomingDto
 from src.dtos.outcome_dtos import OutcomeIncomingDto
-from src.dtos.project_dtos import ProjectCreateDto, ProjectOutgoingDto, ObjectiveViaProjectDto
-from src.dtos.project_roles_dtos import ProjectRoleCreateDto
+from src.dtos.project_dtos import (
+    ProjectCreateDto,
+    ProjectIncomingDto,
+    ProjectOutgoingDto,
+    ObjectiveViaProjectDto,
+)
+from src.dtos.project_roles_dtos import ProjectRoleCreateDto, ProjectRoleIncomingDto
 from src.dtos.uncertainty_dtos import UncertaintyIncomingDto
 from src.dtos.user_dtos import UserIncomingDto
 from src.dtos.utility_dtos import UtilityIncomingDto
@@ -27,6 +38,10 @@ from src.services.edge_service import EdgeService
 from src.services.issue_service import IssueService
 from src.services.project_service import ProjectService
 from src.services.strategy_service import StrategyService
+from src.dtos.user_dtos import (
+    UserMapper,
+)
+from src.repositories.user_repository import UserRepository
 
 
 @dataclass
@@ -48,100 +63,7 @@ class ProjectDuplicationService:
 
     mappings = IdMappings()
 
-    async def project_duplication(
-        self, session: AsyncSession, id: uuid.UUID, current_user: UserIncomingDto
-    ) -> Optional[ProjectOutgoingDto]:
-        """Duplicate a project with all its issues, nodes, and edges."""
-        projects: list[Project] = await ProjectRepository(session).get([id])
-        if not projects:
-            return None
-
-        original_project: Project = projects[0]
-        new_project_id = uuid.uuid4()
-
-        # Create duplicate project
-        duplicated_project = await self.create_duplicate_project(
-            session, original_project, new_project_id, current_user
-        )
-
-        self.mappings.project[original_project.id] = new_project_id
-        self.generate_id_mappings(list(original_project.issues))
-        (
-            duplicate_incoming_issues,
-            duplicate_incoming_discrete_probabilities_dtos,
-            duplicate_incoming_discrete_utilities_dtos,
-        ) = await self.create_duplicate_incoming_issues(list(original_project.issues))
-        # Create duplicate issues
-        self.create_issues = await IssueService().create(
-            session,
-            duplicate_incoming_issues,
-            UserIncomingDto(id=None, name=current_user.name, azure_id=current_user.azure_id),
-        )
-        # Create duplicate discrete probabilities
-        if duplicate_incoming_discrete_probabilities_dtos:
-            await DiscreteProbabilityService().create(
-                session,
-                duplicate_incoming_discrete_probabilities_dtos,
-            )
-        # Create duplicate discrete utilities
-        if duplicate_incoming_discrete_utilities_dtos:
-            await DiscreteUtilityService().create(
-                session,
-                duplicate_incoming_discrete_utilities_dtos,
-            )
-
-        await self.duplicate_strategies(session, original_project, new_project_id, current_user)
-
-        # Duplicate edges
-        await self.duplicate_edges(session, original_project, new_project_id, self.mappings)
-        return duplicated_project
-
-    async def create_duplicate_project(
-        self,
-        session: AsyncSession,
-        original_project: Project,
-        new_project_id: uuid.UUID,
-        current_user: UserIncomingDto,
-    ) -> Optional[ProjectOutgoingDto]:
-        """Create a duplicate project with roles."""
-
-        duplicate_project_dto = ProjectCreateDto(
-            id=new_project_id,
-            name=original_project.name,
-            parent_project_id=original_project.id,
-            parent_project_name=original_project.name,
-            objectives=[
-                ObjectiveViaProjectDto(
-                    description=objective.description,
-                    name=objective.name,
-                )
-                for objective in original_project.objectives
-            ],
-            opportunity_statement=original_project.opportunity_statement,
-            public=original_project.public,
-            end_date=original_project.end_date,
-            users=[
-                ProjectRoleCreateDto(
-                    user_name=role.user.name,
-                    azure_id=role.user.azure_id,
-                    user_id=role.user_id,
-                    project_id=new_project_id,
-                    role=ProjectRoleType(role.role),
-                )
-                for role in original_project.project_role
-            ],
-        )
-
-        duplicated_project = await ProjectService().create(
-            session,
-            [duplicate_project_dto],
-            UserIncomingDto(id=None, name=current_user.name, azure_id=current_user.azure_id),
-            is_duplicate=True,
-        )
-
-        return duplicated_project[0]
-
-    def generate_id_mappings(self, issues: list[Issue]) -> None:
+    def generate_id_mappings(self, issues: list[Issue] | list[IssueIncomingDto]) -> None:
         """Pre-generate all ID mappings for issues, nodes, outcomes, and options."""
         for issue in issues:
             self.mappings.issue[issue.id] = uuid.uuid4()
@@ -158,16 +80,133 @@ class ProjectDuplicationService:
                 for option in issue.decision.options:
                     self.mappings.option[option.id] = uuid.uuid4()
 
-    async def create_duplicate_incoming_issues(
+    def map_parent_ids(
         self,
-        issues: list[Issue],
-    ) -> tuple[
-        list[IssueIncomingDto],
-        list[DiscreteProbabilityIncomingDto],
-        list[DiscreteUtilityIncomingDto],
-    ]:
+        parent_outcome_ids: list[uuid.UUID],
+        parent_option_ids: list[uuid.UUID],
+    ) -> tuple[list[uuid.UUID], list[uuid.UUID]]:
+        """Map parent outcome and option IDs to new IDs."""
+        mapped_outcome_ids: list[uuid.UUID] = [
+            self.mappings.outcome[po] for po in parent_outcome_ids if po in self.mappings.outcome
+        ]
+        mapped_option_ids: list[uuid.UUID] = [
+            self.mappings.option[po] for po in parent_option_ids if po in self.mappings.option
+        ]
+        return (mapped_outcome_ids, mapped_option_ids)
+
+    async def project_duplication(
+        self, session: AsyncSession, id: uuid.UUID, current_user: UserIncomingDto
+    ) -> Optional[ProjectOutgoingDto]:
+        """Duplicate a project with all its issues, nodes, and edges."""
+        projects: list[Project] = await ProjectRepository(session).get([id])
+        if not projects:
+            return None
+
+        original_project: Project = projects[0]
+        new_project_id = uuid.uuid4()
+
+        # Create duplicate project
+        duplicated_project = await self.duplicate_project(
+            session, original_project, new_project_id, current_user
+        )
+
+        self.mappings.project[original_project.id] = new_project_id
+        self.generate_id_mappings(list(original_project.issues))
+        await self.duplicate_issues(session, list(original_project.issues), current_user)
+
+        await self.duplicate_strategies(
+            session, original_project.strategies, new_project_id, current_user
+        )
+
+        await self.duplicate_edges(session, original_project.edges, new_project_id)
+        return duplicated_project
+
+    async def duplicate_project(
+        self,
+        session: AsyncSession,
+        original_project: Project | ProjectIncomingDto,
+        new_project_id: uuid.UUID,
+        current_user: UserIncomingDto,
+    ) -> Optional[ProjectOutgoingDto]:
+        """Create a duplicate project with roles."""
+
+        # Extract and create users from project roles
+        if isinstance(original_project, ProjectIncomingDto):
+            users = [
+                UserIncomingDto(
+                    id=None,
+                    name=role.user_name,
+                    azure_id=role.azure_id,
+                )
+                for role in original_project.users
+                if isinstance(role, ProjectRoleIncomingDto)
+            ]
+            for user in users:
+                await UserRepository(session).get_or_create(UserMapper.to_entity(user))
+
+        duplicate_project_dto = ProjectCreateDto(
+            id=new_project_id,
+            name=original_project.name,
+            parent_project_id=(
+                original_project.id if isinstance(original_project, Project) else None
+            ),
+            parent_project_name=(
+                str(original_project.id) if isinstance(original_project, Project) else None
+            ),
+            objectives=[
+                ObjectiveViaProjectDto(
+                    description=objective.description,
+                    name=objective.name,
+                )
+                for objective in original_project.objectives
+            ],
+            opportunity_statement=original_project.opportunity_statement,
+            public=original_project.public,
+            end_date=original_project.end_date,
+            users=[
+                ProjectRoleCreateDto(
+                    user_name=(
+                        role.user.name
+                        if isinstance(role, ProjectRole) and role.user
+                        else role.user_name
+                    ),
+                    azure_id=(
+                        role.user.azure_id
+                        if isinstance(role, ProjectRole) and role.user
+                        else role.azure_id
+                    ),
+                    user_id=(
+                        role.user.id
+                        if isinstance(role, ProjectRole) and role.user
+                        else role.user_id
+                    ),
+                    project_id=new_project_id,
+                    role=ProjectRoleType(role.role),
+                )
+                for role in (
+                    original_project.project_role
+                    if isinstance(original_project, Project)
+                    else original_project.users
+                )
+            ],
+        )
+
+        duplicated_project = await ProjectService().create(
+            session,
+            [duplicate_project_dto],
+            UserIncomingDto(id=None, name=current_user.name, azure_id=current_user.azure_id),
+            is_duplicate=True,
+        )
+
+        return duplicated_project[0]
+
+    async def duplicate_issues(
+        self,
+        session: AsyncSession,
+        issues: list[Issue] | list[IssueIncomingDto],
+        current_user: UserIncomingDto,
+    ):
         """Create duplicate issues for the new project, prioritizing decision issues first, then uncertainty, then utility."""
-        # Sort issues to process decision issues first, then uncertainty, then utility
         duplicate_incoming_issues: list[IssueIncomingDto] = []
         duplicate_incoming_discrete_probabilities_dtos: list[DiscreteProbabilityIncomingDto] = []
         duplicate_incoming_discrete_utilities_dtos: list[DiscreteUtilityIncomingDto] = []
@@ -201,11 +240,23 @@ class ProjectDuplicationService:
             )
 
             duplicate_incoming_issues.append(issue_incoming_dto)
-        return (
+        await IssueService().create(
+            session,
             duplicate_incoming_issues,
-            duplicate_incoming_discrete_probabilities_dtos,
-            duplicate_incoming_discrete_utilities_dtos,
+            UserIncomingDto(id=None, name=current_user.name, azure_id=current_user.azure_id),
         )
+        # Create duplicate discrete probabilities
+        if duplicate_incoming_discrete_probabilities_dtos:
+            await DiscreteProbabilityService().create(
+                session,
+                duplicate_incoming_discrete_probabilities_dtos,
+            )
+        # Create duplicate discrete utilities
+        if duplicate_incoming_discrete_utilities_dtos:
+            await DiscreteUtilityService().create(
+                session,
+                duplicate_incoming_discrete_utilities_dtos,
+            )
 
     def create_decision_incoming_dto(
         self,
@@ -236,7 +287,7 @@ class ProjectDuplicationService:
         )
 
     def create_uncertainty_incoming_dto(
-        self, issue: Issue
+        self, issue: Issue | IssueIncomingDto
     ) -> Optional[tuple[UncertaintyIncomingDto, list[DiscreteProbabilityIncomingDto]]]:
         """Create an UncertaintyIncomingDto if the issue has an uncertainty."""
         if not issue.uncertainty:
@@ -257,7 +308,16 @@ class ProjectDuplicationService:
         if uncertainty.discrete_probabilities and len(uncertainty.discrete_probabilities) > 0:
             for dp in uncertainty.discrete_probabilities:
                 mapped_outcome_ids, mapped_option_ids = self.map_parent_ids(
-                    list(dp.parent_outcomes), list(dp.parent_options)
+                    list(
+                        [pout.parent_outcome_id for pout in dp.parent_outcomes]
+                        if isinstance(dp, DiscreteProbability)
+                        else dp.parent_outcome_ids
+                    ),
+                    list(
+                        [pot.parent_option_id for pot in dp.parent_options]
+                        if isinstance(dp, DiscreteProbability)
+                        else dp.parent_option_ids
+                    ),
                 )
 
                 outcome_id = self.mappings.outcome.get(dp.outcome_id)
@@ -285,7 +345,7 @@ class ProjectDuplicationService:
         return uncertainty_dto, discrete_probabilities_dtos
 
     def create_utility_incoming_dto(
-        self, issue: Issue
+        self, issue: Issue | IssueIncomingDto
     ) -> Optional[tuple[Optional[UtilityIncomingDto], list[DiscreteUtilityIncomingDto]]]:
         """Create a UtilityIncomingDto if the issue has a utility."""
         if not issue.utility:
@@ -294,8 +354,18 @@ class ProjectDuplicationService:
         new_utility_id = uuid.uuid4()
         discrete_utilities: list[DiscreteUtilityIncomingDto] = []
         for du in issue.utility.discrete_utilities:
+
             mapped_outcome_ids, mapped_option_ids = self.map_parent_ids(
-                list(du.parent_outcomes), list(du.parent_options)
+                list(
+                    [pout.parent_outcome_id for pout in du.parent_outcomes]
+                    if isinstance(du, DiscreteUtility)
+                    else du.parent_outcome_ids
+                ),
+                list(
+                    [pot.parent_option_id for pot in du.parent_options]
+                    if isinstance(du, DiscreteUtility)
+                    else du.parent_option_ids
+                ),
             )
             discrete_utilities.append(
                 DiscreteUtilityIncomingDto(
@@ -315,8 +385,13 @@ class ProjectDuplicationService:
         )
         return utility_incoming_dto, discrete_utilities
 
-    def create_node_dto(self, issue: Issue, new_project_id: uuid.UUID) -> Optional[NodeIncomingDto]:
+    def create_node_dto(
+        self, issue: Issue | IssueIncomingDto, new_project_id: uuid.UUID
+    ) -> Optional[NodeIncomingDto]:
         """Create a NodeIncomingDto if the issue has a node with style."""
+
+        if not issue.node or not issue.node.node_style:
+            return None
 
         new_node_id = self.mappings.node[issue.node.id]
         return NodeIncomingDto(
@@ -331,41 +406,22 @@ class ProjectDuplicationService:
             ),
         )
 
-    def map_parent_ids(
-        self,
-        parent_outcomes: list[Any],
-        parent_options: list[Any],
-    ) -> tuple[list[uuid.UUID], list[uuid.UUID]]:
-        """Map parent outcome and option IDs to new IDs."""
-        mapped_outcome_ids: list[uuid.UUID] = [
-            self.mappings.outcome[po.parent_outcome_id]
-            for po in parent_outcomes
-            if po.parent_outcome_id in self.mappings.outcome
-        ]
-        mapped_option_ids: list[uuid.UUID] = [
-            self.mappings.option[po.parent_option_id]
-            for po in parent_options
-            if po.parent_option_id in self.mappings.option
-        ]
-        return (mapped_outcome_ids, mapped_option_ids)
-
     async def duplicate_edges(
         self,
         session: AsyncSession,
-        original_project: Project,
+        original_edges: list[Edge] | list[EdgeIncomingDto],
         new_project_id: uuid.UUID,
-        mappings: IdMappings,
     ) -> None:
         """Duplicate all edges from the original project."""
 
         duplicate_edge_dtos: list[EdgeIncomingDto] = [
             EdgeIncomingDto(
                 id=uuid.uuid4(),
-                tail_id=mappings.node[edge.tail_id],
-                head_id=mappings.node[edge.head_id],
+                tail_id=self.mappings.node[edge.tail_id],
+                head_id=self.mappings.node[edge.head_id],
                 project_id=new_project_id,
             )
-            for edge in original_project.edges
+            for edge in original_edges
         ]
 
         if duplicate_edge_dtos:
@@ -374,7 +430,7 @@ class ProjectDuplicationService:
     async def duplicate_strategies(
         self,
         session: AsyncSession,
-        original_project: Project,
+        strategies: list[Strategy] | list[StrategyIncomingDto],
         new_project_id: uuid.UUID,
         user_dto: UserIncomingDto,
     ) -> None:
@@ -387,15 +443,39 @@ class ProjectDuplicationService:
                 project_id=new_project_id,
                 options=[
                     OptionIncomingDto(
-                        id=self.mappings.option[strategy_option.option.id],
-                        name=strategy_option.option.name,
-                        decision_id=self.mappings.decision[strategy_option.option.decision_id],
-                        utility=strategy_option.option.utility,
+                        id=self.mappings.option[
+                            (
+                                strategy_option.option.id
+                                if isinstance(strategy_option, StrategyOption)
+                                else strategy_option.id
+                            )
+                        ],
+                        name=(
+                            strategy_option.option.name
+                            if isinstance(strategy_option, StrategyOption)
+                            else strategy_option.name
+                        ),
+                        decision_id=self.mappings.decision[
+                            (
+                                strategy_option.option.decision_id
+                                if isinstance(strategy_option, StrategyOption)
+                                else strategy_option.decision_id
+                            )
+                        ],
+                        utility=(
+                            strategy_option.option.utility
+                            if isinstance(strategy_option, StrategyOption)
+                            else strategy_option.utility
+                        ),
                     )
-                    for strategy_option in strategy.strategy_options
+                    for strategy_option in (
+                        strategy.strategy_options
+                        if isinstance(strategy, Strategy)
+                        else strategy.options
+                    )
                 ],
             )
-            for strategy in original_project.strategies
+            for strategy in strategies
         ]
         if strategies_to_create:
             await StrategyService().create(session, strategies_to_create, user_dto)
