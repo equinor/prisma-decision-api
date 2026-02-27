@@ -12,8 +12,8 @@ class ProjectQueueManager:
 
     def acquire_project_lock(self, project_id: uuid.UUID) -> asyncio.Lock:
         lock = self.project_locks.get(project_id)
-        with self._manager_lock:
-            if lock is None:
+        if lock is None:
+            with self._manager_lock:
                 self.add_project_lock(project_id)
                 lock = self.project_locks.get(project_id)
                 if lock is None:
