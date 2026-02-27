@@ -16,7 +16,7 @@ async def get_optimal_decisions_for_project(
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ):
     try:
-        async with lock_manager.aquire_project_lock(project_id):
+        async with lock_manager.acquire_project_lock(project_id):
             return await solver_service.find_optimal_decision_pyagrum(project_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -29,7 +29,7 @@ async def get_optimal_decisions_for_project_as_tree(
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ):
     try:
-        async with lock_manager.aquire_project_lock(project_id):
+        async with lock_manager.acquire_project_lock(project_id):
             return await solver_service.get_decision_tree_for_optimal_decisions_old(project_id)
     except DecisionTreePruningException as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -44,7 +44,7 @@ async def get_optimal_decisions_for_project_as_tree_tmp(
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ):
     try:
-        async with lock_manager.aquire_project_lock(project_id):
+        async with lock_manager.acquire_project_lock(project_id):
             return await solver_service.get_decision_tree_for_optimal_decisions(project_id)
     except DecisionTreePruningException as e:
         raise HTTPException(status_code=400, detail=str(e))

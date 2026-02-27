@@ -18,7 +18,7 @@ async def get_decision_tree(
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ) -> Optional[DecisionTreeDtoOld]:
     try:
-        async with lock_manager.aquire_project_lock(project_id):
+        async with lock_manager.acquire_project_lock(project_id):
             return await structure_service.create_decision_tree_dtos_old(project_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -31,7 +31,7 @@ async def get_partial_order(
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ) -> Optional[PartialOrderDto]:
     try:
-        async with lock_manager.aquire_project_lock(project_id):
+        async with lock_manager.acquire_project_lock(project_id):
             return await structure_service.create_partial_order(project_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -44,7 +44,7 @@ async def get_decision_tree_tmp(
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ) -> Optional[DecisionTreeDto]:
     try:
-        async with lock_manager.aquire_project_lock(project_id):
+        async with lock_manager.acquire_project_lock(project_id):
             return await structure_service.create_decision_tree_dtos(project_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
