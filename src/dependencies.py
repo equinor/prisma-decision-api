@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, Engine
 from src.services.project_role_service import ProjectRoleService
 from src.services.decision_service import DecisionService
 from src.services.project_service import ProjectService
+from src.services.project_import_service import ProjectImportService
 from src.services.objective_service import ObjectiveService
 from src.services.uncertainty_service import UncertaintyService
 from src.services.discrete_probability_service import DiscreteProbabilityService
@@ -60,6 +61,10 @@ async def get_project_service() -> ProjectService:
 
 async def get_project_duplication_service() -> ProjectDuplicationService:
     return ProjectDuplicationService()
+
+
+async def get_project_import_service() -> ProjectImportService:
+    return ProjectImportService()
 
 
 async def get_project_role_service() -> ProjectRoleService:
