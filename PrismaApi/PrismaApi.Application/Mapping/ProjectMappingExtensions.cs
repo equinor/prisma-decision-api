@@ -64,7 +64,8 @@ public static class ProjectMappingExtensions
             EndDate = dto.EndDate,
             CreatedById = userDto.Id,
             UpdatedById = userDto.Id,
-            Objectives = dto.Objectives.ToEntities(dto.Id, userDto)
+            Objectives = dto.Objectives.ToEntities(dto.Id, userDto),
+            ProjectRoles = dto.Users.ToEntities(userDto)
         };
     }
 

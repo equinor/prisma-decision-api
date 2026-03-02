@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Application.Repositories;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 
@@ -27,19 +28,43 @@ public class ProjectService
 
     public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos, UserOutgoingDto userDto)
     {
-        var projectEntities = dtos.ToEntities(userDto);
-        await _projectRepository.AddRangeAsync(projectEntities);
+        var rolesToBeCreated = dtos.Select(x =>
+        {
+            return new ProjectRoleCreateDto
+            {
+                Id = Guid.NewGuid(),
+                ProjectId = x.Id,
+                UserId = userDto.Id,
+                Role = ProjectRoleType.Facilitator.ToString()
+            };
+        }).Distinct();
 
         foreach (var dto in dtos)
         {
-            if (dto.Users.Count == 0)
+            var creatorRole = new ProjectRoleCreateDto
             {
-                continue;
-            }
-
-            var projectRoles = await BuildProjectRolesAsync(dto.Users, dto.Id, userDto);
-            await _projectRoleRepository.AddRangeAsync(projectRoles);
+                Id = Guid.NewGuid(),
+                ProjectId = dto.Id,
+                UserId = userDto.Id,
+                Role = ProjectRoleType.Facilitator.ToString()
+            };
         }
+
+        var projectEntities = dtos.ToEntities(userDto);
+        await _projectRepository.AddRangeAsync(projectEntities);
+
+        //foreach (var dto in dtos)
+        //{
+        //    if (dto.Users.Count == 0)
+        //    {
+        //        continue;
+        //    }
+
+        //    var projectRoles = await BuildProjectRolesAsync(dto.Users, dto.Id, userDto);
+        //    await _projectRoleRepository.AddRangeAsync(projectRoles);
+        //}
+
+        await _projectRoleRepository.AddRangeAsync(rolesToBeCreated.ToEntities(userDto));
 
         var ids = projectEntities.Select(p => p.Id).ToList();
         var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false);

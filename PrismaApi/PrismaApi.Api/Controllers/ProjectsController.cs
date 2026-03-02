@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Graph;
 using PrismaApi.Infrastructure;
-using PrismaApi.Application.Repositories;
 using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
 
