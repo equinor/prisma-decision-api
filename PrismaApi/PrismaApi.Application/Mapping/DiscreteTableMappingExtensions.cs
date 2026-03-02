@@ -43,6 +43,22 @@ public static class DiscreteTableMappingExtensions
         };
     }
 
+    public static DiscreteProbability ToEntityWithoutParents(this DiscreteProbabilityDto dto)
+    {
+        return new DiscreteProbability
+        {
+            Id = dto.Id,
+            OutcomeId = dto.OutcomeId,
+            UncertaintyId = dto.UncertaintyId,
+            Probability = dto.Probability
+        };
+    }
+
+    public static List<DiscreteProbability> ToEntitiesWithoutParents(this IEnumerable<DiscreteProbabilityDto> dtos)
+    {
+        return dtos.Select(ToEntityWithoutParents).ToList();
+    }
+
     public static List<DiscreteProbabilityDto> ToDtos(this IEnumerable<DiscreteProbability> entities)
     {
         return entities.Select(ToDto).ToList();
@@ -77,6 +93,22 @@ public static class DiscreteTableMappingExtensions
             ParentOptionIds = entity.ParentOptions.Select(x => x.ParentOptionId).ToList(),
             ParentOutcomeIds = entity.ParentOutcomes.Select(x => x.ParentOutcomeId).ToList(),
         };
+    }
+
+    public static DiscreteUtility ToEntityWithoutParents(this DiscreteUtilityDto dto)
+    {
+        return new DiscreteUtility
+        {
+            Id = dto.Id,
+            UtilityId = dto.UtilityId,
+            ValueMetricId = dto.ValueMetricId,
+            UtilityValue = dto.UtilityValue
+        };
+    }
+
+    public static List<DiscreteUtility> ToEntitiesWithoutParents(this IEnumerable<DiscreteUtilityDto> dtos)
+    {
+        return dtos.Select(ToEntityWithoutParents).ToList();
     }
 
     public static List<DiscreteUtilityDto> ToDtos(this IEnumerable<DiscreteUtility> entities)

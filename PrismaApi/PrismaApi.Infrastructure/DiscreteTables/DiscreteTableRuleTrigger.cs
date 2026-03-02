@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.Linq;
 using System.Threading;
 
 namespace PrismaApi.Infrastructure.DiscreteTables;
@@ -83,6 +84,16 @@ public sealed class DiscreteTableRuleTrigger : IDiscreteTableRuleTrigger
 
     private async Task EnqueueHeadIssuesByIssueAsync(ICollection<Guid> issueIds, CancellationToken cancellationToken = default)
     {
+        var strategyOptionsToRemove = await _db.StrategyOptions
+            .AsNoTracking()
+            .Where(x => x.Option.Decision.Issue.Type == "Decision" && issueIds.Contains(x.Option.Decision.IssueId))
+            .Select(e => e.OptionId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        _db.DiscreteTableSessionInfo.EnqueueStrategyOptionsForDeletion(strategyOptionsToRemove);
+
+
         if (_db.IsDiscreteTableEventDisabled)
             return;
         var headIssueIds = await _db.Edges

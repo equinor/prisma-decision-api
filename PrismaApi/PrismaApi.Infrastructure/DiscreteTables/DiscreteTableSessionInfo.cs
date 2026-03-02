@@ -1,3 +1,4 @@
+using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 
@@ -11,6 +12,7 @@ public sealed class DiscreteTableSessionInfo
     public HashSet<Guid> IssuesPendingStrategyRemoval { get; } = new();
     public HashSet<Guid> DiscreteProbabilitiesToDelete { get; } = new();
     public HashSet<Guid> DiscreteUtilitiesToDelete { get; } = new();
+    public HashSet<Guid> OptionsToRemoveFromStrategies { get; } = new();
 
     public bool HasChanges =>
         AffectedIssueIds.Count > 0 ||
@@ -34,5 +36,11 @@ public sealed class DiscreteTableSessionInfo
     {
         foreach (var issueId in issueIds) 
             AffectedIssueIds.Add(issueId);
+    }
+
+    public void EnqueueStrategyOptionsForDeletion(ICollection<Guid> optionIds)
+    {
+        foreach (var optionId in optionIds)
+            OptionsToRemoveFromStrategies.Add(optionId);
     }
 }

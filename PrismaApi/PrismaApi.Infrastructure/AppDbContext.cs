@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Domain.Interfaces;
 using PrismaApi.Infrastructure.DiscreteTables;
 using System.ComponentModel;
+using System.Threading;
 
 namespace PrismaApi.Infrastructure;
 
@@ -432,13 +434,15 @@ public class AppDbContext : DbContext
     public async override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         UpdateTimestamps();
-        var result = await base.SaveChangesAsync(cancellationToken);
+        await OnOutcomeDeletedCleanupAsync(cancellationToken);
+        await OnOptionDeletedCleanupAsync(cancellationToken);
+        return await base.SaveChangesAsync(cancellationToken);
 
         // cleanup must happen after cascading effects have occured as a part of base.SaveChangesAsync
         //DiscreteProbabilityTableCleanup();
         //DiscreteUtilityTableCleanup();
         //await base.SaveChangesAsync(cancellationToken);
-        return result;
+        //return result;
     }
 
     private void UpdateTimestamps()
@@ -454,6 +458,100 @@ public class AppDbContext : DbContext
             }
 
             entry.Entity.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+    }
+
+    private async Task OnOutcomeDeletedCleanupAsync(CancellationToken cancellationToken = default)
+    {
+        var deletedOutcomeIds = ChangeTracker.Entries<Outcome>()
+        .Where(e => e.State == EntityState.Deleted)
+        .Select(e => e.Entity.Id)
+        .ToHashSet();
+
+        if (deletedOutcomeIds.Any())
+        {
+            // Load the parent outcome relationships and the discrete probabilities they reference
+            var affectedProbParentOutcomes = await DiscreteProbabilityParentOutcomes
+                .Where(po => deletedOutcomeIds.Contains(po.ParentOutcomeId))
+                .Include(po => po.DiscreteProbability)
+                    .ThenInclude(dp => dp!.ParentOptions)
+                .Include(po => po.DiscreteProbability)
+                    .ThenInclude(dp => dp!.ParentOutcomes)
+                .ToListAsync(cancellationToken);
+
+            var affectedProbs = affectedProbParentOutcomes
+                .Select(po => po.DiscreteProbability)
+                .Where(dp => dp != null)
+                .Distinct()
+                .Cast<DiscreteProbability>()
+                .ToList();
+
+            DiscreteProbabilities.RemoveRange(affectedProbs);
+
+            // Load the parent outcome relationships and the discrete utilities they reference
+            var affectedUtilParentOutcomes = await DiscreteUtilityParentOutcomes
+                .Where(uo => deletedOutcomeIds.Contains(uo.ParentOutcomeId))
+                .Include(uo => uo.DiscreteUtility)
+                    .ThenInclude(du => du!.ParentOptions)
+                .Include(uo => uo.DiscreteUtility)
+                    .ThenInclude(du => du!.ParentOutcomes)
+                .ToListAsync(cancellationToken);
+
+            var affectedUtils = affectedUtilParentOutcomes
+                .Select(uo => uo.DiscreteUtility)
+                .Where(du => du != null)
+                .Distinct()
+                .Cast<DiscreteUtility>()
+                .ToList();
+
+            DiscreteUtilities.RemoveRange(affectedUtils);
+        }
+    }
+
+    private async Task OnOptionDeletedCleanupAsync(CancellationToken cancellationToken = default)
+    {
+        var deletedOptionIds = ChangeTracker.Entries<Option>()
+        .Where(e => e.State == EntityState.Deleted)
+        .Select(e => e.Entity.Id)
+        .ToHashSet();
+
+        if (deletedOptionIds.Any())
+        {
+            // Load the parent option relationships and the discrete probabilities they reference
+            var affectedProbParentOptions = await DiscreteProbabilityParentOptions
+                .Where(po => deletedOptionIds.Contains(po.ParentOptionId))
+                .Include(po => po.DiscreteProbability)
+                    .ThenInclude(dp => dp!.ParentOptions)
+                .Include(po => po.DiscreteProbability)
+                    .ThenInclude(dp => dp!.ParentOutcomes)
+                .ToListAsync(cancellationToken);
+
+            var affectedProbs = affectedProbParentOptions
+                .Select(po => po.DiscreteProbability)
+                .Where(dp => dp != null)
+                .Distinct()
+                .Cast<DiscreteProbability>()
+                .ToList();
+
+            DiscreteProbabilities.RemoveRange(affectedProbs);
+
+            // Load the parent option relationships and the discrete utilities they reference
+            var affectedUtilParentOptions = await DiscreteUtilityParentOptions
+                .Where(uo => deletedOptionIds.Contains(uo.ParentOptionId))
+                .Include(uo => uo.DiscreteUtility)
+                    .ThenInclude(du => du!.ParentOptions)
+                .Include(uo => uo.DiscreteUtility)
+                    .ThenInclude(du => du!.ParentOutcomes)
+                .ToListAsync(cancellationToken);
+
+            var affectedUtils = affectedUtilParentOptions
+                .Select(uo => uo.DiscreteUtility)
+                .Where(du => du != null)
+                .Distinct()
+                .Cast<DiscreteUtility>()
+                .ToList();
+
+            DiscreteUtilities.RemoveRange(affectedUtils);
         }
     }
 
