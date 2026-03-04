@@ -6,7 +6,7 @@ from src.constants import DatabaseConstants, ProjectRoleType
 
 
 class UserInfoDto(BaseModel):
-    user_name: str = Field(max_length=DatabaseConstants.MAX_LONG_STRING_LENGTH.value)
+    name: str = Field(max_length=DatabaseConstants.MAX_LONG_STRING_LENGTH.value)
     azure_id: str
 
 
@@ -51,7 +51,7 @@ class ProjectRoleMapper:
     def to_outgoing_dto(entity: ProjectRole) -> ProjectRoleOutgoingDto:
         return ProjectRoleOutgoingDto(
             id=entity.id,
-            user_name=entity.user.name,
+            name=entity.user.name,
             user_id=entity.user_id,
             project_id=entity.project_id,
             azure_id=entity.user.azure_id,
