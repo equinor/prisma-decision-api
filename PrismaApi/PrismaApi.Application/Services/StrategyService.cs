@@ -4,16 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
-using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Services;
 
 public class StrategyService: IStrategyService
 {
-    private readonly StrategyRepository _strategyRepository;
+    private readonly IStrategyRepository _strategyRepository;
 
-    public StrategyService(StrategyRepository strategyRepository)
+    public StrategyService(IStrategyRepository strategyRepository)
     {
         _strategyRepository = strategyRepository;
     }

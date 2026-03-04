@@ -4,16 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
-using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Services;
 
 public class UtilityService: IUtilityService
 {
-    private readonly UtilityRepository _utilityRepository;
+    private readonly IUtilityRepository _utilityRepository;
 
-    public UtilityService(UtilityRepository utilityRepository)
+    public UtilityService(IUtilityRepository utilityRepository)
     {
         _utilityRepository = utilityRepository;
     }

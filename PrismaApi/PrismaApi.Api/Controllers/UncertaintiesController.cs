@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 
@@ -13,9 +13,9 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class UncertaintiesController : PrismaBaseEntityController
 {
-    private readonly UncertaintyService _uncertaintyService;
-    private readonly TableRebuildingService _tableRebuildingService;
-    public UncertaintiesController(UncertaintyService uncertaintyService, AppDbContext dbContext, TableRebuildingService tableRebuildingService)
+    private readonly IUncertaintyService _uncertaintyService;
+    private readonly ITableRebuildingService _tableRebuildingService;
+    public UncertaintiesController(IUncertaintyService uncertaintyService, AppDbContext dbContext, ITableRebuildingService tableRebuildingService)
         : base(dbContext)
     {
         _uncertaintyService = uncertaintyService;

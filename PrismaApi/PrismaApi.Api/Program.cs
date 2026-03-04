@@ -80,6 +80,7 @@ builder.Services.AddScoped<IStrategyService, StrategyService>();
 builder.Services.AddScoped<IObjectiveService, ObjectiveService>();
 builder.Services.AddScoped<IProjectRoleService, ProjectRoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddHttpClient<IFastApiService, FastApiService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

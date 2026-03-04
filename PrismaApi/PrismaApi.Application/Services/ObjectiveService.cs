@@ -4,16 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
-using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Services;
 
 public class ObjectiveService: IObjectiveService
 {
-    private readonly ObjectiveRepository _objectiveRepository;
+    private readonly IObjectiveRepository _objectiveRepository;
 
-    public ObjectiveService(ObjectiveRepository objectiveRepository)
+    public ObjectiveService(IObjectiveRepository objectiveRepository)
     {
         _objectiveRepository = objectiveRepository;
     }

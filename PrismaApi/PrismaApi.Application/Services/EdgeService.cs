@@ -4,16 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
-using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Services;
 
 public class EdgeService: IEdgeService
 {
-    private readonly EdgeRepository _edgeRepository;
+    private readonly IEdgeRepository _edgeRepository;
 
-    public EdgeService(EdgeRepository edgeRepository)
+    public EdgeService(IEdgeRepository edgeRepository)
     {
         _edgeRepository = edgeRepository;
     }

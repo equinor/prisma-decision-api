@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 using System.Text.Json;
@@ -12,9 +12,9 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class FastApiController : ControllerBase
 {
-    public readonly FastApiService _fastApiService;
-    public readonly ProjectService _projectService;
-    public FastApiController(FastApiService fastApiService, ProjectService projectService)
+    public readonly IFastApiService _fastApiService;
+    public readonly IProjectService _projectService;
+    public FastApiController(IFastApiService fastApiService, IProjectService projectService)
     {
         _fastApiService = fastApiService;
         _projectService = projectService;

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Infrastructure;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Api.Controllers;
@@ -9,13 +9,13 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class ProjectsController : PrismaBaseEntityController
 {
-    private readonly ProjectService _projectService;
-    private readonly UserService _userService;
+    private readonly IProjectService _projectService;
+    private readonly IUserService _userService;
 
     public ProjectsController(
-        ProjectService projectService,
+        IProjectService projectService,
         AppDbContext dbContext,
-        UserService userService
+        IUserService userService
 
     )
         : base(dbContext)

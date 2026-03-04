@@ -4,16 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
-using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Services;
 
 public class OptionService: IOptionService
 {
-    private readonly OptionRepository _optionRepository;
+    private readonly IOptionRepository _optionRepository;
 
-    public OptionService(OptionRepository optionRepository)
+    public OptionService(IOptionRepository optionRepository)
     {
         _optionRepository = optionRepository;
     }

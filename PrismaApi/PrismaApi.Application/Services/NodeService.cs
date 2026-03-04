@@ -4,16 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
-using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Services;
 
 public class NodeService: INodeService
 {
-    private readonly NodeRepository _nodeRepository;
+    private readonly INodeRepository _nodeRepository;
 
-    public NodeService(NodeRepository nodeRepository)
+    public NodeService(INodeRepository nodeRepository)
     {
         _nodeRepository = nodeRepository;
     }

@@ -3,9 +3,11 @@ using Microsoft.Identity.Web;
 using System.Net;
 using System.Net.Http.Headers;
 
+using PrismaApi.Application.Interfaces;
+
 namespace PrismaApi.Application.Services;
 
-public class FastApiService
+public class FastApiService : IFastApiService
 {
     private readonly HttpClient _httpClient;
     private readonly ITokenAcquisition _tokenAcquisition;

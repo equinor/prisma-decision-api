@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 
@@ -9,9 +9,9 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class DiscreteProbabilitiesController : PrismaBaseEntityController
 {
-    private readonly DiscreteProbabilityService _discreteProbabilityService;
+    private readonly IDiscreteProbabilityService _discreteProbabilityService;
 
-    public DiscreteProbabilitiesController(DiscreteProbabilityService discreteProbabilityService, AppDbContext dbContext)
+    public DiscreteProbabilitiesController(IDiscreteProbabilityService discreteProbabilityService, AppDbContext dbContext)
         : base(dbContext)
     {
         _discreteProbabilityService = discreteProbabilityService;

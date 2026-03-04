@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 
@@ -9,9 +9,9 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class DiscreteUtilitiesController : PrismaBaseEntityController
 {
-    private readonly DiscreteUtilityService _discreteUtilityService;
+    private readonly IDiscreteUtilityService _discreteUtilityService;
 
-    public DiscreteUtilitiesController(DiscreteUtilityService discreteUtilityService, AppDbContext dbContext)
+    public DiscreteUtilitiesController(IDiscreteUtilityService discreteUtilityService, AppDbContext dbContext)
         : base(dbContext)
     {
         _discreteUtilityService = discreteUtilityService;

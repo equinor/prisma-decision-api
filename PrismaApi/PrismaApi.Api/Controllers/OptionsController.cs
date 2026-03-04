@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 
@@ -12,10 +12,10 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class OptionsController : PrismaBaseEntityController
 {
-    private readonly OptionService _optionService;
-    private readonly TableRebuildingService _tableRebuildingService;
+    private readonly IOptionService _optionService;
+    private readonly ITableRebuildingService _tableRebuildingService;
 
-    public OptionsController(OptionService optionService, AppDbContext dbContext, TableRebuildingService tableRebuildingService)
+    public OptionsController(IOptionService optionService, AppDbContext dbContext, ITableRebuildingService tableRebuildingService)
         : base(dbContext)
     {
         _optionService = optionService;

@@ -4,16 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
-using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Services;
 
 public class UncertaintyService: IUncertaintyService
 {
-    private readonly UncertaintyRepository _uncertaintyRepository;
+    private readonly IUncertaintyRepository _uncertaintyRepository;
 
-    public UncertaintyService(UncertaintyRepository uncertaintyRepository)
+    public UncertaintyService(IUncertaintyRepository uncertaintyRepository)
     {
         _uncertaintyRepository = uncertaintyRepository;
     }

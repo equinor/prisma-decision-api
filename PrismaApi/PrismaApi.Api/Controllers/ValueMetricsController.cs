@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 
@@ -12,9 +12,9 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class ValueMetricsController : PrismaBaseEntityController
 {
-    private readonly ValueMetricService _valueMetricService;
+    private readonly IValueMetricService _valueMetricService;
 
-    public ValueMetricsController(ValueMetricService valueMetricService, AppDbContext dbContext)
+    public ValueMetricsController(IValueMetricService valueMetricService, AppDbContext dbContext)
         : base(dbContext)
     {
         _valueMetricService = valueMetricService;

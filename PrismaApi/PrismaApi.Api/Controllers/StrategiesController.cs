@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Graph;
-using PrismaApi.Application.Repositories;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 
@@ -15,13 +13,13 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class StrategiesController : PrismaBaseEntityController
 {
-    private readonly StrategyService _strategyService;
-    private readonly UserService _userService;
+    private readonly IStrategyService _strategyService;
+    private readonly IUserService _userService;
 
     public StrategiesController(
-        StrategyService strategyService,
+        IStrategyService strategyService,
         AppDbContext dbContext,
-        UserService userService
+        IUserService userService
     )
         : base(dbContext)
     {

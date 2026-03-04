@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Graph;
-using PrismaApi.Application.Repositories;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 
@@ -15,16 +13,14 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class IssuesController : PrismaBaseEntityController
 {
-    private readonly IssueService _issueService;
-    private readonly UserService _userService;
-    private readonly TableRebuildingService _tableRebuildingService;
-    private readonly StrategyTableService _strategyTableService;
+    private readonly IIssueService _issueService;
+    private readonly IUserService _userService;
+    private readonly ITableRebuildingService _tableRebuildingService;
 
     public IssuesController(
-        IssueService issueService,
-        UserService userService,
-        TableRebuildingService tableRebuildingService,
-        StrategyTableService strategyTableService,
+        IIssueService issueService,
+        IUserService userService,
+        ITableRebuildingService tableRebuildingService,
         AppDbContext dbContext
     )
         : base(dbContext)
@@ -32,7 +28,6 @@ public class IssuesController : PrismaBaseEntityController
         _issueService = issueService;
         _userService = userService;
         _tableRebuildingService = tableRebuildingService;
-        _strategyTableService = strategyTableService;
     }
 
     [HttpPost("issues")]
@@ -83,7 +78,6 @@ public class IssuesController : PrismaBaseEntityController
         try
         {
             var result = await _issueService.UpdateAsync(dtos, user);
-            await _strategyTableService.RemoveOutStrategyOptionsFromOptionIdsAsync();
             await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);

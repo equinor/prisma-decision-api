@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 
@@ -8,13 +8,13 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class ObjectivesController : PrismaBaseEntityController
 {
-    private readonly ObjectiveService _objectiveService;
-    private readonly UserService _userService;
+    private readonly IObjectiveService _objectiveService;
+    private readonly IUserService _userService;
 
     public ObjectivesController(
-        ObjectiveService objectiveService, 
+        IObjectiveService objectiveService, 
         AppDbContext dbContext,
-        UserService userService
+        IUserService userService
     )
         : base(dbContext)
     {

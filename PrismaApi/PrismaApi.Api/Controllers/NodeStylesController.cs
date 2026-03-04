@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 
@@ -12,9 +12,9 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class NodeStylesController : PrismaBaseEntityController
 {
-    private readonly NodeStyleService _nodeStyleService;
+    private readonly INodeStyleService _nodeStyleService;
 
-    public NodeStylesController(NodeStyleService nodeStyleService, AppDbContext dbContext)
+    public NodeStylesController(INodeStyleService nodeStyleService, AppDbContext dbContext)
         : base(dbContext)
     {
         _nodeStyleService = nodeStyleService;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Infrastructure;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Api.Controllers;
@@ -12,10 +12,10 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class EdgesController : PrismaBaseEntityController
 {
-    private readonly EdgeService _edgeService;
-    private readonly TableRebuildingService _tableRebuildingService;
+    private readonly IEdgeService _edgeService;
+    private readonly ITableRebuildingService _tableRebuildingService;
 
-    public EdgesController(EdgeService edgeService, AppDbContext dbContext, TableRebuildingService tableRebuildingService)
+    public EdgesController(IEdgeService edgeService, AppDbContext dbContext, ITableRebuildingService tableRebuildingService)
         : base(dbContext)
     {
         _edgeService = edgeService;

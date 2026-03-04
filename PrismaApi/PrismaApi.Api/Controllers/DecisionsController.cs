@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Infrastructure;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Api.Controllers;
@@ -12,10 +12,10 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class DecisionsController : PrismaBaseEntityController
 {
-    private readonly DecisionService _decisionService;
-    private readonly TableRebuildingService _tableRebuildingService;
+    private readonly IDecisionService _decisionService;
+    private readonly ITableRebuildingService _tableRebuildingService;
 
-    public DecisionsController(DecisionService decisionService, AppDbContext dbContext, TableRebuildingService tableRebuildingService)
+    public DecisionsController(IDecisionService decisionService, AppDbContext dbContext, ITableRebuildingService tableRebuildingService)
         : base(dbContext)
     {
         _decisionService = decisionService;

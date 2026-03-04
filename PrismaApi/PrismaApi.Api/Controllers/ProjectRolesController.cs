@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Graph;
 using PrismaApi.Infrastructure;
-using PrismaApi.Application.Repositories;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Api.Controllers;
@@ -14,13 +12,13 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class ProjectRolesController : PrismaBaseEntityController
 {
-    private readonly ProjectRoleService _projectRoleService;
-    private readonly UserService _userService;
+    private readonly IProjectRoleService _projectRoleService;
+    private readonly IUserService _userService;
 
     public ProjectRolesController(
-        ProjectRoleService projectRoleService,
+        IProjectRoleService projectRoleService,
         AppDbContext dbContext,
-        UserService userService
+        IUserService userService
 
     )
         : base(dbContext)

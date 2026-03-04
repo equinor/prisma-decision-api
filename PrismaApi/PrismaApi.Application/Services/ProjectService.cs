@@ -1,6 +1,5 @@
 using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
-using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
@@ -9,18 +8,18 @@ namespace PrismaApi.Application.Services;
 
 public class ProjectService : IProjectService
 {
-    private readonly ProjectRepository _projectRepository;
-    private readonly ProjectRoleRepository _projectRoleRepository;
-    private readonly IssueRepository _issueRepository;
-    private readonly EdgeRepository _edgeRepository;
-    private readonly UserRepository _userRepository;
+    private readonly IProjectRepository _projectRepository;
+    private readonly IProjectRoleRepository _projectRoleRepository;
+    private readonly IIssueRepository _issueRepository;
+    private readonly IEdgeRepository _edgeRepository;
+    private readonly IUserRepository _userRepository;
 
     public ProjectService(
-        ProjectRepository projectRepository,
-        ProjectRoleRepository projectRoleRepository,
-        IssueRepository issueRepository,
-        EdgeRepository edgeRepository,
-        UserRepository userRepository)
+        IProjectRepository projectRepository,
+        IProjectRoleRepository projectRoleRepository,
+        IIssueRepository issueRepository,
+        IEdgeRepository edgeRepository,
+        IUserRepository userRepository)
     {
         _projectRepository = projectRepository;
         _projectRoleRepository = projectRoleRepository;

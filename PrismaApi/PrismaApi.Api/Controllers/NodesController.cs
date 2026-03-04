@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 
@@ -13,9 +13,9 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class NodesController : PrismaBaseEntityController
 {
-    private readonly NodeService _nodeService;
+    private readonly INodeService _nodeService;
 
-    public NodesController(NodeService nodeService, AppDbContext dbContext)
+    public NodesController(INodeService nodeService, AppDbContext dbContext)
         : base(dbContext)
     {
         _nodeService = nodeService;

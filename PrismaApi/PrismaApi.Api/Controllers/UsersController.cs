@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 
@@ -13,9 +13,9 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class UsersController : PrismaBaseEntityController
 {
-    private readonly UserService _userService;
+    private readonly IUserService _userService;
 
-    public UsersController(UserService userService, AppDbContext dbContext)
+    public UsersController(IUserService userService, AppDbContext dbContext)
         : base(dbContext)
     {
         _userService = userService;

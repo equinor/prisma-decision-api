@@ -4,16 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
-using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Services;
 
 public class ValueMetricService: IValueMetricService
 {
-    private readonly ValueMetricRepository _valueMetricRepository;
+    private readonly IValueMetricRepository _valueMetricRepository;
 
-    public ValueMetricService(ValueMetricRepository valueMetricRepository)
+    public ValueMetricService(IValueMetricRepository valueMetricRepository)
     {
         _valueMetricRepository = valueMetricRepository;
     }

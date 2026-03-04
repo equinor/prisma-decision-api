@@ -4,16 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
-using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Services;
 
 public class IssueService : IIssueService
 {
-    private readonly IssueRepository _issueRepository;
+    private readonly IIssueRepository _issueRepository;
 
-    public IssueService(IssueRepository issueRepository)
+    public IssueService(IIssueRepository issueRepository)
     {
         _issueRepository = issueRepository;
     }

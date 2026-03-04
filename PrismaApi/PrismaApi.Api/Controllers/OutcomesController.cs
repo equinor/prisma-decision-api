@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Application.Services;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 
@@ -9,10 +9,10 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class OutcomesController : PrismaBaseEntityController
 {
-    private readonly OutcomeService _outcomeService;
-    private readonly TableRebuildingService _tableRebuildingService;
+    private readonly IOutcomeService _outcomeService;
+    private readonly ITableRebuildingService _tableRebuildingService;
 
-    public OutcomesController(OutcomeService outcomeService, AppDbContext dbContext, TableRebuildingService tableRebuildingService)
+    public OutcomesController(IOutcomeService outcomeService, AppDbContext dbContext, ITableRebuildingService tableRebuildingService)
         : base(dbContext)
     {
         _outcomeService = outcomeService;

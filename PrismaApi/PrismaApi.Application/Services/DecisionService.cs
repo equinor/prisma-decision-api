@@ -4,16 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
-using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Services;
 
 public class DecisionService: IDecisionService
 {
-    private readonly DecisionRepository _decisionRepository;
+    private readonly IDecisionRepository _decisionRepository;
 
-    public DecisionService(DecisionRepository decisionRepository)
+    public DecisionService(IDecisionRepository decisionRepository)
     {
         _decisionRepository = decisionRepository;
     }
