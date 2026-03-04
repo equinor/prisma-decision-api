@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using PrismaApi.Application.Interfaces;
+using PrismaApi.Application.Interfaces.Repositories;
+using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
 

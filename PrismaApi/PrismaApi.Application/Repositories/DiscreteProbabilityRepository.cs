@@ -1,6 +1,6 @@
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
-using PrismaApi.Application.Interfaces;
+using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 

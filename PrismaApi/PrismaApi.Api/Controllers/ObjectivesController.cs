@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Application.Interfaces;
+using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure;
 

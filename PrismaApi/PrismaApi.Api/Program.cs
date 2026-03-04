@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 using PrismaApi.Api.Configuration.Extensions;
 using PrismaApi.Api.Configuration.JsonResponseOptions;
-using PrismaApi.Application.Interfaces;
+using PrismaApi.Application.Interfaces.Repositories;
+using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Application.Services;
 using PrismaApi.Infrastructure;
@@ -62,7 +63,6 @@ builder.Services.AddScoped<IProjectRoleRepository, ProjectRoleRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddScoped<ITableRebuildingService, TableRebuildingService>();
-builder.Services.AddScoped<IStrategyTableService, StrategyTableService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IIssueService, IssueService>();
 builder.Services.AddScoped<INodeService, NodeService>();

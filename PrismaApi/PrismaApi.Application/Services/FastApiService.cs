@@ -2,8 +2,8 @@
 using Microsoft.Identity.Web;
 using System.Net;
 using System.Net.Http.Headers;
-
-using PrismaApi.Application.Interfaces;
+using PrismaApi.Domain.Dtos;
+using PrismaApi.Application.Interfaces.Services;
 
 namespace PrismaApi.Application.Services;
 
@@ -19,13 +19,8 @@ public class FastApiService : IFastApiService
         _tokenAcquisition = tokenAcquisition;
         _configuration = configuration;
     }
-    public class ApiResponse
-    {
-        public string? Content { get; set; }
-        public HttpStatusCode StatusCode { get; set; }
-    }
 
-    public async Task<ApiResponse> CallDownstreamFastApiGetAsync(string endpoint)
+    public async Task<ApiResponseDto> CallDownstreamFastApiGetAsync(string endpoint)
     {
         string scope = _configuration["FastApiService:Scope"] ?? throw new InvalidOperationException("Scope configuration is missing");
         string accessToken = await _tokenAcquisition.GetAccessTokenForAppAsync(scope);
@@ -35,14 +30,14 @@ public class FastApiService : IFastApiService
 
         var responseContent = await response.Content.ReadAsStringAsync();
 
-        return new ApiResponse
+        return new ApiResponseDto
         {
             Content = responseContent,
             StatusCode = response.StatusCode
         };
     }
 
-    public async Task<ApiResponse> CallDownstreamFastApiPostAsync(string endpoint, StringContent content)
+    public async Task<ApiResponseDto> CallDownstreamFastApiPostAsync(string endpoint, StringContent content)
     {
         string scope = _configuration["FastApiService:Scope"] ?? throw new InvalidOperationException("Scope configuration is missing");
         string accessToken = await _tokenAcquisition.GetAccessTokenForAppAsync(scope);
@@ -52,7 +47,7 @@ public class FastApiService : IFastApiService
 
         var responseContent = await response.Content.ReadAsStringAsync();
 
-        return new ApiResponse
+        return new ApiResponseDto
         {
             Content = responseContent,
             StatusCode = response.StatusCode

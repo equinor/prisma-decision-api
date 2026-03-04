@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Infrastructure;
-using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Application.Interfaces.Services;
 
 namespace PrismaApi.Api.Controllers;
 

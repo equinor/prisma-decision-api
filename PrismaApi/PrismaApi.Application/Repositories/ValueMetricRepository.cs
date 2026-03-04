@@ -1,5 +1,5 @@
 using System.Linq;
-using PrismaApi.Application.Interfaces;
+using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 

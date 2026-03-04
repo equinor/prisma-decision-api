@@ -1,4 +1,5 @@
-using PrismaApi.Application.Interfaces;
+using PrismaApi.Application.Interfaces.Repositories;
+using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;

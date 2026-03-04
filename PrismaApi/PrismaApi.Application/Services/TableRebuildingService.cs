@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using PrismaApi.Application.Interfaces;
+using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;

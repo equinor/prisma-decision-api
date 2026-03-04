@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Graph.Me.InferenceClassification.Overrides.Item;
-using PrismaApi.Application.Interfaces;
+using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;

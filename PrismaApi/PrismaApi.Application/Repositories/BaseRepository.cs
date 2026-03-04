@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Graph.Models;
-using PrismaApi.Application.Interfaces;
+using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Domain.Interfaces;
 using PrismaApi.Infrastructure;
