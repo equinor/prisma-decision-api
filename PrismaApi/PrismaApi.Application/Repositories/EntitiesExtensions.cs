@@ -1,8 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
-using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Repositories;
 
@@ -92,8 +91,6 @@ public static class EntitiesExtensions
     public static Node Update(this Node entity, Node incommingEntity, AppDbContext context)
     {
         entity.Name = incommingEntity.Name;
-        //entity.HeadEdges.Update(incommingEntity.HeadEdges, context);
-        //entity.TailEdges.Update(incommingEntity.TailEdges, context);
         if (incommingEntity.NodeStyle != null && entity.NodeStyle != null)
             entity.NodeStyle = entity.NodeStyle.Update(incommingEntity.NodeStyle);
         return entity;
@@ -119,23 +116,17 @@ public static class EntitiesExtensions
         return entity;
     }
 
-    public static async Task<Decision> Update(this Decision entity, Decision incommingEntity, AppDbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
+    public static async Task<Decision> Update(this Decision entity, Decision incommingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null)
     {
-        if (entity.Type != incommingEntity.Type && incommingEntity.Type != "Foucus" && ruleTrigger != null)
+        if (entity.Type != incommingEntity.Type && incommingEntity.Type != DecisionHierarchy.Focus.ToString() && ruleTrigger != null)
             await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId]);
         entity.Type = incommingEntity.Type;
         await entity.Options.Update(incommingEntity.Options, context, ruleTrigger);
         return entity;
     }
 
-    public static async Task Update(this ICollection<Option> entities, ICollection<Option> incommingEntities, AppDbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
+    public static async Task Update(this ICollection<Option> entities, ICollection<Option> incommingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null)
     {
-        //var entitiesToDelete = RepositoryUtilities.GetEntitiesToBeDeleted<Option, Guid>(incommingEntities, entities);
-        //foreach (var entityToDelete in entitiesToDelete)
-        //{
-        //    context.Options.Remove(entityToDelete);
-        //    entities.Remove(entityToDelete);
-        //}
         RepositoryUtilities.AddMissingFromCollectionMutate<Option, Guid>(incommingEntities, entities, context);
         var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Option, Guid>(incommingEntities, entities);
         foreach (var entityToAdd in entitiesToAdd)
@@ -144,7 +135,7 @@ public static class EntitiesExtensions
             entities.Add(entityToAdd);
         }
         if (ruleTrigger != null)
-            await ruleTrigger.ParentOptionsAddedAsync([.. entitiesToAdd.Select(e => e.DecisionId)]);
+            await ruleTrigger.OnDecisionOptionsAddedAsync([.. entitiesToAdd.Select(e => e.DecisionId)]);
 
         foreach (var entity in entities)
         {
@@ -155,7 +146,7 @@ public static class EntitiesExtensions
         }
     }
 
-    public static async Task<Uncertainty> Update(this Uncertainty entity, Uncertainty incommingEntity, AppDbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
+    public static async Task<Uncertainty> Update(this Uncertainty entity, Uncertainty incommingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null)
     {
         if (entity.IsKey != incommingEntity.IsKey && ruleTrigger != null)
             await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId]);
@@ -166,15 +157,9 @@ public static class EntitiesExtensions
         return entity;
     }
 
-    public static async Task Update(this ICollection<Outcome> entities, ICollection<Outcome> incommingEntities, AppDbContext context, IDiscreteTableRuleTrigger? ruleTrigger = null)
+    public static async Task Update(this ICollection<Outcome> entities, ICollection<Outcome> incommingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null)
     {
         RepositoryUtilities.RemoveMissingFromCollectionMutate<Outcome, Guid>(incommingEntities, entities);
-        //var entitiesToDelete = RepositoryUtilities.GetEntitiesToBeDeleted<Outcome, Guid>(incommingEntities, entities);
-        //foreach (var entityToDelete in entitiesToDelete)
-        //{
-        //    context.Outcomes.Remove(entityToDelete);
-        //    entities.Remove(entityToDelete);
-        //}
         var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Outcome, Guid>(incommingEntities, entities);
         foreach (var entityToAdd in entitiesToAdd)
         {
@@ -182,7 +167,7 @@ public static class EntitiesExtensions
             entities.Add(entityToAdd);
         }
         if (ruleTrigger != null)
-            await ruleTrigger.ParentOutcomesAddedAsync([.. entitiesToAdd.Select(e => e.UncertaintyId)]);
+            await ruleTrigger.OnUncertaintyOutcomesAddedAsync([.. entitiesToAdd.Select(e => e.UncertaintyId)]);
 
         foreach (var entity in entities)
         {

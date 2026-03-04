@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Graph;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
-public class UserService
+public class UserService: IUserService
 {
     private readonly UserRepository _userRepository;
     private readonly GraphServiceClient _graphServiceClient;

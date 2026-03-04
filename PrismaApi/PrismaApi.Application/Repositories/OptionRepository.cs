@@ -1,13 +1,14 @@
 using System.Linq;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class OptionRepository : BaseRepository<Option, Guid>
+public class OptionRepository : BaseRepository<Option, Guid>, IOptionRepository
 {
-    public readonly IDiscreteTableRuleTrigger _ruleTrigger;
-    public OptionRepository(AppDbContext dbContext, IDiscreteTableRuleTrigger ruleTrigger) : base(dbContext)
+    public readonly IDiscreteTableRuleEventHandler _ruleTrigger;
+    public OptionRepository(AppDbContext dbContext, IDiscreteTableRuleEventHandler ruleTrigger) : base(dbContext)
     {
         _ruleTrigger = ruleTrigger;
     }
@@ -39,13 +40,13 @@ public class OptionRepository : BaseRepository<Option, Guid>
 
     public override async Task<Option> AddAsync(Option entity)
     {
-        await _ruleTrigger.ParentOptionsAddedAsync([entity.DecisionId], default);
+        await _ruleTrigger.OnDecisionOptionsAddedAsync([entity.DecisionId], default);
         return await base.AddAsync(entity);
     }
 
     public override async Task<List<Option>> AddRangeAsync(IEnumerable<Option> entities)
     {
-        await _ruleTrigger.ParentOptionsAddedAsync([.. entities.Select(e => e.DecisionId)], default);
+        await _ruleTrigger.OnDecisionOptionsAddedAsync([.. entities.Select(e => e.DecisionId)], default);
         return await base.AddRangeAsync(entities);
     }
 }

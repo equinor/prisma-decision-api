@@ -1,11 +1,12 @@
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class NodeRepository : BaseRepository<Node, Guid>
+public class NodeRepository : BaseRepository<Node, Guid>, INodeRepository
 {
     public NodeRepository(AppDbContext dbContext) : base(dbContext)
     {

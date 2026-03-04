@@ -1,13 +1,14 @@
 using System.Linq;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class OutcomeRepository : BaseRepository<Outcome, Guid>
+public class OutcomeRepository : BaseRepository<Outcome, Guid>, IOutcomeRepository
 {
-    public readonly IDiscreteTableRuleTrigger _ruleTrigger;
-    public OutcomeRepository(AppDbContext dbContext, IDiscreteTableRuleTrigger ruleTrigger) : base(dbContext)
+    public readonly IDiscreteTableRuleEventHandler _ruleTrigger;
+    public OutcomeRepository(AppDbContext dbContext, IDiscreteTableRuleEventHandler ruleTrigger) : base(dbContext)
     {
         _ruleTrigger = ruleTrigger;
     }
@@ -38,13 +39,13 @@ public class OutcomeRepository : BaseRepository<Outcome, Guid>
     }
     public override async Task<Outcome> AddAsync(Outcome entity)
     {
-        await _ruleTrigger.ParentOutcomesAddedAsync([entity.UncertaintyId], default);
+        await _ruleTrigger.OnUncertaintyOutcomesAddedAsync([entity.UncertaintyId], default);
         return await base.AddAsync(entity);
     }
 
     public override async Task<List<Outcome>> AddRangeAsync(IEnumerable<Outcome> entities)
     {
-        await _ruleTrigger.ParentOutcomesAddedAsync([.. entities.Select(e => e.UncertaintyId)], default);
+        await _ruleTrigger.OnUncertaintyOutcomesAddedAsync([.. entities.Select(e => e.UncertaintyId)], default);
         return await base.AddRangeAsync(entities);
     }
 }

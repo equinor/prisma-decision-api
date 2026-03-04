@@ -1,11 +1,12 @@
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class DiscreteUtilityRepository : BaseRepository<DiscreteUtility, Guid>
+public class DiscreteUtilityRepository : BaseRepository<DiscreteUtility, Guid>, IDiscreteUtilityRepository
 {
     public DiscreteUtilityRepository(AppDbContext dbContext) : base(dbContext)
     {

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Graph.Me.InferenceClassification.Overrides.Item;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Repositories;
 
-public class ProjectRepository : BaseRepository<Project, Guid>
+public class ProjectRepository : BaseRepository<Project, Guid>, IProjectRepository
 {
     public readonly ProjectRoleRepository _repo;
     public ProjectRepository(AppDbContext dbContext, ProjectRoleRepository repo) : base(dbContext)

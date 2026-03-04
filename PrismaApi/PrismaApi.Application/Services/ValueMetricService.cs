@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Services;
 
-public class ValueMetricService
+public class ValueMetricService: IValueMetricService
 {
     private readonly ValueMetricRepository _valueMetricRepository;
 

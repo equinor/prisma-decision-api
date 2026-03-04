@@ -1,14 +1,15 @@
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>
+public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>, IUncertaintyRepository
 {
-    public readonly IDiscreteTableRuleTrigger _ruleTrigger;
-    public UncertaintyRepository(AppDbContext dbContext, IDiscreteTableRuleTrigger ruleTrigger) : base(dbContext)
+    public readonly IDiscreteTableRuleEventHandler _ruleTrigger;
+    public UncertaintyRepository(AppDbContext dbContext, IDiscreteTableRuleEventHandler ruleTrigger) : base(dbContext)
     {
         _ruleTrigger = ruleTrigger;
     }

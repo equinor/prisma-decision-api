@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Services;
 
-public class OutcomeService
+public class OutcomeService: IOutcomeService
 {
     private readonly OutcomeRepository _outcomeRepository;
 

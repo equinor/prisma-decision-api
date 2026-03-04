@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Services;
 
-public class StrategyTableService
+public class StrategyTableService: IStrategyTableService
 {
     private readonly AppDbContext _dbContext;
 

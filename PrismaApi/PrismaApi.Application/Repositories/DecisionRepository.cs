@@ -1,14 +1,15 @@
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using PrismaApi.Application.Interfaces;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class DecisionRepository : BaseRepository<Decision, Guid>
+public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepository
 {
-    public readonly IDiscreteTableRuleTrigger _ruleTrigger;
-    public DecisionRepository(AppDbContext dbContext, IDiscreteTableRuleTrigger ruleTrigger) : base(dbContext)
+    public readonly IDiscreteTableRuleEventHandler _ruleTrigger;
+    public DecisionRepository(AppDbContext dbContext, IDiscreteTableRuleEventHandler ruleTrigger) : base(dbContext)
     {
         _ruleTrigger = ruleTrigger;
     }
@@ -31,7 +32,9 @@ public class DecisionRepository : BaseRepository<Decision, Guid>
                 continue;
             }
 
-            if (entity.Type != incomingEntity.Type && incomingEntity.Type != "Foucus")
+            await RemoveOutOfScopeStrategyOptions(entity, incomingEntity);
+
+            if (entity.Type != incomingEntity.Type && incomingEntity.Type != DecisionHierarchy.Focus.ToString())
                 issuesIdsTriggers.Add(entity.IssueId);
 
             entity.IssueId = incomingEntity.IssueId;
@@ -40,6 +43,25 @@ public class DecisionRepository : BaseRepository<Decision, Guid>
         }
         await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers);
         await DbContext.SaveChangesAsync();
+    }
+
+    private async Task RemoveOutOfScopeStrategyOptions(Decision entity, Decision incommingEntity)
+    {
+        if (!IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
+        var strategyOptionsToBeRemoved = await DbContext.StrategyOptions
+            .Where(e => e.Option.DecisionId == entity.Id)
+            .ToListAsync();
+        if (strategyOptionsToBeRemoved.Any())
+        {
+            DbContext.StrategyOptions.RemoveRange(strategyOptionsToBeRemoved);
+            await DbContext.SaveChangesAsync();
+        }
+    }
+
+    private static bool IsDecisionMovedOutOfStrategyTable(Decision entity, Decision incommingEntity)
+    {
+        if (entity.Type != incommingEntity.Type && entity.Type == DecisionHierarchy.Focus.ToString()) return true;
+        return false;
     }
 
     protected override IQueryable<Decision> Query()

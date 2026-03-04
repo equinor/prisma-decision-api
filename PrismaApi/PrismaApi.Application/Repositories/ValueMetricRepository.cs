@@ -1,10 +1,11 @@
 using System.Linq;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class ValueMetricRepository : BaseRepository<ValueMetric, Guid>
+public class ValueMetricRepository : BaseRepository<ValueMetric, Guid>, IValueMetricRepository
 {
     public ValueMetricRepository(AppDbContext dbContext) : base(dbContext)
     {

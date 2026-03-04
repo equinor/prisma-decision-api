@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 using PrismaApi.Api.Configuration.Extensions;
 using PrismaApi.Api.Configuration.JsonResponseOptions;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Application.Services;
 using PrismaApi.Infrastructure;
@@ -29,6 +30,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(builder.Configuration, "AzureAd")
     .EnableTokenAcquisitionToCallDownstreamApi()
+    .AddDownstreamApi("FastApi", builder.Configuration.GetSection("FastApiService"))
     .AddMicrosoftGraph(builder.Configuration.GetSection("GraphApi"))
     .AddInMemoryTokenCaches();
 
@@ -40,44 +42,44 @@ builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
     options.UseSqlServer(connectionString);
 });
 
-builder.Services.AddScoped<IDiscreteTableRuleTrigger, DiscreteTableRuleTrigger>();
-builder.Services.AddScoped<ProjectRepository>();
-builder.Services.AddScoped<IssueRepository>();
-builder.Services.AddScoped<NodeRepository>();
-builder.Services.AddScoped<NodeStyleRepository>();
-builder.Services.AddScoped<EdgeRepository>();
-builder.Services.AddScoped<DecisionRepository>();
-builder.Services.AddScoped<OptionRepository>();
-builder.Services.AddScoped<OutcomeRepository>();
-builder.Services.AddScoped<UncertaintyRepository>();
-builder.Services.AddScoped<UtilityRepository>();
-builder.Services.AddScoped<DiscreteProbabilityRepository>();
-builder.Services.AddScoped<DiscreteUtilityRepository>();
-builder.Services.AddScoped<ValueMetricRepository>();
-builder.Services.AddScoped<StrategyRepository>();
-builder.Services.AddScoped<ObjectiveRepository>();
-builder.Services.AddScoped<ProjectRoleRepository>();
-builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<IDiscreteTableRuleEventHandler, DiscreteTableRuleEventHandler>();
+builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+builder.Services.AddScoped<IIssueRepository, IssueRepository>();
+builder.Services.AddScoped<INodeRepository, NodeRepository>();
+builder.Services.AddScoped<INodeStyleRepository, NodeStyleRepository>();
+builder.Services.AddScoped<IEdgeRepository, EdgeRepository>();
+builder.Services.AddScoped<IDecisionRepository, DecisionRepository>();
+builder.Services.AddScoped<IOptionRepository, OptionRepository>();
+builder.Services.AddScoped<IOutcomeRepository, OutcomeRepository>();
+builder.Services.AddScoped<IUncertaintyRepository, UncertaintyRepository>();
+builder.Services.AddScoped<IUtilityRepository, UtilityRepository>();
+builder.Services.AddScoped<IDiscreteProbabilityRepository, DiscreteProbabilityRepository>();
+builder.Services.AddScoped<IDiscreteUtilityRepository, DiscreteUtilityRepository>();
+builder.Services.AddScoped<IValueMetricRepository, ValueMetricRepository>();
+builder.Services.AddScoped<IStrategyRepository, StrategyRepository>();
+builder.Services.AddScoped<IObjectiveRepository, ObjectiveRepository>();
+builder.Services.AddScoped<IProjectRoleRepository, ProjectRoleRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
-builder.Services.AddScoped<TableRebuildingService>();
-builder.Services.AddScoped<StrategyTableService>();
-builder.Services.AddScoped<ProjectService>();
-builder.Services.AddScoped<IssueService>();
-builder.Services.AddScoped<NodeService>();
-builder.Services.AddScoped<NodeStyleService>();
-builder.Services.AddScoped<EdgeService>();
-builder.Services.AddScoped<DecisionService>();
-builder.Services.AddScoped<OptionService>();
-builder.Services.AddScoped<OutcomeService>();
-builder.Services.AddScoped<UncertaintyService>();
-builder.Services.AddScoped<UtilityService>();
-builder.Services.AddScoped<DiscreteProbabilityService>();
-builder.Services.AddScoped<DiscreteUtilityService>();
-builder.Services.AddScoped<ValueMetricService>();
-builder.Services.AddScoped<StrategyService>();
-builder.Services.AddScoped<ObjectiveService>();
-builder.Services.AddScoped<ProjectRoleService>();
-builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<ITableRebuildingService, TableRebuildingService>();
+builder.Services.AddScoped<IStrategyTableService, StrategyTableService>();
+builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IIssueService, IssueService>();
+builder.Services.AddScoped<INodeService, NodeService>();
+builder.Services.AddScoped<INodeStyleService, NodeStyleService>();
+builder.Services.AddScoped<IEdgeService, EdgeService>();
+builder.Services.AddScoped<IDecisionService, DecisionService>();
+builder.Services.AddScoped<IOptionService, OptionService>();
+builder.Services.AddScoped<IOutcomeService, OutcomeService>();
+builder.Services.AddScoped<IUncertaintyService, UncertaintyService>();
+builder.Services.AddScoped<IUtilityService, UtilityService>();
+builder.Services.AddScoped<IDiscreteProbabilityService, DiscreteProbabilityService>();
+builder.Services.AddScoped<IDiscreteUtilityService, DiscreteUtilityService>();
+builder.Services.AddScoped<IValueMetricService, ValueMetricService>();
+builder.Services.AddScoped<IStrategyService, StrategyService>();
+builder.Services.AddScoped<IObjectiveService, ObjectiveService>();
+builder.Services.AddScoped<IProjectRoleService, ProjectRoleService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

@@ -1,15 +1,17 @@
-using System.Data;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using PrismaApi.Application.Interfaces;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
+using System.Data;
+using System.Linq;
 
 namespace PrismaApi.Application.Repositories;
 
-public class EdgeRepository : BaseRepository<Edge, Guid>
+public class EdgeRepository : BaseRepository<Edge, Guid>, IEdgeRepository
 {
-    public readonly IDiscreteTableRuleTrigger _ruleTrigger;
-    public EdgeRepository(AppDbContext dbContext, IDiscreteTableRuleTrigger ruleTrigger) : base(dbContext)
+    public readonly IDiscreteTableRuleEventHandler _ruleTrigger;
+    public EdgeRepository(AppDbContext dbContext, IDiscreteTableRuleEventHandler ruleTrigger) : base(dbContext)
     {
         _ruleTrigger = ruleTrigger;
     }
@@ -41,27 +43,32 @@ public class EdgeRepository : BaseRepository<Edge, Guid>
             entity.ProjectId = incomingEntity.ProjectId;
         }
 
-        await _ruleTrigger.NodesConnectionsChangeAsync(nodeIdsToLookup);
+        await _ruleTrigger.OnNodeConnectionsChangedAsync(nodeIdsToLookup);
         await DbContext.SaveChangesAsync();
+    }
+
+    public async Task<ICollection<Edge>> GetEdgesInInfluenceDiagram(Guid projectId)
+    {
+        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId));
     }
 
     public override async Task<Edge> AddAsync(Edge entity)
     {
         var res = await base.AddAsync(entity);
-        await _ruleTrigger.EdgesAddedAsync([entity.Id]);
+        await _ruleTrigger.OnEdgesCreatedAsync([entity.Id]);
         return res;
     }
 
     public override async Task<List<Edge>> AddRangeAsync(IEnumerable<Edge> entities)
     {
         var res = await base.AddRangeAsync(entities);
-        await _ruleTrigger.EdgesAddedAsync(entities.Select(x => x.Id).ToList());
+        await _ruleTrigger.OnEdgesCreatedAsync(entities.Select(x => x.Id).ToList());
         return res;
     }
 
     public override async Task DeleteByIdsAsync(IEnumerable<Guid> ids)
     {
-        await _ruleTrigger.EdgesDeletedAsync(ids.ToList());
+        await _ruleTrigger.OnEdgesRemovedAsync(ids.ToList());
         await base.DeleteByIdsAsync(ids);
     }
 
@@ -70,31 +77,31 @@ public class EdgeRepository : BaseRepository<Edge, Guid>
         return DbContext.Edges
             .Include(e => e.HeadNode)
             .Include(e => e.TailNode);
-            //.Include(e => e.HeadNode)
-            //    .ThenInclude(n => n!.NodeStyle)
-            //.Include(e => e.HeadNode)
-            //    .ThenInclude(n => n!.Issue)
-            //    .ThenInclude(i => i!.Decision)
-            //    .ThenInclude(d => d!.Options)
-            //.Include(e => e.HeadNode)
-            //    .ThenInclude(n => n!.Issue)
-            //    .ThenInclude(i => i!.Uncertainty)
-            //    .ThenInclude(u => u!.Outcomes)
-            //.Include(e => e.HeadNode)
-            //    .ThenInclude(n => n!.Issue)
-            //    .ThenInclude(i => i!.Utility)
-            //.Include(e => e.TailNode)
-            //    .ThenInclude(n => n!.NodeStyle)
-            //.Include(e => e.TailNode)
-            //    .ThenInclude(n => n!.Issue)
-            //    .ThenInclude(i => i!.Decision)
-            //    .ThenInclude(d => d!.Options)
-            //.Include(e => e.TailNode)
-            //    .ThenInclude(n => n!.Issue)
-            //    .ThenInclude(i => i!.Uncertainty)
-            //    .ThenInclude(u => u!.Outcomes)
-            //.Include(e => e.TailNode)
-            //    .ThenInclude(n => n!.Issue)
-            //    .ThenInclude(i => i!.Utility);
     }
 }
+
+public static class EdgeQueryableExtensions
+{
+    public static IQueryable<Edge> IndluenceDiagramFilter(this IQueryable<Edge> query, Guid projectId)
+    {
+        return query
+            .Where(e =>
+                e.ProjectId == projectId &&
+                (e.TailNode.Issue.Boundary == Boundary.In.ToString() || e.TailNode.Issue.Boundary == Boundary.On.ToString()) &&
+                (e.TailNode.Issue.Type == IssueType.Uncertainty.ToString() || e.TailNode.Issue.Type == IssueType.Decision.ToString() || e.TailNode.Issue.Type == IssueType.Utility.ToString()) &&
+                (
+                    (e.TailNode.Issue.Type == IssueType.Uncertainty.ToString() && e.TailNode.Issue.Uncertainty!.IsKey == true) ||
+                    (e.TailNode.Issue.Type == IssueType.Decision.ToString() && e.TailNode.Issue.Decision!.Type == "Foucus") ||
+                    (e.TailNode.Issue.Type == IssueType.Utility.ToString())
+                ) &&
+                (e.HeadNode.Issue.Boundary == Boundary.In.ToString() || e.HeadNode.Issue.Boundary == Boundary.On.ToString()) &&
+                (e.HeadNode.Issue.Type == IssueType.Uncertainty.ToString() || e.HeadNode.Issue.Type == IssueType.Decision.ToString() || e.HeadNode.Issue.Type == IssueType.Utility.ToString()) &&
+                (
+                    (e.HeadNode.Issue.Type == IssueType.Uncertainty.ToString() && e.HeadNode.Issue.Uncertainty!.IsKey == true) ||
+                    (e.HeadNode.Issue.Type == IssueType.Decision.ToString() && e.HeadNode.Issue.Decision!.Type == "Foucus") ||
+                    (e.HeadNode.Issue.Type == IssueType.Utility.ToString())
+                )
+            );
+    }
+}
+

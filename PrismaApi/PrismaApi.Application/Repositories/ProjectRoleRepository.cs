@@ -1,11 +1,12 @@
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class ProjectRoleRepository : BaseRepository<ProjectRole, Guid>
+public class ProjectRoleRepository : BaseRepository<ProjectRole, Guid>, IProjectRoleRepository
 {
     public ProjectRoleRepository(AppDbContext dbContext) : base(dbContext)
     {

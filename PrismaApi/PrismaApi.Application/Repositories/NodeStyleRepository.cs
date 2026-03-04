@@ -1,10 +1,11 @@
 using System.Linq;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class NodeStyleRepository : BaseRepository<NodeStyle, Guid>
+public class NodeStyleRepository : BaseRepository<NodeStyle, Guid>, INodeStyleRepository
 {
     public NodeStyleRepository(AppDbContext dbContext) : base(dbContext)
     {

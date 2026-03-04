@@ -1,35 +1,36 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using PrismaApi.Domain.Constants;
 using System.Linq;
 using System.Threading;
 
 namespace PrismaApi.Infrastructure.DiscreteTables;
 
-public sealed class DiscreteTableRuleTrigger : IDiscreteTableRuleTrigger
+public sealed class DiscreteTableRuleEventHandler : IDiscreteTableRuleEventHandler
 {
     private readonly AppDbContext _db;
 
-    public DiscreteTableRuleTrigger(AppDbContext db) => _db = db;
+    public DiscreteTableRuleEventHandler(AppDbContext db) => _db = db;
 
-    public Task ParentOptionsAddedAsync(ICollection<Guid> decisionIds, CancellationToken cancellationToken = default)
+    public Task OnDecisionOptionsAddedAsync(ICollection<Guid> decisionIds, CancellationToken cancellationToken = default)
         => EnqueueHeadIssuesByParentOptionAsync(decisionIds, cancellationToken);
 
-    public Task ParentOutcomesAddedAsync(ICollection<Guid> uncertaintyIds, CancellationToken cancellationToken = default)
+    public Task OnUncertaintyOutcomesAddedAsync(ICollection<Guid> uncertaintyIds, CancellationToken cancellationToken = default)
         => EnqueueHeadIssuesByParentOutcomeAsync(uncertaintyIds, cancellationToken);
 
     public Task ParentIssuesChangedAsync(ICollection<Guid> parentIssueIds, CancellationToken cancellationToken = default)
         => EnqueueHeadIssuesByIssueAsync(parentIssueIds, cancellationToken);
 
-    public void IssuesToBeReset(ICollection<Guid> issueIds)
+    public void EnqueueIssuesForRebuild(ICollection<Guid> issueIds)
         => EnqueueIssues(issueIds);
 
-    public Task EdgesDeletedAsync(ICollection<Guid> edgeIds, CancellationToken cancellationToken = default)
+    public Task OnEdgesRemovedAsync(ICollection<Guid> edgeIds, CancellationToken cancellationToken = default)
         => EnqueueHeadIssuesEdgeAsync(edgeIds, cancellationToken);
 
-    public Task EdgesAddedAsync(ICollection<Guid> edgeIds, CancellationToken cancellationToken = default)
+    public Task OnEdgesCreatedAsync(ICollection<Guid> edgeIds, CancellationToken cancellationToken = default)
         => EnqueueHeadIssuesEdgeAsync(edgeIds, cancellationToken);
     
-    public Task NodesConnectionsChangeAsync(ICollection<Guid> nodeIds, CancellationToken cancellationToken = default)
+    public Task OnNodeConnectionsChangedAsync(ICollection<Guid> nodeIds, CancellationToken cancellationToken = default)
         => EnqueueIssuesFromNodeIds(nodeIds, cancellationToken);
 
     private void EnqueueIssues(ICollection<Guid> issueIds)
@@ -84,15 +85,6 @@ public sealed class DiscreteTableRuleTrigger : IDiscreteTableRuleTrigger
 
     private async Task EnqueueHeadIssuesByIssueAsync(ICollection<Guid> issueIds, CancellationToken cancellationToken = default)
     {
-        var strategyOptionsToRemove = await _db.StrategyOptions
-            .AsNoTracking()
-            .Where(x => x.Option.Decision.Issue.Type == "Decision" && issueIds.Contains(x.Option.Decision.IssueId))
-            .Select(e => e.OptionId)
-            .Distinct()
-            .ToListAsync(cancellationToken);
-
-        _db.DiscreteTableSessionInfo.EnqueueStrategyOptionsForDeletion(strategyOptionsToRemove);
-
 
         if (_db.IsDiscreteTableEventDisabled)
             return;

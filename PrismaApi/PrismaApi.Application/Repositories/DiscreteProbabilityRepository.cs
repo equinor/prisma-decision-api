@@ -1,11 +1,12 @@
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class DiscreteProbabilityRepository : BaseRepository<DiscreteProbability, Guid>
+public class DiscreteProbabilityRepository : BaseRepository<DiscreteProbability, Guid>, IDiscreteProbabilityRepository
 {
     public DiscreteProbabilityRepository(AppDbContext dbContext) : base(dbContext)
     {

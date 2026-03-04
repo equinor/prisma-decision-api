@@ -1,11 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Services;
 
-public class TableRebuildingService
+public class TableRebuildingService: ITableRebuildingService
 {
     protected readonly AppDbContext DbContext;
     public TableRebuildingService(AppDbContext dbContext)

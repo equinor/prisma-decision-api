@@ -1,12 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Domain.Interfaces;
 using PrismaApi.Infrastructure.DiscreteTables;
-using System.ComponentModel;
-using System.Threading;
 
 namespace PrismaApi.Infrastructure;
 
@@ -437,13 +434,29 @@ public class AppDbContext : DbContext
         await OnOutcomeDeletedCleanupAsync(cancellationToken);
         await OnOptionDeletedCleanupAsync(cancellationToken);
         return await base.SaveChangesAsync(cancellationToken);
-
-        // cleanup must happen after cascading effects have occured as a part of base.SaveChangesAsync
-        //DiscreteProbabilityTableCleanup();
-        //DiscreteUtilityTableCleanup();
-        //await base.SaveChangesAsync(cancellationToken);
-        //return result;
     }
+
+    public async Task<int> SaveChangesWhileDuplicatingAsync(CancellationToken cancellationToken = default)
+    {
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    //private static void UpdateTimestamps(object sender, EntityEntryEventArgs e)
+    //{
+    //    // https://learn.microsoft.com/en-us/ef/core/logging-events-diagnostics/events
+    //    if (e.Entry.Entity is BaseEntity entityWithTimestamps)
+    //    {
+    //        switch (e.Entry.State)
+    //        {
+    //            case EntityState.Modified:
+    //                entityWithTimestamps.UpdatedAt = DateTime.UtcNow;
+    //                break;
+    //            case EntityState.Added:
+    //                entityWithTimestamps.CreatedAt = DateTime.UtcNow;
+    //                break;
+    //        }
+    //    }
+    //}
 
     private void UpdateTimestamps()
     {
@@ -553,46 +566,6 @@ public class AppDbContext : DbContext
 
             DiscreteUtilities.RemoveRange(affectedUtils);
         }
-    }
-
-    private void DiscreteUtilityTableCleanup()
-    {
-        // Find DiscreteUtilities that have no parent outcomes or options
-        var orphanedUtilities = DiscreteUtilities
-            .Include(du => du.ParentOutcomes)
-            .Include(du => du.ParentOptions)
-            .AsEnumerable() // Switch to client-side evaluation
-            .Where(du => !du.ParentOutcomes.Any() && !du.ParentOptions.Any())
-            .ToList();
-
-        if (orphanedUtilities.Count == 0)
-        {
-            return;
-        }
-
-        DiscreteUtilities.RemoveRange(orphanedUtilities);
-        DiscreteUtilityParentOptions.RemoveRange(orphanedUtilities.SelectMany(x => x.ParentOptions).ToList());
-        DiscreteUtilityParentOutcomes.RemoveRange(orphanedUtilities.SelectMany(x => x.ParentOutcomes).ToList());
-    }
-
-    private void DiscreteProbabilityTableCleanup()
-    {
-        // Find DiscreteProbabilities that have no parent outcomes or options
-        var orphanedProbabilities = DiscreteProbabilities
-            .Include(dp => dp.ParentOutcomes)
-            .Include(dp => dp.ParentOptions)
-            .AsEnumerable() // Switch to client-side evaluation
-            .Where(dp => !dp.ParentOutcomes.Any() && !dp.ParentOptions.Any())
-            .ToList();
-
-        if (orphanedProbabilities.Count == 0)
-        {
-            return;
-        }
-
-        DiscreteProbabilities.RemoveRange(orphanedProbabilities);
-        DiscreteProbabilityParentOptions.RemoveRange(orphanedProbabilities.SelectMany(x => x.ParentOptions).ToList());
-        DiscreteProbabilityParentOutcomes.RemoveRange(orphanedProbabilities.SelectMany(x => x.ParentOutcomes).ToList());
     }
 
     public EntityEntry<IBaseEntity<Guid>> CreateEntryFromCollectionAsAdded(IBaseEntity<Guid> entity)

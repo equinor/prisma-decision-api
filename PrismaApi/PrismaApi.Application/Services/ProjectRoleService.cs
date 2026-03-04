@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Services;
 
-public class ProjectRoleService
+public class ProjectRoleService: IProjectRoleService
 {
     private readonly ProjectRoleRepository _projectRoleRepository;
 

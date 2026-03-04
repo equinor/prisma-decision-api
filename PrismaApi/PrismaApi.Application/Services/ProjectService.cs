@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Domain.Constants;
@@ -10,19 +7,25 @@ using PrismaApi.Domain.Entities;
 
 namespace PrismaApi.Application.Services;
 
-public class ProjectService
+public class ProjectService : IProjectService
 {
     private readonly ProjectRepository _projectRepository;
     private readonly ProjectRoleRepository _projectRoleRepository;
+    private readonly IssueRepository _issueRepository;
+    private readonly EdgeRepository _edgeRepository;
     private readonly UserRepository _userRepository;
 
     public ProjectService(
         ProjectRepository projectRepository,
         ProjectRoleRepository projectRoleRepository,
+        IssueRepository issueRepository,
+        EdgeRepository edgeRepository,
         UserRepository userRepository)
     {
         _projectRepository = projectRepository;
         _projectRoleRepository = projectRoleRepository;
+        _issueRepository = issueRepository;
+        _edgeRepository = edgeRepository;
         _userRepository = userRepository;
     }
 
@@ -119,6 +122,16 @@ public class ProjectService
     {
         var projects = await _projectRepository.GetAllAsync(withTracking: false);
         return projects.ToPopulatedDtos();
+    }
+
+    public async Task<InfluanceDiagramDto> GetInfluanceDiagramAsync(Guid projectId)
+    {
+        return new InfluanceDiagramDto
+        {
+            projectId = projectId,
+            issues = (await _issueRepository.GetIssuesInInfluenceDiagram(projectId)).ToOutgoingDtos(),
+            edges = (await _edgeRepository.GetEdgesInInfluenceDiagram(projectId)).ToOutgoingDtos()
+        };
     }
 
     private async Task<List<ProjectRole>> BuildProjectRolesAsync(

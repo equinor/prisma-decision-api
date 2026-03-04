@@ -1,5 +1,6 @@
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using PrismaApi.Application.Interfaces;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
@@ -7,7 +8,7 @@ using PrismaApi.Infrastructure;
 
 namespace PrismaApi.Application.Repositories;
 
-public class UserRepository : BaseRepository<User, int>
+public class UserRepository : BaseRepository<User, int>, IUserRepository
 {
     public UserRepository(AppDbContext dbContext) : base(dbContext)
     {
