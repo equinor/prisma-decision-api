@@ -8,6 +8,7 @@ from src.services.decision_tree_pruning_service import DecisionTreePruningServic
 from src.services.decision_tree_pruning_service import DecisionTreePruningServiceOld, OptimalDecisionTreePrunerOld
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
+from src.dtos.model_solution_dtos import SolutionDto
 
 executor = ThreadPoolExecutor()
 
@@ -18,7 +19,7 @@ class SolverService:
     ):
         self.project_service = project_service
 
-    async def find_optimal_decision_pyagrum(self, project_id: uuid.UUID):
+    async def find_optimal_decision_pyagrum(self, project_id: uuid.UUID) -> SolutionDto:
         async for session in sessionmanager.get_session():
             (
                 issues,

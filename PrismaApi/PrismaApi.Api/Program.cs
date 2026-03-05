@@ -44,7 +44,6 @@ builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
 });
 
 builder.Services.AddScoped<IDiscreteTableRuleEventHandler, DiscreteTableRuleEventHandler>();
-builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IIssueRepository, IssueRepository>();
 builder.Services.AddScoped<INodeRepository, NodeRepository>();
 builder.Services.AddScoped<INodeStyleRepository, NodeStyleRepository>();
@@ -60,6 +59,7 @@ builder.Services.AddScoped<IValueMetricRepository, ValueMetricRepository>();
 builder.Services.AddScoped<IStrategyRepository, StrategyRepository>();
 builder.Services.AddScoped<IObjectiveRepository, ObjectiveRepository>();
 builder.Services.AddScoped<IProjectRoleRepository, ProjectRoleRepository>();
+builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddScoped<ITableRebuildingService, TableRebuildingService>();

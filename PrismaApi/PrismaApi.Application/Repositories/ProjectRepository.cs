@@ -12,8 +12,8 @@ namespace PrismaApi.Application.Repositories;
 
 public class ProjectRepository : BaseRepository<Project, Guid>, IProjectRepository
 {
-    public readonly ProjectRoleRepository _repo;
-    public ProjectRepository(AppDbContext dbContext, ProjectRoleRepository repo) : base(dbContext)
+    public readonly IProjectRoleRepository _repo;
+    public ProjectRepository(AppDbContext dbContext, IProjectRoleRepository repo) : base(dbContext)
     {
         _repo = repo;
     }

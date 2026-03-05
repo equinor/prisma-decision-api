@@ -60,6 +60,13 @@ class StructureService:
         uuid_list = await decision_tree_creator.calculate_partial_order_issues()
         return PartialOrderDto(issue_ids=uuid_list)
 
+    async def create_partial_order_from_dtos(self, project_id: uuid.UUID, issues: list[IssueOutgoingDto] = [], edges: list[EdgeOutgoingDto] = []) -> Optional[PartialOrderDto]:
+        decision_tree_creator = await DecisionTreeCreator.initialize(
+            project_id=project_id, nodes=issues, edges=edges
+        )
+        uuid_list = await decision_tree_creator.calculate_partial_order_issues()
+        return PartialOrderDto(issue_ids=uuid_list)
+
     # to be used for backward compatilibility, to be removed
     async def create_decision_tree_dtos_old(self, project_id: uuid.UUID) -> Optional[DecisionTreeDtoOld]:
         issues = []

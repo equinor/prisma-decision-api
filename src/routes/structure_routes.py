@@ -45,8 +45,18 @@ async def get_decision_tree_tmp(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/structure/{project_id}/partial_order")
+async def get_partial_order_from_dtos(
+    project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], structure_service: StructureService = Depends(get_structure_service),
+    current_user: UserIncomingDto = Depends(get_current_user)
+) -> Optional[PartialOrderDto]:
+    try:
+        return await structure_service.create_partial_order_from_dtos(project_id, issues, edges)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 router.post("/structure/{project_id}/decision_tree/v2")
-async def build_decision_tree_tmp(
+async def build_decision_tree_from_dtos(
     project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], structure_service: StructureService = Depends(get_structure_service),
     current_user: UserIncomingDto = Depends(get_current_user)
 ) -> Optional[DecisionTreeDto]:
