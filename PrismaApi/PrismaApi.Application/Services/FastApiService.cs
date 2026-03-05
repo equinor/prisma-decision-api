@@ -1,21 +1,24 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Web;
-using System.Net;
-using System.Net.Http.Headers;
-using PrismaApi.Domain.Dtos;
 using PrismaApi.Application.Interfaces.Services;
+using PrismaApi.Domain.Dtos;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 
 namespace PrismaApi.Application.Services;
 
 public class FastApiService : IFastApiService
 {
     private readonly HttpClient _httpClient;
+    private readonly IProjectService _projectService;
     private readonly ITokenAcquisition _tokenAcquisition;
     private readonly IConfiguration _configuration;
-    public FastApiService(HttpClient httpClient, IConfiguration configuration, ITokenAcquisition tokenAcquisition)
+    public FastApiService(HttpClient httpClient, IProjectService projectService, IConfiguration configuration, ITokenAcquisition tokenAcquisition)
     {
         _httpClient = httpClient;
         _httpClient.Timeout = TimeSpan.FromSeconds(180);
+        _projectService = projectService;
         _tokenAcquisition = tokenAcquisition;
         _configuration = configuration;
     }
@@ -61,7 +64,12 @@ public class FastApiService : IFastApiService
             Console.WriteLine(e);
             throw;
         }
+    }
 
-
+    public async Task<ApiResponseDto> SendInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint)
+    {
+        var influanceDiagram = await _projectService.GetInfluanceDiagramAsync(projectId);
+        var content = new StringContent(JsonSerializer.Serialize(influanceDiagram), Encoding.UTF8, "application/json");
+        return await CallDownstreamFastApiPostAsync(endpoint, content);
     }
 }
