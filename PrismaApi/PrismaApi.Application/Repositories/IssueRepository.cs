@@ -76,7 +76,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
     {
         if (!IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
         var strategyOptionsToBeRemoved = await DbContext.StrategyOptions
-            .Where(e => e.Option.Decision.IssueId == entity.Id)
+            .Where(e => e.Option!.Decision!.IssueId == entity.Id)
             .ToListAsync();
         if (strategyOptionsToBeRemoved.Any())
         {
@@ -133,7 +133,7 @@ public static class IssueQueryableExtensions
                 (e.Type == IssueType.Uncertainty.ToString() || e.Type == IssueType.Decision.ToString() || e.Type == IssueType.Utility.ToString()) &&
                 (
                     (e.Type == IssueType.Uncertainty.ToString() && e.Uncertainty!.IsKey == true) ||
-                    (e.Type == IssueType.Decision.ToString() && e.Decision!.Type == "Foucus") ||
+                    (e.Type == IssueType.Decision.ToString() && e.Decision!.Type == DecisionHierarchy.Focus.ToString()) ||
                     (e.Type == IssueType.Utility.ToString())
                 )
             );

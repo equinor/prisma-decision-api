@@ -49,7 +49,7 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
     {
         if (!IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
         var strategyOptionsToBeRemoved = await DbContext.StrategyOptions
-            .Where(e => e.Option.DecisionId == entity.Id)
+            .Where(e => e.Option!.DecisionId == entity.Id)
             .ToListAsync();
         if (strategyOptionsToBeRemoved.Any())
         {

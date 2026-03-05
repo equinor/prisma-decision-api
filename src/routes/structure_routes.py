@@ -1,4 +1,5 @@
 import uuid
+import asyncio
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,9 +7,8 @@ from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.services.structure_service import StructureService
 from src.services.project_service import ProjectService
-from src.services.user_service import get_current_user
 from src.dependencies import get_structure_service, get_project_lock_manager, ProjectQueueManager, get_project_service, get_db
-from src.dtos.user_dtos import UserIncomingDto
+from src.domain.influence_diagram import InfluenceDiagramDOT
 from src.dtos.decision_tree_dtos import DecisionTreeDto, PartialOrderDto, DecisionTreeDtoOld
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
@@ -20,7 +20,6 @@ router = APIRouter(tags=["structure"])
 @router.get("/structure/{project_id}/decision_tree")
 async def get_decision_tree(
     project_id: uuid.UUID, structure_service: StructureService = Depends(get_structure_service),
-    current_user: UserIncomingDto = Depends(get_current_user),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ) -> Optional[DecisionTreeDtoOld]:
     try:
@@ -33,7 +32,6 @@ async def get_decision_tree(
 @router.get("/structure/{project_id}/partial_order")
 async def get_partial_order(
     project_id: uuid.UUID, structure_service: StructureService = Depends(get_structure_service),
-    current_user: UserIncomingDto = Depends(get_current_user),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ) -> Optional[PartialOrderDto]:
     try:
@@ -46,7 +44,6 @@ async def get_partial_order(
 @router.get("/structure/{project_id}/decision_tree/v2")
 async def get_decision_tree_tmp(
     project_id: uuid.UUID, structure_service: StructureService = Depends(get_structure_service),
-    current_user: UserIncomingDto = Depends(get_current_user),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ) -> Optional[DecisionTreeDto]:
     try:
@@ -58,7 +55,6 @@ async def get_decision_tree_tmp(
 @router.get("/structure/{project_id}/influence_diagram")
 async def get_influence_diagram(
     project_id: uuid.UUID, project_service: ProjectService = Depends(get_project_service),
-    current_user: UserIncomingDto = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
 ) -> tuple[list[IssueOutgoingDto], list[EdgeOutgoingDto]]:
     try:
@@ -66,20 +62,31 @@ async def get_influence_diagram(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/structure/{project_id}/influence_diagram")
+async def get_influence_diagram_from_dtos(
+    project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], 
+) -> tuple[list[IssueOutgoingDto], list[EdgeOutgoingDto]]:
+    try:
+        influence_diagram = await asyncio.to_thread(
+            lambda: InfluenceDiagramDOT(edges, issues)
+        )
+        await asyncio.to_thread(influence_diagram.validate_diagram)
+        return influence_diagram.issues, influence_diagram.edges
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/structure/{project_id}/partial_order")
 async def get_partial_order_from_dtos(
     project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], structure_service: StructureService = Depends(get_structure_service),
-    current_user: UserIncomingDto = Depends(get_current_user)
 ) -> Optional[PartialOrderDto]:
     try:
         return await structure_service.create_partial_order_from_dtos(project_id, issues, edges)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-router.post("/structure/{project_id}/decision_tree/v2")
+@router.post("/structure/{project_id}/decision_tree/v2")
 async def build_decision_tree_from_dtos(
     project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], structure_service: StructureService = Depends(get_structure_service),
-    current_user: UserIncomingDto = Depends(get_current_user)
 ) -> Optional[DecisionTreeDto]:
     try:
         return await structure_service.create_decision_tree_from_dtos(project_id, issues, edges)

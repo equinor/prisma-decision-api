@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PrismaApi.Domain.Dtos;
-using PrismaApi.Infrastructure;
-using System.Text.Json;
-using System.Text;
-using static PrismaApi.Application.Services.FastApiService;
 using PrismaApi.Application.Interfaces.Services;
+using PrismaApi.Domain.Dtos;
+using Scampi.Domain.Extensions;
+using System.Net;
+using System.Text;
+using System.Text.Json;
 
 namespace PrismaApi.Api.Controllers;
 
@@ -26,7 +26,32 @@ public class StuctureController : ControllerBase
         // get content from issue and edge dtos from the database
         var influanceDiagram = await _projectService.GetInfluanceDiagramAsync(projectId);
         var content = new StringContent(JsonSerializer.Serialize(influanceDiagram), Encoding.UTF8, "application/json");
-        return await _fastApiService.CallDownstreamFastApiPostAsync($"/structure/{projectId}/decision_tree/v2", content);
+        var fastApiResponse = await _fastApiService.CallDownstreamFastApiPostAsync($"/structure/{projectId}/decision_tree/v2", content);
+        if (fastApiResponse.StatusCode == HttpStatusCode.OK)
+        {
+            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeString() : null);
+        }
+        else
+        {
+            return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
+        }
+    }
+
+    [HttpGet("structure/{projectId:guid}/influence_diagram")]
+    public async Task<ActionResult<ApiResponseDto>> GetInfluenceDiagramAsync([FromRoute] Guid projectId)
+    {
+        // get content from issue and edge dtos from the database
+        var influanceDiagram = await _projectService.GetInfluanceDiagramAsync(projectId);
+        var content = new StringContent(JsonSerializer.Serialize(influanceDiagram), Encoding.UTF8, "application/json");
+        var fastApiResponse = await _fastApiService.CallDownstreamFastApiPostAsync($"/structure/{projectId}/influence_diagram", content);
+        if (fastApiResponse.StatusCode == HttpStatusCode.OK)
+        {
+            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeString() : null);
+        }
+        else
+        {
+            return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
+        }
     }
 
     [HttpGet("structure/{projectId:guid}/partial_order")]
@@ -34,6 +59,14 @@ public class StuctureController : ControllerBase
     {
         var influanceDiagram = await _projectService.GetInfluanceDiagramAsync(projectId);
         var content = new StringContent(JsonSerializer.Serialize(influanceDiagram), Encoding.UTF8, "application/json");
-        return await _fastApiService.CallDownstreamFastApiPostAsync($"/structure/{projectId}/partial_order", content);
+        var fastApiResponse = await _fastApiService.CallDownstreamFastApiPostAsync($"/structure/{projectId}/partial_order", content);
+        if (fastApiResponse.StatusCode == HttpStatusCode.OK)
+        {
+            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeString() : null);
+        }
+        else
+        {
+            return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
+        }
     }
 }

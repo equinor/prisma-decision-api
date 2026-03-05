@@ -26,7 +26,8 @@ public class FastApiService : IFastApiService
         string accessToken = await _tokenAcquisition.GetAccessTokenForAppAsync(scope);
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        var response = await _httpClient.GetAsync(_configuration["FastApiService:BaseUrl"] + "/" + endpoint);
+        var normalizedEndpoint = endpoint.TrimStart('/');
+        var response = await _httpClient.GetAsync(_configuration["FastApiService:BaseUrl"] + "/" + normalizedEndpoint);
 
         var responseContent = await response.Content.ReadAsStringAsync();
 
@@ -42,15 +43,25 @@ public class FastApiService : IFastApiService
         string scope = _configuration["FastApiService:Scope"] ?? throw new InvalidOperationException("Scope configuration is missing");
         string accessToken = await _tokenAcquisition.GetAccessTokenForAppAsync(scope);
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-        var response = await _httpClient.PostAsync(_configuration["FastApiService:BaseUrl"] + "/" + endpoint, content);
-
-        var responseContent = await response.Content.ReadAsStringAsync();
-
-        return new ApiResponseDto
+        try
         {
-            Content = responseContent,
-            StatusCode = response.StatusCode
-        };
+
+            var normalizedEndpoint = endpoint.TrimStart('/');
+            var response = await _httpClient.PostAsync(_configuration["FastApiService:BaseUrl"] + "/" + normalizedEndpoint, content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            return new ApiResponseDto
+            {
+                Content = responseContent,
+                StatusCode = response.StatusCode
+            };
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+
+
     }
 }

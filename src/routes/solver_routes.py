@@ -39,7 +39,6 @@ async def get_optimal_decisions_for_project_from_dtos(
 async def get_optimal_decisions_for_project_as_tree(
     project_id: uuid.UUID,
     solver_service: SolverService = Depends(get_solver_service),
-    current_user: UserIncomingDto = Depends(get_current_user),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ):
     try:
@@ -54,7 +53,6 @@ async def get_optimal_decisions_for_project_as_tree(
 async def get_optimal_decisions_for_project_as_tree_tmp(
     project_id: uuid.UUID,
     solver_service: SolverService = Depends(get_solver_service),
-    current_user: UserIncomingDto = Depends(get_current_user),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ):
     try:
@@ -71,7 +69,6 @@ async def get_optimal_decisions_for_project_as_tree_tmp_from_dtos(
     issues: list[IssueOutgoingDto], 
     edges: list[EdgeOutgoingDto],
     solver_service: SolverService = Depends(get_solver_service),
-    current_user: UserIncomingDto = Depends(get_current_user),
 ):
     try:
         return await solver_service.get_decision_tree_for_optimal_decisions_from_dtos(project_id, issues, edges)
