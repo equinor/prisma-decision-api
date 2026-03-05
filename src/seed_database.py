@@ -1754,6 +1754,8 @@ async def seed_database(
                     name="",
                     description="",
                     rationale="",
+                    icon="",
+                    icon_color="",
                     user_id=user.id,
                     strategy_options=[
                         StrategyOption(

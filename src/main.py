@@ -2,6 +2,7 @@ import uvicorn
 from fastapi import FastAPI, status, Depends
 from contextlib import asynccontextmanager
 from src.routes import project_duplication_routes
+from src.routes import project_import_routes
 from src.routes import project_role_routes
 from src.auth.auth import verify_token
 import src.routes.decision_routes as decision_routes
@@ -29,6 +30,7 @@ from azure.monitor.opentelemetry import configure_azure_monitor  # type: ignore
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor  # type: ignore
 
 from src.middleware.exception_handling_middleware import ExceptionFilterMiddleware
+from src.middleware.load_check_middleware import LoadCheckMiddleware
 from src.logger import DOT_API_LOGGER_NAME, get_dot_api_logger
 
 logger = get_dot_api_logger()
@@ -70,6 +72,7 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all HTTP headers
 )
+app.add_middleware(LoadCheckMiddleware)
 app.add_middleware(ExceptionFilterMiddleware)
 
 if config.PROFILE:
@@ -86,6 +89,7 @@ app.include_router(user_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(project_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(project_role_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(project_duplication_routes.router, dependencies=[Depends(verify_token)])
+app.include_router(project_import_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(solver_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(issue_routes.router, dependencies=[Depends(verify_token)])
 app.include_router(objective_routes.router, dependencies=[Depends(verify_token)])

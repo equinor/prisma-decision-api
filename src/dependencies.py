@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, Engine
 from src.services.project_role_service import ProjectRoleService
 from src.services.decision_service import DecisionService
 from src.services.project_service import ProjectService
+from src.services.project_import_service import ProjectImportService
 from src.services.objective_service import ObjectiveService
 from src.services.uncertainty_service import UncertaintyService
 from src.services.discrete_probability_service import DiscreteProbabilityService
@@ -22,6 +23,7 @@ from src.services.strategy_service import StrategyService
 from src.services.user_service import UserService
 from src.services.solver_service import SolverService
 from src.services.structure_service import StructureService
+from src.project_lock_manager import ProjectQueueManager
 from src.config import config
 from src.database import get_connection_string_and_token, build_connection_url
 
@@ -46,6 +48,12 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.rollback()
             raise e
 
+queue_manager = None
+async def get_project_lock_manager() -> ProjectQueueManager:
+    global queue_manager
+    if queue_manager is None:
+        queue_manager = ProjectQueueManager()
+    return queue_manager
 
 async def get_project_service() -> ProjectService:
     return ProjectService()
@@ -53,6 +61,10 @@ async def get_project_service() -> ProjectService:
 
 async def get_project_duplication_service() -> ProjectDuplicationService:
     return ProjectDuplicationService()
+
+
+async def get_project_import_service() -> ProjectImportService:
+    return ProjectImportService()
 
 
 async def get_project_role_service() -> ProjectRoleService:

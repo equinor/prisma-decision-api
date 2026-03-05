@@ -76,6 +76,9 @@ spec:
         limits:
           memory: '10000Mi'
           cpu: '1000m'
+        limits:
+          memory: '10000Mi'
+          cpu: '1000m'
         horizontalScaling:
           resources:
             memory:
