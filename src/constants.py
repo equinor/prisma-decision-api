@@ -50,8 +50,8 @@ class DecisionHierarchy(str, Enum):
 
 
 class DatabaseConstants(int, Enum):
-    MAX_SHORT_STRING_LENGTH = 60
-    MAX_LONG_STRING_LENGTH = 600
+    MAX_SHORT_STRING_LENGTH = 1000
+    MAX_LONG_STRING_LENGTH = 6000
     FLOAT_PRECISION = 53
 
 
