@@ -100,7 +100,8 @@ class ProjectService:
                 UserMapper.to_entity(user_dto_item)
             )
             user_from_db.append(user_entity)
-        user = next((u for u in user_from_db if u.azure_id == user_dto.azure_id))
+        user_by_azure_id = {u.azure_id: u for u in user_from_db}
+        user = user_by_azure_id[user_dto.azure_id]
         create_project_user_dto = self._build_project_role_create_dtos(dtos, user_from_db)
 
         if not is_duplicate:
@@ -136,16 +137,17 @@ class ProjectService:
                 UserMapper.to_entity(user_dto_item)
             )
             user_from_db.append(user_entity)
-        user = next((u for u in user_from_db if u.azure_id == user_dto.azure_id))
+        user_by_azure_id = {u.azure_id: u for u in user_from_db}
+        current_user = user_by_azure_id[user_dto.azure_id]
         for dto in dtos:
             for user_in_dto in dto.users:
-                matched_user = next(
-                    (u for u in user_from_db if u.azure_id == user_in_dto.azure_id), None
-                )
+                matched_user = user_by_azure_id.get(user_in_dto.azure_id)
                 if matched_user is not None:
                     user_in_dto.user_id = matched_user.id
 
-        await ProjectRepository(session).update(ProjectMapper.to_project_entities(dtos, user.id))
+        await ProjectRepository(session).update(
+            ProjectMapper.to_project_entities(dtos, current_user.id)
+        )
         return await self.get(session, ids=[dto.id for dto in dtos])
 
     async def delete(
