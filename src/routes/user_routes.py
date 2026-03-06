@@ -22,8 +22,11 @@ async def get_me(token: str = Depends(verify_token)) -> UserIncomingDto:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve user: {str(e)}")
 
 
-@router.get("/graph/users/{search}")
-async def get_graph_users(search: str, token: str = Depends(verify_token)) -> list[UserIncomingDto]:
+@router.get("/graph/users")
+async def get_graph_users(
+    search: str = Query(..., description="Search query for users"),
+    token: str = Depends(verify_token),
+) -> list[UserIncomingDto]:
     try:
         return await call_ms_graph_api_users(token, search)
     except Exception as e:

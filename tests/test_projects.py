@@ -8,7 +8,6 @@ from tests.utils import (
 from src.dtos.project_dtos import (
     ProjectIncomingDto,
     ProjectOutgoingDto,
-    ProjectCreateDto,
     PopulatedProjectDto,
 )
 from src.dtos.strategy_dtos import StrategyIncomingDto
@@ -45,7 +44,7 @@ async def test_get_project_populated(client: AsyncClient):
 async def test_create_project(client: AsyncClient):
     test_project_id = uuid4()
     payload = [
-        ProjectCreateDto(
+        ProjectIncomingDto(
             id=test_project_id,
             name=str(uuid4()),
             objectives=[],
@@ -63,7 +62,7 @@ async def test_create_project(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_create_project_with_objectives(client: AsyncClient):
 
-    project = ProjectCreateDto(
+    project = ProjectIncomingDto(
         name=str(uuid4()),
         objectives=[],
         opportunity_statement=str(uuid4()),
@@ -87,7 +86,6 @@ async def test_update_project(client: AsyncClient):
             name=new_name,
             opportunity_statement=" ",
             users=[],
-            strategies=[],
         ).model_dump(mode="json")
     ]
     response = await client.put("/projects", json=payload)
@@ -142,14 +140,13 @@ async def test_update_project_with_strategies(client: AsyncClient):
                 ProjectRoleIncomingDto(
                     id=user.id,
                     user_id=user.user_id,
-                    user_name=user.user_name,
+                    name=user.name,
                     project_id=user.project_id,
                     azure_id=user.azure_id,
                     role=user.role,  # type: ignore
                 )
                 for user in example_project.users
             ],
-            strategies=[strategy],
         ).model_dump(mode="json")
     ]
     response = await client.put("/projects", json=payload)

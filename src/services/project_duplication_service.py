@@ -21,12 +21,11 @@ from src.dtos.node_style_dtos import NodeStyleIncomingDto
 from src.dtos.option_dtos import OptionIncomingDto
 from src.dtos.outcome_dtos import OutcomeIncomingDto
 from src.dtos.project_dtos import (
-    ProjectCreateDto,
     ProjectIncomingDto,
     ProjectOutgoingDto,
     ObjectiveViaProjectDto,
 )
-from src.dtos.project_roles_dtos import ProjectRoleCreateDto, ProjectRoleIncomingDto
+from src.dtos.project_roles_dtos import ProjectRoleIncomingDto
 from src.dtos.uncertainty_dtos import UncertaintyIncomingDto
 from src.dtos.user_dtos import UserIncomingDto
 from src.dtos.utility_dtos import UtilityIncomingDto
@@ -135,16 +134,16 @@ class ProjectDuplicationService:
             users = [
                 UserIncomingDto(
                     id=None,
-                    name=role.user_name,
-                    azure_id=role.azure_id,
+                    name=user.name,
+                    azure_id=user.azure_id,
                 )
-                for role in original_project.users
-                if isinstance(role, ProjectRoleIncomingDto)
+                for user in original_project.users
+                if isinstance(user, ProjectRoleIncomingDto)
             ]
             for user in users:
                 await UserRepository(session).get_or_create(UserMapper.to_entity(user))
 
-        duplicate_project_dto = ProjectCreateDto(
+        duplicate_project_dto = ProjectIncomingDto(
             id=new_project_id,
             name=original_project.name,
             parent_project_id=(
@@ -164,26 +163,24 @@ class ProjectDuplicationService:
             public=original_project.public,
             end_date=original_project.end_date,
             users=[
-                ProjectRoleCreateDto(
-                    user_name=(
-                        role.user.name
-                        if isinstance(role, ProjectRole) and role.user
-                        else role.user_name
+                ProjectRoleIncomingDto(
+                    name=(
+                        user.user.name if isinstance(user, ProjectRole) and user.user else user.name
                     ),
                     azure_id=(
-                        role.user.azure_id
-                        if isinstance(role, ProjectRole) and role.user
-                        else role.azure_id
+                        user.user.azure_id
+                        if isinstance(user, ProjectRole) and user.user
+                        else user.azure_id
                     ),
                     user_id=(
-                        role.user.id
-                        if isinstance(role, ProjectRole) and role.user
-                        else role.user_id
+                        user.user.id
+                        if isinstance(user, ProjectRole) and user.user
+                        else user.user_id
                     ),
                     project_id=new_project_id,
-                    role=ProjectRoleType(role.role),
+                    role=ProjectRoleType(user.role),
                 )
-                for role in (
+                for user in (
                     original_project.project_role
                     if isinstance(original_project, Project)
                     else original_project.users

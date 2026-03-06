@@ -1,3 +1,4 @@
+from typing import Optional
 import uuid
 from pydantic import BaseModel, Field
 
@@ -12,19 +13,21 @@ class UserInfoDto(BaseModel):
 
 class ProjectRoleDto(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    user_id: int
     project_id: uuid.UUID
 
 
 class ProjectRoleIncomingDto(ProjectRoleDto, UserInfoDto):
+    user_id: Optional[int]
     role: ProjectRoleType
 
 
 class ProjectRoleCreateDto(ProjectRoleDto, UserInfoDto):
+    user_id: int
     role: ProjectRoleType
 
 
 class ProjectRoleOutgoingDto(ProjectRoleDto, UserInfoDto):
+    user_id: int
     role: str
 
 
@@ -39,7 +42,7 @@ class ProjectRoleMapper:
         )
 
     @staticmethod
-    def to_project_role_entity(dto: ProjectRoleIncomingDto) -> ProjectRole:
+    def to_project_role_entity(dto: ProjectRoleCreateDto) -> ProjectRole:
         return ProjectRole(
             id=dto.id,
             user_id=dto.user_id,
@@ -77,6 +80,6 @@ class ProjectRoleMapper:
 
     @staticmethod
     def to_project_role_entities(
-        entities: list[ProjectRoleIncomingDto],
+        entities: list[ProjectRoleCreateDto],
     ) -> list[ProjectRole]:
         return [ProjectRoleMapper.to_project_role_entity(entity) for entity in entities]

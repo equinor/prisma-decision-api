@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.dtos.project_dtos import (
     ProjectIncomingDto,
     ProjectOutgoingDto,
-    ProjectCreateDto,
     PopulatedProjectDto,
 )
 from src.services.project_service import ProjectService
@@ -22,7 +21,7 @@ router = APIRouter(tags=["projects"])
 
 @router.post("/projects")
 async def create_projects(
-    dtos: list[ProjectCreateDto],
+    dtos: list[ProjectIncomingDto],
     project_service: ProjectService = Depends(get_project_service),
     current_user: UserIncomingDto = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),

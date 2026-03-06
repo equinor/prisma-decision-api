@@ -35,11 +35,6 @@ class ProjectDto(BaseModel):
     end_date: datetime = Field(default_factory=default_endtime)
 
 
-class ProjectCreateDto(ProjectDto):
-    objectives: list[ObjectiveViaProjectDto] = []
-    users: list[ProjectRoleCreateDto]
-
-
 class ProjectIncomingDto(ProjectDto):
     objectives: list[ObjectiveViaProjectDto] = []
     strategies: list[StrategyIncomingDto] = []
@@ -60,7 +55,7 @@ class PopulatedProjectDto(ProjectDto):
 
 class ProjectMapper:
     @staticmethod
-    def from_create_to_entity(dto: ProjectCreateDto, user_id: int) -> Project:
+    def from_create_to_entity(dto: ProjectIncomingDto, user_id: int) -> Project:
         return Project(
             id=dto.id,
             parent_project_name=dto.parent_project_name,
@@ -87,7 +82,6 @@ class ProjectMapper:
             public=entity.public,
             end_date=entity.end_date,
             users=ProjectRoleMapper.to_outgoing_dtos(entity.project_role),
-            strategies=StrategyMapper.to_outgoing_dtos(entity.strategies),
         )
 
     @staticmethod
@@ -116,13 +110,25 @@ class ProjectMapper:
             user_id=user_id,
             public=dto.public,
             end_date=dto.end_date,
-            project_role=ProjectRoleMapper.to_project_role_entities(dto.users),
+            project_role=ProjectRoleMapper.to_project_role_entities(
+                [
+                    ProjectRoleCreateDto(
+                        name=user.name,
+                        azure_id=user.azure_id,
+                        user_id=user.user_id,
+                        project_id=dto.id,
+                        role=user.role,
+                    )
+                    for user in dto.users
+                    if user.user_id is not None
+                ]
+            ),
             strategies=StrategyMapper.to_entities(dto.strategies, user_id),
         )
 
     @staticmethod
     def from_create_to_project_entities(
-        dtos: list[ProjectCreateDto], user_id: int
+        dtos: list[ProjectIncomingDto], user_id: int
     ) -> list[Project]:
         return [ProjectMapper.from_create_to_entity(dto, user_id) for dto in dtos]
 

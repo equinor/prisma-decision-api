@@ -2,6 +2,7 @@ import asyncio
 import uuid
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
+from src.models.user import User
 from src.domain.influence_diagram import InfluenceDiagramDOT
 from src.dtos.edge_dtos import EdgeMapper, EdgeOutgoingDto
 from src.dtos.issue_dtos import IssueMapper, IssueOutgoingDto
@@ -19,7 +20,6 @@ from src.dtos.project_dtos import (
     ProjectMapper,
     ProjectIncomingDto,
     ProjectOutgoingDto,
-    ProjectCreateDto,
     PopulatedProjectDto,
 )
 from src.dtos.user_dtos import (
@@ -32,6 +32,44 @@ from src.models.filters.project_filter import ProjectFilter
 
 
 class ProjectService:
+
+    def _build_project_incoming_users(
+        self, dtos: list[ProjectIncomingDto]
+    ) -> list[UserIncomingDto]:
+        return [
+            UserIncomingDto(
+                user_id=user.user_id,
+                name=user.name,
+                azure_id=user.azure_id,
+                project_roles=[],
+            )
+            for dto in dtos
+            for user in dto.users
+        ]
+
+    def _build_project_role_create_dtos(
+        self,
+        dtos: list[ProjectIncomingDto],
+        users: list[User],
+    ) -> list[ProjectRoleCreateDto]:
+        users_by_azure_id = {user.azure_id: user for user in users}
+        project_role_dtos: list[ProjectRoleCreateDto] = []
+        for dto in dtos:
+            for user_in_dto in dto.users:
+                matched_user = users_by_azure_id.get(user_in_dto.azure_id)
+                if matched_user is None:
+                    continue
+                user_in_dto.user_id = matched_user.id
+                project_role_dtos.append(
+                    ProjectRoleCreateDto(
+                        name=user_in_dto.name,
+                        azure_id=user_in_dto.azure_id,
+                        user_id=user_in_dto.user_id,
+                        project_id=dto.id,
+                        role=user_in_dto.role,
+                    )
+                )
+        return project_role_dtos
 
     async def _create_role_for_project(
         self,
@@ -50,29 +88,35 @@ class ProjectService:
     async def create(
         self,
         session: AsyncSession,
-        dtos: list[ProjectCreateDto],
+        dtos: list[ProjectIncomingDto],
         user_dto: UserIncomingDto,
         is_duplicate: bool = False,
     ) -> list[ProjectOutgoingDto]:
-        user = await UserRepository(session).get_or_create(UserMapper.to_entity(user_dto))
+        project_incoming_users = self._build_project_incoming_users(dtos)
+        all_users = [user_dto] + project_incoming_users
+        user_from_db: list[User] = []
+        for user in all_users:
+            user = await UserRepository(session).get_or_create(UserMapper.to_entity(user))
+            user_from_db.append(user)
+        user = next((u for u in user_from_db if u.azure_id == user_dto.azure_id))
+        create_project_user_dto = self._build_project_role_create_dtos(dtos, user_from_db)
 
         if not is_duplicate:
             for dto in dtos:
                 owner_role = ProjectRoleCreateDto(
-                    user_name=user.name,
+                    name=user.name,
                     azure_id=user.azure_id,
                     user_id=user.id,
                     project_id=dto.id,
                     role=ProjectRoleType.FACILITATOR,
                 )
-                dto.users.append(owner_role)
+                create_project_user_dto.append(owner_role)
 
         await ProjectRepository(session).create(
             ProjectMapper.from_create_to_project_entities(dtos, user.id)
         )
-        for dto in dtos:
-            if len(dto.users) > 0:
-                await self._create_role_for_project(session, dto.users)
+
+        await self._create_role_for_project(session, create_project_user_dto)
 
         return await self.get(session, ids=[dto.id for dto in dtos])
 
@@ -82,7 +126,21 @@ class ProjectService:
         dtos: list[ProjectIncomingDto],
         user_dto: UserIncomingDto,
     ) -> list[ProjectOutgoingDto]:
-        user = await UserRepository(session).get_or_create(UserMapper.to_entity(user_dto))
+        project_incoming_users = self._build_project_incoming_users(dtos)
+        all_users = [user_dto] + project_incoming_users
+        user_from_db: list[User] = []
+        for user in all_users:
+            user = await UserRepository(session).get_or_create(UserMapper.to_entity(user))
+            user_from_db.append(user)
+        user = next((u for u in user_from_db if u.azure_id == user_dto.azure_id))
+        for dto in dtos:
+            for user_in_dto in dto.users:
+                matched_user = next(
+                    (u for u in user_from_db if u.azure_id == user_in_dto.azure_id), None
+                )
+                if matched_user is not None:
+                    user_in_dto.user_id = matched_user.id
+
         await ProjectRepository(session).update(ProjectMapper.to_project_entities(dtos, user.id))
         return await self.get(session, ids=[dto.id for dto in dtos])
 
@@ -211,7 +269,7 @@ class ProjectService:
             connected_issue_ids.add(edge.head_node.issue_id)
             connected_issue_ids.add(edge.tail_node.issue_id)
 
-        # remove issues that have no edges        
+        # remove issues that have no edges
         issues_entities = [issue for issue in issues_entities if issue.id in connected_issue_ids]
 
         issue_dtos = IssueMapper.to_outgoing_dtos(issues_entities)
