@@ -2,7 +2,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.auth.graph_api import call_ms_graph_api
+from src.auth.graph_api import call_ms_graph_api, call_ms_graph_api_users
 from src.auth.auth import verify_token
 from src.services.user_service import UserService
 from src.constants import SwaggerDocumentationConstants
@@ -18,6 +18,17 @@ router = APIRouter(tags=["user"])
 async def get_me(token: str = Depends(verify_token)) -> UserIncomingDto:
     try:
         return await call_ms_graph_api(token)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve user: {str(e)}")
+
+
+@router.get("/graph/users")
+async def get_graph_users(
+    search: str = Query(..., description="Search query for users"),
+    token: str = Depends(verify_token),
+) -> list[UserIncomingDto]:
+    try:
+        return await call_ms_graph_api_users(token, search)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve user: {str(e)}")
 

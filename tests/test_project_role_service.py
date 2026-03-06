@@ -37,7 +37,7 @@ async def test_update_project_role(client: AsyncClient):
             id=GenerateUuid.as_uuid(2),
             user_id=1,
             azure_id=GenerateUuid.as_string(15),
-            user_name="",
+            name="",
             project_id=GenerateUuid.as_uuid(2),
             role=ProjectRoleType.MEMBER,
         ).model_dump(mode="json")
