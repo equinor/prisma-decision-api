@@ -136,6 +136,7 @@ async def test_update_project_with_strategies(client: AsyncClient):
             id=project_id,
             name=new_name,
             opportunity_statement="Updated opportunity statement",
+            strategies=[strategy],
             users=[
                 ProjectRoleIncomingDto(
                     id=user.id,

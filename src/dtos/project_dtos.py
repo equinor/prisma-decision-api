@@ -81,6 +81,7 @@ class ProjectMapper:
             objectives=ObjectiveMapper.to_outgoing_dtos(entity.objectives),
             public=entity.public,
             end_date=entity.end_date,
+            strategies=StrategyMapper.to_outgoing_dtos(entity.strategies),
             users=ProjectRoleMapper.to_outgoing_dtos(entity.project_role),
         )
 
@@ -95,6 +96,7 @@ class ProjectMapper:
             public=entity.public,
             end_date=entity.end_date,
             objectives=ObjectiveMapper.to_outgoing_dtos(entity.objectives),
+            strategies=StrategyMapper.to_outgoing_dtos(entity.strategies),
             users=ProjectRoleMapper.to_outgoing_dtos(entity.project_role),
         )
 
