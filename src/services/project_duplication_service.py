@@ -133,7 +133,7 @@ class ProjectDuplicationService:
         if isinstance(original_project, ProjectIncomingDto):
             users = [
                 UserIncomingDto(
-                    id=None,
+                    user_id=None,
                     name=user.name,
                     azure_id=user.azure_id,
                 )
@@ -191,7 +191,7 @@ class ProjectDuplicationService:
         duplicated_project = await ProjectService().create(
             session,
             [duplicate_project_dto],
-            UserIncomingDto(id=None, name=current_user.name, azure_id=current_user.azure_id),
+            UserIncomingDto(user_id=None, name=current_user.name, azure_id=current_user.azure_id),
             is_duplicate=True,
         )
 
@@ -240,7 +240,7 @@ class ProjectDuplicationService:
         await IssueService().create(
             session,
             duplicate_incoming_issues,
-            UserIncomingDto(id=None, name=current_user.name, azure_id=current_user.azure_id),
+            UserIncomingDto(user_id=None, name=current_user.name, azure_id=current_user.azure_id),
         )
         # Create duplicate discrete probabilities
         if duplicate_incoming_discrete_probabilities_dtos:

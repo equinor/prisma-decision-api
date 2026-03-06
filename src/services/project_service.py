@@ -95,9 +95,11 @@ class ProjectService:
         project_incoming_users = self._build_project_incoming_users(dtos)
         all_users = [user_dto] + project_incoming_users
         user_from_db: list[User] = []
-        for user in all_users:
-            user = await UserRepository(session).get_or_create(UserMapper.to_entity(user))
-            user_from_db.append(user)
+        for user_dto_item in all_users:
+            user_entity = await UserRepository(session).get_or_create(
+                UserMapper.to_entity(user_dto_item)
+            )
+            user_from_db.append(user_entity)
         user = next((u for u in user_from_db if u.azure_id == user_dto.azure_id))
         create_project_user_dto = self._build_project_role_create_dtos(dtos, user_from_db)
 
@@ -129,9 +131,11 @@ class ProjectService:
         project_incoming_users = self._build_project_incoming_users(dtos)
         all_users = [user_dto] + project_incoming_users
         user_from_db: list[User] = []
-        for user in all_users:
-            user = await UserRepository(session).get_or_create(UserMapper.to_entity(user))
-            user_from_db.append(user)
+        for user_dto_item in all_users:
+            user_entity = await UserRepository(session).get_or_create(
+                UserMapper.to_entity(user_dto_item)
+            )
+            user_from_db.append(user_entity)
         user = next((u for u in user_from_db if u.azure_id == user_dto.azure_id))
         for dto in dtos:
             for user_in_dto in dto.users:
