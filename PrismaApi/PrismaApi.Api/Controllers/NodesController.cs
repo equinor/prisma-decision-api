@@ -14,24 +14,31 @@ namespace PrismaApi.Api.Controllers;
 public class NodesController : PrismaBaseEntityController
 {
     private readonly INodeService _nodeService;
+    private readonly IUserService _userService;
 
-    public NodesController(INodeService nodeService, AppDbContext dbContext)
+    public NodesController(
+        INodeService nodeService,
+        AppDbContext dbContext,
+        IUserService userService)
         : base(dbContext)
     {
         _nodeService = nodeService;
+        _userService = userService;
     }
 
     [HttpGet("nodes/{id:guid}")]
     public async Task<ActionResult<NodeOutgoingDto>> GetNode(Guid id)
     {
-        var result = await _nodeService.GetAsync(new List<Guid> { id });
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _nodeService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("nodes")]
     public async Task<ActionResult<List<NodeOutgoingDto>>> GetAllNodes()
     {
-        var result = await _nodeService.GetAllAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _nodeService.GetAllAsync(user);
         return Ok(result);
     }
 
@@ -44,10 +51,12 @@ public class NodesController : PrismaBaseEntityController
     [HttpPut("nodes")]
     public async Task<ActionResult<List<NodeOutgoingDto>>> UpdateNodes([FromBody] List<NodeIncomingDto> dtos)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            var result = await _nodeService.UpdateAsync(dtos);
+            var result = await _nodeService.UpdateAsync(dtos, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }
@@ -61,10 +70,12 @@ public class NodesController : PrismaBaseEntityController
     [HttpDelete("nodes/{id:guid}")]
     public async Task<IActionResult> DeleteNode(Guid id)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _nodeService.DeleteAsync(new List<Guid> { id });
+            await _nodeService.DeleteAsync(new List<Guid> { id }, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }
@@ -78,10 +89,12 @@ public class NodesController : PrismaBaseEntityController
     [HttpDelete("nodes")]
     public async Task<IActionResult> DeleteNodes([FromQuery] List<Guid> ids)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _nodeService.DeleteAsync(ids);
+            await _nodeService.DeleteAsync(ids, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }

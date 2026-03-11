@@ -13,34 +13,43 @@ namespace PrismaApi.Api.Controllers;
 public class NodeStylesController : PrismaBaseEntityController
 {
     private readonly INodeStyleService _nodeStyleService;
+    private readonly IUserService _userService;
 
-    public NodeStylesController(INodeStyleService nodeStyleService, AppDbContext dbContext)
+    public NodeStylesController(
+        INodeStyleService nodeStyleService,
+        AppDbContext dbContext,
+        IUserService userService)
         : base(dbContext)
     {
         _nodeStyleService = nodeStyleService;
+        _userService = userService;
     }
 
     [HttpGet("node-styles/{id:guid}")]
     public async Task<ActionResult<NodeStyleOutgoingDto>> GetNodeStyle(Guid id)
     {
-        var result = await _nodeStyleService.GetAsync(new List<Guid> { id });
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _nodeStyleService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("node-styles")]
     public async Task<ActionResult<List<NodeStyleOutgoingDto>>> GetAllNodeStyles()
     {
-        var result = await _nodeStyleService.GetAllAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _nodeStyleService.GetAllAsync(user);
         return Ok(result);
     }
 
     [HttpPut("node-styles")]
     public async Task<ActionResult<List<NodeStyleOutgoingDto>>> UpdateNodeStyles([FromBody] List<NodeStyleIncomingDto> dtos)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            var result = await _nodeStyleService.UpdateAsync(dtos);
+            var result = await _nodeStyleService.UpdateAsync(dtos, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }
@@ -54,10 +63,12 @@ public class NodeStylesController : PrismaBaseEntityController
     [HttpDelete("node-styles/{id:guid}")]
     public async Task<IActionResult> DeleteNodeStyle(Guid id)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _nodeStyleService.DeleteAsync(new List<Guid> { id });
+            await _nodeStyleService.DeleteAsync(new List<Guid> { id }, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }
@@ -71,10 +82,12 @@ public class NodeStylesController : PrismaBaseEntityController
     [HttpDelete("node-styles")]
     public async Task<IActionResult> DeleteNodeStyles([FromQuery] List<Guid> ids)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _nodeStyleService.DeleteAsync(ids);
+            await _nodeStyleService.DeleteAsync(ids, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }

@@ -81,13 +81,13 @@ public class ProjectService : IProjectService
         }
 
         var ids = dtos.Select(d => d.Id).ToList();
-        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
+        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return projects.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        await _projectRepository.DeleteByIdsAsync(ids);
+        await _projectRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
     }
 
     public async Task<List<ProjectOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)

@@ -20,29 +20,29 @@ public class UncertaintyService: IUncertaintyService
         _uncertaintyRepository = uncertaintyRepository;
     }
 
-    public async Task<List<UncertaintyOutgoingDto>> UpdateAsync(List<UncertaintyIncomingDto> dtos)
+    public async Task<List<UncertaintyOutgoingDto>> UpdateAsync(List<UncertaintyIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntities();
         await _uncertaintyRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _uncertaintyRepository.GetByIdsAsync(ids, withTracking: false);
+        var updated = await _uncertaintyRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        await _uncertaintyRepository.DeleteByIdsAsync(ids);
+        await _uncertaintyRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
     }
 
-    public async Task<List<UncertaintyOutgoingDto>> GetAsync(List<Guid> ids)
+    public async Task<List<UncertaintyOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        var entities = await _uncertaintyRepository.GetByIdsAsync(ids, withTracking: false);
+        var entities = await _uncertaintyRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<UncertaintyOutgoingDto>> GetAllAsync()
+    public async Task<List<UncertaintyOutgoingDto>> GetAllAsync(UserOutgoingDto user)
     {
-        var entities = await _uncertaintyRepository.GetAllAsync(withTracking: false);
+        var entities = await _uncertaintyRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
         return entities.ToOutgoingDtos();
     }
     private static Expression<Func<Uncertainty, bool>> UserFilter(UserOutgoingDto user)

@@ -38,6 +38,7 @@ public class ValueMetricsController : PrismaBaseEntityController
     [HttpPut("value-metrics")]
     public async Task<ActionResult<List<ValueMetricOutgoingDto>>> UpdateValueMetrics([FromBody] List<ValueMetricIncomingDto> dtos)
     {
+        return StatusCode(StatusCodes.Status501NotImplemented);
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
@@ -55,6 +56,7 @@ public class ValueMetricsController : PrismaBaseEntityController
     [HttpDelete("value-metrics/{id:guid}")]
     public async Task<IActionResult> DeleteValueMetric(Guid id)
     {
+        return StatusCode(StatusCodes.Status501NotImplemented);
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
@@ -72,6 +74,7 @@ public class ValueMetricsController : PrismaBaseEntityController
     [HttpDelete("value-metrics")]
     public async Task<IActionResult> DeleteValueMetrics([FromQuery] List<Guid> ids)
     {
+        return StatusCode(StatusCodes.Status501NotImplemented);
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {

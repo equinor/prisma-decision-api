@@ -44,14 +44,16 @@ public class ObjectivesController : PrismaBaseEntityController
     [HttpGet("objectives/{id:guid}")]
     public async Task<ActionResult<ObjectiveOutgoingDto>> GetObjective(Guid id)
     {
-        var result = await _objectiveService.GetAsync(new List<Guid> { id });
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _objectiveService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("objectives")]
     public async Task<ActionResult<List<ObjectiveOutgoingDto>>> GetAllObjectives()
     {
-        var result = await _objectiveService.GetAllAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _objectiveService.GetAllAsync(user);
         return Ok(result);
     }
 
@@ -83,10 +85,12 @@ public class ObjectivesController : PrismaBaseEntityController
     [HttpDelete("objectives/{id:guid}")]
     public async Task<IActionResult> DeleteObjective(Guid id)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _objectiveService.DeleteAsync(new List<Guid> { id });
+            await _objectiveService.DeleteAsync(new List<Guid> { id }, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }
@@ -100,10 +104,12 @@ public class ObjectivesController : PrismaBaseEntityController
     [HttpDelete("objectives")]
     public async Task<IActionResult> DeleteObjectives([FromQuery] List<Guid> ids)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _objectiveService.DeleteAsync(ids);
+            await _objectiveService.DeleteAsync(ids, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }

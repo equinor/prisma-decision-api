@@ -68,14 +68,16 @@ public class StrategiesController : PrismaBaseEntityController
     [HttpGet("strategies/{id:guid}")]
     public async Task<ActionResult<StrategyOutgoingDto>> GetStrategy(Guid id)
     {
-        var result = await _strategyService.GetAsync(new List<Guid> { id });
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _strategyService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("strategies")]
     public async Task<ActionResult<List<StrategyOutgoingDto>>> GetAllStrategies()
     {
-        var result = await _strategyService.GetAllAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _strategyService.GetAllAsync(user);
         return Ok(result);
     }
 
@@ -88,10 +90,12 @@ public class StrategiesController : PrismaBaseEntityController
     [HttpDelete("strategies/{id:guid}")]
     public async Task<IActionResult> DeleteStrategy(Guid id)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _strategyService.DeleteAsync(new List<Guid> { id });
+            await _strategyService.DeleteAsync(new List<Guid> { id }, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }
@@ -105,10 +109,12 @@ public class StrategiesController : PrismaBaseEntityController
     [HttpDelete("strategies")]
     public async Task<IActionResult> DeleteStrategies([FromQuery] List<Guid> ids)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _strategyService.DeleteAsync(ids);
+            await _strategyService.DeleteAsync(ids, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }

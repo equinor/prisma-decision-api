@@ -5,6 +5,7 @@ using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
@@ -19,15 +20,15 @@ public class ProjectRoleService: IProjectRoleService
         _projectRoleRepository = projectRoleRepository;
     }
 
-    public async Task<List<ProjectRoleOutgoingDto>> GetAsync(List<Guid> ids)
+    public async Task<List<ProjectRoleOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        var roles = await _projectRoleRepository.GetByIdsAsync(ids, withTracking: false);
+        var roles = await _projectRoleRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
         return roles.ToOutgoingDtos();
     }
 
-    public async Task<List<ProjectRoleOutgoingDto>> GetAllAsync()
+    public async Task<List<ProjectRoleOutgoingDto>> GetAllAsync(UserOutgoingDto user)
     {
-        var roles = await _projectRoleRepository.GetAllAsync(withTracking: false);
+        var roles = await _projectRoleRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
         return roles.ToOutgoingDtos();
     }
 
@@ -35,12 +36,14 @@ public class ProjectRoleService: IProjectRoleService
     {
         var entities = dtos.ToEntities(userDto);
         await _projectRoleRepository.UpdateRangeAsync(entities);
-        return entities.ToOutgoingDtos();
+        var ids = dtos.Select(d => d.Id).ToList();
+        var updated = await _projectRoleRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
+        return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        await _projectRoleRepository.DeleteByIdsAsync(ids);
+        await _projectRoleRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
     }
 
     private static Expression<Func<ProjectRole, bool>> UserFilter(UserOutgoingDto user)

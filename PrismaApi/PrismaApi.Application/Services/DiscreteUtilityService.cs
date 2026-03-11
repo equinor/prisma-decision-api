@@ -27,29 +27,29 @@ public class DiscreteUtilityService: IDiscreteUtilityService
         return entities.ToDtos();
     }
 
-    public async Task<List<DiscreteUtilityDto>> UpdateAsync(List<DiscreteUtilityDto> dtos)
+    public async Task<List<DiscreteUtilityDto>> UpdateAsync(List<DiscreteUtilityDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntitiesWithoutParents();
         await _discreteUtilityRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _discreteUtilityRepository.GetByIdsAsync(ids, withTracking: false);
+        var updated = await _discreteUtilityRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        await _discreteUtilityRepository.DeleteByIdsAsync(ids);
+        await _discreteUtilityRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
     }
 
-    public async Task<List<DiscreteUtilityDto>> GetAsync(List<Guid> ids)
+    public async Task<List<DiscreteUtilityDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        var entities = await _discreteUtilityRepository.GetByIdsAsync(ids, withTracking: false);
+        var entities = await _discreteUtilityRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
         return entities.ToDtos();
     }
 
-    public async Task<List<DiscreteUtilityDto>> GetAllAsync()
+    public async Task<List<DiscreteUtilityDto>> GetAllAsync(UserOutgoingDto user)
     {
-        var entities = await _discreteUtilityRepository.GetAllAsync(withTracking: false);
+        var entities = await _discreteUtilityRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
         return entities.ToDtos();
     }
     private static Expression<Func<DiscreteUtility, bool>> UserFilter(UserOutgoingDto user)

@@ -27,29 +27,29 @@ public class OptionService: IOptionService
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<OptionOutgoingDto>> UpdateAsync(List<OptionIncomingDto> dtos)
+    public async Task<List<OptionOutgoingDto>> UpdateAsync(List<OptionIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntities();
         await _optionRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _optionRepository.GetByIdsAsync(ids, withTracking: false);
+        var updated = await _optionRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        await _optionRepository.DeleteByIdsAsync(ids);
+        await _optionRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
     }
 
-    public async Task<List<OptionOutgoingDto>> GetAsync(List<Guid> ids)
+    public async Task<List<OptionOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        var entities = await _optionRepository.GetByIdsAsync(ids, withTracking: false);
+        var entities = await _optionRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<OptionOutgoingDto>> GetAllAsync()
+    public async Task<List<OptionOutgoingDto>> GetAllAsync(UserOutgoingDto user)
     {
-        var entities = await _optionRepository.GetAllAsync(withTracking: false);
+        var entities = await _optionRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
         return entities.ToOutgoingDtos();
     }
 

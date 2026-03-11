@@ -11,12 +11,18 @@ public class OutcomesController : PrismaBaseEntityController
 {
     private readonly IOutcomeService _outcomeService;
     private readonly ITableRebuildingService _tableRebuildingService;
+    private readonly IUserService _userService;
 
-    public OutcomesController(IOutcomeService outcomeService, AppDbContext dbContext, ITableRebuildingService tableRebuildingService)
+    public OutcomesController(
+        IOutcomeService outcomeService,
+        AppDbContext dbContext,
+        ITableRebuildingService tableRebuildingService,
+        IUserService userService)
         : base(dbContext)
     {
         _outcomeService = outcomeService;
         _tableRebuildingService = tableRebuildingService;
+        _userService = userService;
     }
 
     [HttpPost("outcomes")]
@@ -40,24 +46,28 @@ public class OutcomesController : PrismaBaseEntityController
     [HttpGet("outcomes/{id:guid}")]
     public async Task<ActionResult<OutcomeOutgoingDto>> GetOutcome(Guid id)
     {
-        var result = await _outcomeService.GetAsync(new List<Guid> { id });
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _outcomeService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("outcomes")]
     public async Task<ActionResult<List<OutcomeOutgoingDto>>> GetAllOutcomes()
     {
-        var result = await _outcomeService.GetAllAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _outcomeService.GetAllAsync(user);
         return Ok(result);
     }
 
     [HttpPut("outcomes")]
     public async Task<ActionResult<List<OutcomeOutgoingDto>>> UpdateOutcomes([FromBody] List<OutcomeIncomingDto> dtos)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            var result = await _outcomeService.UpdateAsync(dtos);
+            var result = await _outcomeService.UpdateAsync(dtos, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }
@@ -71,10 +81,12 @@ public class OutcomesController : PrismaBaseEntityController
     [HttpDelete("outcomes/{id:guid}")]
     public async Task<IActionResult> DeleteOutcome(Guid id)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _outcomeService.DeleteAsync(new List<Guid> { id });
+            await _outcomeService.DeleteAsync(new List<Guid> { id }, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }
@@ -88,10 +100,12 @@ public class OutcomesController : PrismaBaseEntityController
     [HttpDelete("outcomes")]
     public async Task<IActionResult> DeleteOutcomes([FromQuery] List<Guid> ids)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _outcomeService.DeleteAsync(ids);
+            await _outcomeService.DeleteAsync(ids, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }

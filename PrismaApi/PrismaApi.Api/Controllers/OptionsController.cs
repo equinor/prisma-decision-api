@@ -14,12 +14,18 @@ public class OptionsController : PrismaBaseEntityController
 {
     private readonly IOptionService _optionService;
     private readonly ITableRebuildingService _tableRebuildingService;
+    private readonly IUserService _userService;
 
-    public OptionsController(IOptionService optionService, AppDbContext dbContext, ITableRebuildingService tableRebuildingService)
+    public OptionsController(
+        IOptionService optionService,
+        AppDbContext dbContext,
+        ITableRebuildingService tableRebuildingService,
+        IUserService userService)
         : base(dbContext)
     {
         _optionService = optionService;
         _tableRebuildingService = tableRebuildingService;
+        _userService = userService;
     }
 
     [HttpPost("options")]
@@ -43,24 +49,28 @@ public class OptionsController : PrismaBaseEntityController
     [HttpGet("options/{id:guid}")]
     public async Task<ActionResult<OptionOutgoingDto>> GetOption(Guid id)
     {
-        var result = await _optionService.GetAsync(new List<Guid> { id });
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _optionService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("options")]
     public async Task<ActionResult<List<OptionOutgoingDto>>> GetAllOptions()
     {
-        var result = await _optionService.GetAllAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _optionService.GetAllAsync(user);
         return Ok(result);
     }
 
     [HttpPut("options")]
     public async Task<ActionResult<List<OptionOutgoingDto>>> UpdateOptions([FromBody] List<OptionIncomingDto> dtos)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            var result = await _optionService.UpdateAsync(dtos);
+            var result = await _optionService.UpdateAsync(dtos, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }
@@ -74,10 +84,12 @@ public class OptionsController : PrismaBaseEntityController
     [HttpDelete("options/{id:guid}")]
     public async Task<IActionResult> DeleteOption(Guid id)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _optionService.DeleteAsync(new List<Guid> { id });
+            await _optionService.DeleteAsync(new List<Guid> { id }, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }
@@ -91,10 +103,12 @@ public class OptionsController : PrismaBaseEntityController
     [HttpDelete("options")]
     public async Task<IActionResult> DeleteOptions([FromQuery] List<Guid> ids)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _optionService.DeleteAsync(ids);
+            await _optionService.DeleteAsync(ids, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }

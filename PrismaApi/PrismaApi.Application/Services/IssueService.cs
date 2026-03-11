@@ -34,24 +34,24 @@ public class IssueService : IIssueService
         var entities = dtos.ToEntities(userDto);
         await _issueRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _issueRepository.GetByIdsAsync(ids, withTracking: false);
+        var updated = await _issueRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        await _issueRepository.DeleteByIdsAsync(ids);
+        await _issueRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
     }
 
-    public async Task<List<IssueOutgoingDto>> GetAsync(List<Guid> ids)
+    public async Task<List<IssueOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        var issues = await _issueRepository.GetByIdsAsync(ids, withTracking: false);
+        var issues = await _issueRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
         return issues.ToOutgoingDtos();
     }
 
-    public async Task<List<IssueOutgoingDto>> GetAllAsync()
+    public async Task<List<IssueOutgoingDto>> GetAllAsync(UserOutgoingDto user)
     {
-        var issues = await _issueRepository.GetAllAsync(withTracking: false);
+        var issues = await _issueRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
         return issues.ToOutgoingDtos();
     }
 

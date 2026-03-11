@@ -20,29 +20,29 @@ public class NodeStyleService: INodeStyleService
         _nodeStyleRepository = nodeStyleRepository;
     }
 
-    public async Task<List<NodeStyleOutgoingDto>> UpdateAsync(List<NodeStyleIncomingDto> dtos)
+    public async Task<List<NodeStyleOutgoingDto>> UpdateAsync(List<NodeStyleIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntities();
         await _nodeStyleRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _nodeStyleRepository.GetByIdsAsync(ids, withTracking: false);
+        var updated = await _nodeStyleRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        await _nodeStyleRepository.DeleteByIdsAsync(ids);
+        await _nodeStyleRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
     }
 
-    public async Task<List<NodeStyleOutgoingDto>> GetAsync(List<Guid> ids)
+    public async Task<List<NodeStyleOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        var entities = await _nodeStyleRepository.GetByIdsAsync(ids, withTracking: false);
+        var entities = await _nodeStyleRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<NodeStyleOutgoingDto>> GetAllAsync()
+    public async Task<List<NodeStyleOutgoingDto>> GetAllAsync(UserOutgoingDto user)
     {
-        var entities = await _nodeStyleRepository.GetAllAsync(withTracking: false);
+        var entities = await _nodeStyleRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
         return entities.ToOutgoingDtos();
     }
 

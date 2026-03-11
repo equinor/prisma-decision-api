@@ -29,29 +29,29 @@ public class EdgeService: IEdgeService
         return created.ToOutgoingDtos();
     }
 
-    public async Task<List<EdgeOutgoingDto>> UpdateAsync(List<EdgeIncomingDto> dtos)
+    public async Task<List<EdgeOutgoingDto>> UpdateAsync(List<EdgeIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntities();
         await _edgeRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _edgeRepository.GetByIdsAsync(ids, withTracking: false);
+        var updated = await _edgeRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        await _edgeRepository.DeleteByIdsAsync(ids);
+        await _edgeRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
     }
 
-    public async Task<List<EdgeOutgoingDto>> GetAsync(List<Guid> ids)
+    public async Task<List<EdgeOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        var entities = await _edgeRepository.GetByIdsAsync(ids, withTracking: false);
+        var entities = await _edgeRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<EdgeOutgoingDto>> GetAllAsync()
+    public async Task<List<EdgeOutgoingDto>> GetAllAsync(UserOutgoingDto user)
     {
-        var entities = await _edgeRepository.GetAllAsync(withTracking: false);
+        var entities = await _edgeRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
         return entities.ToOutgoingDtos();
     }
     private static Expression<Func<Edge, bool>> UserFilter(UserOutgoingDto user)

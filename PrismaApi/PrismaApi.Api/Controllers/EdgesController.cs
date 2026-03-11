@@ -14,12 +14,18 @@ public class EdgesController : PrismaBaseEntityController
 {
     private readonly IEdgeService _edgeService;
     private readonly ITableRebuildingService _tableRebuildingService;
+    private readonly IUserService _userService;
 
-    public EdgesController(IEdgeService edgeService, AppDbContext dbContext, ITableRebuildingService tableRebuildingService)
+    public EdgesController(
+        IEdgeService edgeService,
+        AppDbContext dbContext,
+        ITableRebuildingService tableRebuildingService,
+        IUserService userService)
         : base(dbContext)
     {
         _edgeService = edgeService;
         _tableRebuildingService = tableRebuildingService;
+        _userService = userService;
     }
 
     [HttpPost("edges")]
@@ -43,24 +49,28 @@ public class EdgesController : PrismaBaseEntityController
     [HttpGet("edges/{id:guid}")]
     public async Task<ActionResult<EdgeOutgoingDto>> GetEdge(Guid id)
     {
-        var result = await _edgeService.GetAsync(new List<Guid> { id });
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _edgeService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("edges")]
     public async Task<ActionResult<List<EdgeOutgoingDto>>> GetAllEdges()
     {
-        var result = await _edgeService.GetAllAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _edgeService.GetAllAsync(user);
         return Ok(result);
     }
 
     [HttpPut("edges")]
     public async Task<ActionResult<List<EdgeOutgoingDto>>> UpdateEdges([FromBody] List<EdgeIncomingDto> dtos)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            var result = await _edgeService.UpdateAsync(dtos);
+            var result = await _edgeService.UpdateAsync(dtos, user);
             await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
@@ -75,10 +85,12 @@ public class EdgesController : PrismaBaseEntityController
     [HttpDelete("edges/{id:guid}")]
     public async Task<IActionResult> DeleteEdge(Guid id)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _edgeService.DeleteAsync(new List<Guid> { id });
+            await _edgeService.DeleteAsync(new List<Guid> { id }, user);
             await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
@@ -93,10 +105,12 @@ public class EdgesController : PrismaBaseEntityController
     [HttpDelete("edges")]
     public async Task<IActionResult> DeleteEdges([FromQuery] List<Guid> ids)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _edgeService.DeleteAsync(ids);
+            await _edgeService.DeleteAsync(ids, user);
             await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();

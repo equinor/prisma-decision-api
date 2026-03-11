@@ -52,14 +52,16 @@ public class IssuesController : PrismaBaseEntityController
     [HttpGet("issues/{id:guid}")]
     public async Task<ActionResult<IssueOutgoingDto>> GetIssue(Guid id)
     {
-        var result = await _issueService.GetAsync(new List<Guid> { id });
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _issueService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("issues")]
     public async Task<ActionResult<List<IssueOutgoingDto>>> GetAllIssues()
     {
-        var result = await _issueService.GetAllAsync();
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _issueService.GetAllAsync(user);
         return Ok(result);
     }
 
@@ -92,10 +94,12 @@ public class IssuesController : PrismaBaseEntityController
     [HttpDelete("issues/{id:guid}")]
     public async Task<IActionResult> DeleteIssue(Guid id)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _issueService.DeleteAsync(new List<Guid> { id });
+            await _issueService.DeleteAsync(new List<Guid> { id }, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }
@@ -109,10 +113,12 @@ public class IssuesController : PrismaBaseEntityController
     [HttpDelete("issues")]
     public async Task<IActionResult> DeleteIssues([FromQuery] List<Guid> ids)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _issueService.DeleteAsync(ids);
+            await _issueService.DeleteAsync(ids, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }

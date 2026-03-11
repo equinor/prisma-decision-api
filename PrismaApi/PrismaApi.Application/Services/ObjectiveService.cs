@@ -28,24 +28,24 @@ public class ObjectiveService: IObjectiveService
         var entities = dtos.ToEntities(userDto);
         await _objectiveRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _objectiveRepository.GetByIdsAsync(ids, withTracking: false);
+        var updated = await _objectiveRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        await _objectiveRepository.DeleteByIdsAsync(ids);
+        await _objectiveRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
     }
 
-    public async Task<List<ObjectiveOutgoingDto>> GetAsync(List<Guid> ids)
+    public async Task<List<ObjectiveOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        var entities = await _objectiveRepository.GetByIdsAsync(ids, withTracking: false);
+        var entities = await _objectiveRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<ObjectiveOutgoingDto>> GetAllAsync()
+    public async Task<List<ObjectiveOutgoingDto>> GetAllAsync(UserOutgoingDto user)
     {
-        var entities = await _objectiveRepository.GetAllAsync(withTracking: false);
+        var entities = await _objectiveRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
         return entities.ToOutgoingDtos();
     }
 

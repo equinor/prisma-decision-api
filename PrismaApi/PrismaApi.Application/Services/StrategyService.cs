@@ -34,24 +34,24 @@ public class StrategyService: IStrategyService
         var entities = dtos.ToEntities(userDto);
         await _strategyRepository.UpdateRangeAsync(entities);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _strategyRepository.GetByIdsAsync(ids);
+        var updated = await _strategyRepository.GetByIdsAsync(ids, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        await _strategyRepository.DeleteByIdsAsync(ids);
+        await _strategyRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
     }
 
-    public async Task<List<StrategyOutgoingDto>> GetAsync(List<Guid> ids)
+    public async Task<List<StrategyOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        var strategies = await _strategyRepository.GetByIdsAsync(ids);
+        var strategies = await _strategyRepository.GetByIdsAsync(ids, filterPredicate: UserFilter(user));
         return strategies.ToOutgoingDtos();
     }
 
-    public async Task<List<StrategyOutgoingDto>> GetAllAsync()
+    public async Task<List<StrategyOutgoingDto>> GetAllAsync(UserOutgoingDto user)
     {
-        var strategies = await _strategyRepository.GetAllAsync();
+        var strategies = await _strategyRepository.GetAllAsync(filterPredicate: UserFilter(user));
         return strategies.ToOutgoingDtos();
     }
 

@@ -46,7 +46,8 @@ public class ProjectsController : PrismaBaseEntityController
     [HttpGet("projects/{id:guid}")]
     public async Task<ActionResult<ProjectOutgoingDto>> GetProject(Guid id)
     {
-        var result = await _projectService.GetAsync(new List<Guid> { id });
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var result = await _projectService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
@@ -81,10 +82,11 @@ public class ProjectsController : PrismaBaseEntityController
     [HttpDelete("projects/{id:guid}")]
     public async Task<IActionResult> DeleteProject(Guid id)
     {
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            await _projectService.DeleteAsync(new List<Guid> { id });
+            await _projectService.DeleteAsync(new List<Guid> { id }, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return NoContent();
         }

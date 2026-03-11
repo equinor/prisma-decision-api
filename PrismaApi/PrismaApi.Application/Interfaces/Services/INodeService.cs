@@ -4,8 +4,8 @@ namespace PrismaApi.Application.Interfaces.Services;
 
 public interface INodeService
 {
-    Task<List<NodeOutgoingDto>> UpdateAsync(List<NodeIncomingDto> dtos);
- Task DeleteAsync(List<Guid> ids);
- Task<List<NodeOutgoingDto>> GetAsync(List<Guid> ids);
-    Task<List<NodeOutgoingDto>> GetAllAsync();
+     Task<List<NodeOutgoingDto>> UpdateAsync(List<NodeIncomingDto> dtos, UserOutgoingDto userDto);
+ Task DeleteAsync(List<Guid> ids, UserOutgoingDto user);
+ Task<List<NodeOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user);
+     Task<List<NodeOutgoingDto>> GetAllAsync(UserOutgoingDto user);
 }
