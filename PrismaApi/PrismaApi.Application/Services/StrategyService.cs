@@ -32,7 +32,7 @@ public class StrategyService: IStrategyService
     public async Task<List<StrategyOutgoingDto>> UpdateAsync(List<StrategyIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntities(userDto);
-        await _strategyRepository.UpdateRangeAsync(entities);
+        await _strategyRepository.UpdateRangeAsync(entities, UserFilter(userDto));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _strategyRepository.GetByIdsAsync(ids, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();

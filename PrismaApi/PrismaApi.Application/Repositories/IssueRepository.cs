@@ -15,7 +15,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
         _ruleTrigger = ruleTrigger;
     }
 
-    public override async Task UpdateRangeAsync(IEnumerable<Issue> incommingEntities)
+    public async Task UpdateRangeAsync(IEnumerable<Issue> incommingEntities, Expression<Func<Issue, bool>> filterPredicate)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -23,7 +23,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id));
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
         List<Guid> issuesIdsTriggers = [];
         foreach (var entity in entities)
         {

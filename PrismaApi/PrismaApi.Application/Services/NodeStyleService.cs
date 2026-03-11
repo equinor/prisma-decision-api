@@ -23,7 +23,7 @@ public class NodeStyleService: INodeStyleService
     public async Task<List<NodeStyleOutgoingDto>> UpdateAsync(List<NodeStyleIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntities();
-        await _nodeStyleRepository.UpdateRangeAsync(entities);
+        await _nodeStyleRepository.UpdateRangeAsync(entities, UserFilter(userDto));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _nodeStyleRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();

@@ -30,7 +30,7 @@ public class OptionService: IOptionService
     public async Task<List<OptionOutgoingDto>> UpdateAsync(List<OptionIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntities();
-        await _optionRepository.UpdateRangeAsync(entities);
+        await _optionRepository.UpdateRangeAsync(entities, UserFilter(userDto));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _optionRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();

@@ -67,7 +67,7 @@ public class ProjectService : IProjectService
     public async Task<List<ProjectOutgoingDto>> UpdateAsync(List<ProjectIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var projectEntities = dtos.ToEntities(userDto);
-        await _projectRepository.UpdateRangeAsync(projectEntities);
+        await _projectRepository.UpdateRangeAsync(projectEntities, filterPredicate: UserFilter(userDto));
 
         foreach (var dto in dtos)
         {

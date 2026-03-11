@@ -23,7 +23,7 @@ public class UncertaintyService: IUncertaintyService
     public async Task<List<UncertaintyOutgoingDto>> UpdateAsync(List<UncertaintyIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntities();
-        await _uncertaintyRepository.UpdateRangeAsync(entities);
+        await _uncertaintyRepository.UpdateRangeAsync(entities, UserFilter(userDto));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _uncertaintyRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();

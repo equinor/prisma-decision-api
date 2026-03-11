@@ -4,8 +4,8 @@ namespace PrismaApi.Application.Interfaces.Services;
 
 public interface IUtilityService
 {
-    Task<List<UtilityOutgoingDto>> UpdateAsync(List<UtilityIncomingDto> dtos);
-    Task DeleteAsync(List<Guid> ids);
-    Task<List<UtilityOutgoingDto>> GetAsync(List<Guid> ids);
-    Task<List<UtilityOutgoingDto>> GetAllAsync();
+    Task<List<UtilityOutgoingDto>> UpdateAsync(List<UtilityIncomingDto> dtos, UserOutgoingDto user);
+    Task DeleteAsync(List<Guid> ids, UserOutgoingDto user);
+    Task<List<UtilityOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user);
+    Task<List<UtilityOutgoingDto>> GetAllAsync(UserOutgoingDto user);
 }

@@ -38,7 +38,7 @@ public class IssueService : IIssueService
     {
         EnsureNodeDefaults(dtos);
         var entities = dtos.ToEntities(userDto);
-        await _issueRepository.UpdateRangeAsync(entities);
+        await _issueRepository.UpdateRangeAsync(entities, UserFilter(userDto));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _issueRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();

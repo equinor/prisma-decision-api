@@ -1,8 +1,9 @@
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Repositories;
 
@@ -14,7 +15,7 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>, IUncerta
         _ruleTrigger = ruleTrigger;
     }
 
-    public override async Task UpdateRangeAsync(IEnumerable<Uncertainty> incommingEntities)
+    public async  Task UpdateRangeAsync(IEnumerable<Uncertainty> incommingEntities, Expression<Func<Uncertainty, bool>> filterPredicate)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -22,7 +23,7 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>, IUncerta
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id));
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
         List<Guid> issuesIdsTriggers = [];
         foreach (var entity in entities)
         {

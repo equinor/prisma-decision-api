@@ -17,7 +17,7 @@ public class EdgeRepository : BaseRepository<Edge, Guid>, IEdgeRepository
         _ruleTrigger = ruleTrigger;
     }
 
-    public override async Task UpdateRangeAsync(IEnumerable<Edge> incommingEntities)
+    public async Task UpdateRangeAsync(IEnumerable<Edge> incommingEntities, Expression<Func<Edge, bool>> filterPredicate)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -25,7 +25,7 @@ public class EdgeRepository : BaseRepository<Edge, Guid>, IEdgeRepository
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id));
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
         HashSet<Guid> nodeIdsToLookup = [];
         foreach (var entity in entities)
         {

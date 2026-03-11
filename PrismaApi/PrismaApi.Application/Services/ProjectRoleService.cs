@@ -35,7 +35,7 @@ public class ProjectRoleService: IProjectRoleService
     public async Task<List<ProjectRoleOutgoingDto>> UpdateAsync(List<ProjectRoleIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntities(userDto);
-        await _projectRoleRepository.UpdateRangeAsync(entities);
+        await _projectRoleRepository.UpdateRangeAsync(entities, UserFilter(userDto));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _projectRoleRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();

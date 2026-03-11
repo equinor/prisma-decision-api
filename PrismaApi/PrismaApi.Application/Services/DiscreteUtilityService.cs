@@ -30,7 +30,7 @@ public class DiscreteUtilityService: IDiscreteUtilityService
     public async Task<List<DiscreteUtilityDto>> UpdateAsync(List<DiscreteUtilityDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntitiesWithoutParents();
-        await _discreteUtilityRepository.UpdateRangeAsync(entities);
+        await _discreteUtilityRepository.UpdateRangeAsync(entities, UserFilter(userDto));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _discreteUtilityRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToDtos();

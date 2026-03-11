@@ -1,10 +1,11 @@
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Repositories;
 

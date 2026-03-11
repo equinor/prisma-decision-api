@@ -19,7 +19,7 @@ public class NodeService: INodeService
     public async Task<List<NodeOutgoingDto>> UpdateAsync(List<NodeIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntities();
-        await _nodeRepository.UpdateRangeAsync(entities);
+        await _nodeRepository.UpdateRangeAsync(entities, UserFilter(userDto));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _nodeRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();
