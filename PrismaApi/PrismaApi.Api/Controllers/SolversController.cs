@@ -9,19 +9,23 @@ using System.Text.Json;
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
-[Route("")]
+
 public class SolversController : PrismaBaseController
 {
     public readonly IFastApiService _fastApiService;
-    public SolversController(IFastApiService fastApiService)
+    public readonly IUserService _userService;
+
+    public SolversController(IFastApiService fastApiService, IUserService userService)
     {
         _fastApiService = fastApiService;
+        _userService = userService;
     }
 
     [HttpGet("solvers/project/{projectId:guid}/decision_tree/v2")]
     public async Task<ActionResult<ApiResponseDto>> GetSolutionAsDecisionTreeAsync([FromRoute] Guid projectId)
     {
-        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}/decision_tree/v2");
+        var user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, user, $"/solvers/project/{projectId}/decision_tree/v2");
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
             return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeString() : null);
@@ -33,7 +37,8 @@ public class SolversController : PrismaBaseController
     [HttpGet("solvers/project/{projectId:guid}")]
     public async Task<ActionResult<ApiResponseDto>> GetSolutionAsync([FromRoute] Guid projectId)
     {
-        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}");
+        var user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, user, $"/solvers/project/{projectId}");
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
             return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeString() : null);
