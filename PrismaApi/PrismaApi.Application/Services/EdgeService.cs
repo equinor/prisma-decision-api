@@ -1,11 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
@@ -52,4 +54,6 @@ public class EdgeService: IEdgeService
         var entities = await _edgeRepository.GetAllAsync(withTracking: false);
         return entities.ToOutgoingDtos();
     }
+    private static Expression<Func<Edge, bool>> UserFilter(UserOutgoingDto user)
+        => e => e.HeadNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id) && e.TailNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 }

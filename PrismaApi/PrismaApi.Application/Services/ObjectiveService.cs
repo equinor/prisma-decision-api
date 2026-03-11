@@ -1,11 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Entities;
+using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Services;
 
@@ -50,4 +48,7 @@ public class ObjectiveService: IObjectiveService
         var entities = await _objectiveRepository.GetAllAsync(withTracking: false);
         return entities.ToOutgoingDtos();
     }
+
+    private static Expression<Func<Objective, bool>> UserFilter(UserOutgoingDto user)
+        => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 }

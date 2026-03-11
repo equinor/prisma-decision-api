@@ -1,11 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
@@ -43,4 +45,6 @@ public class UtilityService: IUtilityService
         var entities = await _utilityRepository.GetAllAsync();
         return entities.ToOutgoingDtos();
     }
+    private static Expression<Func<Utility, bool>> UserFilter(UserOutgoingDto user)
+        => e => e.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 }

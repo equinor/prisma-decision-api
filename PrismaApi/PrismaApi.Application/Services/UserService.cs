@@ -4,6 +4,7 @@ using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Infrastructure.Caching;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -63,11 +64,8 @@ public class UserService: IUserService
         };
         var user = (await _userRepository.GetOrAddByAzureIdAsync(userDto)).ToOutgoingDto();
         
-        var cacheOptions = new MemoryCacheEntryOptions()
-            .SetAbsoluteExpiration(TimeSpan.FromMinutes(30))
-            .SetSlidingExpiration(TimeSpan.FromMinutes(10));
         if (cacheKey != null)
-            _memoryCache.Set(cacheKey, user, cacheOptions);
+            _memoryCache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(30), user);
 
         return user;
 

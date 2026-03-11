@@ -10,7 +10,7 @@ namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [Route("")]
-public class SolversController : ControllerBase
+public class SolversController : PrismaBaseController
 {
     public readonly IFastApiService _fastApiService;
     public SolversController(IFastApiService fastApiService)

@@ -1,19 +1,9 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Graph;
-using PrismaApi.Application.Mapping;
-using PrismaApi.Application.Repositories;
-using PrismaApi.Application.Services;
-using PrismaApi.Domain.Dtos;
-using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace PrismaApi.Api.Controllers;
 
-[ApiController]
-public abstract class PrismaBaseEntityController : ControllerBase
+public abstract class PrismaBaseEntityController : PrismaBaseController
 {
     private readonly AppDbContext _dbContext;
     private IDbContextTransaction? _transaction;
@@ -21,11 +11,6 @@ public abstract class PrismaBaseEntityController : ControllerBase
     protected PrismaBaseEntityController(AppDbContext dbContext)
     {
         _dbContext = dbContext;
-    }
-
-    protected string? GetUserCacheKeyFromClaims()
-    {
-        return User.Claims.FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
     }
 
     protected Task BeginTransactionAsync(CancellationToken cancellationToken = default)

@@ -1,11 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
@@ -50,4 +52,7 @@ public class OutcomeService: IOutcomeService
         var entities = await _outcomeRepository.GetAllAsync(withTracking: false);
         return entities.ToOutgoingDtos();
     }
+
+    private static Expression<Func<Outcome, bool>> UserFilter(UserOutgoingDto user)
+        => e => e.Uncertainty!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 }

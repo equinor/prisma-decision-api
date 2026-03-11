@@ -1,11 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
@@ -82,7 +84,9 @@ public class IssueService : IIssueService
                     Id = Guid.NewGuid(),
                     NodeId = nodeId
                 }
-            };
+            };  
         }
     }
+    private static Expression<Func<Issue, bool>> UserFilter(UserOutgoingDto user)
+        => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 }

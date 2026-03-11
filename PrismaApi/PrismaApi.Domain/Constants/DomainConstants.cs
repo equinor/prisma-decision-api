@@ -14,9 +14,9 @@ public static class DomainConstants
     public static readonly string DefaultValueMetricName = "value";
 }
 
-public enum AccessRole
+public static class AppRoles
 {
-    PrismaDecisionUser
+    public const string PrismaDecisionUser = "PrismaDecisionUser";
 }
 
 public enum IssueType

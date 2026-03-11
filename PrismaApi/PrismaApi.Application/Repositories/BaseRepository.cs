@@ -1,9 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Graph.Models;
 using PrismaApi.Application.Interfaces.Repositories;
+using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Domain.Interfaces;
 using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Extensions;
+using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Repositories;
 
@@ -25,19 +28,21 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         return Set.AsQueryable();
     }
 
-    public virtual Task<TEntity?> GetByIdAsync(TId id, bool withTracking = true, IQueryable<TEntity>? customQuery = null)
+    public virtual Task<TEntity?> GetByIdAsync(TId id, bool withTracking = true, IQueryable<TEntity>? customQuery = null, Expression<Func<TEntity, bool>>? filterPredicate = null)
     {
         IQueryable<TEntity> query = customQuery ?? Query();
-        
+        query = query.OptionalWhere(filterPredicate);
+
         if (!withTracking)
         {
             query = query.AsNoTracking();
         }
 
-        return query.FirstOrDefaultAsync(e => e.Id.Equals(id));
+        return query
+            .FirstOrDefaultAsync(e => e.Id.Equals(id));
     }
 
-    public virtual Task<List<TEntity>> GetByIdsAsync(IEnumerable<TId> ids, bool withTracking = true, IQueryable<TEntity>? customQuery = null)
+    public virtual Task<List<TEntity>> GetByIdsAsync(IEnumerable<TId> ids, bool withTracking = true, IQueryable<TEntity>? customQuery = null, Expression<Func<TEntity, bool>>? filterPredicate = null)
     {
         var idList = ids.ToList();
         if (idList.Count == 0)
@@ -46,6 +51,7 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         }
 
         IQueryable<TEntity> query = customQuery ?? Query();
+        query = query.OptionalWhere(filterPredicate);
 
         if (!withTracking)
         {
@@ -57,9 +63,10 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
             .ToListAsync();
     }
 
-    public virtual Task<List<TEntity>> GetAllAsync(bool withTracking = true, IQueryable<TEntity>? customQuery = null)
+    public virtual Task<List<TEntity>> GetAllAsync(bool withTracking = true, IQueryable<TEntity>? customQuery = null, Expression<Func<TEntity, bool>>? filterPredicate = null)
     {
         IQueryable<TEntity> query = customQuery ?? Query();
+        query = query.OptionalWhere(filterPredicate);
 
         if (!withTracking)
         {
@@ -83,26 +90,19 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         return list;
     }
 
-    public virtual async Task<TEntity> GetOrAddAsync(TEntity entity)
-    {
-        var existingEntity = await GetByIdAsync(entity.Id);
-        if (existingEntity != null)
-        {
-            return existingEntity;
-        }
-
-        return await AddAsync(entity);
-    }
-
     public virtual async Task UpdateRangeAsync(IEnumerable<TEntity> entities)
     {
         Set.UpdateRange(entities);
         await DbContext.SaveChangesAsync();
     }
 
-    public virtual async Task DeleteByIdsAsync(IEnumerable<TId> ids)
+    public virtual async Task DeleteByIdsAsync(IEnumerable<TId> ids, Expression<Func<TEntity, bool>>? filterPredicate = null)
     {
-        var entities = await GetByIdsAsync(ids);
+        var entities = await Set
+            .OptionalWhere(filterPredicate)
+            .Where(e => ids.ToList().Contains(e.Id))
+            .ToListAsync();
+
         if (entities.Count == 0)
         {
             return;

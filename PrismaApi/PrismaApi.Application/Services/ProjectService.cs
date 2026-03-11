@@ -4,6 +4,7 @@ using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
+using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Services;
 
@@ -56,17 +57,6 @@ public class ProjectService : IProjectService
         var projectEntities = dtos.ToEntities(userDto);
         await _projectRepository.AddRangeAsync(projectEntities);
 
-        //foreach (var dto in dtos)
-        //{
-        //    if (dto.Users.Count == 0)
-        //    {
-        //        continue;
-        //    }
-
-        //    var projectRoles = await BuildProjectRolesAsync(dto.Users, dto.Id, userDto);
-        //    await _projectRoleRepository.AddRangeAsync(projectRoles);
-        //}
-
         await _projectRoleRepository.AddRangeAsync(rolesToBeCreated.ToEntities(userDto));
 
         var ids = projectEntities.Select(p => p.Id).ToList();
@@ -91,7 +81,7 @@ public class ProjectService : IProjectService
         }
 
         var ids = dtos.Select(d => d.Id).ToList();
-        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false);
+        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
         return projects.ToOutgoingDtos();
     }
 
@@ -100,32 +90,37 @@ public class ProjectService : IProjectService
         await _projectRepository.DeleteByIdsAsync(ids);
     }
 
-    public async Task<List<ProjectOutgoingDto>> GetAsync(List<Guid> ids)
+    public async Task<List<ProjectOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false);
+        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
         return projects.ToOutgoingDtos();
     }
 
     public async Task<List<ProjectOutgoingDto>> GetAllAsync(UserOutgoingDto user)
     {
-        var projects = await _projectRepository.GetAllAsyncProjects(user, withTracking: false);
+        var projects = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
         return projects.ToOutgoingDtos();
     }
 
-    public async Task<List<PopulatedProjectDto>> GetPopulatedAsync(List<Guid> ids)
+    public async Task<List<PopulatedProjectDto>> GetPopulatedAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false);
+        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
         return projects.ToPopulatedDtos();
     }
 
-    public async Task<List<PopulatedProjectDto>> GetAllPopulatedAsync()
+    public async Task<List<PopulatedProjectDto>> GetAllPopulatedAsync(UserOutgoingDto user)
     {
-        var projects = await _projectRepository.GetAllAsync(withTracking: false);
+        var projects = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
         return projects.ToPopulatedDtos();
     }
 
-    public async Task<InfluanceDiagramDto> GetInfluanceDiagramAsync(Guid projectId)
+    public async Task<InfluanceDiagramDto> GetInfluanceDiagramAsync(Guid projectId, UserOutgoingDto user)
     {
+        var project = await _projectRepository.GetByIdsAsync([projectId], withTracking: false, filterPredicate: UserFilter(user));
+
+        if (project == null)
+            throw new ArgumentNullException(nameof(project));
+
         return new InfluanceDiagramDto
         {
             projectId = projectId,
@@ -148,7 +143,7 @@ public class ProjectService : IProjectService
             {
                 user = new User
                 {
-                    Name = dto.UserName,
+                    Name = dto.Name,
                     AzureId = dto.AzureId
                 };
 
@@ -184,7 +179,7 @@ public class ProjectService : IProjectService
             {
                 user = new User
                 {
-                    Name = dto.UserName,
+                    Name = dto.Name,
                     AzureId = dto.AzureId
                 };
 
@@ -205,4 +200,7 @@ public class ProjectService : IProjectService
 
         return result;
     }
+
+    private static Expression<Func<Project, bool>> UserFilter(UserOutgoingDto user)
+        => e => e.ProjectRoles.Any(p => p.UserId == user.Id);
 }

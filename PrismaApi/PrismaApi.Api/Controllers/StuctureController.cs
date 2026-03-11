@@ -10,7 +10,7 @@ namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [Route("")]
-public class StuctureController : ControllerBase
+public class StuctureController : PrismaBaseController
 {
     public readonly IFastApiService _fastApiService;
     public StuctureController(IFastApiService fastApiService)

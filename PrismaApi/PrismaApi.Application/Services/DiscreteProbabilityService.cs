@@ -1,11 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
@@ -50,4 +52,7 @@ public class DiscreteProbabilityService: IDiscreteProbabilityService
         var entities = await _discreteProbabilityRepository.GetAllAsync(withTracking: false);
         return entities.ToDtos();
     }
+
+    private static Expression<Func<DiscreteProbability, bool>> UserFilter(UserOutgoingDto user)
+        => e => e.Uncertainty!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 }

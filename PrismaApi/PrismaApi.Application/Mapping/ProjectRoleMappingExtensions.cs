@@ -15,7 +15,7 @@ public static class ProjectRoleMappingExtensions
             UserId = entity.UserId,
             ProjectId = entity.ProjectId,
             Role = entity.Role,
-            UserName = entity.User?.Name ?? string.Empty,
+            Name = entity.User?.Name ?? string.Empty,
             AzureId = entity.User?.AzureId ?? string.Empty
         };
     }

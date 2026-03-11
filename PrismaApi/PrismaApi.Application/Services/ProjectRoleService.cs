@@ -1,10 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
@@ -40,4 +42,7 @@ public class ProjectRoleService: IProjectRoleService
     {
         await _projectRoleRepository.DeleteByIdsAsync(ids);
     }
+
+    private static Expression<Func<ProjectRole, bool>> UserFilter(UserOutgoingDto user)
+        => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 }
