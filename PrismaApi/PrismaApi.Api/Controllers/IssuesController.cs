@@ -31,7 +31,7 @@ public class IssuesController : PrismaBaseEntityController
     }
 
     [HttpPost("issues")]
-    public async Task<ActionResult<List<IssueOutgoingDto>>> CreateIssues([FromBody] List<IssueIncomingDto> dtos)
+    public async Task<ActionResult<List<IssueOutgoingDto>>> CreateIssues([FromBody] List<IssueIncomingDto> dtos, CancellationToken cancellationToken = default)
     {
         UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
 
@@ -39,12 +39,12 @@ public class IssuesController : PrismaBaseEntityController
         try
         {
             var result = await _issueService.CreateAsync(dtos, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await CommitTransactionAsync(cancellationToken);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(cancellationToken);
             throw;
         }
     }

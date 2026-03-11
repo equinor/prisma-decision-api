@@ -48,9 +48,9 @@ public class EdgeRepository : BaseRepository<Edge, Guid>, IEdgeRepository
         await DbContext.SaveChangesAsync();
     }
 
-    public async Task<ICollection<Edge>> GetEdgesInInfluenceDiagram(Guid projectId)
+    public async Task<ICollection<Edge>> GetEdgesInInfluenceDiagram(Guid projectId, Expression<Func<Edge, bool>>? filterPredicate)
     {
-        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId));
+        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId), filterPredicate);
     }
 
     public override async Task<Edge> AddAsync(Edge entity)
