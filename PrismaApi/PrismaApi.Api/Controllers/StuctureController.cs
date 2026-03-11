@@ -12,16 +12,19 @@ namespace PrismaApi.Api.Controllers;
 [Route("")]
 public class StuctureController : PrismaBaseController
 {
-    public readonly IFastApiService _fastApiService;
-    public StuctureController(IFastApiService fastApiService)
+    private readonly IFastApiService _fastApiService;
+    private readonly IUserService _userService;
+    public StuctureController(IFastApiService fastApiService, IUserService userService)
     {
         _fastApiService = fastApiService;
+        _userService = userService;
     }
 
     [HttpGet("structure/{projectId:guid}/decision_tree/v2")]
     public async Task<ActionResult<ApiResponseDto>> GetDecisionTreeAsync([FromRoute] Guid projectId)
     {
-        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/decision_tree/v2");
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/decision_tree/v2", user);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
             return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeString() : null);
@@ -33,7 +36,8 @@ public class StuctureController : PrismaBaseController
     [HttpGet("structure/{projectId:guid}/influence_diagram")]
     public async Task<ActionResult<ApiResponseDto>> GetInfluenceDiagramAsync([FromRoute] Guid projectId)
     {
-        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/influence_diagram");
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/influence_diagram", user);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
             return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeString() : null);
@@ -45,7 +49,8 @@ public class StuctureController : PrismaBaseController
     [HttpGet("structure/{projectId:guid}/partial_order")]
     public async Task<ActionResult<ApiResponseDto>> GetPartialOrderAsync([FromRoute] Guid projectId)
     {
-        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/partial_order");
+        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/partial_order", user);
         
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
