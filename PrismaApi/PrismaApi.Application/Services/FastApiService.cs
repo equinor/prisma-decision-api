@@ -3,6 +3,7 @@ using Microsoft.Identity.Web;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
 using System.Net.Http.Headers;
+using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
 
@@ -66,10 +67,10 @@ public class FastApiService : IFastApiService
         }
     }
 
-    public async Task<ApiResponseDto> SendInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint)
+    public async Task<ApiResponseDto> SendInfluenceDiagramToFastApiAsync(Guid projectId, UserOutgoingDto user, string endpoint)
     {
-        var influanceDiagram = await _projectService.GetInfluanceDiagramAsync(projectId);
-        var content = new StringContent(JsonSerializer.Serialize(influanceDiagram), Encoding.UTF8, "application/json");
+        var influanceDiagram = await _projectService.GetInfluanceDiagramAsync(projectId, user);
+        var content = new StringContent(JsonSerializer.Serialize(influanceDiagram), Encoding.UTF8, MediaTypeNames.Application.Json);
         return await CallDownstreamFastApiPostAsync(endpoint, content);
     }
 }

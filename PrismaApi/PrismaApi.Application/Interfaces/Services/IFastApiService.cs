@@ -7,5 +7,5 @@ public interface IFastApiService
 {
     Task<ApiResponseDto> CallDownstreamFastApiGetAsync(string endpoint);
     Task<ApiResponseDto> CallDownstreamFastApiPostAsync(string endpoint, StringContent content);
-    Task<ApiResponseDto> SendInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint);
+    Task<ApiResponseDto> SendInfluenceDiagramToFastApiAsync(Guid projectId, UserOutgoingDto user, string endpoint);
 }
