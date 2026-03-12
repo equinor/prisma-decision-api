@@ -431,6 +431,9 @@ public class AppDbContext : DbContext
     public async override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         UpdateTimestamps();
+        await OnProjectDeletedCleanupAsync(cancellationToken);
+        await OnIssueDeletedCleanupAsync(cancellationToken);
+        await OnStrategyDeletedCleanupAsync(cancellationToken);
         await OnOutcomeDeletedCleanupAsync(cancellationToken);
         await OnOptionDeletedCleanupAsync(cancellationToken);
         return await base.SaveChangesAsync(cancellationToken);
@@ -476,10 +479,7 @@ public class AppDbContext : DbContext
 
     private async Task OnOutcomeDeletedCleanupAsync(CancellationToken cancellationToken = default)
     {
-        var deletedOutcomeIds = ChangeTracker.Entries<Outcome>()
-        .Where(e => e.State == EntityState.Deleted)
-        .Select(e => e.Entity.Id)
-        .ToHashSet();
+        var deletedOutcomeIds = GetDeletedEntityIds<Outcome>();
 
         if (deletedOutcomeIds.Any())
         {
@@ -521,12 +521,91 @@ public class AppDbContext : DbContext
         }
     }
 
+    private async Task OnProjectDeletedCleanupAsync(CancellationToken cancellationToken = default)
+    {
+        var deletedProjectIds = GetDeletedEntityIds<Project>();
+
+        if (!deletedProjectIds.Any())
+        {
+            return;
+        }
+
+        var issueIds = await Issues
+            .Where(i => deletedProjectIds.Contains(i.ProjectId))
+            .Select(i => i.Id)
+            .ToListAsync(cancellationToken);
+
+        var nodeIds = await Nodes
+            .Where(n => deletedProjectIds.Contains(n.ProjectId))
+            .Select(n => n.Id)
+            .ToListAsync(cancellationToken);
+
+        var strategyIds = await Strategies
+            .Where(s => deletedProjectIds.Contains(s.ProjectId))
+            .Select(s => s.Id)
+            .ToListAsync(cancellationToken);
+
+        await Edges
+            .Where(e => deletedProjectIds.Contains(e.ProjectId))
+            .ExecuteDeleteAsync(cancellationToken);
+
+        await DeleteIssueAsync(issueIds, nodeIds, deleteEdgesByNodeIds: false, cancellationToken);
+
+        await StrategyOptions
+            .Where(so => strategyIds.Contains(so.StrategyId))
+            .ExecuteDeleteAsync(cancellationToken);
+
+        await Issues
+            .Where(i => deletedProjectIds.Contains(i.ProjectId))
+            .ExecuteDeleteAsync(cancellationToken);
+
+        await Strategies
+            .Where(s => deletedProjectIds.Contains(s.ProjectId))
+            .ExecuteDeleteAsync(cancellationToken);
+
+        await Objectives
+            .Where(o => deletedProjectIds.Contains(o.ProjectId))
+            .ExecuteDeleteAsync(cancellationToken);
+
+        await ProjectRoles
+            .Where(pr => deletedProjectIds.Contains(pr.ProjectId))
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    private async Task OnStrategyDeletedCleanupAsync(CancellationToken cancellationToken = default)
+    {
+        var deletedStrategyIds = GetDeletedEntityIds<Strategy>();
+
+        if (!deletedStrategyIds.Any())
+        {
+            return;
+        }
+
+        await StrategyOptions
+            .Where(so => deletedStrategyIds.Contains(so.StrategyId))
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    private async Task OnIssueDeletedCleanupAsync(CancellationToken cancellationToken = default)
+    {
+        var deletedIssueIds = GetDeletedEntityIds<Issue>();
+
+        if (!deletedIssueIds.Any())
+        {
+            return;
+        }
+
+        var nodeIds = await Nodes
+            .Where(n => deletedIssueIds.Contains(n.IssueId))
+            .Select(n => n.Id)
+            .ToListAsync(cancellationToken);
+
+        await DeleteIssueAsync(deletedIssueIds, nodeIds, deleteEdgesByNodeIds: true, cancellationToken);
+    }
+
     private async Task OnOptionDeletedCleanupAsync(CancellationToken cancellationToken = default)
     {
-        var deletedOptionIds = ChangeTracker.Entries<Option>()
-        .Where(e => e.State == EntityState.Deleted)
-        .Select(e => e.Entity.Id)
-        .ToHashSet();
+        var deletedOptionIds = GetDeletedEntityIds<Option>();
 
         if (deletedOptionIds.Any())
         {
@@ -568,11 +647,166 @@ public class AppDbContext : DbContext
         }
     }
 
+    private HashSet<Guid> GetDeletedEntityIds<TEntity>()
+        where TEntity : class, IBaseEntity<Guid>
+    {
+        return ChangeTracker.Entries<TEntity>()
+            .Where(e => e.State == EntityState.Deleted)
+            .Select(e => e.Entity.Id)
+            .ToHashSet();
+    }
+
+    private async Task DeleteIssueAsync(
+        IReadOnlyCollection<Guid> issueIds,
+        IReadOnlyCollection<Guid> nodeIds,
+        bool deleteEdgesByNodeIds,
+        CancellationToken cancellationToken)
+    {
+        var decisionIds = issueIds.Count == 0
+            ? new List<Guid>()
+            : await Decisions
+                .Where(d => issueIds.Contains(d.IssueId))
+                .Select(d => d.Id)
+                .ToListAsync(cancellationToken);
+
+        var uncertaintyIds = issueIds.Count == 0
+            ? new List<Guid>()
+            : await Uncertainties
+                .Where(u => issueIds.Contains(u.IssueId))
+                .Select(u => u.Id)
+                .ToListAsync(cancellationToken);
+
+        var utilityIds = issueIds.Count == 0
+            ? new List<Guid>()
+            : await Utilities
+                .Where(u => issueIds.Contains(u.IssueId))
+                .Select(u => u.Id)
+                .ToListAsync(cancellationToken);
+
+        var optionIds = decisionIds.Count == 0
+            ? new List<Guid>()
+            : await Options
+                .Where(o => decisionIds.Contains(o.DecisionId))
+                .Select(o => o.Id)
+                .ToListAsync(cancellationToken);
+
+        var outcomeIds = uncertaintyIds.Count == 0
+            ? new List<Guid>()
+            : await Outcomes
+                .Where(o => uncertaintyIds.Contains(o.UncertaintyId))
+                .Select(o => o.Id)
+                .ToListAsync(cancellationToken);
+
+        var discreteProbabilityIds = (uncertaintyIds.Count == 0 && outcomeIds.Count == 0)
+            ? new List<Guid>()
+            : await DiscreteProbabilities
+                .Where(dp => uncertaintyIds.Contains(dp.UncertaintyId) || outcomeIds.Contains(dp.OutcomeId))
+                .Select(dp => dp.Id)
+                .ToListAsync(cancellationToken);
+
+        var discreteUtilityIds = utilityIds.Count == 0
+            ? new List<Guid>()
+            : await DiscreteUtilities
+                .Where(du => utilityIds.Contains(du.UtilityId))
+                .Select(du => du.Id)
+                .ToListAsync(cancellationToken);
+
+        if (deleteEdgesByNodeIds && nodeIds.Count > 0)
+        {
+            await Edges
+                .Where(e => nodeIds.Contains(e.HeadId) || nodeIds.Contains(e.TailId))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        if (nodeIds.Count > 0)
+        {
+            await NodeStyles
+                .Where(ns => nodeIds.Contains(ns.NodeId))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        if (discreteProbabilityIds.Count > 0)
+        {
+            await DiscreteProbabilityParentOptions
+                .Where(dppo => discreteProbabilityIds.Contains(dppo.DiscreteProbabilityId))
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await DiscreteProbabilityParentOutcomes
+                .Where(dppo => discreteProbabilityIds.Contains(dppo.DiscreteProbabilityId))
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await DiscreteProbabilities
+                .Where(dp => discreteProbabilityIds.Contains(dp.Id))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        if (discreteUtilityIds.Count > 0)
+        {
+            await DiscreteUtilityParentOptions
+                .Where(dupo => discreteUtilityIds.Contains(dupo.DiscreteUtilityId))
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await DiscreteUtilityParentOutcomes
+                .Where(dupo => discreteUtilityIds.Contains(dupo.DiscreteUtilityId))
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await DiscreteUtilities
+                .Where(du => discreteUtilityIds.Contains(du.Id))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        if (optionIds.Count > 0)
+        {
+            await StrategyOptions
+                .Where(so => optionIds.Contains(so.OptionId))
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await Options
+                .Where(o => optionIds.Contains(o.Id))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        if (outcomeIds.Count > 0)
+        {
+            await Outcomes
+                .Where(o => outcomeIds.Contains(o.Id))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        if (decisionIds.Count > 0)
+        {
+            await Decisions
+                .Where(d => decisionIds.Contains(d.Id))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        if (uncertaintyIds.Count > 0)
+        {
+            await Uncertainties
+                .Where(u => uncertaintyIds.Contains(u.Id))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        if (utilityIds.Count > 0)
+        {
+            await Utilities
+                .Where(u => utilityIds.Contains(u.Id))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        if (nodeIds.Count > 0)
+        {
+            await Nodes
+                .Where(n => nodeIds.Contains(n.Id))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+    }
+
     public EntityEntry<IBaseEntity<Guid>> CreateEntryFromCollectionAsAdded(IBaseEntity<Guid> entity)
     {
         Entry(entity).State = EntityState.Added;
         return base.Add(entity);
     }
 
-    
+
 }

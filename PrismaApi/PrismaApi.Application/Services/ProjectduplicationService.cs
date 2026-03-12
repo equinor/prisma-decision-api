@@ -41,10 +41,16 @@ public class ProjectDuplicationService : IProjectDuplicationService
         var mappings = new IdMappings();
         var newProjectId = Guid.NewGuid();
         mappings.Project.Add(fullProject.Id, newProjectId);
-        GenerateIdMappings(fullProject.Issues, mappings);
+        GenerateIdMappings(
+            fullProject.Issues,
+            i => i.Node?.Id,
+            i => i.Uncertainty is null ? null : (i.Uncertainty.Id, i.Uncertainty.Outcomes.Select(o => o.Id)),
+            i => i.Decision is null ? null : (i.Decision.Id, i.Decision.Options.Select(o => o.Id)),
+            i => i.Utility?.Id,
+            mappings);
 
         var createProjectDto = CreateProjectDto(fullProject, newProjectId);
-        var createdProjects = await _projectService.CreateAsync([createProjectDto], user);
+        var createdProjects = await _projectService.CreateAsync([createProjectDto], isProjectNotDuplicated: false, userDto: user);
         var createdProject = createdProjects[0];
 
         var issueDtos = new List<IssueIncomingDto>();
@@ -56,8 +62,12 @@ public class ProjectDuplicationService : IProjectDuplicationService
             ct.ThrowIfCancellationRequested();
             var mappedIssueId = GetMappedOrThrow(mappings.Issue, issue.Id, "issue");
 
-            var uncertaintyResult = CreateUncertainty(issue, mappedIssueId, mappings);
-            var utilityResult = CreateUtility(issue, mappedIssueId, mappings);
+            var uncertaintyResult = CreateUncertainty(
+                issue.Uncertainty?.Id, issue.Uncertainty?.IsKey ?? true,
+                issue.Uncertainty?.Outcomes, issue.Uncertainty?.DiscreteProbabilities,
+                mappedIssueId, mappings);
+            var utilityResult = CreateUtility(
+                issue.Utility?.Id, issue.Utility?.DiscreteUtilities, mappedIssueId, mappings);
 
             if (uncertaintyResult.DiscreteProbabilities.Count > 0)
                 discreteProbabilityDtos.AddRange(uncertaintyResult.DiscreteProbabilities);
@@ -74,8 +84,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
                 Order = issue.Order,
                 Type = issue.Type,
                 Boundary = issue.Boundary,
-                Node = CreateNode(issue, newProjectId, mappedIssueId, mappings),
-                Decision = CreateDecision(issue, mappedIssueId, mappings),
+                Node = CreateNode(issue.Node?.Id, issue.Node?.Name, issue.Node?.NodeStyle?.XPosition, issue.Node?.NodeStyle?.YPosition, issue.Name, newProjectId, mappedIssueId, mappings),
+                Decision = CreateDecision(issue.Decision?.Id, issue.Decision?.Type, issue.Decision?.Options, mappedIssueId, mappings),
                 Uncertainty = uncertaintyResult.Uncertainty,
                 Utility = utilityResult.Utility
             });
@@ -90,7 +100,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (discreteUtilityDtos.Count > 0)
             await _discreteUtilityService.CreateAsync(discreteUtilityDtos);
 
-        var strategyDtos = CreateStrategies(fullProject.Strategies, newProjectId, mappings);
+        var strategyDtos = CreateStrategies(fullProject.Strategies, s => s.Options, newProjectId, mappings);
         if (strategyDtos.Count > 0)
             await _strategyService.CreateAsync(strategyDtos, user);
 
@@ -111,11 +121,17 @@ public class ProjectDuplicationService : IProjectDuplicationService
         mappings.Project[importedProjectId] = newProjectId;
 
         var createProjectDto = CreateProjectDtoFromImport(dto.Projects, newProjectId);
-        var createdProjects = await _projectService.CreateAsync([createProjectDto], user);
+        var createdProjects = await _projectService.CreateAsync([createProjectDto], isProjectNotDuplicated: false, userDto: user);
         if (createdProjects.Count == 0)
             return null;
 
-        GenerateIdMappingsFromIncoming(dto.Issues, mappings);
+        GenerateIdMappings(
+            dto.Issues,
+            i => i.Node?.Id,
+            i => i.Uncertainty is null ? null : (i.Uncertainty.Id, i.Uncertainty.Outcomes.Select(o => o.Id)),
+            i => i.Decision is null ? null : (i.Decision.Id, i.Decision.Options.Select(o => o.Id)),
+            i => i.Utility?.Id,
+            mappings);
 
         var issueDtos = new List<IssueIncomingDto>();
         var discreteProbabilityDtos = new List<DiscreteProbabilityDto>();
@@ -126,8 +142,13 @@ public class ProjectDuplicationService : IProjectDuplicationService
             ct.ThrowIfCancellationRequested();
             var mappedIssueId = GetMappedOrThrow(mappings.Issue, issue.Id, "issue");
 
-            var uncertaintyResult = CreateUncertaintyFromIncoming(issue, mappedIssueId, mappings);
-            var utilityResult = CreateUtilityFromIncoming(issue, mappedIssueId, mappings);
+            var uncertaintyResult = CreateUncertainty(
+                issue.Uncertainty?.Id, issue.Uncertainty?.IsKey ?? true,
+                issue.Uncertainty?.Outcomes, issue.Uncertainty?.DiscreteProbabilities,
+                mappedIssueId, mappings);
+            var utilityResult = CreateUtility(
+                issue.Utility?.Id, issue.Utility?.DiscreteUtilities,
+                mappedIssueId, mappings);
 
             if (uncertaintyResult.DiscreteProbabilities.Count > 0)
                 discreteProbabilityDtos.AddRange(uncertaintyResult.DiscreteProbabilities);
@@ -144,8 +165,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
                 Order = issue.Order,
                 Type = issue.Type,
                 Boundary = issue.Boundary,
-                Node = CreateNodeFromIncoming(issue, newProjectId, mappedIssueId, mappings),
-                Decision = CreateDecisionFromIncoming(issue, mappedIssueId, mappings),
+                Node = CreateNode(issue.Node?.Id, issue.Node?.Name, issue.Node?.NodeStyle?.XPosition, issue.Node?.NodeStyle?.YPosition, issue.Name, newProjectId, mappedIssueId, mappings),
+                Decision = CreateDecision(issue.Decision?.Id, issue.Decision?.Type, issue.Decision?.Options, mappedIssueId, mappings),
                 Uncertainty = uncertaintyResult.Uncertainty,
                 Utility = utilityResult.Utility
             });
@@ -160,11 +181,11 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (discreteUtilityDtos.Count > 0)
             await _discreteUtilityService.CreateAsync(discreteUtilityDtos);
 
-        var strategyDtos = CreateStrategiesFromIncoming(dto.Projects.Strategies, newProjectId, mappings);
+        var strategyDtos = CreateStrategies(dto.Projects.Strategies, s => s.Options, newProjectId, mappings);
         if (strategyDtos.Count > 0)
             await _strategyService.CreateAsync(strategyDtos, user);
 
-        var edgeDtos = CreateEdgesFromIncoming(dto.Edges, newProjectId, mappings);
+        var edgeDtos = CreateEdges(dto.Edges, newProjectId, mappings);
         if (edgeDtos.Count > 0)
             await _edgeService.CreateAsync(edgeDtos);
 
@@ -237,18 +258,23 @@ public class ProjectDuplicationService : IProjectDuplicationService
         };
     }
 
-    private static DecisionIncomingDto? CreateDecisionFromIncoming(IssueIncomingDto issue, Guid mappedIssueId, IdMappings mappings)
+    private static DecisionIncomingDto? CreateDecision(
+        Guid? decisionId,
+        string? decisionType,
+        IEnumerable<OptionDto>? options,
+        Guid mappedIssueId,
+        IdMappings mappings)
     {
-        if (issue.Decision is null)
+        if (decisionId is null)
             return null;
 
-        var mappedDecisionId = GetMappedOrThrow(mappings.Decision, issue.Decision.Id, "decision");
+        var mappedDecisionId = GetMappedOrThrow(mappings.Decision, decisionId.Value, "decision");
         return new DecisionIncomingDto
         {
             Id = mappedDecisionId,
             IssueId = mappedIssueId,
-            Type = issue.Decision.Type,
-            Options = issue.Decision.Options
+            Type = decisionType ?? "Focus",
+            Options = (options ?? [])
                 .Select(option => new OptionIncomingDto
                 {
                     Id = GetMappedOrThrow(mappings.Option, option.Id, "option"),
@@ -260,38 +286,49 @@ public class ProjectDuplicationService : IProjectDuplicationService
         };
     }
 
-    private static NodeIncomingDto? CreateNodeFromIncoming(IssueIncomingDto issue, Guid newProjectId, Guid mappedIssueId, IdMappings mappings)
+    private static NodeIncomingDto? CreateNode(
+        Guid? sourceNodeId,
+        string? sourceNodeName,
+        double? xPosition,
+        double? yPosition,
+        string issueName,
+        Guid newProjectId,
+        Guid mappedIssueId,
+        IdMappings mappings)
     {
-        if (issue.Node is null || issue.Node.NodeStyle is null)
+        if (sourceNodeId is null || xPosition is null || yPosition is null)
             return null;
 
-        var mappedNodeId = GetMappedOrThrow(mappings.Node, issue.Node.Id, "node");
+        var mappedNodeId = GetMappedOrThrow(mappings.Node, sourceNodeId.Value, "node");
         return new NodeIncomingDto
         {
             Id = mappedNodeId,
             ProjectId = newProjectId,
             IssueId = mappedIssueId,
-            Name = string.IsNullOrWhiteSpace(issue.Node.Name) ? issue.Name : issue.Node.Name,
+            Name = string.IsNullOrWhiteSpace(sourceNodeName) ? issueName : sourceNodeName,
             NodeStyle = new NodeStyleIncomingDto
             {
                 Id = Guid.NewGuid(),
                 NodeId = mappedNodeId,
-                XPosition = issue.Node.NodeStyle.XPosition,
-                YPosition = issue.Node.NodeStyle.YPosition
+                XPosition = xPosition.Value,
+                YPosition = yPosition.Value
             }
         };
     }
 
-    private static (UncertaintyIncomingDto? Uncertainty, List<DiscreteProbabilityDto> DiscreteProbabilities) CreateUncertaintyFromIncoming(
-        IssueIncomingDto issue,
+    private static (UncertaintyIncomingDto? Uncertainty, List<DiscreteProbabilityDto> DiscreteProbabilities) CreateUncertainty(
+        Guid? uncertaintyId,
+        bool isKey,
+        IEnumerable<OutcomeDto>? outcomes,
+        IEnumerable<DiscreteProbabilityDto>? discreteProbabilities,
         Guid mappedIssueId,
         IdMappings mappings)
     {
-        if (issue.Uncertainty is null)
-            return (null, new List<DiscreteProbabilityDto>());
+        if (uncertaintyId is null)
+            return (null, []);
 
-        var mappedUncertaintyId = GetMappedOrThrow(mappings.Uncertainty, issue.Uncertainty.Id, "uncertainty");
-        var outcomes = issue.Uncertainty.Outcomes
+        var mappedUncertaintyId = GetMappedOrThrow(mappings.Uncertainty, uncertaintyId.Value, "uncertainty");
+        var mappedOutcomes = (outcomes ?? [])
             .Select(outcome => new OutcomeIncomingDto
             {
                 Id = GetMappedOrThrow(mappings.Outcome, outcome.Id, "outcome"),
@@ -301,7 +338,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
             })
             .ToList();
 
-        var discreteProbabilities = issue.Uncertainty.DiscreteProbabilities
+        var mappedDiscreteProbabilities = (discreteProbabilities ?? [])
             .Select(dp =>
             {
                 var (parentOutcomeIds, parentOptionIds) = MapParentIds(dp.ParentOutcomeIds, dp.ParentOptionIds, mappings);
@@ -321,136 +358,31 @@ public class ProjectDuplicationService : IProjectDuplicationService
         {
             Id = mappedUncertaintyId,
             IssueId = mappedIssueId,
-            IsKey = issue.Uncertainty.IsKey,
-            Outcomes = outcomes,
-            DiscreteProbabilities = new List<DiscreteProbabilityDto>()
+            IsKey = isKey,
+            Outcomes = mappedOutcomes,
+            DiscreteProbabilities = []
         };
 
-        return (uncertaintyDto, discreteProbabilities);
+        return (uncertaintyDto, mappedDiscreteProbabilities);
     }
 
-    private static (UtilityIncomingDto? Utility, List<DiscreteUtilityDto> DiscreteUtilities) CreateUtilityFromIncoming(
-        IssueIncomingDto issue,
+    private static (UtilityIncomingDto? Utility, List<DiscreteUtilityDto> DiscreteUtilities) CreateUtility(
+        Guid? utilityId,
+        IEnumerable<DiscreteUtilityDto>? discreteUtilities,
         Guid mappedIssueId,
         IdMappings mappings)
     {
-        if (issue.Utility is null)
-            return (null, new List<DiscreteUtilityDto>());
+        if (utilityId is null)
+            return (null, []);
 
-        var mappedUtilityId = GetMappedOrThrow(mappings.Utility, issue.Utility.Id, "utility");
-
+        var mappedUtilityId = GetMappedOrThrow(mappings.Utility, utilityId.Value, "utility");
         var utilityDto = new UtilityIncomingDto
         {
             Id = mappedUtilityId,
             IssueId = mappedIssueId
         };
 
-        return (utilityDto, new List<DiscreteUtilityDto>());
-    }
-
-    private static DecisionIncomingDto? CreateDecision(IssueOutgoingDto issue, Guid mappedIssueId, IdMappings mappings)
-    {
-        if (issue.Decision is null)
-            return null;
-
-        var mappedDecisionId = GetMappedOrThrow(mappings.Decision, issue.Decision.Id, "decision");
-        return new DecisionIncomingDto
-        {
-            Id = mappedDecisionId,
-            IssueId = mappedIssueId,
-            Type = issue.Decision.Type,
-            Options = issue.Decision.Options
-                .Select(option => new OptionIncomingDto
-                {
-                    Id = GetMappedOrThrow(mappings.Option, option.Id, "option"),
-                    DecisionId = mappedDecisionId,
-                    Name = option.Name,
-                    Utility = option.Utility
-                })
-                .ToList()
-        };
-    }
-
-    private static NodeIncomingDto? CreateNode(IssueOutgoingDto issue, Guid newProjectId, Guid mappedIssueId, IdMappings mappings)
-    {
-        if (issue.Node is null || issue.Node.NodeStyle is null)
-            return null;
-
-        var mappedNodeId = GetMappedOrThrow(mappings.Node, issue.Node.Id, "node");
-        return new NodeIncomingDto
-        {
-            Id = mappedNodeId,
-            ProjectId = newProjectId,
-            IssueId = mappedIssueId,
-            Name = string.IsNullOrWhiteSpace(issue.Node.Name) ? issue.Name : issue.Node.Name,
-            NodeStyle = new NodeStyleIncomingDto
-            {
-                Id = Guid.NewGuid(),
-                NodeId = mappedNodeId,
-                XPosition = issue.Node.NodeStyle.XPosition,
-                YPosition = issue.Node.NodeStyle.YPosition
-            }
-        };
-    }
-
-    private static (UncertaintyIncomingDto? Uncertainty, List<DiscreteProbabilityDto> DiscreteProbabilities) CreateUncertainty(
-        IssueOutgoingDto issue,
-        Guid mappedIssueId,
-        IdMappings mappings)
-    {
-        if (issue.Uncertainty is null)
-            return (null, new List<DiscreteProbabilityDto>());
-
-        var mappedUncertaintyId = GetMappedOrThrow(mappings.Uncertainty, issue.Uncertainty.Id, "uncertainty");
-        var outcomes = issue.Uncertainty.Outcomes
-            .Select(outcome => new OutcomeIncomingDto
-            {
-                Id = GetMappedOrThrow(mappings.Outcome, outcome.Id, "outcome"),
-                Name = outcome.Name,
-                UncertaintyId = mappedUncertaintyId,
-                Utility = outcome.Utility
-            })
-            .ToList();
-
-        var discreteProbabilities = issue.Uncertainty.DiscreteProbabilities
-            .Select(dp =>
-            {
-                var (parentOutcomeIds, parentOptionIds) = MapParentIds(dp.ParentOutcomeIds, dp.ParentOptionIds, mappings);
-                return new DiscreteProbabilityDto
-                {
-                    Id = Guid.NewGuid(),
-                    UncertaintyId = mappedUncertaintyId,
-                    OutcomeId = mappings.Outcome.GetValueOrDefault(dp.OutcomeId, dp.OutcomeId),
-                    Probability = dp.Probability,
-                    ParentOutcomeIds = parentOutcomeIds,
-                    ParentOptionIds = parentOptionIds
-                };
-            })
-            .ToList();
-
-        var uncertaintyDto = new UncertaintyIncomingDto
-        {
-            Id = mappedUncertaintyId,
-            IssueId = mappedIssueId,
-            IsKey = issue.Uncertainty.IsKey,
-            Outcomes = outcomes,
-            DiscreteProbabilities = new List<DiscreteProbabilityDto>()
-        };
-
-        return (uncertaintyDto, discreteProbabilities);
-    }
-
-    private static (UtilityIncomingDto? Utility, List<DiscreteUtilityDto> DiscreteUtilities) CreateUtility(
-        IssueOutgoingDto issue,
-        Guid mappedIssueId,
-        IdMappings mappings)
-    {
-        if (issue.Utility is null)
-            return (null, new List<DiscreteUtilityDto>());
-
-        var mappedUtilityId = GetMappedOrThrow(mappings.Utility, issue.Utility.Id, "utility");
-
-        var discreteUtilities = issue.Utility.DiscreteUtilities
+        var mappedDiscreteUtilities = (discreteUtilities ?? [])
             .Select(du =>
             {
                 var (parentOutcomeIds, parentOptionIds) = MapParentIds(du.ParentOutcomeIds, du.ParentOptionIds, mappings);
@@ -466,19 +398,14 @@ public class ProjectDuplicationService : IProjectDuplicationService
             })
             .ToList();
 
-        var utilityDto = new UtilityIncomingDto
-        {
-            Id = mappedUtilityId,
-            IssueId = mappedIssueId
-        };
-
-        return (utilityDto, discreteUtilities);
+        return (utilityDto, mappedDiscreteUtilities);
     }
 
-    private static List<StrategyIncomingDto> CreateStrategies(
-        List<StrategyOutgoingDto> strategies,
+    private static List<StrategyIncomingDto> CreateStrategies<TStrategy>(
+        IEnumerable<TStrategy> strategies,
+        Func<TStrategy, IEnumerable<OptionDto>> getOptions,
         Guid newProjectId,
-        IdMappings mappings)
+        IdMappings mappings) where TStrategy : StrategyDto
     {
         return strategies.Select(strategy => new StrategyIncomingDto
         {
@@ -489,7 +416,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
             Rationale = strategy.Rationale,
             Icon = strategy.Icon,
             IconColor = strategy.IconColor,
-            Options = strategy.Options.Select(option => new OptionIncomingDto
+            Options = getOptions(strategy).Select(option => new OptionIncomingDto
             {
                 Id = GetMappedOrThrow(mappings.Option, option.Id, "option"),
                 DecisionId = GetMappedOrThrow(mappings.Decision, option.DecisionId, "decision"),
@@ -499,31 +426,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         }).ToList();
     }
 
-    private static List<StrategyIncomingDto> CreateStrategiesFromIncoming(
-        List<StrategyIncomingDto> strategies,
-        Guid newProjectId,
-        IdMappings mappings)
-    {
-        return strategies.Select(strategy => new StrategyIncomingDto
-        {
-            Id = Guid.NewGuid(),
-            ProjectId = newProjectId,
-            Name = strategy.Name,
-            Description = strategy.Description,
-            Rationale = strategy.Rationale,
-            Icon = strategy.Icon,
-            IconColor = strategy.IconColor,
-            Options = strategy.Options.Select(option => new OptionIncomingDto
-            {
-                Id = GetMappedOrThrow(mappings.Option, option.Id, "option"),
-                DecisionId = GetMappedOrThrow(mappings.Decision, option.DecisionId, "decision"),
-                Name = option.Name,
-                Utility = option.Utility
-            }).ToList()
-        }).ToList();
-    }
-
-    private static List<EdgeIncomingDto> CreateEdges(List<EdgeOutgoingDto> edges, Guid newProjectId, IdMappings mappings)
+    private static List<EdgeIncomingDto> CreateEdges(IEnumerable<EdgeDto> edges, Guid newProjectId, IdMappings mappings)
     {
         return edges.Select(edge => new EdgeIncomingDto
         {
@@ -534,70 +437,41 @@ public class ProjectDuplicationService : IProjectDuplicationService
         }).ToList();
     }
 
-    private static List<EdgeIncomingDto> CreateEdgesFromIncoming(List<EdgeIncomingDto> edges, Guid newProjectId, IdMappings mappings)
-    {
-        return edges.Select(edge => new EdgeIncomingDto
-        {
-            Id = Guid.NewGuid(),
-            TailId = GetMappedOrThrow(mappings.Node, edge.TailId, "node"),
-            HeadId = GetMappedOrThrow(mappings.Node, edge.HeadId, "node"),
-            ProjectId = newProjectId
-        }).ToList();
-    }
-
-    private static void GenerateIdMappings(List<IssueOutgoingDto> issues, IdMappings mappings)
+    private static void GenerateIdMappings<TIssue>(
+        IEnumerable<TIssue> issues,
+        Func<TIssue, Guid?> getNodeId,
+        Func<TIssue, (Guid Id, IEnumerable<Guid> OutcomeIds)?> getUncertaintyInfo,
+        Func<TIssue, (Guid Id, IEnumerable<Guid> OptionIds)?> getDecisionInfo,
+        Func<TIssue, Guid?> getUtilityId,
+        IdMappings mappings) where TIssue : IssueDto
     {
         foreach (var issue in issues)
         {
             mappings.Issue[issue.Id] = Guid.NewGuid();
 
-            if (issue.Node is not null)
-                mappings.Node[issue.Node.Id] = Guid.NewGuid();
+            var nodeId = getNodeId(issue);
+            if (nodeId.HasValue)
+                mappings.Node[nodeId.Value] = Guid.NewGuid();
 
-            if (issue.Uncertainty is not null)
+            var uncertaintyInfo = getUncertaintyInfo(issue);
+            if (uncertaintyInfo.HasValue)
             {
-                mappings.Uncertainty[issue.Uncertainty.Id] = Guid.NewGuid();
-                foreach (var outcome in issue.Uncertainty.Outcomes)
-                    mappings.Outcome[outcome.Id] = Guid.NewGuid();
+                mappings.Uncertainty[uncertaintyInfo.Value.Id] = Guid.NewGuid();
+                foreach (var outcomeId in uncertaintyInfo.Value.OutcomeIds)
+                    mappings.Outcome[outcomeId] = Guid.NewGuid();
             }
 
-            if (issue.Decision is not null)
+            var decisionInfo = getDecisionInfo(issue);
+            if (decisionInfo.HasValue)
             {
-                mappings.Decision[issue.Decision.Id] = Guid.NewGuid();
-                foreach (var option in issue.Decision.Options)
-                    mappings.Option[option.Id] = Guid.NewGuid();
+                mappings.Decision[decisionInfo.Value.Id] = Guid.NewGuid();
+                foreach (var optionId in decisionInfo.Value.OptionIds)
+                    mappings.Option[optionId] = Guid.NewGuid();
             }
 
-            if (issue.Utility is not null)
-                mappings.Utility[issue.Utility.Id] = Guid.NewGuid();
-        }
-    }
-
-    private static void GenerateIdMappingsFromIncoming(List<IssueIncomingDto> issues, IdMappings mappings)
-    {
-        foreach (var issue in issues)
-        {
-            mappings.Issue[issue.Id] = Guid.NewGuid();
-
-            if (issue.Node is not null)
-                mappings.Node[issue.Node.Id] = Guid.NewGuid();
-
-            if (issue.Uncertainty is not null)
-            {
-                mappings.Uncertainty[issue.Uncertainty.Id] = Guid.NewGuid();
-                foreach (var outcome in issue.Uncertainty.Outcomes)
-                    mappings.Outcome[outcome.Id] = Guid.NewGuid();
-            }
-
-            if (issue.Decision is not null)
-            {
-                mappings.Decision[issue.Decision.Id] = Guid.NewGuid();
-                foreach (var option in issue.Decision.Options)
-                    mappings.Option[option.Id] = Guid.NewGuid();
-            }
-
-            if (issue.Utility is not null)
-                mappings.Utility[issue.Utility.Id] = Guid.NewGuid();
+            var utilityId = getUtilityId(issue);
+            if (utilityId.HasValue)
+                mappings.Utility[utilityId.Value] = Guid.NewGuid();
         }
     }
 

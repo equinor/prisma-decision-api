@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
-public class DiscreteUtilityService: IDiscreteUtilityService
+public class DiscreteUtilityService : IDiscreteUtilityService
 {
     private readonly IDiscreteUtilityRepository _discreteUtilityRepository;
 
@@ -22,7 +22,7 @@ public class DiscreteUtilityService: IDiscreteUtilityService
 
     public async Task<List<DiscreteUtilityDto>> CreateAsync(List<DiscreteUtilityDto> dtos)
     {
-        var entities = dtos.ToEntitiesWithoutParents();
+        var entities = dtos.ToEntities();
         await _discreteUtilityRepository.AddRangeAsync(entities);
         return entities.ToDtos();
     }

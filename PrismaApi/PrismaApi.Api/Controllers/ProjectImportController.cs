@@ -8,7 +8,7 @@ using System.Net;
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("")]
 [Authorize(Policy = SecurityPolicy.UserRoleRequired)]
 public class ProjectImportController : PrismaBaseController
 {
