@@ -61,7 +61,7 @@ public class ProjectService : IProjectService
     public async Task<List<ProjectOutgoingDto>> UpdateAsync(List<ProjectIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var projectEntities = dtos.ToEntities(userDto);
-        await _projectRepository.UpdateRangeAsync(projectEntities);
+        await _projectRepository.UpdateRangeAsync(projectEntities, filterPredicate: UserFilter(userDto));
 
         foreach (var dto in dtos)
         {
@@ -118,8 +118,8 @@ public class ProjectService : IProjectService
         return new InfluanceDiagramDto
         {
             projectId = projectId,
-            issues = (await _issueRepository.GetIssuesInInfluenceDiagram(projectId)).ToOutgoingDtos(),
-            edges = (await _edgeRepository.GetEdgesInInfluenceDiagram(projectId)).ToOutgoingDtos()
+            issues = (await _issueRepository.GetIssuesInInfluenceDiagram(projectId, IssuesUserFilter(user))).ToOutgoingDtos(),
+            edges = (await _edgeRepository.GetEdgesInInfluenceDiagram(projectId, EdgesUserFilter(user))).ToOutgoingDtos()
         };
     }
 
@@ -197,4 +197,10 @@ public class ProjectService : IProjectService
 
     private static Expression<Func<Project, bool>> UserFilter(UserOutgoingDto user)
         => e => e.ProjectRoles.Any(p => p.UserId == user.Id);
+
+    private static Expression<Func<Issue, bool>> IssuesUserFilter(UserOutgoingDto user)
+        => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+
+    private static Expression<Func<Edge, bool>> EdgesUserFilter(UserOutgoingDto user)
+        => e => e.HeadNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id) && e.TailNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 }

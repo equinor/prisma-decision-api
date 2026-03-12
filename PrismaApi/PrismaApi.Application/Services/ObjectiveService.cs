@@ -26,7 +26,7 @@ public class ObjectiveService: IObjectiveService
     public async Task<List<ObjectiveOutgoingDto>> UpdateAsync(List<ObjectiveIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntities(userDto);
-        await _objectiveRepository.UpdateRangeAsync(entities);
+        await _objectiveRepository.UpdateRangeAsync(entities, UserFilter(userDto));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _objectiveRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();

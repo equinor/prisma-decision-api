@@ -32,7 +32,7 @@ public class EdgeService: IEdgeService
     public async Task<List<EdgeOutgoingDto>> UpdateAsync(List<EdgeIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntities();
-        await _edgeRepository.UpdateRangeAsync(entities);
+        await _edgeRepository.UpdateRangeAsync(entities, UserFilter(userDto));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _edgeRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();

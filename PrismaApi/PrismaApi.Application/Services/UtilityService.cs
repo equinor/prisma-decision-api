@@ -20,29 +20,29 @@ public class UtilityService: IUtilityService
         _utilityRepository = utilityRepository;
     }
 
-    public async Task<List<UtilityOutgoingDto>> UpdateAsync(List<UtilityIncomingDto> dtos)
+    public async Task<List<UtilityOutgoingDto>> UpdateAsync(List<UtilityIncomingDto> dtos, UserOutgoingDto user)
     {
         var entities = dtos.ToEntities();
-        await _utilityRepository.UpdateRangeAsync(entities);
+        await _utilityRepository.UpdateRangeAsync(entities, UserFilter(user));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _utilityRepository.GetByIdsAsync(ids);
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        await _utilityRepository.DeleteByIdsAsync(ids);
+        await _utilityRepository.DeleteByIdsAsync(ids, UserFilter(user));
     }
 
-    public async Task<List<UtilityOutgoingDto>> GetAsync(List<Guid> ids)
+    public async Task<List<UtilityOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
     {
-        var entities = await _utilityRepository.GetByIdsAsync(ids);
+        var entities = await _utilityRepository.GetByIdsAsync(ids, filterPredicate: UserFilter(user));
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<UtilityOutgoingDto>> GetAllAsync()
+    public async Task<List<UtilityOutgoingDto>> GetAllAsync(UserOutgoingDto user)
     {
-        var entities = await _utilityRepository.GetAllAsync();
+        var entities = await _utilityRepository.GetAllAsync(filterPredicate: UserFilter(user));
         return entities.ToOutgoingDtos();
     }
     private static Expression<Func<Utility, bool>> UserFilter(UserOutgoingDto user)

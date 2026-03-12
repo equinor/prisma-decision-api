@@ -1,7 +1,8 @@
-using System.Linq;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Repositories;
 
@@ -13,7 +14,7 @@ public class OutcomeRepository : BaseRepository<Outcome, Guid>, IOutcomeReposito
         _ruleTrigger = ruleTrigger;
     }
 
-    public override async Task UpdateRangeAsync(IEnumerable<Outcome> incommingEntities)
+    public async Task UpdateRangeAsync(IEnumerable<Outcome> incommingEntities, Expression<Func<Outcome, bool>> filterPredicate)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -21,7 +22,7 @@ public class OutcomeRepository : BaseRepository<Outcome, Guid>, IOutcomeReposito
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id));
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
         foreach (var entity in entities)
         {
             var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);

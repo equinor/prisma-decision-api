@@ -14,14 +14,20 @@ namespace PrismaApi.Application.Services;
 public class IssueService : IIssueService
 {
     private readonly IIssueRepository _issueRepository;
+    private readonly IProjectRepository _projectRepository;
 
-    public IssueService(IIssueRepository issueRepository)
+    public IssueService(IIssueRepository issueRepository, IProjectRepository projectRepository)
     {
         _issueRepository = issueRepository;
+        _projectRepository = projectRepository;
     }
 
     public async Task<List<IssueOutgoingDto>> CreateAsync(List<IssueIncomingDto> dtos, UserOutgoingDto userDto)
     {
+        var projectIds = dtos.Select(d => d.ProjectId).Distinct().ToList();
+        if ((await _projectRepository.GetProjectsWhereUserHasAccess(projectIds, userDto.Id)).Count == 0)
+            throw new UnauthorizedAccessException("User does not have access to one or more projects.");
+
         EnsureNodeDefaults(dtos);
         var entities = dtos.ToEntities(userDto);
         await _issueRepository.AddRangeAsync(entities);
@@ -32,7 +38,7 @@ public class IssueService : IIssueService
     {
         EnsureNodeDefaults(dtos);
         var entities = dtos.ToEntities(userDto);
-        await _issueRepository.UpdateRangeAsync(entities);
+        await _issueRepository.UpdateRangeAsync(entities, UserFilter(userDto));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _issueRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();

@@ -30,7 +30,7 @@ public class OutcomeService: IOutcomeService
     public async Task<List<OutcomeOutgoingDto>> UpdateAsync(List<OutcomeIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntities();
-        await _outcomeRepository.UpdateRangeAsync(entities);
+        await _outcomeRepository.UpdateRangeAsync(entities, UserFilter(userDto));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _outcomeRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToOutgoingDtos();

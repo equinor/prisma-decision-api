@@ -15,10 +15,19 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
         _repo = repo;
     }
 
-
-    public override async Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incommingEntities)
+    public async Task<ICollection<Project>> GetProjectsWhereUserHasAccess(ICollection<Guid> projectIds, int userId)
     {
-        var entities = await GetByIdsAsync(incommingEntities.Select(e => e.Id));
+        return await GetByIdsAsync(
+            projectIds,
+            withTracking: false,
+            filterPredicate: p => p.ProjectRoles.Any(r => r.UserId == userId)
+        );
+    }
+
+
+    public async Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incommingEntities, Expression<Func<Project, bool>> filterPredicate)
+    {
+        var entities = await GetByIdsAsync(incommingEntities.Select(e => e.Id), withTracking: true, filterPredicate: filterPredicate);
         foreach (var entity in entities)
         {
             var incommingEntity = incommingEntities.Where(x => x.Id == entity.Id).First();

@@ -30,7 +30,7 @@ public class DiscreteProbabilityService: IDiscreteProbabilityService
     public async Task<List<DiscreteProbabilityDto>> UpdateAsync(List<DiscreteProbabilityDto> dtos, UserOutgoingDto userDto)
     {
         var entities = dtos.ToEntitiesWithoutParents();
-        await _discreteProbabilityRepository.UpdateRangeAsync(entities);
+        await _discreteProbabilityRepository.UpdateRangeAsync(entities, UserFilter(userDto));
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _discreteProbabilityRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
         return updated.ToDtos();

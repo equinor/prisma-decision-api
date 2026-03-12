@@ -3,6 +3,7 @@ using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure;
+using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Repositories;
 
@@ -14,7 +15,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
         _ruleTrigger = ruleTrigger;
     }
 
-    public override async Task UpdateRangeAsync(IEnumerable<Issue> incommingEntities)
+    public async Task UpdateRangeAsync(IEnumerable<Issue> incommingEntities, Expression<Func<Issue, bool>> filterPredicate)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -22,7 +23,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id));
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
         List<Guid> issuesIdsTriggers = [];
         foreach (var entity in entities)
         {
@@ -60,9 +61,9 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
         await DbContext.SaveChangesAsync();
     }
 
-    public async Task<ICollection<Issue>> GetIssuesInInfluenceDiagram(Guid projectId)
+    public async Task<ICollection<Issue>> GetIssuesInInfluenceDiagram(Guid projectId, Expression<Func<Issue, bool>>? filterPredicate)
     {
-        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId));
+        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId), filterPredicate);
     }
 
     private bool WillIssueChangeTables(Issue entity, Issue incommingEntity)
