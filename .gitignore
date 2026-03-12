@@ -172,3 +172,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# .NET build artifacts (PrismaApi)
+PrismaApi/**/bin/
+PrismaApi/**/obj/
