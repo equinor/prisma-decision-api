@@ -9,7 +9,7 @@ using System.Text.Json;
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
-[Route("")]
+
 public class StuctureController : PrismaBaseController
 {
     private readonly IFastApiService _fastApiService;
@@ -51,7 +51,7 @@ public class StuctureController : PrismaBaseController
     {
         UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
         var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/partial_order", user);
-        
+
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
             return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeString() : null);

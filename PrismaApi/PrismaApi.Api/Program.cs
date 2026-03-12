@@ -2,6 +2,7 @@ using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
+using PrismaApi.Api;
 using PrismaApi.Api.Configuration.Extensions;
 using PrismaApi.Api.Configuration.JsonResponseOptions;
 using PrismaApi.Application.Interfaces.Repositories;
@@ -71,6 +72,7 @@ builder.Services.AddScoped<IObjectiveRepository, ObjectiveRepository>();
 builder.Services.AddScoped<IProjectRoleRepository, ProjectRoleRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IProjectDuplicationRepository, ProjectDuplicationRepository>();
 
 builder.Services.AddScoped<ITableRebuildingService, TableRebuildingService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
@@ -90,6 +92,8 @@ builder.Services.AddScoped<IStrategyService, StrategyService>();
 builder.Services.AddScoped<IObjectiveService, ObjectiveService>();
 builder.Services.AddScoped<IProjectRoleService, ProjectRoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IProjectDuplicationService, ProjectDuplicationService>();
+builder.Services.AddScoped<IProjectImportService, ProjectImportService>();
 builder.Services.AddHttpClient<IFastApiService, FastApiService>();
 
 builder.Services.AddControllers()
@@ -100,6 +104,14 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddSwagger(builder.Configuration);
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(SecurityPolicy.UserRoleRequired, policy =>
+    {
+        SecurityPolicy.AddPrismaDecisionUserPolicy(policy);
+    });
+});
 
 var app = builder.Build();
 

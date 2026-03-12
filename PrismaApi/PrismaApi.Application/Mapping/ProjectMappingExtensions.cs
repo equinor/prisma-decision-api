@@ -51,6 +51,25 @@ public static class ProjectMappingExtensions
         return entities.Select(ToPopulatedDto).ToList();
     }
 
+    public static FullProjectForDuplicationDto ToFullProjectForDuplicationDto(this Project entity)
+    {
+        return new FullProjectForDuplicationDto
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            ParentProjectId = entity.ParentProjectId,
+            ParentProjectName = entity.ParentProjectName ?? "",
+            OpportunityStatement = entity.OpportunityStatement,
+            Public = entity.Public,
+            EndDate = entity.EndDate,
+            Objectives = entity.Objectives.ToOutgoingDtos(),
+            Strategies = entity.Strategies.ToOutgoingDtos(),
+            Users = entity.ProjectRoles.ToOutgoingDtos(),
+            Issues = entity.Issues.ToOutgoingDtos(),
+            Edges = entity.Edges.ToOutgoingDtos()
+        };
+    }
+
     public static Project ToEntity(this ProjectCreateDto dto, UserOutgoingDto userDto)
     {
         return new Project

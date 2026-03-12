@@ -37,8 +37,8 @@ public class EdgeRepository : BaseRepository<Edge, Guid>, IEdgeRepository
 
             if (entity.HeadId != incomingEntity.HeadId || entity.TailId != incomingEntity.TailId)
                 nodeIdsToLookup.Add(entity.HeadId);
-                nodeIdsToLookup.Add(incomingEntity.HeadId);
-            
+            nodeIdsToLookup.Add(incomingEntity.HeadId);
+
             entity.TailId = incomingEntity.TailId;
             entity.HeadId = incomingEntity.HeadId;
             entity.ProjectId = incomingEntity.ProjectId;
@@ -70,7 +70,7 @@ public class EdgeRepository : BaseRepository<Edge, Guid>, IEdgeRepository
     public override async Task DeleteByIdsAsync(IEnumerable<Guid> ids, Expression<Func<Edge, bool>>? filterPredicate = null)
     {
         await _ruleTrigger.OnEdgesRemovedAsync(ids.ToList());
-        await base.DeleteByIdsAsync(ids);
+        await base.DeleteByIdsAsync(ids, filterPredicate);
     }
 
     protected override IQueryable<Edge> Query()
@@ -105,4 +105,3 @@ public static class EdgeQueryableExtensions
             );
     }
 }
-

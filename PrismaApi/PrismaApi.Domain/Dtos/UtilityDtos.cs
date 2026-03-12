@@ -12,12 +12,16 @@ public class UtilityDto
     public Guid IssueId { get; set; }
 }
 
-public class UtilityIncomingDto : UtilityDto
-{
-}
-
-public class UtilityOutgoingDto : UtilityDto
+public abstract class UtilityWithDiscreteUtilitiesDto : UtilityDto
 {
     [JsonPropertyName("discrete_utilities")]
     public List<DiscreteUtilityDto> DiscreteUtilities { get; set; } = new();
+}
+
+public class UtilityIncomingDto : UtilityWithDiscreteUtilitiesDto
+{
+}
+
+public class UtilityOutgoingDto : UtilityWithDiscreteUtilitiesDto
+{
 }
