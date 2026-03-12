@@ -72,30 +72,26 @@ async def call_ms_graph_api_users(token: str, username: str) -> list[UserIncomin
     async with AsyncClient() as client:
         try:
             access_token = await _get_obo_access_token(client, token)
-            next_link = (
-                f'https://graph.microsoft.com/v1.0/users?$search="displayName:{sanitized_username}"'
-            )
+            graphApiEndpoint = f'https://graph.microsoft.com/v1.0/users?$search="displayName:{sanitized_username}"&$top=100'
             all_users: list[dict[str, Any]] = []
 
-            while next_link:
-                graph_response: httpx.Response = await client.get(
-                    next_link,
-                    headers={
-                        "Authorization": f"Bearer {access_token}",
-                        "ConsistencyLevel": "eventual",
-                    },
-                    timeout=30.0,
+            graph_response: httpx.Response = await client.get(
+                graphApiEndpoint,
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "ConsistencyLevel": "eventual",
+                },
+                timeout=30.0,
+            )
+
+            if not graph_response.is_success:
+                raise HTTPException(
+                    status_code=graph_response.status_code,
+                    detail=f"Graph API error: {graph_response.text}",
                 )
 
-                if not graph_response.is_success:
-                    raise HTTPException(
-                        status_code=graph_response.status_code,
-                        detail=f"Graph API error: {graph_response.text}",
-                    )
-
-                graph: dict[str, Any] = graph_response.json()
-                all_users.extend(graph.get("value", []))
-                next_link = graph.get("@odata.nextLink")
+            graph: dict[str, Any] = graph_response.json()
+            all_users.extend(graph.get("value", []))
 
             filtered_users = [
                 user
