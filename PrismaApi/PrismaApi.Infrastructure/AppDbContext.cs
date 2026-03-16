@@ -419,6 +419,8 @@ public class AppDbContext : DbContext
         {
             Id = DomainConstants.DefaultValueMetricId,
             Name = DomainConstants.DefaultValueMetricName,
+            CreatedAt = new DateTimeOffset(new DateTime(2026, 3, 16, 13, 51, 24, 68, DateTimeKind.Utc).AddTicks(5473), TimeSpan.Zero),
+            UpdatedAt = new DateTimeOffset(new DateTime(2026, 3, 16, 13, 51, 24, 68, DateTimeKind.Utc).AddTicks(5475), TimeSpan.Zero)
         });
     }
 
