@@ -25,7 +25,13 @@ async def test_get_strategies(client: AsyncClient):
 @pytest.mark.first
 @pytest.mark.asyncio
 async def test_get_strategy(client: AsyncClient):
-    response = await client.get(f"/strategies/{GenerateUuid.as_string(1)}")
+    list_response = await client.get("/strategies")
+    assert list_response.status_code == 200, f"Response content: {list_response.content}"
+
+    strategies = parse_response_to_dtos_test(list_response, StrategyOutgoingDto)
+    assert strategies, "Expected at least one strategy"
+
+    response = await client.get(f"/strategies/{strategies[0].id}")
     assert response.status_code == 200, f"Response content: {response.content}"
 
     parse_response_to_dto_test(response, StrategyOutgoingDto)

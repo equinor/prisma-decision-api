@@ -1,3 +1,4 @@
+from typing import Optional
 import uuid
 from pydantic import BaseModel, Field
 
@@ -6,25 +7,27 @@ from src.constants import DatabaseConstants, ProjectRoleType
 
 
 class UserInfoDto(BaseModel):
-    user_name: str = Field(max_length=DatabaseConstants.MAX_LONG_STRING_LENGTH.value)
+    name: str = Field(max_length=DatabaseConstants.MAX_LONG_STRING_LENGTH.value)
     azure_id: str
 
 
 class ProjectRoleDto(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    user_id: int
     project_id: uuid.UUID
 
 
 class ProjectRoleIncomingDto(ProjectRoleDto, UserInfoDto):
+    user_id: Optional[int]
     role: ProjectRoleType
 
 
 class ProjectRoleCreateDto(ProjectRoleDto, UserInfoDto):
+    user_id: int
     role: ProjectRoleType
 
 
 class ProjectRoleOutgoingDto(ProjectRoleDto, UserInfoDto):
+    user_id: int
     role: str
 
 
@@ -39,7 +42,7 @@ class ProjectRoleMapper:
         )
 
     @staticmethod
-    def to_project_role_entity(dto: ProjectRoleIncomingDto) -> ProjectRole:
+    def to_project_role_entity(dto: ProjectRoleCreateDto) -> ProjectRole:
         return ProjectRole(
             id=dto.id,
             user_id=dto.user_id,
@@ -51,7 +54,7 @@ class ProjectRoleMapper:
     def to_outgoing_dto(entity: ProjectRole) -> ProjectRoleOutgoingDto:
         return ProjectRoleOutgoingDto(
             id=entity.id,
-            user_name=entity.user.name,
+            name=entity.user.name,
             user_id=entity.user_id,
             project_id=entity.project_id,
             azure_id=entity.user.azure_id,
@@ -77,6 +80,6 @@ class ProjectRoleMapper:
 
     @staticmethod
     def to_project_role_entities(
-        entities: list[ProjectRoleIncomingDto],
+        entities: list[ProjectRoleCreateDto],
     ) -> list[ProjectRole]:
         return [ProjectRoleMapper.to_project_role_entity(entity) for entity in entities]
