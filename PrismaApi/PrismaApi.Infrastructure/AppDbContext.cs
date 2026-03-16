@@ -38,6 +38,8 @@ public class AppDbContext : DbContext
     public DbSet<Objective> Objectives => Set<Objective>();
     public DbSet<ProjectRole> ProjectRoles => Set<ProjectRole>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<Assessment> Assessments => Set<Assessment>();
+    public DbSet<SpiderAssessment> SpiderAssessments => Set<SpiderAssessment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -87,6 +89,11 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasMany(e => e.Edges)
+                .WithOne(e => e.Project)
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.Assessments)
                 .WithOne(e => e.Project)
                 .HasForeignKey(e => e.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -417,10 +424,52 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<ValueMetric>().HasData(new ValueMetric
         {
-            Id = DomainConstants.DefaultValueMetricId,
-            Name = DomainConstants.DefaultValueMetricName,
+            Id = new Guid("288e0811-7ab6-5d24-b80c-9fa925b848a6"),
+            Name = "value",
+            CreatedAt = new DateTimeOffset(new DateTime(2026, 3, 13, 11, 42, 32, 191, DateTimeKind.Unspecified).AddTicks(1090), new TimeSpan(0, 0, 0, 0, 0)),
+            UpdatedAt = new DateTimeOffset(new DateTime(2026, 3, 13, 11, 42, 32, 191, DateTimeKind.Unspecified).AddTicks(1090), new TimeSpan(0, 0, 0, 0, 0)),
+        });
+        modelBuilder.Entity<Assessment>(entity =>
+        {
+            entity.ToTable("assessment");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
+            entity.HasOne(e => e.CreatedBy)
+              .WithMany()
+              .HasForeignKey(e => e.CreatedById)
+              .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasMany(e => e.SpiderAssessments)
+                .WithOne(e => e.Assessment)
+                .HasForeignKey(e => e.AssessmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<SpiderAssessment>(entity =>
+        {
+            entity.ToTable("spider_assessment");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Comment).HasMaxLength(DomainConstants.MaxLongStringLength);
+            entity.Property(e => e.Value).HasPrecision(DomainConstants.FloatPrecision);
+            entity.Property(e => e.Risk).HasPrecision(DomainConstants.FloatPrecision);
+            entity.Property(e => e.Cost).HasPrecision(DomainConstants.FloatPrecision);
+            entity.Property(e => e.Feasibility).HasPrecision(DomainConstants.FloatPrecision);
+            entity.Property(e => e.Impact).HasPrecision(DomainConstants.FloatPrecision);
+            entity.HasOne(e => e.CreatedBy)
+              .WithMany()
+              .HasForeignKey(e => e.CreatedById)
+              .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
+
 
     public override int SaveChanges()
     {
@@ -574,5 +623,5 @@ public class AppDbContext : DbContext
         return base.Add(entity);
     }
 
-    
+
 }
