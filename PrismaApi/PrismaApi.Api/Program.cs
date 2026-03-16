@@ -2,6 +2,7 @@ using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
+using PrismaApi.Api;
 using PrismaApi.Api.Configuration.Extensions;
 using PrismaApi.Api.Configuration.JsonResponseOptions;
 using PrismaApi.Application.Interfaces.Repositories;
@@ -38,6 +39,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddMemoryCache();
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(SecurityPolicy.UserRoleRequired, SecurityPolicy.AddPrismaDecisionUserPolicy);
+});
+
 var appInsightsConnectionString = Environment.GetEnvironmentVariable("ApplicationInsightsConnectionString") ?? builder.Configuration.GetSection("ApplicationInsightsConnectionString").Value;
 if (!string.IsNullOrEmpty(appInsightsConnectionString) && builder.Environment.EnvironmentName != "Local")
 {
@@ -46,6 +52,7 @@ if (!string.IsNullOrEmpty(appInsightsConnectionString) && builder.Environment.En
         options.ConnectionString = appInsightsConnectionString;
     });
 }
+
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
@@ -71,6 +78,8 @@ builder.Services.AddScoped<IObjectiveRepository, ObjectiveRepository>();
 builder.Services.AddScoped<IProjectRoleRepository, ProjectRoleRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAssessmentRepository, AssessmentRepository>();
+builder.Services.AddScoped<ISpiderAssessmentRepository, SpiderAssessmentRepository>();
 
 builder.Services.AddScoped<ITableRebuildingService, TableRebuildingService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
@@ -90,6 +99,8 @@ builder.Services.AddScoped<IStrategyService, StrategyService>();
 builder.Services.AddScoped<IObjectiveService, ObjectiveService>();
 builder.Services.AddScoped<IProjectRoleService, ProjectRoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAssessmentService, AssessmentService>();
+builder.Services.AddScoped<ISpiderAssessmentService, SpiderAssessmentService>();
 builder.Services.AddHttpClient<IFastApiService, FastApiService>();
 
 builder.Services.AddControllers()
@@ -116,7 +127,7 @@ app.UseHttpsRedirection();
 // Use CORS - must be before UseAuthorization
 app.UseCors("AllowFrontend");
 
-// Authentication/authorization hook - intentionally permissive for local testing.
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

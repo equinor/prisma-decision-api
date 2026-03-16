@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "PrismaApi.Api (.NET)",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceFolder}/PrismaApi/PrismaApi.Api/bin/Debug/net8.0/PrismaApi.Api.dll",
+      "args": [],
+      "preLaunchTask": "Build PrismaApi.sln",
+      "cwd": "${workspaceFolder}/PrismaApi/PrismaApi.Api",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:7075;http://localhost:7069"
+      },
+      "console": "internalConsole"
+    }
+  ]
+}
