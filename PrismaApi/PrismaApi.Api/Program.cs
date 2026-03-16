@@ -29,6 +29,12 @@ builder.Services.AddCors(options =>
     });
 });
 
+var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
+if (!string.IsNullOrEmpty(clientSecret))
+{
+    builder.Configuration["AzureAd:ClientSecret"] = clientSecret;
+}
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(builder.Configuration, "AzureAd")
     .EnableTokenAcquisitionToCallDownstreamApi()
@@ -38,7 +44,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddMemoryCache();
 
-var appInsightsConnectionString = Environment.GetEnvironmentVariable("ApplicationInsightsConnectionString") ?? builder.Configuration.GetSection("ApplicationInsightsConnectionString").Value;
+var appInsightsConnectionString = Environment.GetEnvironmentVariable("APPLICATION_INSIGHTS_CONNECTIONSTRING") ?? builder.Configuration.GetSection("ApplicationInsights:ConnectionString").Value;
 if (!string.IsNullOrEmpty(appInsightsConnectionString) && builder.Environment.EnvironmentName != "Local")
 {
     builder.Services.AddOpenTelemetry().UseAzureMonitor(options =>
