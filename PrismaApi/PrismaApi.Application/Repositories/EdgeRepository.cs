@@ -36,8 +36,10 @@ public class EdgeRepository : BaseRepository<Edge, Guid>, IEdgeRepository
             }
 
             if (entity.HeadId != incomingEntity.HeadId || entity.TailId != incomingEntity.TailId)
-                nodeIdsToLookup.Add(entity.HeadId);
-            nodeIdsToLookup.Add(incomingEntity.HeadId);
+            {
+                nodeIdsToLookup.Add(entity.TailId);
+                nodeIdsToLookup.Add(incomingEntity.TailId);
+            }
 
             entity.TailId = incomingEntity.TailId;
             entity.HeadId = incomingEntity.HeadId;

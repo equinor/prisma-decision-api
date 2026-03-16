@@ -30,13 +30,13 @@ public class ProjectService : IProjectService
         _userRepository = userRepository;
     }
 
-    public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos, bool isProjectNotDuplicated, UserOutgoingDto userDto)
+    public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos, bool isProjectDuplicated, UserOutgoingDto userDto)
     {
         var projectEntities = dtos.ToEntities(userDto);
 
         await _projectRepository.AddRangeAsync(projectEntities);
 
-        if (isProjectNotDuplicated)
+        if (isProjectDuplicated)
         {
 
             var creatorRole = dtos.Select(x =>

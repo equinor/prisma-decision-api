@@ -28,17 +28,17 @@ public class ProjectsController : PrismaBaseEntityController
     public async Task<ActionResult<List<ProjectOutgoingDto>>> CreateProjects([FromBody] List<ProjectCreateDto> dtos)
     {
         UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
-        bool isProjectNotDuplicated = true;
+        bool isProjectDuplicated = false;
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            var result = await _projectService.CreateAsync(dtos, isProjectNotDuplicated, user);
+            var result = await _projectService.CreateAsync(dtos, isProjectDuplicated, user);
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }

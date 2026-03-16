@@ -3,22 +3,23 @@ using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Api.Configuration.Extensions;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Infrastructure;
 using System.Net;
 
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [Route("")]
-[Authorize(Policy = SecurityPolicy.UserRoleRequired)]
-public class ProjectImportController : PrismaBaseController
+public class ProjectImportController : PrismaBaseEntityController
 {
     private readonly IProjectImportService _projectImportService;
     private readonly IUserService _userService;
 
     public ProjectImportController(
         IProjectImportService projectImportService,
+        AppDbContext dbContext,
         IUserService userService
-    )
+    ) : base(dbContext)
     {
         _projectImportService = projectImportService;
         _userService = userService;
@@ -36,26 +37,27 @@ public class ProjectImportController : PrismaBaseController
             return BadRequest("No projects provided for import");
         }
 
+
+        // Get current user from claims
+        var user = await _userService.GetOrCreateUserFromGraphMeAsync(
+            GetUserCacheKeyFromClaims()
+        );
+
+        await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            // Get current user from claims
-            var user = await _userService.GetOrCreateUserFromGraphMeAsync(
-                GetUserCacheKeyFromClaims()
-            );
-
-            // Import projects using duplication logic
             var createdProjects = await _projectImportService.ImportFromJsonWithDuplicationLogicAsync(
                 importDtos,
                 user,
                 cancellationToken
             );
-
             return Ok(createdProjects);
         }
         catch (Exception ex)
         {
+            await RollbackTransactionAsync(CancellationToken.None);
             return StatusCode((int)HttpStatusCode.InternalServerError,
-                new { message = "An error occurred during project import", error = ex.Message });
+                           new { message = "An error occurred during project import", error = ex.Message });
         }
     }
 }

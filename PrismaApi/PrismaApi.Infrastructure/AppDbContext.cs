@@ -431,9 +431,6 @@ public class AppDbContext : DbContext
     public async override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         UpdateTimestamps();
-        await OnProjectDeletedCleanupAsync(cancellationToken);
-        await OnIssueDeletedCleanupAsync(cancellationToken);
-        await OnStrategyDeletedCleanupAsync(cancellationToken);
         await OnOutcomeDeletedCleanupAsync(cancellationToken);
         await OnOptionDeletedCleanupAsync(cancellationToken);
         return await base.SaveChangesAsync(cancellationToken);
@@ -520,89 +517,6 @@ public class AppDbContext : DbContext
             DiscreteUtilities.RemoveRange(affectedUtils);
         }
     }
-
-    private async Task OnProjectDeletedCleanupAsync(CancellationToken cancellationToken = default)
-    {
-        var deletedProjectIds = GetDeletedEntityIds<Project>();
-
-        if (!deletedProjectIds.Any())
-        {
-            return;
-        }
-
-        var issueIds = await Issues
-            .Where(i => deletedProjectIds.Contains(i.ProjectId))
-            .Select(i => i.Id)
-            .ToListAsync(cancellationToken);
-
-        var nodeIds = await Nodes
-            .Where(n => deletedProjectIds.Contains(n.ProjectId))
-            .Select(n => n.Id)
-            .ToListAsync(cancellationToken);
-
-        var strategyIds = await Strategies
-            .Where(s => deletedProjectIds.Contains(s.ProjectId))
-            .Select(s => s.Id)
-            .ToListAsync(cancellationToken);
-
-        await Edges
-            .Where(e => deletedProjectIds.Contains(e.ProjectId))
-            .ExecuteDeleteAsync(cancellationToken);
-
-        await DeleteIssueAsync(issueIds, nodeIds, deleteEdgesByNodeIds: false, cancellationToken);
-
-        await StrategyOptions
-            .Where(so => strategyIds.Contains(so.StrategyId))
-            .ExecuteDeleteAsync(cancellationToken);
-
-        await Issues
-            .Where(i => deletedProjectIds.Contains(i.ProjectId))
-            .ExecuteDeleteAsync(cancellationToken);
-
-        await Strategies
-            .Where(s => deletedProjectIds.Contains(s.ProjectId))
-            .ExecuteDeleteAsync(cancellationToken);
-
-        await Objectives
-            .Where(o => deletedProjectIds.Contains(o.ProjectId))
-            .ExecuteDeleteAsync(cancellationToken);
-
-        await ProjectRoles
-            .Where(pr => deletedProjectIds.Contains(pr.ProjectId))
-            .ExecuteDeleteAsync(cancellationToken);
-    }
-
-    private async Task OnStrategyDeletedCleanupAsync(CancellationToken cancellationToken = default)
-    {
-        var deletedStrategyIds = GetDeletedEntityIds<Strategy>();
-
-        if (!deletedStrategyIds.Any())
-        {
-            return;
-        }
-
-        await StrategyOptions
-            .Where(so => deletedStrategyIds.Contains(so.StrategyId))
-            .ExecuteDeleteAsync(cancellationToken);
-    }
-
-    private async Task OnIssueDeletedCleanupAsync(CancellationToken cancellationToken = default)
-    {
-        var deletedIssueIds = GetDeletedEntityIds<Issue>();
-
-        if (!deletedIssueIds.Any())
-        {
-            return;
-        }
-
-        var nodeIds = await Nodes
-            .Where(n => deletedIssueIds.Contains(n.IssueId))
-            .Select(n => n.Id)
-            .ToListAsync(cancellationToken);
-
-        await DeleteIssueAsync(deletedIssueIds, nodeIds, deleteEdgesByNodeIds: true, cancellationToken);
-    }
-
     private async Task OnOptionDeletedCleanupAsync(CancellationToken cancellationToken = default)
     {
         var deletedOptionIds = GetDeletedEntityIds<Option>();
