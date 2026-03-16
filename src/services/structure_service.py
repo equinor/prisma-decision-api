@@ -1,8 +1,9 @@
 import uuid
 from typing import Optional
 from src.services.project_service import ProjectService
-from src.dtos.decision_tree_dtos import DecisionTreeDto, PartialOrderDto, DecisionTreeDtoOld
+from src.dtos.decision_tree_dtos import DecisionTreeDto, PartialOrderDto, DecisionTreeDtoOld, DecisionTreeDto2
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator, DecisionTreeGraph
+from src.services.decision_tree.decision_tree_creator_v2 import DecisionTreeCreator_v2, DecisionTreeGraph_v2
 from src.session_manager import sessionmanager
 
 
@@ -32,6 +33,20 @@ class StructureService:
                 edges,
             ) = await self.project_service.get_influence_diagram_data(session, project_id)
         decision_tree_creator = await DecisionTreeCreator.initialize(
+            project_id=project_id, nodes=issues, edges=edges
+        )
+        dt = await decision_tree_creator.create_decision_tree()
+        return await dt.to_issue_dtos()
+    
+    async def create_decision_tree_dtos_opt(self, project_id: uuid.UUID) -> Optional[DecisionTreeDto2]:
+        issues = []
+        edges = []
+        async for session in sessionmanager.get_session():
+            (
+                issues,
+                edges,
+            ) = await self.project_service.get_influence_diagram_data(session, project_id)
+        decision_tree_creator = await DecisionTreeCreator_v2.initialize(
             project_id=project_id, nodes=issues, edges=edges
         )
         dt = await decision_tree_creator.create_decision_tree()

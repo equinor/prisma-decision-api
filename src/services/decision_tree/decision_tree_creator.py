@@ -4,6 +4,7 @@ import logging
 import uuid
 import copy
 import itertools
+import time
 import networkx as nx
 from typing import Optional, Dict, Any, Union, List, Tuple, Iterator
 from fastapi import HTTPException
@@ -53,6 +54,13 @@ class DecisionTreeGraph:
         return parents[0] if (parents and len(parents) > 0) else None  # type: ignore
 
     async def populate_utility_lookup(self) -> None:
+
+        #ff = self.treenode_lookup.get_list_of_nodes()
+        # for f in ff:
+        #     print(f.issue.type)
+        # gg = self.nx.nodes
+        # ff1 = len(ff)
+        # gg1 = len(gg)
         for node in self.treenode_lookup.get_list_of_nodes():
             if isinstance(node.issue, EndPointNodeDto) or node.issue.type != Type.UTILITY.value:
                 continue
@@ -71,6 +79,7 @@ class DecisionTreeGraph:
             self.treenode_lookup.add_with_original_id(uuid.UUID(id), node)
 
     async def to_issue_dtos(self) -> Optional[DecisionTreeDto]:
+        time1 = time.time()
         await self.populate_utility_lookup()
         self.edge_names = nx.get_edge_attributes(self.nx, "name")  # type: ignore
         tg = nx.readwrite.json_graph.tree_data(self.nx, self.root)  # type: ignore
@@ -79,6 +88,8 @@ class DecisionTreeGraph:
         await self.calculate_endpointnode_values(tree_structure)
         # calculate expected values for the tree_nodes
         self.final_expected_value = await self.calculate_expected_values(tree_structure)
+        time2 = time.time()
+        print("Elapsed time opt:", time2 - time1, "seconds")
         return tree_structure
 
     async def calculate_expected_values(self, decision_tree: DecisionTreeDto | None) -> float:
@@ -614,6 +625,9 @@ class DecisionTreeCreator:
                 element[0].head = endpoint_end
                 await decision_tree.add_edge(element[0])  # node is added when the branch is added
 
+
+        # for k,v in self.treenode_lookup.items():
+        #     print(v.issue.type)
         await decision_tree.populate_treenode_lookup(self.treenode_lookup)
         decision_tree.outcomes_lookup = copy.deepcopy(self.outcomes_lookup)
         return decision_tree

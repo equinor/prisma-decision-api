@@ -9,7 +9,7 @@ from src.services.project_service import ProjectService
 from src.services.user_service import get_current_user
 from src.dependencies import get_structure_service, get_project_lock_manager, ProjectQueueManager, get_project_service, get_db
 from src.dtos.user_dtos import UserIncomingDto
-from src.dtos.decision_tree_dtos import DecisionTreeDto, PartialOrderDto, DecisionTreeDtoOld
+from src.dtos.decision_tree_dtos import DecisionTreeDto, PartialOrderDto, DecisionTreeDtoOld, DecisionTreeDto2
 
 
 router = APIRouter(tags=["structure"])
@@ -37,6 +37,19 @@ async def get_partial_order(
     try:
         async with lock_manager.acquire_project_lock(project_id):
             return await structure_service.create_partial_order(project_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/structure/{project_id}/decision_tree/opt")
+async def get_decision_tree_opt(
+    project_id: uuid.UUID, structure_service: StructureService = Depends(get_structure_service),
+    current_user: UserIncomingDto = Depends(get_current_user),
+    lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
+) -> Optional[DecisionTreeDto2]:
+    try:
+        async with lock_manager.acquire_project_lock(project_id):
+            return await structure_service.create_decision_tree_dtos_opt(project_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
