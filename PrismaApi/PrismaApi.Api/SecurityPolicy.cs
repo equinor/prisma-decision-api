@@ -30,7 +30,7 @@ public class SecurityPolicy
         return hasScope;
     }
 
-    public static void AddScampiUserPolicy(AuthorizationPolicyBuilder policy)
+    public static void AddPrismaDecisionUserPolicy(AuthorizationPolicyBuilder policy)
     {
         policy.RequireAuthenticatedUser();
         policy.RequireRole(AppRoles.PrismaDecisionUser)

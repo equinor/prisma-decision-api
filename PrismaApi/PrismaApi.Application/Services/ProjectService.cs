@@ -30,34 +30,28 @@ public class ProjectService : IProjectService
         _userRepository = userRepository;
     }
 
-    public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos, UserOutgoingDto userDto)
+    public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos, bool isProjectDuplicated, UserOutgoingDto userDto)
     {
-        var rolesToBeCreated = dtos.Select(x =>
-        {
-            return new ProjectRoleCreateDto
-            {
-                Id = Guid.NewGuid(),
-                ProjectId = x.Id,
-                UserId = userDto.Id,
-                Role = ProjectRoleType.Facilitator.ToString()
-            };
-        }).Distinct();
-
-        foreach (var dto in dtos)
-        {
-            var creatorRole = new ProjectRoleCreateDto
-            {
-                Id = Guid.NewGuid(),
-                ProjectId = dto.Id,
-                UserId = userDto.Id,
-                Role = ProjectRoleType.Facilitator.ToString()
-            };
-        }
-
         var projectEntities = dtos.ToEntities(userDto);
+
         await _projectRepository.AddRangeAsync(projectEntities);
 
-        await _projectRoleRepository.AddRangeAsync(rolesToBeCreated.ToEntities(userDto));
+        if (isProjectDuplicated)
+        {
+
+            var creatorRole = dtos.Select(x =>
+            {
+                return new ProjectRoleCreateDto
+                {
+                    Id = Guid.NewGuid(),
+                    ProjectId = x.Id,
+                    UserId = userDto.Id,
+                    Role = ProjectRoleType.Facilitator.ToString()
+                };
+            }).Distinct();
+
+            await _projectRoleRepository.AddRangeAsync(creatorRole.ToEntities(userDto));
+        }
 
         var ids = projectEntities.Select(p => p.Id).ToList();
         var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false);

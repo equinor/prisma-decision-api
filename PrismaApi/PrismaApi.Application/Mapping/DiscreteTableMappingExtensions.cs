@@ -106,9 +106,37 @@ public static class DiscreteTableMappingExtensions
         };
     }
 
+    public static DiscreteUtility ToEntity(this DiscreteUtilityDto dto)
+    {
+        return new DiscreteUtility
+        {
+            Id = dto.Id,
+            UtilityId = dto.UtilityId,
+            ValueMetricId = dto.ValueMetricId,
+            UtilityValue = dto.UtilityValue,
+            ParentOptions = dto.ParentOptionIds
+                .Select(x => new DiscreteUtilityParentOption
+                {
+                    DiscreteUtilityId = dto.Id,
+                    ParentOptionId = x
+                }).ToList(),
+            ParentOutcomes = dto.ParentOutcomeIds
+                .Select(x => new DiscreteUtilityParentOutcome
+                {
+                    DiscreteUtilityId = dto.Id,
+                    ParentOutcomeId = x
+                }).ToList()
+        };
+    }
+
     public static List<DiscreteUtility> ToEntitiesWithoutParents(this IEnumerable<DiscreteUtilityDto> dtos)
     {
         return dtos.Select(ToEntityWithoutParents).ToList();
+    }
+
+    public static List<DiscreteUtility> ToEntities(this IEnumerable<DiscreteUtilityDto> dtos)
+    {
+        return dtos.Select(ToEntity).ToList();
     }
 
     public static List<DiscreteUtilityDto> ToDtos(this IEnumerable<DiscreteUtility> entities)

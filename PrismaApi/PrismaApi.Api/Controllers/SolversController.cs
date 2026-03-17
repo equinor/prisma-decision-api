@@ -9,7 +9,7 @@ using System.Text.Json;
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
-[Route("")]
+
 public class SolversController : PrismaBaseController
 {
     private readonly IFastApiService _fastApiService;
