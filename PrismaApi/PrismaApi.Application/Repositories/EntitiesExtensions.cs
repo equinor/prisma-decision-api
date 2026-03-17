@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
-using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
+using PrismaApi.Infrastructure.Interfaces;
 
 namespace PrismaApi.Application.Repositories;
 

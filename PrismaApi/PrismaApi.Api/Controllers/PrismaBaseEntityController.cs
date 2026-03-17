@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore.Storage;
-using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
 
 namespace PrismaApi.Api.Controllers;
 

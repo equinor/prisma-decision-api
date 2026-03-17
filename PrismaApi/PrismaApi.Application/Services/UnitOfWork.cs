@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using PrismaApi.Application.Interfaces;
-using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
 
 namespace PrismaApi.Application.Services;
 

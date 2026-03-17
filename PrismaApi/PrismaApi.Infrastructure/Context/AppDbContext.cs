@@ -5,7 +5,7 @@ using PrismaApi.Domain.Entities;
 using PrismaApi.Domain.Interfaces;
 using PrismaApi.Infrastructure.DiscreteTables;
 
-namespace PrismaApi.Infrastructure;
+namespace PrismaApi.Infrastructure.Context;
 
 public class AppDbContext : DbContext
 {
@@ -411,8 +411,6 @@ public class AppDbContext : DbContext
             entity.ToTable("user");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
-            entity.Property(e => e.AzureId).HasMaxLength(DomainConstants.MaxShortStringLength);
-            entity.HasIndex(e => e.AzureId).IsUnique();
         });
 
         modelBuilder.Entity<ValueMetric>().HasData(new ValueMetric
@@ -613,7 +611,7 @@ public class AppDbContext : DbContext
                 .Select(o => o.Id)
                 .ToListAsync(cancellationToken);
 
-        var discreteProbabilityIds = (uncertaintyIds.Count == 0 && outcomeIds.Count == 0)
+        var discreteProbabilityIds = uncertaintyIds.Count == 0 && outcomeIds.Count == 0
             ? new List<Guid>()
             : await DiscreteProbabilities
                 .Where(dp => uncertaintyIds.Contains(dp.UncertaintyId) || outcomeIds.Contains(dp.OutcomeId))

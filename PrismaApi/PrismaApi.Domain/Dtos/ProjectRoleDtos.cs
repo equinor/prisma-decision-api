@@ -3,20 +3,12 @@ using System.Text.Json.Serialization;
 
 namespace PrismaApi.Domain.Dtos;
 
-public class UserInfoDto
-{
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
-    [JsonPropertyName("azure_id")]
-    public string AzureId { get; set; } = string.Empty;
-}
-
 public class ProjectRoleDto
 {
     [JsonPropertyName("id")]
     public Guid Id { get; set; } = Guid.NewGuid();
     [JsonPropertyName("user_id")]
-    public int UserId { get; set; }
+    public required string UserId { get; set; }
     [JsonPropertyName("project_id")]
     public Guid ProjectId { get; set; }
 }
@@ -27,8 +19,6 @@ public class ProjectRoleIncomingDto : ProjectRoleDto
     public string Role { get; set; } = string.Empty;
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
-    [JsonPropertyName("azure_id")]
-    public string AzureId { get; set; } = string.Empty;
 }
 
 public class ProjectRoleCreateDto : ProjectRoleDto
@@ -37,8 +27,6 @@ public class ProjectRoleCreateDto : ProjectRoleDto
     public string Role { get; set; } = string.Empty;
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
-    [JsonPropertyName("azure_id")]
-    public string AzureId { get; set; } = string.Empty;
 }
 
 public class ProjectRoleOutgoingDto : ProjectRoleDto
@@ -47,6 +35,4 @@ public class ProjectRoleOutgoingDto : ProjectRoleDto
     public string Role { get; set; } = string.Empty;
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
-    [JsonPropertyName("azure_id")]
-    public string AzureId { get; set; } = string.Empty;
 }

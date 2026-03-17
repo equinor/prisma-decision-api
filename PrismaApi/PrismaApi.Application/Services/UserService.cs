@@ -24,7 +24,7 @@ public class UserService: IUserService
         _memoryCache = memoryCache;
     }
 
-    public async Task<List<UserOutgoingDto>> GetAsync(List<int> ids)
+    public async Task<List<UserOutgoingDto>> GetAsync(List<string> ids)
     {
         var users = await _userRepository.GetByIdsAsync(ids, withTracking: false);
         return users.ToOutgoingDtos();
@@ -36,16 +36,9 @@ public class UserService: IUserService
         return users.ToOutgoingDtos();
     }
 
-    public async Task<UserOutgoingDto?> GetByAzureIdAsync(string azureId)
+    public async Task<UserOutgoingDto> GetOrCreateUserByIdAsync(UserIncomingDto dto)
     {
-        var user = await _userRepository.GetByAzureIdAsync(azureId);
-        return user != null ? user.ToOutgoingDto() : null;
-    }
-
-    public async Task<UserOutgoingDto> GetOrCreateUserByAzureIdAsync(UserIncomingDto dto)
-    {
-        var user = await GetByAzureIdAsync(dto.AzureId);
-        user ??= (await _userRepository.AddAsync(dto.ToEntity())).ToOutgoingDto();
+        var user = (await _userRepository.GetOrAddByIdAsync(dto)).ToOutgoingDto();
         return user;
     }
 
@@ -59,10 +52,10 @@ public class UserService: IUserService
         if (graphUser == null || graphUser.Id == null) throw new Exception("User not found");
         var userDto = new UserIncomingDto
         {
-            AzureId = graphUser.Id,
+            Id = graphUser.Id.ToString(),
             Name = graphUser.DisplayName ?? "",
         };
-        var user = (await _userRepository.GetOrAddByAzureIdAsync(userDto)).ToOutgoingDto();
+        var user = (await _userRepository.GetOrAddByIdAsync(userDto)).ToOutgoingDto();
         
         if (cacheKey != null)
             _memoryCache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(30), user);

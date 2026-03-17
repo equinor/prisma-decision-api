@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Api.Controllers;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
-using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
 
 [ApiController]
 [Route("")]

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Api.Configuration.Extensions;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
-using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
 using System.Net;
 
 namespace PrismaApi.Api.Controllers;
