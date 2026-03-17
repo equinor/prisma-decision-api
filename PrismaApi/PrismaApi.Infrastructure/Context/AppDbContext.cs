@@ -16,34 +16,34 @@ public class AppDbContext : DbContext
     public DiscreteTableSessionInfo DiscreteTableSessionInfo { get; } = new();
     public bool IsDiscreteTableEventDisabled { get; set; }
 
-    public DbSet<Project> Projects => Set<Project>();
-    public DbSet<Issue> Issues => Set<Issue>();
-    public DbSet<Node> Nodes => Set<Node>();
-    public DbSet<NodeStyle> NodeStyles => Set<NodeStyle>();
-    public DbSet<Edge> Edges => Set<Edge>();
-    public DbSet<Decision> Decisions => Set<Decision>();
-    public DbSet<Option> Options => Set<Option>();
-    public DbSet<Outcome> Outcomes => Set<Outcome>();
-    public DbSet<Uncertainty> Uncertainties => Set<Uncertainty>();
-    public DbSet<Utility> Utilities => Set<Utility>();
-    public DbSet<ValueMetric> ValueMetrics => Set<ValueMetric>();
-    public DbSet<DiscreteProbability> DiscreteProbabilities => Set<DiscreteProbability>();
-    public DbSet<DiscreteProbabilityParentOutcome> DiscreteProbabilityParentOutcomes => Set<DiscreteProbabilityParentOutcome>();
-    public DbSet<DiscreteProbabilityParentOption> DiscreteProbabilityParentOptions => Set<DiscreteProbabilityParentOption>();
-    public DbSet<DiscreteUtility> DiscreteUtilities => Set<DiscreteUtility>();
-    public DbSet<DiscreteUtilityParentOutcome> DiscreteUtilityParentOutcomes => Set<DiscreteUtilityParentOutcome>();
-    public DbSet<DiscreteUtilityParentOption> DiscreteUtilityParentOptions => Set<DiscreteUtilityParentOption>();
-    public DbSet<Strategy> Strategies => Set<Strategy>();
-    public DbSet<StrategyOption> StrategyOptions => Set<StrategyOption>();
-    public DbSet<Objective> Objectives => Set<Objective>();
-    public DbSet<ProjectRole> ProjectRoles => Set<ProjectRole>();
-    public DbSet<User> Users => Set<User>();
+    public DbSet<PrismaApi.Domain.Entities.Project> Projects => Set<PrismaApi.Domain.Entities.Project>();
+    public DbSet<PrismaApi.Domain.Entities.Issue> Issues => Set<PrismaApi.Domain.Entities.Issue>();
+    public DbSet<PrismaApi.Domain.Entities.Node> Nodes => Set<PrismaApi.Domain.Entities.Node>();
+    public DbSet<PrismaApi.Domain.Entities.NodeStyle> NodeStyles => Set<PrismaApi.Domain.Entities.NodeStyle>();
+    public DbSet<PrismaApi.Domain.Entities.Edge> Edges => Set<PrismaApi.Domain.Entities.Edge>();
+    public DbSet<PrismaApi.Domain.Entities.Decision> Decisions => Set<PrismaApi.Domain.Entities.Decision>();
+    public DbSet<PrismaApi.Domain.Entities.Option> Options => Set<PrismaApi.Domain.Entities.Option>();
+    public DbSet<PrismaApi.Domain.Entities.Outcome> Outcomes => Set<PrismaApi.Domain.Entities.Outcome>();
+    public DbSet<PrismaApi.Domain.Entities.Uncertainty> Uncertainties => Set<PrismaApi.Domain.Entities.Uncertainty>();
+    public DbSet<PrismaApi.Domain.Entities.Utility> Utilities => Set<PrismaApi.Domain.Entities.Utility>();
+    public DbSet<PrismaApi.Domain.Entities.ValueMetric> ValueMetrics => Set<PrismaApi.Domain.Entities.ValueMetric>();
+    public DbSet<PrismaApi.Domain.Entities.DiscreteProbability> DiscreteProbabilities => Set<PrismaApi.Domain.Entities.DiscreteProbability>();
+    public DbSet<PrismaApi.Domain.Entities.DiscreteProbabilityParentOutcome> DiscreteProbabilityParentOutcomes => Set<PrismaApi.Domain.Entities.DiscreteProbabilityParentOutcome>();
+    public DbSet<PrismaApi.Domain.Entities.DiscreteProbabilityParentOption> DiscreteProbabilityParentOptions => Set<PrismaApi.Domain.Entities.DiscreteProbabilityParentOption>();
+    public DbSet<PrismaApi.Domain.Entities.DiscreteUtility> DiscreteUtilities => Set<PrismaApi.Domain.Entities.DiscreteUtility>();
+    public DbSet<PrismaApi.Domain.Entities.DiscreteUtilityParentOutcome> DiscreteUtilityParentOutcomes => Set<PrismaApi.Domain.Entities.DiscreteUtilityParentOutcome>();
+    public DbSet<PrismaApi.Domain.Entities.DiscreteUtilityParentOption> DiscreteUtilityParentOptions => Set<PrismaApi.Domain.Entities.DiscreteUtilityParentOption>();
+    public DbSet<PrismaApi.Domain.Entities.Strategy> Strategies => Set<PrismaApi.Domain.Entities.Strategy>();
+    public DbSet<PrismaApi.Domain.Entities.StrategyOption> StrategyOptions => Set<PrismaApi.Domain.Entities.StrategyOption>();
+    public DbSet<PrismaApi.Domain.Entities.Objective> Objectives => Set<PrismaApi.Domain.Entities.Objective>();
+    public DbSet<PrismaApi.Domain.Entities.ProjectRole> ProjectRoles => Set<PrismaApi.Domain.Entities.ProjectRole>();
+    public DbSet<PrismaApi.Domain.Entities.User> Users => Set<PrismaApi.Domain.Entities.User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Project>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.Project>(entity =>
         {
             entity.ToTable("project");
             entity.HasKey(e => e.Id);
@@ -92,7 +92,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Issue>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.Issue>(entity =>
         {
             entity.ToTable("issue");
             entity.HasKey(e => e.Id);
@@ -132,7 +132,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Node>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.Node>(entity =>
         {
             entity.ToTable("node");
             entity.HasKey(e => e.Id);
@@ -154,19 +154,19 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<NodeStyle>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.NodeStyle>(entity =>
         {
             entity.ToTable("node_style");
             entity.HasKey(e => e.Id);
         });
 
-        modelBuilder.Entity<Edge>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.Edge>(entity =>
         {
             entity.ToTable("edge");
             entity.HasKey(e => e.Id);
         });
 
-        modelBuilder.Entity<Decision>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.Decision>(entity =>
         {
             entity.ToTable("decision");
             entity.HasKey(e => e.Id);
@@ -178,21 +178,21 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Option>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.Option>(entity =>
         {
             entity.ToTable("option");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
         });
 
-        modelBuilder.Entity<Outcome>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.Outcome>(entity =>
         {
             entity.ToTable("outcome");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
         });
 
-        modelBuilder.Entity<Uncertainty>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.Uncertainty>(entity =>
         {
             entity.ToTable("uncertainty");
             entity.HasKey(e => e.Id);
@@ -203,13 +203,13 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Utility>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.Utility>(entity =>
         {
             entity.ToTable("utility");
             entity.HasKey(e => e.Id);
         });
 
-        modelBuilder.Entity<DiscreteProbability>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.DiscreteProbability>(entity =>
         {
             entity.ToTable("discrete_probability");
             entity.HasKey(e => e.Id);
@@ -238,7 +238,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<DiscreteProbabilityParentOutcome>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.DiscreteProbabilityParentOutcome>(entity =>
         {
             entity.ToTable("discrete_probability_parent_outcome");
             entity.HasKey(e => new { e.DiscreteProbabilityId, e.ParentOutcomeId });
@@ -254,7 +254,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<DiscreteProbabilityParentOption>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.DiscreteProbabilityParentOption>(entity =>
         {
             entity.ToTable("discrete_probability_parent_option");
             entity.HasKey(e => new { e.DiscreteProbabilityId, e.ParentOptionId });
@@ -270,7 +270,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<DiscreteUtility>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.DiscreteUtility>(entity =>
         {
             entity.ToTable("discrete_utility");
             entity.HasKey(e => e.Id);
@@ -299,7 +299,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<DiscreteUtilityParentOutcome>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.DiscreteUtilityParentOutcome>(entity =>
         {
             entity.ToTable("discrete_utility_parent_outcome");
             entity.HasKey(e => new { e.DiscreteUtilityId, e.ParentOutcomeId });
@@ -315,7 +315,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<DiscreteUtilityParentOption>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.DiscreteUtilityParentOption>(entity =>
         {
             entity.ToTable("discrete_utility_parent_option");
             entity.HasKey(e => new { e.DiscreteUtilityId, e.ParentOptionId });
@@ -331,14 +331,14 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<ValueMetric>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.ValueMetric>(entity =>
         {
             entity.ToTable("value_metric");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
         });
 
-        modelBuilder.Entity<Strategy>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.Strategy>(entity =>
         {
             entity.ToTable("strategy");
             entity.HasKey(e => e.Id);
@@ -361,7 +361,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<StrategyOption>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.StrategyOption>(entity =>
         {
             entity.ToTable("strategy_option");
             entity.HasKey(e => new { e.StrategyId, e.OptionId });
@@ -372,7 +372,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Objective>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.Objective>(entity =>
         {
             entity.ToTable("objective");
             entity.HasKey(e => e.Id);
@@ -390,7 +390,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(DomainConstants.MaxLongStringLength);
         });
 
-        modelBuilder.Entity<ProjectRole>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.ProjectRole>(entity =>
         {
             entity.ToTable("project_role");
             entity.HasKey(e => e.Id);
@@ -406,7 +406,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Role).HasMaxLength(DomainConstants.MaxShortStringLength);
         });
 
-        modelBuilder.Entity<User>(entity =>
+        modelBuilder.Entity<PrismaApi.Domain.Entities.User>(entity =>
         {
             entity.ToTable("user");
             entity.HasKey(e => e.Id);
@@ -415,7 +415,7 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.AzureId).IsUnique();
         });
 
-        modelBuilder.Entity<ValueMetric>().HasData(new ValueMetric
+        modelBuilder.Entity<PrismaApi.Domain.Entities.ValueMetric>().HasData(new ValueMetric
         {
             Id = DomainConstants.DefaultValueMetricId,
             Name = DomainConstants.DefaultValueMetricName,
@@ -478,7 +478,7 @@ public class AppDbContext : DbContext
 
     private async Task OnOutcomeDeletedCleanupAsync(CancellationToken cancellationToken = default)
     {
-        var deletedOutcomeIds = ChangeTracker.Entries<Outcome>()
+        var deletedOutcomeIds = ChangeTracker.Entries<PrismaApi.Domain.Entities.Outcome>()
         .Where(e => e.State == EntityState.Deleted)
         .Select(e => e.Entity.Id)
         .ToHashSet();
@@ -498,7 +498,7 @@ public class AppDbContext : DbContext
                 .Select(po => po.DiscreteProbability)
                 .Where(dp => dp != null)
                 .Distinct()
-                .Cast<DiscreteProbability>()
+                .Cast<PrismaApi.Domain.Entities.DiscreteProbability>()
                 .ToList();
 
             DiscreteProbabilities.RemoveRange(affectedProbs);
@@ -516,7 +516,7 @@ public class AppDbContext : DbContext
                 .Select(uo => uo.DiscreteUtility)
                 .Where(du => du != null)
                 .Distinct()
-                .Cast<DiscreteUtility>()
+                .Cast<PrismaApi.Domain.Entities.DiscreteUtility>()
                 .ToList();
 
             DiscreteUtilities.RemoveRange(affectedUtils);
@@ -545,7 +545,7 @@ public class AppDbContext : DbContext
                 .Select(po => po.DiscreteProbability)
                 .Where(dp => dp != null)
                 .Distinct()
-                .Cast<DiscreteProbability>()
+                .Cast<PrismaApi.Domain.Entities.DiscreteProbability>()
                 .ToList();
 
             DiscreteProbabilities.RemoveRange(affectedProbs);
@@ -563,7 +563,7 @@ public class AppDbContext : DbContext
                 .Select(uo => uo.DiscreteUtility)
                 .Where(du => du != null)
                 .Distinct()
-                .Cast<DiscreteUtility>()
+                .Cast<PrismaApi.Domain.Entities.DiscreteUtility>()
                 .ToList();
 
             DiscreteUtilities.RemoveRange(affectedUtils);
