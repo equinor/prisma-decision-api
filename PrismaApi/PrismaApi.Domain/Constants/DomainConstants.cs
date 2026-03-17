@@ -4,8 +4,8 @@ namespace PrismaApi.Domain.Constants;
 
 public static class DomainConstants
 {
-    public const int MaxShortStringLength = 60;
-    public const int MaxLongStringLength = 600;
+    public const int MaxShortStringLength = 1000;
+    public const int MaxLongStringLength = 6000;
     public const int FloatPrecision = 53;
     public const int DecimalPlaces = 14;
 
