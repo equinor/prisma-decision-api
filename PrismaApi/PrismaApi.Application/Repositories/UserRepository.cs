@@ -3,7 +3,7 @@ using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
-using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
 using System.Linq;
 using System.Linq.Expressions;
 

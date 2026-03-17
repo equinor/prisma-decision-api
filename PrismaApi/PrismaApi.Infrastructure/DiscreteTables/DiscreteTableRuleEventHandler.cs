@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using PrismaApi.Domain.Constants;
+using PrismaApi.Infrastructure.Context;
+using PrismaApi.Infrastructure.Interfaces;
 using System.Linq;
 using System.Threading;
 

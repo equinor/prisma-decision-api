@@ -5,7 +5,7 @@ using PrismaApi.Domain.Entities;
 using PrismaApi.Domain.Interfaces;
 using PrismaApi.Infrastructure.DiscreteTables;
 
-namespace PrismaApi.Infrastructure;
+namespace PrismaApi.Infrastructure.Context;
 
 public class AppDbContext : DbContext
 {

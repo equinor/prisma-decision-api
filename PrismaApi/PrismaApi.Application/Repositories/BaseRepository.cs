@@ -4,7 +4,7 @@ using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Domain.Interfaces;
-using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
 using PrismaApi.Infrastructure.Extensions;
 using System.Linq.Expressions;
 
