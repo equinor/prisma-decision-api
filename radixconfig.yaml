@@ -13,7 +13,6 @@ spec:
         from: main|dev-deploy*
   components:
     - name: api
-      src: .
       dockerfile: api.Dockerfile
       ports:
         - name: http
@@ -61,7 +60,6 @@ spec:
               clientId: 9ddb8304-fd8c-4a35-8324-e0317a7fda45
 
     - name: fastapi
-      src: .
       dockerfile: fastApi.Dockerfile
       ports:
         - name: http
