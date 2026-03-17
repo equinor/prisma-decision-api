@@ -60,7 +60,7 @@ spec:
             azure:
               clientId: 9ddb8304-fd8c-4a35-8324-e0317a7fda45
 
-    - name: fast-api
+    - name: fastapi
       src: .
       dockerfile: fastApi.Dockerfile
       ports:
@@ -121,5 +121,3 @@ spec:
           identity:
             azure:
               clientId: 9ddb8304-fd8c-4a35-8324-e0317a7fda45
-
-
