@@ -12,9 +12,9 @@ spec:
       build:
         from: main|dev-deploy*
   components:
-    - name: dotnetapi
+    - name: api
       src: .
-      dockerfileName: dotnetapi.Dockerfile
+      dockerfileName: api.Dockerfile
       ports:
         - name: http
           port: 7075
@@ -62,7 +62,7 @@ spec:
 
     - name: fastapi
       src: .
-      dockerfileName: fastapi.Dockerfile
+      dockerfileName: fastApi.Dockerfile
       ports:
         - name: http
           port: 8000
