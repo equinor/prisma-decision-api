@@ -13,8 +13,8 @@ spec:
         from: main|dev-deploy*
   components:
     - name: dotnetapi
-      src: PrismaApi
-      dockerfileName: PrismaApi/Dockerfile
+      src: .
+      dockerfileName: dotnetapi.Dockerfile
       ports:
         - name: http
           port: 7075
@@ -62,7 +62,7 @@ spec:
 
     - name: fastapi
       src: .
-      dockerfileName: Dockerfile
+      dockerfileName: fastapi.Dockerfile
       ports:
         - name: http
           port: 8000
