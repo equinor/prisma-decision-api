@@ -12,7 +12,7 @@ spec:
       build:
         from: main|dev-deploy*
   components:
-    - name: api
+    - name: dotnetapi
       dockerfile: PrismaApi/Dockerfile
       ports:
         - name: http
