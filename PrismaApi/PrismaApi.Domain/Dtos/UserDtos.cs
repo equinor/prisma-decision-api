@@ -24,6 +24,4 @@ public class UserOutgoingDto : UserDto
 {
     [JsonPropertyName("id")]
     public int Id { get; set; }
-    [JsonPropertyName("project_roles")]
-    public List<ProjectRoleOutgoingDto> ProjectRoles { get; set; } = new();
 }

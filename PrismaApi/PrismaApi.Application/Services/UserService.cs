@@ -7,11 +7,12 @@ using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure.Caching;
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
-public class UserService: IUserService
+public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly GraphServiceClient _graphServiceClient;
@@ -63,11 +64,36 @@ public class UserService: IUserService
             Name = graphUser.DisplayName ?? "",
         };
         var user = (await _userRepository.GetOrAddByAzureIdAsync(userDto)).ToOutgoingDto();
-        
+
         if (cacheKey != null)
             _memoryCache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(30), user);
 
         return user;
 
+    }
+    public async Task<List<UserOutgoingDto>> SearchUsersFromGraphAsync(string query)
+    {
+        string sanitizedQuery = SanitizeSearchQuery(query);
+        var users = await _graphServiceClient.Users
+            .GetAsync(config =>
+            {
+                config.QueryParameters.Search = $"\"displayName:{sanitizedQuery}\" OR \"mail:{sanitizedQuery}\"";
+                config.QueryParameters.Select = new[] { "id", "displayName", "mail", "userPrincipalName" };
+                config.QueryParameters.Top = 100;
+                config.Headers.Add("ConsistencyLevel", "eventual");
+            });
+
+        return users?.Value?.Select(u => new UserOutgoingDto
+        {
+            Id = 0,
+            Name = u.DisplayName ?? u.UserPrincipalName ?? "",
+        }).ToList() ?? new List<UserOutgoingDto>();
+    }
+    private static string SanitizeSearchQuery(string query)
+    {
+        var sanitized = query.Trim();
+        sanitized = Regex.Replace(sanitized, @"\s+", " ");
+        sanitized = Regex.Replace(sanitized, @"[""'\\(){}[\];]", string.Empty);
+        return sanitized;
     }
 }

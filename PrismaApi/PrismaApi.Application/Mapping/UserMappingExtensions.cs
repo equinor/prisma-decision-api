@@ -13,8 +13,6 @@ public static class UserMappingExtensions
         {
             Id = entity.Id,
             Name = entity.Name,
-            AzureId = entity.AzureId,
-            ProjectRoles = entity.ProjectRoles.ToOutgoingDtos()
         };
     }
 
@@ -28,7 +26,6 @@ public static class UserMappingExtensions
         var user = new User
         {
             Name = dto.Name,
-            AzureId = dto.AzureId,
         };
 
         if (dto?.Id.HasValue == true)

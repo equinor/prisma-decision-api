@@ -48,6 +48,16 @@ public class UsersController : PrismaBaseEntityController
         return result != null ? Ok(result) : NotFound();
     }
 
+    [HttpGet("users/search")]
+    public async Task<ActionResult<List<UserOutgoingDto>>> SearchUsers([FromQuery] string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return BadRequest("Query parameter is required.");
+
+        var result = await _userService.SearchUsersFromGraphAsync(query);
+        return Ok(result);
+    }
+
     [HttpGet("auth")]
     public IActionResult AuthPlaceholder()
     {

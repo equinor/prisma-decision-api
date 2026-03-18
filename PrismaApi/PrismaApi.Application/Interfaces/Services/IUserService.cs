@@ -9,4 +9,6 @@ public interface IUserService
     Task<UserOutgoingDto?> GetByAzureIdAsync(string azureId);
     Task<UserOutgoingDto> GetOrCreateUserByAzureIdAsync(UserIncomingDto dto);
     Task<UserOutgoingDto> GetOrCreateUserFromGraphMeAsync(string? cacheKey);
+    Task<List<UserOutgoingDto>> SearchUsersFromGraphAsync(string query);
+
 }
