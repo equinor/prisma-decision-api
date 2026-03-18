@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PrismaApi.Api.SecurityPolicy;
 using PrismaApi.Api.Attributes;
 
 namespace PrismaApi.Api.Controllers;

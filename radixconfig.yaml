@@ -14,7 +14,7 @@ spec:
   components:
     - name: api
       src: .
-      dockerfile: api.Dockerfile
+      dockerfileName: api.Dockerfile
       ports:
         - name: http
           port: 7075
@@ -60,9 +60,9 @@ spec:
             azure:
               clientId: 9ddb8304-fd8c-4a35-8324-e0317a7fda45
 
-    - name: fast-api
+    - name: fastapi
       src: .
-      dockerfile: fastApi.Dockerfile
+      dockerfileName: fastApi.Dockerfile
       ports:
         - name: http
           port: 8000
@@ -121,5 +121,3 @@ spec:
           identity:
             azure:
               clientId: 9ddb8304-fd8c-4a35-8324-e0317a7fda45
-
-

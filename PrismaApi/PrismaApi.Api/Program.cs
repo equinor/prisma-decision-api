@@ -5,6 +5,7 @@ using Microsoft.Identity.Web;
 using PrismaApi.Api;
 using PrismaApi.Api.Configuration.Extensions;
 using PrismaApi.Api.Configuration.JsonResponseOptions;
+using PrismaApi.Api.SecurityPolicy;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Repositories;
@@ -17,18 +18,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-// Add CORS policy
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy.WithOrigins("http://localhost:5004", "http://localhost:3000")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
-    });
-});
 
 var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
 if (!string.IsNullOrEmpty(clientSecret))
@@ -113,12 +102,19 @@ builder.Services.AddSwagger(builder.Configuration);
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy(SecurityPolicy.UserRoleRequired, policy =>
+    options.AddPolicy(AppRolesPolicy.UserRoleRequired, policy =>
     {
-        SecurityPolicy.AddPrismaDecisionUserPolicy(policy);
+        AppRolesPolicy.AddPrismaDecisionUserPolicy(policy);
     });
 });
-
+string[] allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()!;
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        CorsPolicy.AllowOriginsPolicy,
+        policy => CorsPolicy.AddCorsPolicy(policy, allowedOrigins)
+    );
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -132,7 +128,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Use CORS - must be before UseAuthorization
-app.UseCors("AllowFrontend");
+app.UseCors(CorsPolicy.AllowOriginsPolicy);
 
 // Authentication/authorization hook - intentionally permissive for local testing.
 app.UseAuthorization();
