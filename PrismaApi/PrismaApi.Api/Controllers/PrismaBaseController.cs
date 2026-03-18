@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PrismaApi.Api.SecurityPolicy;
 
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = SecurityPolicy.UserRoleRequired)]
-public class PrismaBaseController: ControllerBase
+[Authorize(Policy = AppRolesPolicy.UserRoleRequired)]
+public class PrismaBaseController : ControllerBase
 {
     protected string? GetUserCacheKeyFromClaims()
     {

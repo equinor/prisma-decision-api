@@ -3,9 +3,9 @@ using Microsoft.Identity.Web;
 using PrismaApi.Domain.Constants;
 using System.Security.Claims;
 
-namespace PrismaApi.Api;
+namespace PrismaApi.Api.SecurityPolicy;
 
-public class SecurityPolicy
+public class AppRolesPolicy
 {
     public const string UserRoleRequired = "UserRoleRequired";
     public static readonly string ReadScope = "Read";
