@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Graph;
 using PrismaApi.Application.Interfaces.Repositories;
@@ -61,6 +62,18 @@ public class UserService: IUserService
             _memoryCache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(30), user);
 
         return user;
+    }
 
+    public async Task<UserOutgoingDto> GetOrCreateUserFromContextAsync(HttpContext context)
+    {
+        var oid = context.User.Claims
+            .FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+
+        if (string.IsNullOrEmpty(oid))
+        {
+            throw new InvalidOperationException("No Id found in Claims");
+        }
+        var user = await GetOrCreateUserFromGraphMeAsync(oid);
+        return user;
     }
 }

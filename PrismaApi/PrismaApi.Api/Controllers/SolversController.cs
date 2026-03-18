@@ -3,8 +3,7 @@ using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
 using Scampi.Domain.Extensions;
 using System.Net;
-using System.Text;
-using System.Text.Json;
+using PrismaApi.Api.Extensions;
 
 namespace PrismaApi.Api.Controllers;
 
@@ -23,7 +22,7 @@ public class SolversController : PrismaBaseController
     [HttpGet("solvers/project/{projectId:guid}/decision_tree/v2")]
     public async Task<ActionResult<ApiResponseDto>> GetSolutionAsDecisionTreeAsync([FromRoute] Guid projectId)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}/decision_tree/v2", user);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
@@ -36,7 +35,7 @@ public class SolversController : PrismaBaseController
     [HttpGet("solvers/project/{projectId:guid}")]
     public async Task<ActionResult<ApiResponseDto>> GetSolutionAsync([FromRoute] Guid projectId)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}", user);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {

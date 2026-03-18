@@ -45,7 +45,6 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Project>(entity =>
         {
-            entity.ToTable("project");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.Property(e => e.ParentProjectName).HasMaxLength(DomainConstants.MaxShortStringLength);
@@ -54,12 +53,12 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.CreatedBy)
                 .WithMany()
                 .HasForeignKey(e => e.CreatedById)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasOne(e => e.UpdatedBy)
                 .WithMany()
                 .HasForeignKey(e => e.UpdatedById)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasMany(e => e.ProjectRoles)
                 .WithOne(e => e.Project)
@@ -84,17 +83,16 @@ public class AppDbContext : DbContext
             entity.HasMany(e => e.Nodes)
                 .WithOne(e => e.Project)
                 .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict); // will be cascade deleted through Issues
 
             entity.HasMany(e => e.Edges)
                 .WithOne(e => e.Project)
                 .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict); // will be cascade deleted through Issues -> Nodes
         });
 
         modelBuilder.Entity<Issue>(entity =>
         {
-            entity.ToTable("issue");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.Property(e => e.Description).HasMaxLength(DomainConstants.MaxLongStringLength);
@@ -109,7 +107,7 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.UpdatedBy)
                 .WithMany()
                 .HasForeignKey(e => e.UpdatedById)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasOne(e => e.Node)
                 .WithOne(e => e.Issue)
@@ -134,7 +132,6 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Node>(entity =>
         {
-            entity.ToTable("node");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
 
@@ -146,29 +143,26 @@ public class AppDbContext : DbContext
             entity.HasMany(e => e.HeadEdges)
                 .WithOne(e => e.HeadNode)
                 .HasForeignKey(e => e.HeadId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.ClientCascade);
 
             entity.HasMany(e => e.TailEdges)
                 .WithOne(e => e.TailNode)
                 .HasForeignKey(e => e.TailId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.ClientCascade);
         });
 
         modelBuilder.Entity<NodeStyle>(entity =>
         {
-            entity.ToTable("node_style");
             entity.HasKey(e => e.Id);
         });
 
         modelBuilder.Entity<Edge>(entity =>
         {
-            entity.ToTable("edge");
             entity.HasKey(e => e.Id);
         });
 
         modelBuilder.Entity<Decision>(entity =>
         {
-            entity.ToTable("decision");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
 
@@ -180,21 +174,18 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Option>(entity =>
         {
-            entity.ToTable("option");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
         });
 
         modelBuilder.Entity<Outcome>(entity =>
         {
-            entity.ToTable("outcome");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
         });
 
         modelBuilder.Entity<Uncertainty>(entity =>
         {
-            entity.ToTable("uncertainty");
             entity.HasKey(e => e.Id);
 
             entity.HasMany(e => e.Outcomes)
@@ -205,19 +196,17 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Utility>(entity =>
         {
-            entity.ToTable("utility");
             entity.HasKey(e => e.Id);
         });
 
         modelBuilder.Entity<DiscreteProbability>(entity =>
         {
-            entity.ToTable("discrete_probability");
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.OutcomeId);
             entity.HasIndex(e => e.UncertaintyId);
             entity.Property(e => e.Probability).HasPrecision(DomainConstants.FloatPrecision);
 
-            entity.HasOne(e => e.Outcome)
+            entity.HasOne(e => e.Outcome) 
                 .WithMany()
                 .HasForeignKey(e => e.OutcomeId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -225,7 +214,7 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.Uncertainty)
                 .WithMany(e => e.DiscreteProbabilities)
                 .HasForeignKey(e => e.UncertaintyId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasMany(e => e.ParentOutcomes)
                 .WithOne(e => e.DiscreteProbability)
@@ -240,7 +229,6 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<DiscreteProbabilityParentOutcome>(entity =>
         {
-            entity.ToTable("discrete_probability_parent_outcome");
             entity.HasKey(e => new { e.DiscreteProbabilityId, e.ParentOutcomeId });
 
             entity.HasOne(e => e.DiscreteProbability)
@@ -251,12 +239,11 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.ParentOutcome)
                 .WithMany()
                 .HasForeignKey(e => e.ParentOutcomeId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.ClientCascade);
         });
 
         modelBuilder.Entity<DiscreteProbabilityParentOption>(entity =>
         {
-            entity.ToTable("discrete_probability_parent_option");
             entity.HasKey(e => new { e.DiscreteProbabilityId, e.ParentOptionId });
 
             entity.HasOne(e => e.DiscreteProbability)
@@ -267,12 +254,11 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.ParentOption)
                 .WithMany()
                 .HasForeignKey(e => e.ParentOptionId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.ClientCascade);
         });
 
         modelBuilder.Entity<DiscreteUtility>(entity =>
         {
-            entity.ToTable("discrete_utility");
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.ValueMetricId);
             entity.HasIndex(e => e.UtilityId);
@@ -286,7 +272,7 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.Utility)
                 .WithMany(e => e.DiscreteUtilities)
                 .HasForeignKey(e => e.UtilityId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasMany(e => e.ParentOutcomes)
                 .WithOne(e => e.DiscreteUtility)
@@ -301,7 +287,6 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<DiscreteUtilityParentOutcome>(entity =>
         {
-            entity.ToTable("discrete_utility_parent_outcome");
             entity.HasKey(e => new { e.DiscreteUtilityId, e.ParentOutcomeId });
 
             entity.HasOne(e => e.DiscreteUtility)
@@ -317,7 +302,6 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<DiscreteUtilityParentOption>(entity =>
         {
-            entity.ToTable("discrete_utility_parent_option");
             entity.HasKey(e => new { e.DiscreteUtilityId, e.ParentOptionId });
 
             entity.HasOne(e => e.DiscreteUtility)
@@ -333,14 +317,12 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<ValueMetric>(entity =>
         {
-            entity.ToTable("value_metric");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
         });
 
         modelBuilder.Entity<Strategy>(entity =>
         {
-            entity.ToTable("strategy");
             entity.HasKey(e => e.Id);
             entity.HasOne(e => e.CreatedBy)
                 .WithMany()
@@ -358,23 +340,20 @@ public class AppDbContext : DbContext
             entity.HasMany(e => e.StrategyOptions)
                 .WithOne(e => e.Strategy)
                 .HasForeignKey(e => e.StrategyId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.ClientCascade);
         });
 
         modelBuilder.Entity<StrategyOption>(entity =>
         {
-            entity.ToTable("strategy_option");
             entity.HasKey(e => new { e.StrategyId, e.OptionId });
 
             entity.HasOne(e => e.Option)
                 .WithMany(e => e.StrategyOptions)
-                .HasForeignKey(e => e.OptionId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasForeignKey(e => e.OptionId);
         });
 
         modelBuilder.Entity<Objective>(entity =>
         {
-            entity.ToTable("objective");
             entity.HasKey(e => e.Id);
             entity.HasOne(e => e.CreatedBy)
                 .WithMany()
@@ -392,7 +371,6 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<ProjectRole>(entity =>
         {
-            entity.ToTable("project_role");
             entity.HasKey(e => e.Id);
             entity.HasOne(e => e.CreatedBy)
                 .WithMany()
@@ -408,7 +386,6 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.ToTable("user");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
         });
@@ -417,8 +394,8 @@ public class AppDbContext : DbContext
         {
             Id = DomainConstants.DefaultValueMetricId,
             Name = DomainConstants.DefaultValueMetricName,
-            CreatedAt = new DateTimeOffset(new DateTime(2026, 3, 16, 13, 51, 24, 68, DateTimeKind.Utc).AddTicks(5473), TimeSpan.Zero),
-            UpdatedAt = new DateTimeOffset(new DateTime(2026, 3, 16, 13, 51, 24, 68, DateTimeKind.Utc).AddTicks(5475), TimeSpan.Zero)
+            CreatedAt = new DateTimeOffset(new DateTime(2020, 1, 1, 1, 1, 1, 1, DateTimeKind.Utc).AddTicks(1), TimeSpan.Zero),
+            UpdatedAt = new DateTimeOffset(new DateTime(2020, 1, 1, 1, 1, 1, 1, DateTimeKind.Utc).AddTicks(2), TimeSpan.Zero)
         });
     }
 
@@ -570,152 +547,7 @@ public class AppDbContext : DbContext
             .ToHashSet();
     }
 
-    private async Task DeleteIssueAsync(
-        IReadOnlyCollection<Guid> issueIds,
-        IReadOnlyCollection<Guid> nodeIds,
-        bool deleteEdgesByNodeIds,
-        CancellationToken cancellationToken)
-    {
-        var decisionIds = issueIds.Count == 0
-            ? new List<Guid>()
-            : await Decisions
-                .Where(d => issueIds.Contains(d.IssueId))
-                .Select(d => d.Id)
-                .ToListAsync(cancellationToken);
-
-        var uncertaintyIds = issueIds.Count == 0
-            ? new List<Guid>()
-            : await Uncertainties
-                .Where(u => issueIds.Contains(u.IssueId))
-                .Select(u => u.Id)
-                .ToListAsync(cancellationToken);
-
-        var utilityIds = issueIds.Count == 0
-            ? new List<Guid>()
-            : await Utilities
-                .Where(u => issueIds.Contains(u.IssueId))
-                .Select(u => u.Id)
-                .ToListAsync(cancellationToken);
-
-        var optionIds = decisionIds.Count == 0
-            ? new List<Guid>()
-            : await Options
-                .Where(o => decisionIds.Contains(o.DecisionId))
-                .Select(o => o.Id)
-                .ToListAsync(cancellationToken);
-
-        var outcomeIds = uncertaintyIds.Count == 0
-            ? new List<Guid>()
-            : await Outcomes
-                .Where(o => uncertaintyIds.Contains(o.UncertaintyId))
-                .Select(o => o.Id)
-                .ToListAsync(cancellationToken);
-
-        var discreteProbabilityIds = uncertaintyIds.Count == 0 && outcomeIds.Count == 0
-            ? new List<Guid>()
-            : await DiscreteProbabilities
-                .Where(dp => uncertaintyIds.Contains(dp.UncertaintyId) || outcomeIds.Contains(dp.OutcomeId))
-                .Select(dp => dp.Id)
-                .ToListAsync(cancellationToken);
-
-        var discreteUtilityIds = utilityIds.Count == 0
-            ? new List<Guid>()
-            : await DiscreteUtilities
-                .Where(du => utilityIds.Contains(du.UtilityId))
-                .Select(du => du.Id)
-                .ToListAsync(cancellationToken);
-
-        if (deleteEdgesByNodeIds && nodeIds.Count > 0)
-        {
-            await Edges
-                .Where(e => nodeIds.Contains(e.HeadId) || nodeIds.Contains(e.TailId))
-                .ExecuteDeleteAsync(cancellationToken);
-        }
-
-        if (nodeIds.Count > 0)
-        {
-            await NodeStyles
-                .Where(ns => nodeIds.Contains(ns.NodeId))
-                .ExecuteDeleteAsync(cancellationToken);
-        }
-
-        if (discreteProbabilityIds.Count > 0)
-        {
-            await DiscreteProbabilityParentOptions
-                .Where(dppo => discreteProbabilityIds.Contains(dppo.DiscreteProbabilityId))
-                .ExecuteDeleteAsync(cancellationToken);
-
-            await DiscreteProbabilityParentOutcomes
-                .Where(dppo => discreteProbabilityIds.Contains(dppo.DiscreteProbabilityId))
-                .ExecuteDeleteAsync(cancellationToken);
-
-            await DiscreteProbabilities
-                .Where(dp => discreteProbabilityIds.Contains(dp.Id))
-                .ExecuteDeleteAsync(cancellationToken);
-        }
-
-        if (discreteUtilityIds.Count > 0)
-        {
-            await DiscreteUtilityParentOptions
-                .Where(dupo => discreteUtilityIds.Contains(dupo.DiscreteUtilityId))
-                .ExecuteDeleteAsync(cancellationToken);
-
-            await DiscreteUtilityParentOutcomes
-                .Where(dupo => discreteUtilityIds.Contains(dupo.DiscreteUtilityId))
-                .ExecuteDeleteAsync(cancellationToken);
-
-            await DiscreteUtilities
-                .Where(du => discreteUtilityIds.Contains(du.Id))
-                .ExecuteDeleteAsync(cancellationToken);
-        }
-
-        if (optionIds.Count > 0)
-        {
-            await StrategyOptions
-                .Where(so => optionIds.Contains(so.OptionId))
-                .ExecuteDeleteAsync(cancellationToken);
-
-            await Options
-                .Where(o => optionIds.Contains(o.Id))
-                .ExecuteDeleteAsync(cancellationToken);
-        }
-
-        if (outcomeIds.Count > 0)
-        {
-            await Outcomes
-                .Where(o => outcomeIds.Contains(o.Id))
-                .ExecuteDeleteAsync(cancellationToken);
-        }
-
-        if (decisionIds.Count > 0)
-        {
-            await Decisions
-                .Where(d => decisionIds.Contains(d.Id))
-                .ExecuteDeleteAsync(cancellationToken);
-        }
-
-        if (uncertaintyIds.Count > 0)
-        {
-            await Uncertainties
-                .Where(u => uncertaintyIds.Contains(u.Id))
-                .ExecuteDeleteAsync(cancellationToken);
-        }
-
-        if (utilityIds.Count > 0)
-        {
-            await Utilities
-                .Where(u => utilityIds.Contains(u.Id))
-                .ExecuteDeleteAsync(cancellationToken);
-        }
-
-        if (nodeIds.Count > 0)
-        {
-            await Nodes
-                .Where(n => nodeIds.Contains(n.Id))
-                .ExecuteDeleteAsync(cancellationToken);
-        }
-    }
-
+    
     public EntityEntry<IBaseEntity<Guid>> CreateEntryFromCollectionAsAdded(IBaseEntity<Guid> entity)
     {
         Entry(entity).State = EntityState.Added;

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure.Context;
+using PrismaApi.Api.Extensions;
 
 namespace PrismaApi.Api.Controllers;
 
@@ -24,7 +25,7 @@ public class UsersController : PrismaBaseEntityController
     [HttpGet("user/me")]
     public async Task<ActionResult<UserOutgoingDto>> GetMe()
     {
-        return Ok(await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims()));
+        return Ok(HttpContext.GetLoadedUser());
     }
 
     [HttpGet("users")]

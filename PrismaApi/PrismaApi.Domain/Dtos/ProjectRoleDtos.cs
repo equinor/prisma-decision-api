@@ -1,3 +1,4 @@
+using PrismaApi.Domain.Converters;
 using System;
 using System.Text.Json.Serialization;
 
@@ -8,6 +9,7 @@ public class ProjectRoleDto
     [JsonPropertyName("id")]
     public Guid Id { get; set; } = Guid.NewGuid();
     [JsonPropertyName("user_id")]
+    [JsonConverter(typeof(UserIdConverter))]
     public required string UserId { get; set; }
     [JsonPropertyName("project_id")]
     public Guid ProjectId { get; set; }
@@ -19,6 +21,8 @@ public class ProjectRoleIncomingDto : ProjectRoleDto
     public string Role { get; set; } = string.Empty;
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
+    [JsonPropertyName("azure_id")]
+    public Guid? AzureId { get; set; }
 }
 
 public class ProjectRoleCreateDto : ProjectRoleDto

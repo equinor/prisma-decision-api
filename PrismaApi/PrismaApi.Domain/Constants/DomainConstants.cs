@@ -14,6 +14,11 @@ public static class DomainConstants
     public static readonly string DefaultValueMetricName = "value";
 }
 
+public static class AppConstants
+{
+    public const string CurrentUserKey = "CurrentUser";
+}
+
 public static class AppRoles
 {
     public const string PrismaDecisionUser = "PrismaDecisionUser";

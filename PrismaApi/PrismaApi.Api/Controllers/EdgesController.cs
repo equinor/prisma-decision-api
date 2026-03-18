@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Application.Interfaces.Services;
+using PrismaApi.Api.Extensions;
 using PrismaApi.Infrastructure.Context;
 
 namespace PrismaApi.Api.Controllers;
@@ -49,7 +50,7 @@ public class EdgesController : PrismaBaseEntityController
     [HttpGet("edges/{id:guid}")]
     public async Task<ActionResult<EdgeOutgoingDto>> GetEdge(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _edgeService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
@@ -57,7 +58,7 @@ public class EdgesController : PrismaBaseEntityController
     [HttpGet("edges")]
     public async Task<ActionResult<List<EdgeOutgoingDto>>> GetAllEdges()
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _edgeService.GetAllAsync(user);
         return Ok(result);
     }
@@ -65,7 +66,7 @@ public class EdgesController : PrismaBaseEntityController
     [HttpPut("edges")]
     public async Task<ActionResult<List<EdgeOutgoingDto>>> UpdateEdges([FromBody] List<EdgeIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -85,7 +86,7 @@ public class EdgesController : PrismaBaseEntityController
     [HttpDelete("edges/{id:guid}")]
     public async Task<IActionResult> DeleteEdge(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -105,7 +106,7 @@ public class EdgesController : PrismaBaseEntityController
     [HttpDelete("edges")]
     public async Task<IActionResult> DeleteEdges([FromQuery] List<Guid> ids)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try

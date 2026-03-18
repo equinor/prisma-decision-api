@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using PrismaApi.Api.Extensions;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure.Context;
@@ -42,7 +43,7 @@ public class DiscreteUtilitiesController : PrismaBaseEntityController
     [HttpGet("discrete_utilities/{id:guid}")]
     public async Task<ActionResult<DiscreteUtilityDto>> GetDiscreteUtility(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _discreteUtilityService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
@@ -50,7 +51,7 @@ public class DiscreteUtilitiesController : PrismaBaseEntityController
     [HttpGet("discrete_utilities")]
     public async Task<ActionResult<List<DiscreteUtilityDto>>> GetAllDiscreteUtilities()
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _discreteUtilityService.GetAllAsync(user);
         return Ok(result);
     }
@@ -58,7 +59,7 @@ public class DiscreteUtilitiesController : PrismaBaseEntityController
     [HttpPut("discrete_utilities")]
     public async Task<ActionResult<List<DiscreteUtilityDto>>> UpdateDiscreteUtilities([FromBody] List<DiscreteUtilityDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -77,7 +78,7 @@ public class DiscreteUtilitiesController : PrismaBaseEntityController
     [HttpDelete("discrete_utilities/{id:guid}")]
     public async Task<IActionResult> DeleteDiscreteUtility(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -96,7 +97,7 @@ public class DiscreteUtilitiesController : PrismaBaseEntityController
     [HttpDelete("discrete_utilities")]
     public async Task<IActionResult> DeleteDiscreteUtilities([FromQuery] List<Guid> ids)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try

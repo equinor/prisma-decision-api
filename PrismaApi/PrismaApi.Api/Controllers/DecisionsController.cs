@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Infrastructure.Context;
+using PrismaApi.Api.Extensions;
 
 namespace PrismaApi.Api.Controllers;
 
@@ -31,28 +32,24 @@ public class DecisionsController : PrismaBaseEntityController
     [HttpGet("decisions/{id:guid}")]
     public async Task<ActionResult<DecisionOutgoingDto>> GetDecision(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
-        var result = await _decisionService.GetAsync(new List<Guid> { id }, user);
+        var result = await _decisionService.GetAsync(new List<Guid> { id }, HttpContext.GetLoadedUser());
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("decisions")]
     public async Task<ActionResult<List<DecisionOutgoingDto>>> GetAllDecisions()
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
-        var result = await _decisionService.GetAllAsync(user);
+        var result = await _decisionService.GetAllAsync(HttpContext.GetLoadedUser());
         return Ok(result);
     }
 
     [HttpPut("decisions")]
     public async Task<ActionResult<List<DecisionOutgoingDto>>> UpdateDecisions([FromBody] List<DecisionIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
-
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
-            var result = await _decisionService.UpdateAsync(dtos, user);
+            var result = await _decisionService.UpdateAsync(dtos, HttpContext.GetLoadedUser());
             await _tableRebuildingService.RebuildTablesAsync();
             await CommitTransactionAsync(HttpContext.RequestAborted);
             return Ok(result);
@@ -67,7 +64,7 @@ public class DecisionsController : PrismaBaseEntityController
     [HttpDelete("decisions/{id:guid}")]
     public async Task<IActionResult> DeleteDecision(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -86,7 +83,7 @@ public class DecisionsController : PrismaBaseEntityController
     [HttpDelete("decisions")]
     public async Task<IActionResult> DeleteDecisions([FromQuery] List<Guid> ids)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try

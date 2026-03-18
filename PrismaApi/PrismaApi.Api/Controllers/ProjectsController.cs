@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Application.Interfaces.Services;
+using PrismaApi.Api.Extensions;
 using PrismaApi.Infrastructure.Context;
 
 namespace PrismaApi.Api.Controllers;
@@ -27,7 +28,7 @@ public class ProjectsController : PrismaBaseEntityController
     [HttpPost("projects")]
     public async Task<ActionResult<List<ProjectOutgoingDto>>> CreateProjects([FromBody] List<ProjectCreateDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         bool isProjectDuplicated = false;
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -46,7 +47,7 @@ public class ProjectsController : PrismaBaseEntityController
     [HttpGet("projects/{id:guid}")]
     public async Task<ActionResult<ProjectOutgoingDto>> GetProject(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _projectService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
@@ -54,7 +55,7 @@ public class ProjectsController : PrismaBaseEntityController
     [HttpGet("projects")]
     public async Task<ActionResult<List<ProjectOutgoingDto>>> GetAllProjects()
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         var result = await _projectService.GetAllAsync(user);
         return Ok(result);
@@ -63,8 +64,7 @@ public class ProjectsController : PrismaBaseEntityController
     [HttpPut("projects")]
     public async Task<ActionResult<List<ProjectOutgoingDto>>> UpdateProjects([FromBody] List<ProjectIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
-
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
@@ -82,7 +82,7 @@ public class ProjectsController : PrismaBaseEntityController
     [HttpDelete("projects/{id:guid}")]
     public async Task<IActionResult> DeleteProject(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {

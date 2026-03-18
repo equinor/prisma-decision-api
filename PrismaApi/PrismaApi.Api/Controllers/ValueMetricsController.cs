@@ -6,6 +6,7 @@ using PrismaApi.Infrastructure.Context;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using PrismaApi.Api.Extensions;
 
 namespace PrismaApi.Api.Controllers;
 

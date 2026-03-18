@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Api.Extensions;
 using PrismaApi.Infrastructure.Context;
 
 namespace PrismaApi.Api.Controllers;
@@ -49,7 +50,7 @@ public class OptionsController : PrismaBaseEntityController
     [HttpGet("options/{id:guid}")]
     public async Task<ActionResult<OptionOutgoingDto>> GetOption(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _optionService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
@@ -57,7 +58,7 @@ public class OptionsController : PrismaBaseEntityController
     [HttpGet("options")]
     public async Task<ActionResult<List<OptionOutgoingDto>>> GetAllOptions()
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _optionService.GetAllAsync(user);
         return Ok(result);
     }
@@ -65,7 +66,7 @@ public class OptionsController : PrismaBaseEntityController
     [HttpPut("options")]
     public async Task<ActionResult<List<OptionOutgoingDto>>> UpdateOptions([FromBody] List<OptionIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -84,7 +85,7 @@ public class OptionsController : PrismaBaseEntityController
     [HttpDelete("options/{id:guid}")]
     public async Task<IActionResult> DeleteOption(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -103,7 +104,7 @@ public class OptionsController : PrismaBaseEntityController
     [HttpDelete("options")]
     public async Task<IActionResult> DeleteOptions([FromQuery] List<Guid> ids)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Application.Interfaces.Services;
+using PrismaApi.Api.Extensions;
 using PrismaApi.Infrastructure.Context;
 
 namespace PrismaApi.Api.Controllers;
@@ -30,7 +31,7 @@ public class ProjectRolesController : PrismaBaseEntityController
     [HttpGet("project-roles")]
     public async Task<ActionResult<List<ProjectRoleOutgoingDto>>> GetAllProjectRoles()
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _projectRoleService.GetAllAsync(user);
         return Ok(result);
     }
@@ -38,7 +39,7 @@ public class ProjectRolesController : PrismaBaseEntityController
     [HttpGet("project-roles/{id:guid}")]
     public async Task<ActionResult<List<ProjectRoleOutgoingDto>>> GetProjectRole(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _projectRoleService.GetAsync(new List<Guid> { id }, user);
         return Ok(result);
     }
@@ -46,7 +47,7 @@ public class ProjectRolesController : PrismaBaseEntityController
     [HttpPut("project-roles")]
     public async Task<ActionResult<List<ProjectRoleOutgoingDto>>> UpdateProjectRoles([FromBody] List<ProjectRoleIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -65,7 +66,7 @@ public class ProjectRolesController : PrismaBaseEntityController
     [HttpDelete("project-roles/{projectId:guid}/{id:guid}")]
     public async Task<IActionResult> DeleteProjectRole(Guid projectId, Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -84,7 +85,7 @@ public class ProjectRolesController : PrismaBaseEntityController
     [HttpDelete("project-roles/{projectId:guid}")]
     public async Task<IActionResult> DeleteProjectRoles(Guid projectId, [FromQuery] List<Guid> ids)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try

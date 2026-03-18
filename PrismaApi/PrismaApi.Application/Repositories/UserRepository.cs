@@ -134,6 +134,7 @@ public class UserRepository : IUserRepository
 
         User user = dto.ToEntity();
         await _dbContext.Users.AddAsync(user);
+        await _dbContext.SaveChangesAsync();
 
         return user;
     }

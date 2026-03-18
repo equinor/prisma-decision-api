@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using PrismaApi.Api.Extensions;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure.Context;
@@ -42,7 +43,7 @@ public class DiscreteProbabilitiesController : PrismaBaseEntityController
     [HttpGet("discrete_probabilities/{id:guid}")]
     public async Task<ActionResult<DiscreteProbabilityDto>> GetDiscreteProbability(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _discreteProbabilityService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
@@ -50,7 +51,7 @@ public class DiscreteProbabilitiesController : PrismaBaseEntityController
     [HttpGet("discrete_probabilities")]
     public async Task<ActionResult<List<DiscreteProbabilityDto>>> GetAllDiscreteProbabilities()
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _discreteProbabilityService.GetAllAsync(user);
         return Ok(result);
     }
@@ -58,7 +59,7 @@ public class DiscreteProbabilitiesController : PrismaBaseEntityController
     [HttpPut("discrete_probabilities")]
     public async Task<ActionResult<List<DiscreteProbabilityDto>>> UpdateDiscreteProbabilities([FromBody] List<DiscreteProbabilityDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -77,7 +78,7 @@ public class DiscreteProbabilitiesController : PrismaBaseEntityController
     [HttpDelete("discrete_probabilities/{id:guid}")]
     public async Task<IActionResult> DeleteDiscreteProbability(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -96,7 +97,7 @@ public class DiscreteProbabilitiesController : PrismaBaseEntityController
     [HttpDelete("discrete_probabilities")]
     public async Task<IActionResult> DeleteDiscreteProbabilities([FromQuery] List<Guid> ids)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
