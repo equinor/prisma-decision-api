@@ -33,4 +33,4 @@ ENV ASPNETCORE_URLS="http://+:7075"
 ENV DOTNET_RUNNING_IN_CONTAINER=true
 
 EXPOSE 7075
-ENTRYPOINT ["dotnet", "PrismaApi.PrismaApi.Api.dll"]
+ENTRYPOINT ["dotnet", "PrismaApi.Api.dll"]
