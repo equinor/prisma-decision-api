@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Api.Configuration.Extensions;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
-using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
+using PrismaApi.Api.Extensions;
 using System.Net;
 
 namespace PrismaApi.Api.Controllers;
@@ -37,12 +38,10 @@ public class ProjectImportController : PrismaBaseEntityController
             return BadRequest("No projects provided for import");
         }
 
+        
 
         // Get current user from claims
-        var user = await _userService.GetOrCreateUserFromGraphMeAsync(
-            GetUserCacheKeyFromClaims()
-        );
-
+        var user = HttpContext.GetLoadedUser();
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
         {
@@ -51,6 +50,7 @@ public class ProjectImportController : PrismaBaseEntityController
                 user,
                 cancellationToken
             );
+            await CommitTransactionAsync(cancellationToken);
             return Ok(createdProjects);
         }
         catch (Exception ex)

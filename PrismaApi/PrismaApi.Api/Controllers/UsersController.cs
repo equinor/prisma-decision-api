@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
-using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
+using PrismaApi.Api.Extensions;
 
 namespace PrismaApi.Api.Controllers;
 
@@ -24,7 +25,7 @@ public class UsersController : PrismaBaseEntityController
     [HttpGet("user/me")]
     public async Task<ActionResult<UserOutgoingDto>> GetMe()
     {
-        return Ok(await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims()));
+        return Ok(HttpContext.GetLoadedUser());
     }
 
     [HttpGet("users")]
@@ -35,17 +36,10 @@ public class UsersController : PrismaBaseEntityController
     }
 
     [HttpGet("users/{id:int}")]
-    public async Task<ActionResult<UserOutgoingDto>> GetUser(int id)
+    public async Task<ActionResult<UserOutgoingDto>> GetUser(string id)
     {
-        var result = await _userService.GetAsync(new List<int> { id });
+        var result = await _userService.GetAsync(new List<string> { id });
         return result.Count > 0 ? Ok(result[0]) : NotFound();
-    }
-
-    [HttpGet("users/azure-id/{azureId}")]
-    public async Task<ActionResult<UserOutgoingDto>> GetUserByAzureId(string azureId)
-    {
-        var result = await _userService.GetByAzureIdAsync(azureId);
-        return result != null ? Ok(result) : NotFound();
     }
 
     [HttpGet("auth")]

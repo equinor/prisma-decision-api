@@ -1,7 +1,7 @@
 using System.Linq;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Entities;
-using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
 
 namespace PrismaApi.Application.Repositories;
 

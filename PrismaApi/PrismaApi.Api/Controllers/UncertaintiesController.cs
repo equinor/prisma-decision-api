@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
-using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
+using PrismaApi.Api.Extensions;
 
 namespace PrismaApi.Api.Controllers;
 
@@ -31,7 +32,7 @@ public class UncertaintiesController : PrismaBaseEntityController
     [HttpGet("uncertainties/{id:guid}")]
     public async Task<ActionResult<UncertaintyOutgoingDto>> GetUncertainty(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _uncertaintyService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
@@ -39,7 +40,7 @@ public class UncertaintiesController : PrismaBaseEntityController
     [HttpGet("uncertainties")]
     public async Task<ActionResult<List<UncertaintyOutgoingDto>>> GetAllUncertainties()
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _uncertaintyService.GetAllAsync(user);
         return Ok(result);
     }
@@ -47,7 +48,7 @@ public class UncertaintiesController : PrismaBaseEntityController
     [HttpPut("uncertainties")]
     public async Task<ActionResult<List<UncertaintyOutgoingDto>>> UpdateUncertainties([FromBody] List<UncertaintyIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -67,7 +68,7 @@ public class UncertaintiesController : PrismaBaseEntityController
     [HttpDelete("uncertainties/{id:guid}")]
     public async Task<IActionResult> DeleteUncertainty(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -86,7 +87,7 @@ public class UncertaintiesController : PrismaBaseEntityController
     [HttpDelete("uncertainties")]
     public async Task<IActionResult> DeleteUncertainties([FromQuery] List<Guid> ids)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try

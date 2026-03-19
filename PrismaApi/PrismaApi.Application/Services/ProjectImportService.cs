@@ -1,3 +1,4 @@
+using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
 
@@ -7,10 +8,12 @@ namespace PrismaApi.Application.Services;
 public class ProjectImportService : IProjectImportService
 {
     private readonly IProjectDuplicationService _projectDuplicationService;
+    private readonly IUserRepository _userRepository;
 
-    public ProjectImportService(IProjectDuplicationService projectDuplicationService)
+    public ProjectImportService(IProjectDuplicationService projectDuplicationService, IUserRepository userRepository)
     {
         _projectDuplicationService = projectDuplicationService;
+        _userRepository = userRepository;
     }
 
     public async Task<List<ProjectOutgoingDto>> ImportFromJsonWithDuplicationLogicAsync(
@@ -28,6 +31,19 @@ public class ProjectImportService : IProjectImportService
         foreach (var dto in dtos)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            foreach (var userDto in dto.Projects.Users)
+            {
+                if (userDto != null && userDto.AzureId != null)
+                    userDto.UserId = userDto.AzureId.Value.ToString();
+
+                // make sure all users are in the database
+                if (userDto != null)
+                {
+                    var userForRole = new UserIncomingDto { Id = userDto.UserId, Name = userDto.Name };
+                    await _userRepository.GetOrAddByIdAsync(userForRole);
+                }
+            }
 
             var createdProject = await _projectDuplicationService.DuplicateImportedProjectAsync(dto, user, cancellationToken);
             if (createdProject is null)

@@ -2,7 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Api.Controllers;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
-using PrismaApi.Infrastructure;
+using PrismaApi.Api.Extensions;
+using PrismaApi.Infrastructure.Context;
 
 [ApiController]
 [Route("")]
@@ -23,7 +24,7 @@ public class ProjectDuplicationController : PrismaBaseEntityController
     [HttpPost("projects/{id:guid}/duplicate")]
     public async Task<ActionResult<ProjectOutgoingDto>> DuplicateProject(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try

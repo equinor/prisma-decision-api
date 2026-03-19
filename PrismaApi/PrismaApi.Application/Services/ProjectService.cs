@@ -132,17 +132,12 @@ public class ProjectService : IProjectService
 
         foreach (var dto in dtos)
         {
-            var user = await _userRepository.GetByAzureIdAsync(dto.AzureId);
-            if (user == null)
-            {
-                user = new User
-                {
-                    Name = dto.Name,
-                    AzureId = dto.AzureId
-                };
 
-                await _userRepository.AddAsync(user);
-            }
+            var user = await _userRepository.GetOrAddByIdAsync(new UserIncomingDto
+            {
+                Id = dto.UserId,
+                Name = dto.Name,
+            });
 
             result.Add(new ProjectRole
             {
@@ -168,17 +163,11 @@ public class ProjectService : IProjectService
 
         foreach (var dto in dtos)
         {
-            var user = await _userRepository.GetByAzureIdAsync(dto.AzureId);
-            if (user == null)
-            {
-                user = new User
+            var user = await _userRepository.GetOrAddByIdAsync(new UserIncomingDto
                 {
+                    Id = dto.UserId,
                     Name = dto.Name,
-                    AzureId = dto.AzureId
-                };
-
-                await _userRepository.AddAsync(user);
-            }
+                });
 
             result.Add(new ProjectRole
             {

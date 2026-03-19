@@ -1,11 +1,11 @@
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using System.Linq.Expressions;
+using System.Security.Cryptography;
 
 namespace PrismaApi.Application.Interfaces.Repositories;
 
-public interface IUserRepository : ICrudRepository<User, int>
+public interface IUserRepository : ICrudRepository<User, string>
 {
-    Task<User?> GetByAzureIdAsync(string azureId);
-    Task<User> GetOrAddByAzureIdAsync(UserIncomingDto dto);
+    Task<User> GetOrAddByIdAsync(UserIncomingDto dto);
 }

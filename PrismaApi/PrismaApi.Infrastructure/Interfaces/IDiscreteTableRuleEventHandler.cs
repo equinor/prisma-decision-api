@@ -1,4 +1,4 @@
-﻿namespace PrismaApi.Infrastructure;
+﻿namespace PrismaApi.Infrastructure.Interfaces;
 
 public interface IDiscreteTableRuleEventHandler
 {

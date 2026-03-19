@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
-using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
 
 namespace PrismaApi.Application.Repositories;
 
