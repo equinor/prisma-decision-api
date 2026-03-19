@@ -88,7 +88,7 @@ public class AppDbContext : DbContext
             entity.HasMany(e => e.Edges)
                 .WithOne(e => e.Project)
                 .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction); // will be cascade deleted through Issues -> Nodes
         });
 
         modelBuilder.Entity<Issue>(entity =>
@@ -340,7 +340,7 @@ public class AppDbContext : DbContext
             entity.HasMany(e => e.StrategyOptions)
                 .WithOne(e => e.Strategy)
                 .HasForeignKey(e => e.StrategyId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.ClientCascade);
         });
 
         modelBuilder.Entity<StrategyOption>(entity =>
