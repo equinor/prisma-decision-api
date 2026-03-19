@@ -128,6 +128,7 @@ public static class EntitiesExtensions
 
     public static async Task Update(this ICollection<Option> entities, ICollection<Option> incommingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null)
     {
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<Option, Guid>(incommingEntities, entities);
         RepositoryUtilities.AddMissingFromCollectionMutate<Option, Guid>(incommingEntities, entities, context);
         var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Option, Guid>(incommingEntities, entities);
         foreach (var entityToAdd in entitiesToAdd)

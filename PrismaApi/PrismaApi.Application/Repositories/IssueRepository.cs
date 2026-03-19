@@ -1,19 +1,35 @@
 using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces.Repositories;
+using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
 using PrismaApi.Infrastructure.Interfaces;
 using System.Linq.Expressions;
+using System.Security.Cryptography;
 
 namespace PrismaApi.Application.Repositories;
 
 public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
 {
     public readonly IDiscreteTableRuleEventHandler _ruleTrigger;
-    public IssueRepository(AppDbContext dbContext, IDiscreteTableRuleEventHandler ruleTrigger) : base(dbContext)
+    public readonly ITableRebuildingService _tableRebuildingService;
+    public IssueRepository(AppDbContext dbContext, IDiscreteTableRuleEventHandler ruleTrigger, ITableRebuildingService tableRebuildingService) : base(dbContext)
     {
         _ruleTrigger = ruleTrigger;
+        _tableRebuildingService = tableRebuildingService;
+    }
+
+    public override async Task DeleteByIdsAsync(IEnumerable<Guid> ids, Expression<Func<Issue, bool>>? filterPredicate = null)
+    {
+        var edgesToDelete = await DbContext.Edges
+            .Where(x => ids.Contains(x.HeadNode!.IssueId) || ids.Contains(x.TailNode!.IssueId))
+            .ToListAsync();
+        DbContext.Edges.RemoveRange(edgesToDelete);
+        await _ruleTrigger.OnEdgesRemovedAsync(edgesToDelete.Select(x => x.Id).ToList());
+        await _tableRebuildingService.RebuildTablesAsync();
+        await DbContext.SaveChangesAsync();
+        await base.DeleteByIdsAsync(ids, filterPredicate);
     }
 
     public async Task UpdateRangeAsync(IEnumerable<Issue> incommingEntities, Expression<Func<Issue, bool>> filterPredicate)
