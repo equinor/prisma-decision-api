@@ -9,93 +9,13 @@ using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Repositories;
 
-public class UserRepository : IUserRepository
+public class UserRepository : BaseRepository<User, string>, IUserRepository
 {
-    private readonly AppDbContext _dbContext;
-    public UserRepository(AppDbContext dbContext)
+    public UserRepository(AppDbContext dbContext) : base(dbContext)
     {
-        _dbContext = dbContext;
     }
 
-    public virtual Task<User?> GetByIdAsync(string id, bool withTracking = true, IQueryable<User>? customQuery = null, Expression<Func<User, bool>>? filterPredicate = null)
-    {
-        IQueryable<User> query = customQuery ?? Query();
-        query = query.OptionalWhere(filterPredicate);
-
-        if (!withTracking)
-        {
-            query = query.AsNoTracking();
-        }
-
-        return query
-            .FirstOrDefaultAsync(e => e.Id.Equals(id));
-    }
-
-    public virtual Task<List<User>> GetByIdsAsync(IEnumerable<string> ids, bool withTracking = true, IQueryable<User>? customQuery = null, Expression<Func<User, bool>>? filterPredicate = null)
-    {
-        var idList = ids.ToList();
-        if (idList.Count == 0)
-        {
-            return Task.FromResult(new List<User>());
-        }
-
-        IQueryable<User> query = customQuery ?? Query();
-        query = query.OptionalWhere(filterPredicate);
-
-        if (!withTracking)
-        {
-            query = query.AsNoTracking();
-        }
-
-        return query
-            .Where(e => idList.Contains(e.Id))
-            .ToListAsync();
-    }
-
-    public virtual Task<List<User>> GetAllAsync(bool withTracking = true, IQueryable<User>? customQuery = null, Expression<Func<User, bool>>? filterPredicate = null)
-    {
-        IQueryable<User> query = customQuery ?? Query();
-        query = query.OptionalWhere(filterPredicate);
-
-        if (!withTracking)
-        {
-            query = query.AsNoTracking();
-        }
-        return query.ToListAsync();
-    }
-
-    public virtual async Task<User> AddAsync(User entity)
-    {
-        _dbContext.Users.Add(entity);
-        await _dbContext.SaveChangesAsync();
-        return entity;
-    }
-
-    public virtual async Task<List<User>> AddRangeAsync(IEnumerable<User> entities)
-    {
-        var list = entities.ToList();
-        _dbContext.Users.AddRange(list);
-        await _dbContext.SaveChangesAsync();
-        return list;
-    }
-
-    public virtual async Task DeleteByIdsAsync(IEnumerable<string> ids, Expression<Func<User, bool>>? filterPredicate = null)
-    {
-        var entities = await _dbContext.Users
-            .OptionalWhere(filterPredicate)
-            .Where(e => ids.ToList().Contains(e.Id))
-            .ToListAsync();
-
-        if (entities.Count == 0)
-        {
-            return;
-        }
-
-        _dbContext.Users.RemoveRange(entities);
-        await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task UpdateRangeAsync(IEnumerable<User> incommingEntities)
+    public override async Task UpdateRangeAsync(IEnumerable<User> incommingEntities)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -115,12 +35,12 @@ public class UserRepository : IUserRepository
             entity.Name = incomingEntity.Name;
         }
 
-        await _dbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync();
     }
 
-    protected IQueryable<User> Query()
+    protected override IQueryable<User> Query()
     {
-        return _dbContext.Users
+        return DbContext.Users
             .Include(u => u.ProjectRoles);
     }
 
@@ -133,8 +53,8 @@ public class UserRepository : IUserRepository
         }
 
         User user = dto.ToEntity();
-        await _dbContext.Users.AddAsync(user);
-        await _dbContext.SaveChangesAsync();
+        await DbContext.Users.AddAsync(user);
+        await DbContext.SaveChangesAsync();
 
         return user;
     }

@@ -1,12 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
 using PrismaApi.Application.Interfaces.Services;
+using PrismaApi.Domain.Constants;
 
 namespace PrismaApi.Api.Attributes;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
 public class LoadUser : Attribute, IAsyncActionFilter
 {
-    public const string CurrentUserKey = "CurrentUser";
+    public const string CurrentUserKey = AppConstants.CurrentUserKey;
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {

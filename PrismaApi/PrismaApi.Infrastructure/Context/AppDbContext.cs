@@ -83,12 +83,12 @@ public class AppDbContext : DbContext
             entity.HasMany(e => e.Nodes)
                 .WithOne(e => e.Project)
                 .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.Restrict); // will be cascade deleted through Issues
+                .OnDelete(DeleteBehavior.NoAction); // will be cascade deleted through Issues
 
             entity.HasMany(e => e.Edges)
                 .WithOne(e => e.Project)
                 .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.Restrict); // will be cascade deleted through Issues -> Nodes
+                .OnDelete(DeleteBehavior.NoAction); // will be cascade deleted through Issues -> Nodes
         });
 
         modelBuilder.Entity<Issue>(entity =>

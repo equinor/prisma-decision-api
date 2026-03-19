@@ -1,8 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Graph.Models;
 using PrismaApi.Application.Interfaces.Repositories;
-using PrismaApi.Domain.Dtos;
-using PrismaApi.Domain.Entities;
 using PrismaApi.Domain.Interfaces;
 using PrismaApi.Infrastructure.Context;
 using PrismaApi.Infrastructure.Extensions;
@@ -12,7 +9,7 @@ namespace PrismaApi.Application.Repositories;
 
 public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
     where TEntity : class, IBaseEntity<TId>
-    where TId : struct
+    where TId : notnull
 {
     protected readonly AppDbContext DbContext;
     protected readonly DbSet<TEntity> Set;
