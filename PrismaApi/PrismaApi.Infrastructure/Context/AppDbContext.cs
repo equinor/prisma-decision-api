@@ -464,12 +464,7 @@ public class AppDbContext : DbContext
                 .Where(e => deletedNodeIds.Contains(e.TailId) || deletedNodeIds.Contains(e.HeadId))
                 .ToListAsync(cancellationToken);
 
-            //var issuesToDelete = await Issues
-            //    .Where(e => deletedNodeIds.Contains(e.Node!.Id))
-            //    .ToListAsync(cancellationToken);
-
             Edges.RemoveRange(tailEdgesToDelete);
-            //Issues.RemoveRange(issuesToDelete);
         }
     }
 
