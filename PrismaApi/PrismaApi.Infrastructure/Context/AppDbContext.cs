@@ -143,12 +143,12 @@ public class AppDbContext : DbContext
             entity.HasMany(e => e.HeadEdges)
                 .WithOne(e => e.HeadNode)
                 .HasForeignKey(e => e.HeadId)
-                .OnDelete(DeleteBehavior.ClientCascade);
+                .OnDelete(DeleteBehavior.NoAction); // deleted in cleanup
 
             entity.HasMany(e => e.TailEdges)
                 .WithOne(e => e.TailNode)
                 .HasForeignKey(e => e.TailId)
-                .OnDelete(DeleteBehavior.ClientCascade);
+                .OnDelete(DeleteBehavior.NoAction); // deleted in cleanup
         });
 
         modelBuilder.Entity<NodeStyle>(entity =>
@@ -239,7 +239,7 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.ParentOutcome)
                 .WithMany()
                 .HasForeignKey(e => e.ParentOutcomeId)
-                .OnDelete(DeleteBehavior.ClientCascade);
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<DiscreteProbabilityParentOption>(entity =>
@@ -254,7 +254,7 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.ParentOption)
                 .WithMany()
                 .HasForeignKey(e => e.ParentOptionId)
-                .OnDelete(DeleteBehavior.ClientCascade);
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<DiscreteUtility>(entity =>
@@ -297,7 +297,7 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.ParentOutcome)
                 .WithMany()
                 .HasForeignKey(e => e.ParentOutcomeId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<DiscreteUtilityParentOption>(entity =>
@@ -312,7 +312,7 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.ParentOption)
                 .WithMany()
                 .HasForeignKey(e => e.ParentOptionId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<ValueMetric>(entity =>
@@ -349,7 +349,8 @@ public class AppDbContext : DbContext
 
             entity.HasOne(e => e.Option)
                 .WithMany(e => e.StrategyOptions)
-                .HasForeignKey(e => e.OptionId);
+                .HasForeignKey(e => e.OptionId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<Objective>(entity =>
@@ -408,6 +409,7 @@ public class AppDbContext : DbContext
     public async override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         UpdateTimestamps();
+        await OnNodeDeletedCleanupAsync(cancellationToken);
         await OnOutcomeDeletedCleanupAsync(cancellationToken);
         await OnOptionDeletedCleanupAsync(cancellationToken);
         return await base.SaveChangesAsync(cancellationToken);
@@ -451,6 +453,21 @@ public class AppDbContext : DbContext
         }
     }
 
+    private async Task OnNodeDeletedCleanupAsync(CancellationToken cancellationToken = default)
+    {
+        var deletedNodeIds = GetDeletedEntityIds<Node>();
+
+        if (deletedNodeIds.Any())
+        {
+            // Delete tail edges that reference the deleted nodes
+            var tailEdgesToDelete = await Edges
+                .Where(e => deletedNodeIds.Contains(e.TailId) || deletedNodeIds.Contains(e.HeadId))
+                .ToListAsync(cancellationToken);
+
+            Edges.RemoveRange(tailEdgesToDelete);
+        }
+    }
+
     private async Task OnOutcomeDeletedCleanupAsync(CancellationToken cancellationToken = default)
     {
         var deletedOutcomeIds = GetDeletedEntityIds<Outcome>();
@@ -459,6 +476,7 @@ public class AppDbContext : DbContext
         {
             // Load the parent outcome relationships and the discrete probabilities they reference
             var affectedProbParentOutcomes = await DiscreteProbabilityParentOutcomes
+                .AsSplitQuery()
                 .Where(po => deletedOutcomeIds.Contains(po.ParentOutcomeId))
                 .Include(po => po.DiscreteProbability)
                     .ThenInclude(dp => dp!.ParentOptions)
@@ -477,6 +495,7 @@ public class AppDbContext : DbContext
 
             // Load the parent outcome relationships and the discrete utilities they reference
             var affectedUtilParentOutcomes = await DiscreteUtilityParentOutcomes
+                .AsSplitQuery()
                 .Where(uo => deletedOutcomeIds.Contains(uo.ParentOutcomeId))
                 .Include(uo => uo.DiscreteUtility)
                     .ThenInclude(du => du!.ParentOptions)
@@ -500,8 +519,15 @@ public class AppDbContext : DbContext
 
         if (deletedOptionIds.Any())
         {
+
+            var strategyOptionsToDelete = await StrategyOptions
+                .Where(e => deletedOptionIds.Contains(e.OptionId))
+                .ToListAsync();
+            StrategyOptions.RemoveRange(strategyOptionsToDelete);
+
             // Load the parent option relationships and the discrete probabilities they reference
             var affectedProbParentOptions = await DiscreteProbabilityParentOptions
+                .AsSplitQuery()
                 .Where(po => deletedOptionIds.Contains(po.ParentOptionId))
                 .Include(po => po.DiscreteProbability)
                     .ThenInclude(dp => dp!.ParentOptions)
@@ -517,9 +543,11 @@ public class AppDbContext : DbContext
                 .ToList();
 
             DiscreteProbabilities.RemoveRange(affectedProbs);
+            DiscreteProbabilityParentOptions.RemoveRange(affectedProbParentOptions);
 
             // Load the parent option relationships and the discrete utilities they reference
             var affectedUtilParentOptions = await DiscreteUtilityParentOptions
+                .AsSplitQuery()
                 .Where(uo => deletedOptionIds.Contains(uo.ParentOptionId))
                 .Include(uo => uo.DiscreteUtility)
                     .ThenInclude(du => du!.ParentOptions)
@@ -535,6 +563,7 @@ public class AppDbContext : DbContext
                 .ToList();
 
             DiscreteUtilities.RemoveRange(affectedUtils);
+            DiscreteUtilityParentOptions.RemoveRange(affectedUtilParentOptions);
         }
     }
 

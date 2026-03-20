@@ -71,6 +71,7 @@ public class NodesController : PrismaBaseEntityController
     [HttpDelete("nodes/{id:guid}")]
     public async Task<IActionResult> DeleteNode(Guid id)
     {
+        throw new NotImplementedException();
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
@@ -90,6 +91,7 @@ public class NodesController : PrismaBaseEntityController
     [HttpDelete("nodes")]
     public async Task<IActionResult> DeleteNodes([FromQuery] List<Guid> ids)
     {
+        throw new NotImplementedException();
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);

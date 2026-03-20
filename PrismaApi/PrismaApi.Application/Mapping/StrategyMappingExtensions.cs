@@ -40,6 +40,8 @@ public static class StrategyMappingExtensions
             Rationale = dto.Rationale,
             CreatedById = userDto.Id,
             UpdatedById = userDto.Id,
+            Icon = dto.Icon,
+            IconColor = dto.IconColor,
             StrategyOptions = dto.Options.Select(option => new StrategyOption
             {
                 OptionId = option.Id,
