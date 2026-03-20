@@ -14,20 +14,17 @@ public class ProjectService : IProjectService
     private readonly IProjectRoleRepository _projectRoleRepository;
     private readonly IIssueRepository _issueRepository;
     private readonly IEdgeRepository _edgeRepository;
-    private readonly IUserRepository _userRepository;
 
     public ProjectService(
         IProjectRepository projectRepository,
         IProjectRoleRepository projectRoleRepository,
         IIssueRepository issueRepository,
-        IEdgeRepository edgeRepository,
-        IUserRepository userRepository)
+        IEdgeRepository edgeRepository)
     {
         _projectRepository = projectRepository;
         _projectRoleRepository = projectRoleRepository;
         _issueRepository = issueRepository;
         _edgeRepository = edgeRepository;
-        _userRepository = userRepository;
     }
 
     public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos, bool isProjectDuplicated, UserOutgoingDto userDto)
