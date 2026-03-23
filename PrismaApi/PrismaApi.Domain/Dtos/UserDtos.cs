@@ -20,6 +20,5 @@ public class UserIncomingDto : UserDto
 
 public class UserOutgoingDto : UserDto
 {
-    [JsonPropertyName("id")]
-    public int Id { get; set; }
+
 }

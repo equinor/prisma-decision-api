@@ -91,7 +91,7 @@ public class UserService : IUserService
 
         return users?.Value?.Select(u => new UserOutgoingDto
         {
-            Id = 0,
+            Id = u.Id ?? "",
             Name = u.DisplayName ?? u.UserPrincipalName ?? "",
         }).ToList() ?? new List<UserOutgoingDto>();
     }
