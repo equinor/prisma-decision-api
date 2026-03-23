@@ -27,6 +27,7 @@ public class TableRebuildingService: ITableRebuildingService
     public async Task RebuildIssuesFromIssueIds(ICollection<Guid> issueIds)
     {
         var issues = await DbContext.Issues
+            .AsSplitQuery()
             .Where(issue => issueIds.Contains(issue.Id))
             .Include(issue => issue.Uncertainty!)
                 .ThenInclude(uncertainty => uncertainty.Outcomes)

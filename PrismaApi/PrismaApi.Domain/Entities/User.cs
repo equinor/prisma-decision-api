@@ -7,9 +7,7 @@ namespace PrismaApi.Domain.Entities;
 
 public class User : BaseEntity, IBaseEntity<string>
 {
-    [Column("id")]
     public required string Id { get; set; }
-    [Column("name")]
     public string Name { get; set; } = string.Empty;
     public ICollection<ProjectRole> ProjectRoles { get; set; } = new List<ProjectRole>();
 }

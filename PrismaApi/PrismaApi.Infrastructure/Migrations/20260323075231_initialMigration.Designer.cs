@@ -12,7 +12,7 @@ using PrismaApi.Infrastructure.Context;
 namespace PrismaApi.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260319105451_initialMigration")]
+    [Migration("20260323075231_initialMigration")]
     partial class initialMigration
     {
         /// <inheritdoc />
@@ -29,26 +29,21 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("IssueId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("issue_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("type");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
 
@@ -62,29 +57,23 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("OutcomeId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("outcome_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<double?>("Probability")
                         .HasPrecision(53)
-                        .HasColumnType("float(53)")
-                        .HasColumnName("probability");
+                        .HasColumnType("float(53)");
 
                     b.Property<Guid>("UncertaintyId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("uncertainty_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
 
@@ -98,12 +87,10 @@ namespace PrismaApi.Infrastructure.Migrations
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteProbabilityParentOption", b =>
                 {
                     b.Property<Guid>("DiscreteProbabilityId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("discrete_probability_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ParentOptionId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("parent_option_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("DiscreteProbabilityId", "ParentOptionId");
 
@@ -115,12 +102,10 @@ namespace PrismaApi.Infrastructure.Migrations
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteProbabilityParentOutcome", b =>
                 {
                     b.Property<Guid>("DiscreteProbabilityId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("discrete_probability_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ParentOutcomeId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("parent_outcome_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("DiscreteProbabilityId", "ParentOutcomeId");
 
@@ -133,29 +118,23 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("UtilityId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("utility_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<double?>("UtilityValue")
                         .HasPrecision(53)
-                        .HasColumnType("float(53)")
-                        .HasColumnName("utility_value");
+                        .HasColumnType("float(53)");
 
                     b.Property<Guid>("ValueMetricId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("value_metric_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
@@ -169,12 +148,10 @@ namespace PrismaApi.Infrastructure.Migrations
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteUtilityParentOption", b =>
                 {
                     b.Property<Guid>("DiscreteUtilityId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("discrete_utility_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ParentOptionId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("parent_option_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("DiscreteUtilityId", "ParentOptionId");
 
@@ -186,12 +163,10 @@ namespace PrismaApi.Infrastructure.Migrations
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteUtilityParentOutcome", b =>
                 {
                     b.Property<Guid>("DiscreteUtilityId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("discrete_utility_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ParentOutcomeId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("parent_outcome_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("DiscreteUtilityId", "ParentOutcomeId");
 
@@ -204,28 +179,22 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("HeadId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("head_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ProjectId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("project_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("TailId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("tail_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
 
@@ -242,58 +211,47 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Boundary")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("boundary");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("created_by_id");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(6000)
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("description");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<int>("Order")
-                        .HasColumnType("int")
-                        .HasColumnName("order");
+                        .HasColumnType("int");
 
                     b.Property<Guid>("ProjectId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("project_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("type");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedById")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("updated_by_id");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -310,30 +268,24 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("IssueId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("issue_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<Guid>("ProjectId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("project_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
 
@@ -349,28 +301,22 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("NodeId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("node_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<double>("XPosition")
-                        .HasColumnType("float")
-                        .HasColumnName("x_position");
+                        .HasColumnType("float");
 
                     b.Property<double>("YPosition")
-                        .HasColumnType("float")
-                        .HasColumnName("y_position");
+                        .HasColumnType("float");
 
                     b.HasKey("Id");
 
@@ -384,48 +330,39 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("created_by_id");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(6000)
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("description");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<Guid>("ProjectId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("project_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("type");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedById")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("updated_by_id");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -442,30 +379,24 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("DecisionId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("decision_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<double>("Utility")
-                        .HasColumnType("float")
-                        .HasColumnName("utility");
+                        .HasColumnType("float");
 
                     b.HasKey("Id");
 
@@ -478,30 +409,24 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<Guid>("UncertaintyId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("uncertainty_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<double>("Utility")
-                        .HasColumnType("float")
-                        .HasColumnName("utility");
+                        .HasColumnType("float");
 
                     b.HasKey("Id");
 
@@ -514,55 +439,44 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("created_by_id");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTimeOffset>("EndDate")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("end_date");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("OpportunityStatement")
                         .IsRequired()
                         .HasMaxLength(6000)
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("opportunity_statement");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("ParentProjectId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("parent_project_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ParentProjectName")
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("parent_project_name");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<bool>("Public")
-                        .HasColumnType("bit")
-                        .HasColumnName("public");
+                        .HasColumnType("bit");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedById")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("updated_by_id");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -577,41 +491,33 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("created_by_id");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<Guid>("ProjectId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("project_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("role");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedById")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("updated_by_id");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("user_id");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -630,58 +536,47 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedById")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("created_by_id");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(6000)
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("description");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Icon")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("icon");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("IconColor")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("icon_color");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<Guid>("ProjectId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("project_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Rationale")
                         .IsRequired()
                         .HasMaxLength(6000)
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("rationale");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UpdatedById")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("updated_by_id");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
@@ -697,12 +592,10 @@ namespace PrismaApi.Infrastructure.Migrations
             modelBuilder.Entity("PrismaApi.Domain.Entities.StrategyOption", b =>
                 {
                     b.Property<Guid>("StrategyId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("strategy_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("OptionId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("option_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("StrategyId", "OptionId");
 
@@ -715,24 +608,19 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<bool>("IsKey")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_key");
+                        .HasColumnType("bit");
 
                     b.Property<Guid>("IssueId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("issue_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
 
@@ -745,22 +633,18 @@ namespace PrismaApi.Infrastructure.Migrations
             modelBuilder.Entity("PrismaApi.Domain.Entities.User", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("id");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
 
@@ -771,20 +655,16 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<Guid>("IssueId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("issue_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
 
@@ -798,22 +678,18 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
 
@@ -965,7 +841,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany("Edges")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("PrismaApi.Domain.Entities.Node", "TailNode")
@@ -1179,7 +1055,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Strategy", "Strategy")
                         .WithMany("StrategyOptions")
                         .HasForeignKey("StrategyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.ClientCascade)
                         .IsRequired();
 
                     b.Navigation("Option");
