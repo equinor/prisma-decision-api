@@ -3,13 +3,13 @@ using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
-using PrismaApi.Infrastructure;
-using System.Linq;
+using PrismaApi.Infrastructure.Context;
+using PrismaApi.Infrastructure.Extensions;
 using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Repositories;
 
-public class UserRepository : BaseRepository<User, int>, IUserRepository
+public class UserRepository : BaseRepository<User, string>, IUserRepository
 {
     public UserRepository(AppDbContext dbContext) : base(dbContext)
     {
@@ -33,7 +33,6 @@ public class UserRepository : BaseRepository<User, int>, IUserRepository
             }
 
             entity.Name = incomingEntity.Name;
-            entity.AzureId = incomingEntity.AzureId;
         }
 
         await DbContext.SaveChangesAsync();
@@ -45,21 +44,9 @@ public class UserRepository : BaseRepository<User, int>, IUserRepository
             .Include(u => u.ProjectRoles);
     }
 
-    public Task<User?> GetByAzureIdAsync(string azureId)
+    public async Task<User> GetOrAddByIdAsync(UserIncomingDto dto)
     {
-        return DbContext.Users
-            .AsNoTracking()
-            .Include(u => u.ProjectRoles)
-            .FirstOrDefaultAsync(u => u.AzureId == azureId);
-    }
-
-    public async Task<User> GetOrAddByAzureIdAsync(UserIncomingDto dto)
-    {
-        var existingUser = await DbContext.Users
-            .AsNoTracking()
-            .Include(u => u.ProjectRoles)
-            .FirstOrDefaultAsync(u => u.AzureId == dto.AzureId);
-
+        var existingUser = await GetByIdAsync(dto.Id);
         if (existingUser != null)
         {
             return existingUser;
@@ -67,6 +54,7 @@ public class UserRepository : BaseRepository<User, int>, IUserRepository
 
         User user = dto.ToEntity();
         await DbContext.Users.AddAsync(user);
+        await DbContext.SaveChangesAsync();
 
         return user;
     }

@@ -11,7 +11,7 @@ public class ProjectRole : AuditableEntity, IBaseEntity<Guid>
     [Column("project_id")]
     public Guid ProjectId { get; set; }
     [Column("user_id")]
-    public int UserId { get; set; }
+    public required string UserId { get; set; }
     [Column("role")]
     public string Role { get; set; } = string.Empty;
 

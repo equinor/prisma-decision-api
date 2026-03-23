@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
-using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
 using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Repositories;
@@ -15,7 +15,7 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
         _repo = repo;
     }
 
-    public async Task<ICollection<Project>> GetProjectsWhereUserHasAccess(ICollection<Guid> projectIds, int userId)
+    public async Task<ICollection<Project>> GetProjectsWhereUserHasAccess(ICollection<Guid> projectIds, string userId)
     {
         return await GetByIdsAsync(
             projectIds,

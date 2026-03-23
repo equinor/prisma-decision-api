@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
-using PrismaApi.Infrastructure;
+using PrismaApi.Api.Extensions;
+using PrismaApi.Infrastructure.Context;
 
 namespace PrismaApi.Api.Controllers;
 
@@ -33,7 +34,7 @@ public class IssuesController : PrismaBaseEntityController
     [HttpPost("issues")]
     public async Task<ActionResult<List<IssueOutgoingDto>>> CreateIssues([FromBody] List<IssueIncomingDto> dtos, CancellationToken cancellationToken = default)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -52,7 +53,7 @@ public class IssuesController : PrismaBaseEntityController
     [HttpGet("issues/{id:guid}")]
     public async Task<ActionResult<IssueOutgoingDto>> GetIssue(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _issueService.GetAsync(new List<Guid> { id }, user);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
@@ -60,7 +61,7 @@ public class IssuesController : PrismaBaseEntityController
     [HttpGet("issues")]
     public async Task<ActionResult<List<IssueOutgoingDto>>> GetAllIssues()
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _issueService.GetAllAsync(user);
         return Ok(result);
     }
@@ -74,7 +75,7 @@ public class IssuesController : PrismaBaseEntityController
     [HttpPut("issues")]
     public async Task<ActionResult<List<IssueOutgoingDto>>> UpdateIssues([FromBody] List<IssueIncomingDto> dtos)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -94,7 +95,7 @@ public class IssuesController : PrismaBaseEntityController
     [HttpDelete("issues/{id:guid}")]
     public async Task<IActionResult> DeleteIssue(Guid id)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try
@@ -113,7 +114,7 @@ public class IssuesController : PrismaBaseEntityController
     [HttpDelete("issues")]
     public async Task<IActionResult> DeleteIssues([FromQuery] List<Guid> ids)
     {
-        UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(HttpContext.RequestAborted);
         try

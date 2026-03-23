@@ -11,7 +11,9 @@ using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Application.Services;
 using PrismaApi.Infrastructure;
+using PrismaApi.Infrastructure.Context;
 using PrismaApi.Infrastructure.DiscreteTables;
+using PrismaApi.Infrastructure.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 

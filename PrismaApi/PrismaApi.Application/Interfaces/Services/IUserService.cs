@@ -1,14 +1,15 @@
+using Microsoft.AspNetCore.Http;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Interfaces.Services;
 
 public interface IUserService
 {
-    Task<List<UserOutgoingDto>> GetAsync(List<int> ids);
+    Task<List<UserOutgoingDto>> GetAsync(List<string> ids);
     Task<List<UserOutgoingDto>> GetAllAsync();
-    Task<UserOutgoingDto?> GetByAzureIdAsync(string azureId);
-    Task<UserOutgoingDto> GetOrCreateUserByAzureIdAsync(UserIncomingDto dto);
+    Task<UserOutgoingDto> GetOrCreateUserByIdAsync(UserIncomingDto dto);
     Task<UserOutgoingDto> GetOrCreateUserFromGraphMeAsync(string? cacheKey);
     Task<List<UserOutgoingDto>> SearchUsersFromGraphAsync(string query);
 
+    Task<UserOutgoingDto> GetOrCreateUserFromContextAsync(HttpContext context);
 }

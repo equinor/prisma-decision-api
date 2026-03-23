@@ -219,7 +219,6 @@ public class ProjectDuplicationService : IProjectDuplicationService
                     ProjectId = newProjectId,
                     Role = u.Role,
                     Name = u.Name,
-                    AzureId = u.AzureId
                 })
                 .ToList()
         };
@@ -252,7 +251,6 @@ public class ProjectDuplicationService : IProjectDuplicationService
                     ProjectId = newProjectId,
                     Role = u.Role,
                     Name = u.Name,
-                    AzureId = u.AzureId
                 })
                 .ToList()
         };

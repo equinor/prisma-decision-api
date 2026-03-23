@@ -6,16 +6,14 @@ namespace PrismaApi.Domain.Dtos;
 
 public class UserDto
 {
+    [JsonPropertyName("id")]
+    public required string Id { get; set; }
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
-    [JsonPropertyName("azure_id")]
-    public string AzureId { get; set; } = string.Empty;
 }
 
 public class UserIncomingDto : UserDto
 {
-    [JsonPropertyName("id")]
-    public int? Id { get; set; }
     [JsonPropertyName("project_roles")]
     public List<ProjectRoleIncomingDto> ProjectRoles { get; set; } = new();
 }

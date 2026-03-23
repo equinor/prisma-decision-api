@@ -25,13 +25,9 @@ public static class UserMappingExtensions
     {
         var user = new User
         {
+            Id = dto.Id,
             Name = dto.Name,
         };
-
-        if (dto?.Id.HasValue == true)
-        {
-            user.Id = dto.Id.Value;
-        }
 
         return user;
     }
