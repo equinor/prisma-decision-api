@@ -35,18 +35,11 @@ public class UsersController : PrismaBaseEntityController
         return Ok(result);
     }
 
-    [HttpGet("users/{id:int}")]
-    public async Task<ActionResult<UserOutgoingDto>> GetUser(string id)
-    {
-        var result = await _userService.GetAsync(new List<string> { id });
-        return result.Count > 0 ? Ok(result[0]) : NotFound();
-    }
-
     [HttpGet("users/azure-id/{azureId}")]
     public async Task<ActionResult<UserOutgoingDto>> GetUserByAzureId(string azureId)
     {
-        var result = await _userService.GetByAzureIdAsync(azureId);
-        return result != null ? Ok(result) : NotFound();
+        var result = await _userService.GetAsync([azureId]);
+        return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("users/search")]
