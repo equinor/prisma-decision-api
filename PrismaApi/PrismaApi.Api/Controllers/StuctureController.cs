@@ -26,7 +26,7 @@ public class StuctureController : PrismaBaseController
         var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/decision_tree/v2", user);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
-            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeString() : null);
+            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeLogString() : null);
         }
 
         return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
@@ -39,7 +39,7 @@ public class StuctureController : PrismaBaseController
         var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/influence_diagram", user);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
-            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeString() : null);
+            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeLogString() : null);
         }
 
         return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
@@ -53,7 +53,7 @@ public class StuctureController : PrismaBaseController
 
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
-            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeString() : null);
+            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeLogString() : null);
         }
 
         return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);

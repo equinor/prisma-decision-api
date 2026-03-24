@@ -35,11 +35,15 @@ public class UsersController : PrismaBaseEntityController
         return Ok(result);
     }
 
-    [HttpGet("users/azure-id/{azureId}")]
-    public async Task<ActionResult<UserOutgoingDto>> GetUserByAzureId(string azureId)
+
+    [HttpPost("users/userIds")]
+    public async Task<ActionResult<List<UserOutgoingDto>>> GetUsersByIds([FromBody] List<string> ids)
     {
-        var result = await _userService.GetAsync([azureId]);
-        return result.Count > 0 ? Ok(result[0]) : NotFound();
+        if (ids == null || ids.Count == 0)
+            return BadRequest("At least one user ID is required.");
+
+        var result = await _userService.GetByIdsAsync(ids);
+        return result.Count > 0 ? Ok(result) : NotFound();
     }
 
     [HttpGet("users/search")]
@@ -49,7 +53,7 @@ public class UsersController : PrismaBaseEntityController
             return BadRequest("Query parameter is required.");
 
         var result = await _userService.SearchUsersFromGraphAsync(query);
-        return Ok(result);
+        return result.Count > 0 ? Ok(result) : NotFound();
     }
 
     [HttpGet("auth")]
