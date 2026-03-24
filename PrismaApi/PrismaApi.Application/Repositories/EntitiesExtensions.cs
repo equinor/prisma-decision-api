@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
@@ -70,6 +71,7 @@ public static class EntitiesExtensions
             entity.Description = incommingEntity.Description;
             entity.Rationale = incommingEntity.Rationale;
             entity.Icon = incommingEntity.Icon;
+            entity.IconColor = incommingEntity.IconColor;
             entity.UpdatedById = incommingEntity.UpdatedById;
             entity.StrategyOptions.Update(incommingEntity.StrategyOptions, context);
         }
@@ -93,7 +95,7 @@ public static class EntitiesExtensions
         }
     }
 
-    public static Node Update(this Node entity, Node incommingEntity, AppDbContext context)
+    public static Node Update(this Node entity, Node incommingEntity)
     {
         entity.ProjectId = incommingEntity.ProjectId;
         entity.IssueId = incommingEntity.IssueId;

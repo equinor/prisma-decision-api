@@ -63,7 +63,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
             entity.UpdatedById = incomingEntity.UpdatedById;
 
             if (incomingEntity.Node != null && entity.Node != null)
-                entity.Node = entity.Node.Update(incomingEntity.Node, DbContext);
+                entity.Node = entity.Node.Update(incomingEntity.Node);
 
             if (incomingEntity.Decision != null && entity.Decision != null)
                 entity.Decision = await entity.Decision.Update(incomingEntity.Decision, DbContext, _ruleTrigger);

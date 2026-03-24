@@ -29,7 +29,7 @@ public class NodeRepository : BaseRepository<Node, Guid>, INodeRepository
             {
                 continue;
             }
-            entity.Update(incomingEntity, DbContext);
+            entity.Update(incomingEntity);
         }
 
         await DbContext.SaveChangesAsync();
