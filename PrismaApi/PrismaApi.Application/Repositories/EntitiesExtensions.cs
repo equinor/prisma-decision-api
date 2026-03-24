@@ -209,24 +209,22 @@ public static class EntitiesExtensions
         }
     }
 
-    public static async Task RemoveOutOfScopeStrategyOptions(this Issue entity, Issue incommingEntity, AppDbContext context)
+  public static async Task RemoveOutOfScopeStrategyOptions(this Issue entity, Issue incommingEntity, AppDbContext context)
     {
         if (!RepositoryUtilities.IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
-        var strategyOptionsToBeRemoved = await context.StrategyOptions
-            .Where(e => e.Option!.Decision!.IssueId == entity.Id)
-            .ToListAsync();
-        if (strategyOptionsToBeRemoved.Count != 0)
-        {
-            context.StrategyOptions.RemoveRange(strategyOptionsToBeRemoved);
-            await context.SaveChangesAsync();
-        }
+        await RemoveStrategyOptions(context, e => e.Option!.Decision!.IssueId == entity.Id);
     }
 
     public static async Task RemoveOutOfScopeStrategyOptions(this Decision entity, Decision incommingEntity, AppDbContext context)
     {
         if (!RepositoryUtilities.IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
+        await RemoveStrategyOptions(context, e => e.Option!.DecisionId == entity.Id);
+    }
+
+    private static async Task RemoveStrategyOptions(AppDbContext context, Expression<Func<StrategyOption, bool>> predicate)
+    {
         var strategyOptionsToBeRemoved = await context.StrategyOptions
-            .Where(e => e.Option!.DecisionId == entity.Id)
+            .Where(predicate)
             .ToListAsync();
         if (strategyOptionsToBeRemoved.Count != 0)
         {
