@@ -28,10 +28,7 @@ public class NodeStyleRepository : BaseRepository<NodeStyle, Guid>, INodeStyleRe
             {
                 continue;
             }
-
-            entity.NodeId = incomingEntity.NodeId;
-            entity.XPosition = incomingEntity.XPosition;
-            entity.YPosition = incomingEntity.YPosition;
+            entity.Update(incomingEntity);
         }
 
         await DbContext.SaveChangesAsync();

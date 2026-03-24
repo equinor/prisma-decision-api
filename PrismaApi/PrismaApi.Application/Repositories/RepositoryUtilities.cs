@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using PrismaApi.Domain.Constants;
+using PrismaApi.Domain.Entities;
 using PrismaApi.Domain.Interfaces;
 
 namespace PrismaApi.Application.Repositories;
@@ -58,5 +60,17 @@ public static class RepositoryUtilities
         return entities
             .Where(e => !incommingEntities.Any(ie => EqualityComparer<TId>.Default.Equals(ie.Id, e.Id)))
             .ToList();
+    }
+    public static bool IsDecisionMovedOutOfStrategyTable(Decision entity, Decision incommingEntity)
+    {
+        if (entity.Type != incommingEntity.Type && entity.Type == DecisionHierarchy.Focus.ToString()) return true;
+        return false;
+    }
+    public static bool IsDecisionMovedOutOfStrategyTable(Issue entity, Issue incommingEntity)
+    {
+        if (entity.Type != incommingEntity.Type && entity.Type == IssueType.Decision.ToString()) return true;
+        if (entity.Boundary != incommingEntity.Boundary && incommingEntity.Boundary == Boundary.Out.ToString()) return true;
+        if (entity.Decision != null && incommingEntity.Decision != null && entity.Decision.Type != incommingEntity.Decision.Type && entity.Decision.Type == DecisionHierarchy.Focus.ToString()) return true;
+        return false;
     }
 }

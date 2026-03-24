@@ -6,7 +6,6 @@ using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
 using PrismaApi.Infrastructure.Interfaces;
 using System.Linq.Expressions;
-using System.Security.Cryptography;
 
 namespace PrismaApi.Application.Repositories;
 
@@ -52,7 +51,8 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
 
             if (WillIssueChangeTables(entity, incomingEntity))
                 issuesIdsTriggers.Add(entity.Id);
-            await RemoveOutOfScopeStrategyOptions(entity, incomingEntity);
+
+            await entity.RemoveOutOfScopeStrategyOptions(incomingEntity, DbContext);
 
             entity.ProjectId = incomingEntity.ProjectId;
             entity.Type = incomingEntity.Type;
@@ -87,27 +87,6 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
     {
         if (entity.Type != incommingEntity.Type) return true;
         if (entity.Boundary != incommingEntity.Boundary && (incommingEntity.Boundary == Boundary.Out.ToString() || entity.Boundary == Boundary.Out.ToString())) return true;
-        return false;
-    }
-
-    private async Task RemoveOutOfScopeStrategyOptions(Issue entity, Issue incommingEntity)
-    {
-        if (!IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
-        var strategyOptionsToBeRemoved = await DbContext.StrategyOptions
-            .Where(e => e.Option!.Decision!.IssueId == entity.Id)
-            .ToListAsync();
-        if (strategyOptionsToBeRemoved.Any())
-        {
-            DbContext.StrategyOptions.RemoveRange(strategyOptionsToBeRemoved);
-            await DbContext.SaveChangesAsync();
-        }
-    }
-
-    private static bool IsDecisionMovedOutOfStrategyTable(Issue entity, Issue incommingEntity)
-    {
-        if (entity.Type != incommingEntity.Type && entity.Type == IssueType.Decision.ToString()) return true;
-        if (entity.Boundary != incommingEntity.Boundary && incommingEntity.Boundary == Boundary.Out.ToString()) return true;
-        if (entity.Decision != null && incommingEntity.Decision != null && entity.Decision.Type != incommingEntity.Decision.Type && entity.Decision.Type == DecisionHierarchy.Focus.ToString()) return true;
         return false;
     }
 

@@ -29,14 +29,7 @@ public class NodeRepository : BaseRepository<Node, Guid>, INodeRepository
             {
                 continue;
             }
-
-            entity.ProjectId = incomingEntity.ProjectId;
-            entity.IssueId = incomingEntity.IssueId;
-            entity.Name = incomingEntity.Name;
-            //entity.HeadEdges.Update(incomingEntity.HeadEdges, DbContext);
-            //entity.TailEdges.Update(incomingEntity.TailEdges, DbContext);
-            if (entity.NodeStyle != null && incomingEntity.NodeStyle != null)
-                entity.NodeStyle = entity.NodeStyle.Update(incomingEntity.NodeStyle);
+            entity.Update(incomingEntity, DbContext);
         }
 
         await DbContext.SaveChangesAsync();

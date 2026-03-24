@@ -16,6 +16,8 @@ public static class StrategyMappingExtensions
             Name = entity.Name,
             Description = entity.Description,
             Rationale = entity.Rationale,
+            Icon = entity.Icon,
+            IconColor = entity.IconColor,
             Options = entity.StrategyOptions
                 .Select(so => so.Option)
                 .Where(option => option != null)

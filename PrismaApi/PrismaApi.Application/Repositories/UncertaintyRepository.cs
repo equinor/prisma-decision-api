@@ -25,7 +25,6 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>, IUncerta
         }
 
         var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
-        List<Guid> issuesIdsTriggers = [];
         foreach (var entity in entities)
         {
             var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
@@ -33,15 +32,9 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>, IUncerta
             {
                 continue;
             }
-            if (entity.IsKey != incomingEntity.IsKey)
-                issuesIdsTriggers.Add(entity.IssueId);
-            entity.IssueId = incomingEntity.IssueId;
-            entity.IsKey = incomingEntity.IsKey;
-            await entity.Outcomes.Update(incomingEntity.Outcomes, DbContext);
-            entity.DiscreteProbabilities.Update(incomingEntity.DiscreteProbabilities, DbContext);
+            await entity.Update(incomingEntity, DbContext);
         }
 
-        await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers);
         await DbContext.SaveChangesAsync();
     }
 

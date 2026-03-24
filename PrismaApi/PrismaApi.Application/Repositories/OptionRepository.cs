@@ -24,18 +24,10 @@ public class OptionRepository : BaseRepository<Option, Guid>, IOptionRepository
         }
 
         var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
-        foreach (var entity in entities)
-        {
-            var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
-            if (incomingEntity == null)
-            {
-                continue;
-            }
-
-            entity.DecisionId = incomingEntity.DecisionId;
-            entity.Name = incomingEntity.Name;
-            entity.Utility = incomingEntity.Utility;
-        }
+        // filter out entities not found
+        if (entities.Count != incomingList.Count)
+            incomingList = incomingList.Where(e => entities.Select(x => x.Id).Contains(e.Id)).ToList();
+        await entities.Update(incomingList, DbContext);
 
         await DbContext.SaveChangesAsync();
     }

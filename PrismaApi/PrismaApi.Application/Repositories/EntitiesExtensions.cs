@@ -10,6 +10,12 @@ public static class EntitiesExtensions
 {
     public static void Update(this ICollection<ProjectRole> entities, ICollection<ProjectRole> incommingEntities, AppDbContext context)
     {
+        // delete
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<ProjectRole, Guid>(incommingEntities, entities);
+
+        // create
+        RepositoryUtilities.AddMissingFromCollectionMutate<ProjectRole, Guid>(incommingEntities, entities, context);
+
         // Update
         foreach (var entity in entities)
         {
@@ -22,11 +28,6 @@ public static class EntitiesExtensions
             entity.UpdatedById = inncommingEntity.UpdatedById;
         }
 
-        // delete
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<ProjectRole, Guid>(incommingEntities, entities);
-
-        // create
-        RepositoryUtilities.AddMissingFromCollectionMutate<ProjectRole, Guid>(incommingEntities, entities, context);
     }
 
     public static void Update(this ICollection<Objective> entities, ICollection<Objective> incommingEntities, AppDbContext context)
@@ -65,7 +66,10 @@ public static class EntitiesExtensions
 
 
             entity.ProjectId = incommingEntity.ProjectId;
+            entity.Name = incommingEntity.Name;
             entity.Description = incommingEntity.Description;
+            entity.Rationale = incommingEntity.Rationale;
+            entity.Icon = incommingEntity.Icon;
             entity.UpdatedById = incommingEntity.UpdatedById;
             entity.StrategyOptions.Update(incommingEntity.StrategyOptions, context);
         }
@@ -91,27 +95,17 @@ public static class EntitiesExtensions
 
     public static Node Update(this Node entity, Node incommingEntity, AppDbContext context)
     {
+        entity.ProjectId = incommingEntity.ProjectId;
+        entity.IssueId = incommingEntity.IssueId;
         entity.Name = incommingEntity.Name;
         if (incommingEntity.NodeStyle != null && entity.NodeStyle != null)
             entity.NodeStyle = entity.NodeStyle.Update(incommingEntity.NodeStyle);
         return entity;
     }
 
-    public static void Update(this ICollection<Edge> entities, ICollection<Edge> incommingEntities, AppDbContext context)
-    {
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<Edge, Guid>(incommingEntities, entities);
-        RepositoryUtilities.AddMissingFromCollectionMutate<Edge, Guid>(incommingEntities, entities, context);
-        foreach (var entity in entities)
-        {
-            var inncommingEntity = incommingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
-            if (inncommingEntity == null) continue;
-            entity.HeadId = inncommingEntity.HeadId;
-            entity.TailId = inncommingEntity.TailId;
-        }
-    }
-
     public static NodeStyle Update(this NodeStyle entity, NodeStyle incommingEntity)
     {
+        entity.NodeId = incommingEntity.NodeId;
         entity.XPosition = incommingEntity.XPosition;
         entity.YPosition = incommingEntity.YPosition;
         return entity;
@@ -121,6 +115,8 @@ public static class EntitiesExtensions
     {
         if (entity.Type != incommingEntity.Type && incommingEntity.Type != DecisionHierarchy.Focus.ToString() && ruleTrigger != null)
             await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId]);
+        await entity.RemoveOutOfScopeStrategyOptions(incommingEntity, context);
+        entity.IssueId = incommingEntity.IssueId;
         entity.Type = incommingEntity.Type;
         await entity.Options.Update(incommingEntity.Options, context, ruleTrigger);
         return entity;
@@ -129,7 +125,6 @@ public static class EntitiesExtensions
     public static async Task Update(this ICollection<Option> entities, ICollection<Option> incommingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null)
     {
         RepositoryUtilities.RemoveMissingFromCollectionMutate<Option, Guid>(incommingEntities, entities);
-        RepositoryUtilities.AddMissingFromCollectionMutate<Option, Guid>(incommingEntities, entities, context);
         var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Option, Guid>(incommingEntities, entities);
         foreach (var entityToAdd in entitiesToAdd)
         {
@@ -143,6 +138,7 @@ public static class EntitiesExtensions
         {
             var inncommingEntity = incommingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
             if (inncommingEntity == null) continue;
+            entity.DecisionId = inncommingEntity.DecisionId;
             entity.Name = inncommingEntity.Name;
             entity.Utility = inncommingEntity.Utility;
         }
@@ -154,6 +150,7 @@ public static class EntitiesExtensions
             await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId]);
             
         await entity.Outcomes.Update(incommingEntity.Outcomes, context, ruleTrigger);
+        entity.IssueId = incommingEntity.IssueId;
         entity.IsKey = incommingEntity.IsKey;
         entity.DiscreteProbabilities.Update(incommingEntity.DiscreteProbabilities, context);
         return entity;
@@ -175,6 +172,7 @@ public static class EntitiesExtensions
         {
             var inncommingEntity = incommingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
             if (inncommingEntity == null) continue;
+            entity.UncertaintyId = inncommingEntity.UncertaintyId;
             entity.Name = inncommingEntity.Name;
             entity.Utility = inncommingEntity.Utility;
         }
@@ -194,6 +192,7 @@ public static class EntitiesExtensions
 
     public static Utility Update(this Utility entity, Utility incommingEntity, AppDbContext context)
     {
+        entity.IssueId = incommingEntity.IssueId;
         entity.DiscreteUtilities.Update(incommingEntity.DiscreteUtilities, context);
         return entity;
     }
@@ -207,6 +206,32 @@ public static class EntitiesExtensions
             var inncommingEntity = incommingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
             if (inncommingEntity == null) continue;
             entity.UtilityValue = inncommingEntity.UtilityValue;
+        }
+    }
+
+    public static async Task RemoveOutOfScopeStrategyOptions(this Issue entity, Issue incommingEntity, AppDbContext context)
+    {
+        if (!RepositoryUtilities.IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
+        var strategyOptionsToBeRemoved = await context.StrategyOptions
+            .Where(e => e.Option!.Decision!.IssueId == entity.Id)
+            .ToListAsync();
+        if (strategyOptionsToBeRemoved.Count != 0)
+        {
+            context.StrategyOptions.RemoveRange(strategyOptionsToBeRemoved);
+            await context.SaveChangesAsync();
+        }
+    }
+
+    public static async Task RemoveOutOfScopeStrategyOptions(this Decision entity, Decision incommingEntity, AppDbContext context)
+    {
+        if (!RepositoryUtilities.IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
+        var strategyOptionsToBeRemoved = await context.StrategyOptions
+            .Where(e => e.Option!.DecisionId == entity.Id)
+            .ToListAsync();
+        if (strategyOptionsToBeRemoved.Count != 0)
+        {
+            context.StrategyOptions.RemoveRange(strategyOptionsToBeRemoved);
+            await context.SaveChangesAsync();
         }
     }
 }
