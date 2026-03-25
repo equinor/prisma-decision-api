@@ -36,7 +36,7 @@ public class StrategiesController : PrismaBaseEntityController
         await BeginTransactionAsync(ct);
         try
         {
-            var result = await _strategyService.CreateAsync(dtos, user);
+            var result = await _strategyService.CreateAsync(dtos, user, ct);
             await CommitTransactionAsync(ct);
             return Ok(result);
         }
