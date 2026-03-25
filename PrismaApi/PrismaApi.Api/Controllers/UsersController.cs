@@ -46,7 +46,7 @@ public class UsersController : PrismaBaseEntityController
         return result.Count > 0 ? Ok(result) : NotFound();
     }
 
-    [HttpGet("users/search")]
+    [HttpGet("graph/users/search")]
     public async Task<ActionResult<List<UserOutgoingDto>>> SearchUsers([FromQuery] string query, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(query))

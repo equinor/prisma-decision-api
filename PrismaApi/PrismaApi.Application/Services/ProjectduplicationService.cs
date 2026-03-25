@@ -50,7 +50,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
             mappings);
 
         var createProjectDto = CreateProjectDto(fullProject, newProjectId);
-        var createdProjects = await _projectService.CreateAsync([createProjectDto], isProjectDuplicated: false, userDto: user);
+        var createdProjects = await _projectService.CreateAsync([createProjectDto], createDefaultRole: false, userDto: user);
         var createdProject = createdProjects[0];
 
         var issueDtos = new List<IssueIncomingDto>();
@@ -121,7 +121,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         mappings.Project[importedProjectId] = newProjectId;
 
         var createProjectDto = CreateProjectDtoFromImport(dto.Projects, newProjectId);
-        var createdProjects = await _projectService.CreateAsync([createProjectDto], isProjectDuplicated: false, userDto: user);
+        var createdProjects = await _projectService.CreateAsync([createProjectDto], createDefaultRole: false, userDto: user);
         if (createdProjects.Count == 0)
             return null;
 

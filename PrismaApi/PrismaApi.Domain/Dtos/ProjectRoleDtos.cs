@@ -21,8 +21,6 @@ public class ProjectRoleIncomingDto : ProjectRoleDto
     public string Role { get; set; } = string.Empty;
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
-    [JsonPropertyName("azure_id")]
-    public Guid? AzureId { get; set; }
 }
 
 public class ProjectRoleCreateDto : ProjectRoleDto

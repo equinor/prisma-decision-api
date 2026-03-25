@@ -14,29 +14,32 @@ public class ProjectService : IProjectService
     private readonly IProjectRoleRepository _projectRoleRepository;
     private readonly IIssueRepository _issueRepository;
     private readonly IEdgeRepository _edgeRepository;
+    private readonly IUserRepository _userRepository;
 
     public ProjectService(
         IProjectRepository projectRepository,
         IProjectRoleRepository projectRoleRepository,
         IIssueRepository issueRepository,
-        IEdgeRepository edgeRepository)
+        IEdgeRepository edgeRepository,
+        IUserRepository userRepository)
     {
         _projectRepository = projectRepository;
         _projectRoleRepository = projectRoleRepository;
         _issueRepository = issueRepository;
         _edgeRepository = edgeRepository;
+        _userRepository = userRepository;
     }
 
-    public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos, bool isProjectDuplicated, UserOutgoingDto userDto, CancellationToken ct = default)
+    public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos, bool createDefaultRole, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         var projectEntities = dtos.ToEntities(userDto);
 
         await _projectRepository.AddRangeAsync(projectEntities, ct);
 
-        if (isProjectDuplicated)
+        if (createDefaultRole)
         {
 
-            var creatorRole = dtos.Select(x =>
+            var facilitatorRole = dtos.Select(x =>
             {
                 return new ProjectRoleCreateDto
                 {
@@ -47,7 +50,7 @@ public class ProjectService : IProjectService
                 };
             }).Distinct();
 
-            await _projectRoleRepository.AddRangeAsync(creatorRole.ToEntities(userDto), ct);
+            await _projectRoleRepository.AddRangeAsync(facilitatorRole.ToEntities(userDto), ct);
         }
 
         var ids = projectEntities.Select(p => p.Id).ToList();
@@ -57,6 +60,12 @@ public class ProjectService : IProjectService
 
     public async Task<List<ProjectOutgoingDto>> UpdateAsync(List<ProjectIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
+        var newUserIds = dtos.SelectMany(d => d.Users).Select(u => new { u.UserId, u.Name }).Distinct();
+        foreach (var u in newUserIds)
+        {
+            await _userRepository.GetOrAddByIdAsync(new UserIncomingDto { Id = u.UserId, Name = u.Name }, ct);
+        }
+
         var projectEntities = dtos.ToEntities(userDto);
         var projects = await _projectRepository.UpdateRangeAsync(projectEntities, filterPredicate: UserFilter(userDto), ct);
         return projects.ToOutgoingDtos();
