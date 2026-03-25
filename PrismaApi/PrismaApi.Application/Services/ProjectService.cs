@@ -14,20 +14,17 @@ public class ProjectService : IProjectService
     private readonly IProjectRoleRepository _projectRoleRepository;
     private readonly IIssueRepository _issueRepository;
     private readonly IEdgeRepository _edgeRepository;
-    private readonly IUserRepository _userRepository;
 
     public ProjectService(
         IProjectRepository projectRepository,
         IProjectRoleRepository projectRoleRepository,
         IIssueRepository issueRepository,
-        IEdgeRepository edgeRepository,
-        IUserRepository userRepository)
+        IEdgeRepository edgeRepository)
     {
         _projectRepository = projectRepository;
         _projectRoleRepository = projectRoleRepository;
         _issueRepository = issueRepository;
         _edgeRepository = edgeRepository;
-        _userRepository = userRepository;
     }
 
     public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos, bool isProjectDuplicated, UserOutgoingDto userDto)
@@ -61,21 +58,7 @@ public class ProjectService : IProjectService
     public async Task<List<ProjectOutgoingDto>> UpdateAsync(List<ProjectIncomingDto> dtos, UserOutgoingDto userDto)
     {
         var projectEntities = dtos.ToEntities(userDto);
-        await _projectRepository.UpdateRangeAsync(projectEntities, filterPredicate: UserFilter(userDto));
-
-        foreach (var dto in dtos)
-        {
-            if (dto.Users.Count == 0)
-            {
-                continue;
-            }
-
-            var projectRoles = await BuildProjectRolesAsync(dto.Users, dto.Id, userDto);
-            await _projectRoleRepository.UpdateRangeAsync(projectRoles);
-        }
-
-        var ids = dtos.Select(d => d.Id).ToList();
-        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
+        var projects = await _projectRepository.UpdateRangeAsync(projectEntities, filterPredicate: UserFilter(userDto));
         return projects.ToOutgoingDtos();
     }
 
@@ -121,67 +104,6 @@ public class ProjectService : IProjectService
             issues = (await _issueRepository.GetIssuesInInfluenceDiagram(projectId, IssuesUserFilter(user))).ToOutgoingDtos(),
             edges = (await _edgeRepository.GetEdgesInInfluenceDiagram(projectId, EdgesUserFilter(user))).ToOutgoingDtos()
         };
-    }
-
-    private async Task<List<ProjectRole>> BuildProjectRolesAsync(
-        IEnumerable<ProjectRoleIncomingDto> dtos,
-        Guid projectId,
-        UserOutgoingDto userDto)
-    {
-        var result = new List<ProjectRole>();
-
-        foreach (var dto in dtos)
-        {
-
-            var user = await _userRepository.GetOrAddByIdAsync(new UserIncomingDto
-            {
-                Id = dto.UserId,
-                Name = dto.Name,
-            });
-
-            result.Add(new ProjectRole
-            {
-                Id = dto.Id,
-                ProjectId = projectId,
-                UserId = user.Id,
-                Role = dto.Role,
-                User = user,
-                CreatedById = userDto.Id,
-                UpdatedById = userDto.Id
-            });
-        }
-
-        return result;
-    }
-
-    private async Task<List<ProjectRole>> BuildProjectRolesAsync(
-        IEnumerable<ProjectRoleCreateDto> dtos,
-        Guid projectId,
-        UserOutgoingDto userDto)
-    {
-        var result = new List<ProjectRole>();
-
-        foreach (var dto in dtos)
-        {
-            var user = await _userRepository.GetOrAddByIdAsync(new UserIncomingDto
-                {
-                    Id = dto.UserId,
-                    Name = dto.Name,
-                });
-
-            result.Add(new ProjectRole
-            {
-                Id = dto.Id,
-                ProjectId = projectId,
-                UserId = user.Id,
-                Role = dto.Role,
-                User = user,
-                CreatedById = userDto.Id,
-                UpdatedById = userDto.Id
-            });
-        }
-
-        return result;
     }
 
     private static Expression<Func<Project, bool>> UserFilter(UserOutgoingDto user)

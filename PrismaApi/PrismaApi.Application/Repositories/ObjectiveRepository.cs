@@ -12,29 +12,20 @@ public class ObjectiveRepository : BaseRepository<Objective, Guid>, IObjectiveRe
     {
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Objective> incommingEntities, Expression<Func<Objective, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Objective> incomingEntities, Expression<Func<Objective, bool>> filterPredicate)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;
         }
 
         var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
-        foreach (var entity in entities)
-        {
-            var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
-            if (incomingEntity == null)
-            {
-                continue;
-            }
+        // filter out entities not found
+        if (entities.Count != incomingList.Count)
+            incomingList = incomingList.Where(e => entities.Select(x => x.Id).Contains(e.Id)).ToList();
 
-            entity.ProjectId = incomingEntity.ProjectId;
-            entity.Name = incomingEntity.Name;
-            entity.Type = incomingEntity.Type;
-            entity.Description = incomingEntity.Description;
-            entity.UpdatedById = incomingEntity.UpdatedById;
-        }
+        entities.Update(incomingList, DbContext);
 
         await DbContext.SaveChangesAsync();
     }

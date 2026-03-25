@@ -7,5 +7,5 @@ namespace PrismaApi.Application.Interfaces.Repositories;
 public interface IProjectRepository : ICrudRepository<Project, Guid>
 {
     Task<ICollection<Project>> GetProjectsWhereUserHasAccess(ICollection<Guid> projectIds, string userId);
-    Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incommingEntities, Expression<Func<Project, bool>> filterPredicate);
+    Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incomingEntities, Expression<Func<Project, bool>> filterPredicate);
 }
