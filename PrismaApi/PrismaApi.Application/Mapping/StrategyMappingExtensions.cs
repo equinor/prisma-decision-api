@@ -16,6 +16,8 @@ public static class StrategyMappingExtensions
             Name = entity.Name,
             Description = entity.Description,
             Rationale = entity.Rationale,
+            Icon = entity.Icon,
+            IconColor = entity.IconColor,
             Options = entity.StrategyOptions
                 .Select(so => so.Option)
                 .Where(option => option != null)
@@ -40,6 +42,8 @@ public static class StrategyMappingExtensions
             Rationale = dto.Rationale,
             CreatedById = userDto.Id,
             UpdatedById = userDto.Id,
+            Icon = dto.Icon,
+            IconColor = dto.IconColor,
             StrategyOptions = dto.Options.Select(option => new StrategyOption
             {
                 OptionId = option.Id,
