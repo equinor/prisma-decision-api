@@ -19,19 +19,19 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
         _tableRebuildingService = tableRebuildingService;
     }
 
-    public override async Task DeleteByIdsAsync(IEnumerable<Guid> ids, Expression<Func<Issue, bool>>? filterPredicate = null)
+    public override async Task DeleteByIdsAsync(IEnumerable<Guid> ids, Expression<Func<Issue, bool>>? filterPredicate = null, CancellationToken ct = default)
     {
         var edgesToDelete = await DbContext.Edges
             .Where(x => ids.Contains(x.HeadNode!.IssueId) || ids.Contains(x.TailNode!.IssueId))
-            .ToListAsync();
+            .ToListAsync(ct);
         DbContext.Edges.RemoveRange(edgesToDelete);
-        await _ruleTrigger.OnEdgesRemovedAsync(edgesToDelete.Select(x => x.Id).ToList());
-        await _tableRebuildingService.RebuildTablesAsync();
-        await DbContext.SaveChangesAsync();
-        await base.DeleteByIdsAsync(ids, filterPredicate);
+        await _ruleTrigger.OnEdgesRemovedAsync(edgesToDelete.Select(x => x.Id).ToList(), ct);
+        await _tableRebuildingService.RebuildTablesAsync(ct);
+        await DbContext.SaveChangesAsync(ct);
+        await base.DeleteByIdsAsync(ids, filterPredicate, ct);
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Issue> incomingEntities, Expression<Func<Issue, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Issue> incomingEntities, Expression<Func<Issue, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
@@ -39,7 +39,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
         List<Guid> issuesIdsTriggers = [];
         foreach (var entity in entities)
         {
@@ -52,7 +52,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
             if (WillIssueChangeTables(entity, incomingEntity))
                 issuesIdsTriggers.Add(entity.Id);
 
-            await entity.RemoveOutOfScopeStrategyOptions(incomingEntity, DbContext);
+            await entity.RemoveOutOfScopeStrategyOptions(incomingEntity, DbContext, ct);
 
             entity.ProjectId = incomingEntity.ProjectId;
             entity.Type = incomingEntity.Type;
@@ -63,24 +63,24 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
             entity.UpdatedById = incomingEntity.UpdatedById;
 
             if (incomingEntity.Node != null && entity.Node != null)
-                entity.Node = entity.Node.Update(incomingEntity.Node);
+                entity.Node = entity.Node.Update(incomingEntity.Node, ct);
 
             if (incomingEntity.Decision != null && entity.Decision != null)
-                entity.Decision = await entity.Decision.Update(incomingEntity.Decision, DbContext, _ruleTrigger);
+                entity.Decision = await entity.Decision.Update(incomingEntity.Decision, DbContext, _ruleTrigger, ct);
 
             if (incomingEntity.Uncertainty != null && entity.Uncertainty != null)
-                entity.Uncertainty = await entity.Uncertainty.Update(incomingEntity.Uncertainty, DbContext, _ruleTrigger);
+                entity.Uncertainty = await entity.Uncertainty.Update(incomingEntity.Uncertainty, DbContext, _ruleTrigger, ct);
 
             if (incomingEntity.Utility != null && entity.Utility != null)
-                entity.Utility = entity.Utility.Update(incomingEntity.Utility, DbContext);
+                entity.Utility = entity.Utility.Update(incomingEntity.Utility, DbContext, ct);
         }
-        await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers);
-        await DbContext.SaveChangesAsync();
+        await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers, ct);
+        await DbContext.SaveChangesAsync(ct);
     }
 
-    public async Task<ICollection<Issue>> GetIssuesInInfluenceDiagram(Guid projectId, Expression<Func<Issue, bool>>? filterPredicate)
+    public async Task<ICollection<Issue>> GetIssuesInInfluenceDiagram(Guid projectId, Expression<Func<Issue, bool>>? filterPredicate, CancellationToken ct = default)
     {
-        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId), filterPredicate);
+        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId), filterPredicate, ct);
     }
 
     private bool WillIssueChangeTables(Issue entity, Issue incomingEntity)

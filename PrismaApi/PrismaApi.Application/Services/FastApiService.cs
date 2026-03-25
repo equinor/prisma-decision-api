@@ -23,16 +23,16 @@ public class FastApiService : IFastApiService
         _configuration = configuration;
     }
 
-    public async Task<ApiResponseDto> CallDownstreamFastApiGetAsync(string endpoint)
+    public async Task<ApiResponseDto> CallDownstreamFastApiGetAsync(string endpoint, CancellationToken ct = default)
     {
         string scope = _configuration["FastApiService:Scope"] ?? throw new InvalidOperationException("Scope configuration is missing");
         string accessToken = await _tokenAcquisition.GetAccessTokenForAppAsync(scope);
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         var normalizedEndpoint = endpoint.TrimStart('/');
-        var response = await _httpClient.GetAsync(_configuration["FastApiService:BaseUrl"] + "/" + normalizedEndpoint);
+        var response = await _httpClient.GetAsync(_configuration["FastApiService:BaseUrl"] + "/" + normalizedEndpoint, ct);
 
-        var responseContent = await response.Content.ReadAsStringAsync();
+        var responseContent = await response.Content.ReadAsStringAsync(ct);
 
         return new ApiResponseDto
         {
@@ -41,7 +41,7 @@ public class FastApiService : IFastApiService
         };
     }
 
-    public async Task<ApiResponseDto> CallDownstreamFastApiPostAsync(string endpoint, StringContent content)
+    public async Task<ApiResponseDto> CallDownstreamFastApiPostAsync(string endpoint, StringContent content, CancellationToken ct = default)
     {
         string scope = _configuration["FastApiService:Scope"] ?? throw new InvalidOperationException("Scope configuration is missing");
         string accessToken = await _tokenAcquisition.GetAccessTokenForAppAsync(scope);
@@ -50,8 +50,8 @@ public class FastApiService : IFastApiService
         {
 
             var normalizedEndpoint = endpoint.TrimStart('/');
-            var response = await _httpClient.PostAsync(_configuration["FastApiService:BaseUrl"] + "/" + normalizedEndpoint, content);
-            var responseContent = await response.Content.ReadAsStringAsync();
+            var response = await _httpClient.PostAsync(_configuration["FastApiService:BaseUrl"] + "/" + normalizedEndpoint, content, ct);
+            var responseContent = await response.Content.ReadAsStringAsync(ct);
 
             return new ApiResponseDto
             {
@@ -66,10 +66,10 @@ public class FastApiService : IFastApiService
         }
     }
 
-    public async Task<ApiResponseDto> SendInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, UserOutgoingDto user)
+    public async Task<ApiResponseDto> SendInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var influanceDiagram = await _projectService.GetInfluanceDiagramAsync(projectId, user);
+        var influanceDiagram = await _projectService.GetInfluanceDiagramAsync(projectId, user, ct);
         var content = new StringContent(JsonSerializer.Serialize(influanceDiagram), Encoding.UTF8, "application/json");
-        return await CallDownstreamFastApiPostAsync(endpoint, content);
+        return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
     }
 }

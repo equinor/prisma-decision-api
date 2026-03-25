@@ -24,91 +24,91 @@ public class DiscreteProbabilitiesController : PrismaBaseEntityController
     }
 
     [HttpPost("discrete_probabilities")]
-    public async Task<ActionResult<List<DiscreteProbabilityDto>>> CreateDiscreteProbabilities([FromBody] List<DiscreteProbabilityDto> dtos)
+    public async Task<ActionResult<List<DiscreteProbabilityDto>>> CreateDiscreteProbabilities([FromBody] List<DiscreteProbabilityDto> dtos, CancellationToken ct = default)
     {
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
             var result = await _discreteProbabilityService.CreateAsync(dtos);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpGet("discrete_probabilities/{id:guid}")]
-    public async Task<ActionResult<DiscreteProbabilityDto>> GetDiscreteProbability(Guid id)
+    public async Task<ActionResult<DiscreteProbabilityDto>> GetDiscreteProbability(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _discreteProbabilityService.GetAsync(new List<Guid> { id }, user);
+        var result = await _discreteProbabilityService.GetAsync(new List<Guid> { id }, user, ct);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("discrete_probabilities")]
-    public async Task<ActionResult<List<DiscreteProbabilityDto>>> GetAllDiscreteProbabilities()
+    public async Task<ActionResult<List<DiscreteProbabilityDto>>> GetAllDiscreteProbabilities(CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _discreteProbabilityService.GetAllAsync(user);
+        var result = await _discreteProbabilityService.GetAllAsync(user, ct);
         return Ok(result);
     }
 
     [HttpPut("discrete_probabilities")]
-    public async Task<ActionResult<List<DiscreteProbabilityDto>>> UpdateDiscreteProbabilities([FromBody] List<DiscreteProbabilityDto> dtos)
+    public async Task<ActionResult<List<DiscreteProbabilityDto>>> UpdateDiscreteProbabilities([FromBody] List<DiscreteProbabilityDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            var result = await _discreteProbabilityService.UpdateAsync(dtos, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            var result = await _discreteProbabilityService.UpdateAsync(dtos, user, ct);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("discrete_probabilities/{id:guid}")]
-    public async Task<IActionResult> DeleteDiscreteProbability(Guid id)
+    public async Task<IActionResult> DeleteDiscreteProbability(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _discreteProbabilityService.DeleteAsync(new List<Guid> { id }, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _discreteProbabilityService.DeleteAsync(new List<Guid> { id }, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("discrete_probabilities")]
-    public async Task<IActionResult> DeleteDiscreteProbabilities([FromQuery] List<Guid> ids)
+    public async Task<IActionResult> DeleteDiscreteProbabilities([FromQuery] List<Guid> ids, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _discreteProbabilityService.DeleteAsync(ids, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _discreteProbabilityService.DeleteAsync(ids, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }

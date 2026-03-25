@@ -23,13 +23,13 @@ public class UsersController : PrismaBaseEntityController
     }
 
     [HttpGet("user/me")]
-    public async Task<ActionResult<UserOutgoingDto>> GetMe()
+    public async Task<ActionResult<UserOutgoingDto>> GetMe(CancellationToken ct = default)
     {
         return Ok(HttpContext.GetLoadedUser());
     }
 
     [HttpGet("users")]
-    public async Task<ActionResult<List<UserOutgoingDto>>> GetUsers()
+    public async Task<ActionResult<List<UserOutgoingDto>>> GetUsers(CancellationToken ct = default)
     {
         var result = await _userService.GetAllAsync();
         return Ok(result);
@@ -37,7 +37,7 @@ public class UsersController : PrismaBaseEntityController
 
 
     [HttpPost("users/userIds")]
-    public async Task<ActionResult<List<UserOutgoingDto>>> GetUsersByIds([FromBody] List<string> ids)
+    public async Task<ActionResult<List<UserOutgoingDto>>> GetUsersByIds([FromBody] List<string> ids, CancellationToken ct = default)
     {
         if (ids == null || ids.Count == 0)
             return BadRequest("At least one user ID is required.");
@@ -47,7 +47,7 @@ public class UsersController : PrismaBaseEntityController
     }
 
     [HttpGet("users/search")]
-    public async Task<ActionResult<List<UserOutgoingDto>>> SearchUsers([FromQuery] string query)
+    public async Task<ActionResult<List<UserOutgoingDto>>> SearchUsers([FromQuery] string query, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(query))
             return BadRequest("Query parameter is required.");
@@ -57,7 +57,7 @@ public class UsersController : PrismaBaseEntityController
     }
 
     [HttpGet("auth")]
-    public IActionResult AuthPlaceholder()
+    public IActionResult AuthPlaceholder(CancellationToken ct = default)
     {
         return StatusCode(StatusCodes.Status501NotImplemented);
     }

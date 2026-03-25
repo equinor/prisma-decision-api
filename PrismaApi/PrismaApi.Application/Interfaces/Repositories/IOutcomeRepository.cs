@@ -5,5 +5,5 @@ namespace PrismaApi.Application.Interfaces.Repositories;
 
 public interface IOutcomeRepository : ICrudRepository<Outcome, Guid>
 {
-    Task UpdateRangeAsync(IEnumerable<Outcome> incomingEntities, Expression<Func<Outcome, bool>> filterPredicate);
+    Task UpdateRangeAsync(IEnumerable<Outcome> incomingEntities, Expression<Func<Outcome, bool>> filterPredicate, CancellationToken ct = default);
 }

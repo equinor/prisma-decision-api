@@ -25,7 +25,7 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         return Set.AsQueryable();
     }
 
-    public virtual Task<TEntity?> GetByIdAsync(TId id, bool withTracking = true, IQueryable<TEntity>? customQuery = null, Expression<Func<TEntity, bool>>? filterPredicate = null)
+    public virtual Task<TEntity?> GetByIdAsync(TId id, bool withTracking = true, IQueryable<TEntity>? customQuery = null, Expression<Func<TEntity, bool>>? filterPredicate = null, CancellationToken ct = default)
     {
         IQueryable<TEntity> query = customQuery ?? Query();
         query = query.OptionalWhere(filterPredicate);
@@ -36,10 +36,10 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         }
 
         return query
-            .FirstOrDefaultAsync(e => e.Id.Equals(id));
+            .FirstOrDefaultAsync(e => e.Id.Equals(id), ct);
     }
 
-    public virtual Task<List<TEntity>> GetByIdsAsync(IEnumerable<TId> ids, bool withTracking = true, IQueryable<TEntity>? customQuery = null, Expression<Func<TEntity, bool>>? filterPredicate = null)
+    public virtual Task<List<TEntity>> GetByIdsAsync(IEnumerable<TId> ids, bool withTracking = true, IQueryable<TEntity>? customQuery = null, Expression<Func<TEntity, bool>>? filterPredicate = null, CancellationToken ct = default)
     {
         var idList = ids.ToList();
         if (idList.Count == 0)
@@ -57,10 +57,10 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
 
         return query
             .Where(e => idList.Contains(e.Id))
-            .ToListAsync();
+            .ToListAsync(ct);
     }
 
-    public virtual Task<List<TEntity>> GetAllAsync(bool withTracking = true, IQueryable<TEntity>? customQuery = null, Expression<Func<TEntity, bool>>? filterPredicate = null)
+    public virtual Task<List<TEntity>> GetAllAsync(bool withTracking = true, IQueryable<TEntity>? customQuery = null, Expression<Func<TEntity, bool>>? filterPredicate = null, CancellationToken ct = default)
     {
         IQueryable<TEntity> query = customQuery ?? Query();
         query = query.OptionalWhere(filterPredicate);
@@ -69,36 +69,36 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         {
             query = query.AsNoTracking();
         }
-        return query.ToListAsync();
+        return query.ToListAsync(ct);
     }
 
-    public virtual async Task<TEntity> AddAsync(TEntity entity)
+    public virtual async Task<TEntity> AddAsync(TEntity entity, CancellationToken ct = default)
     {
         Set.Add(entity);
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
         return entity;
     }
 
-    public virtual async Task<List<TEntity>> AddRangeAsync(IEnumerable<TEntity> entities)
+    public virtual async Task<List<TEntity>> AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken ct = default)
     {
         var list = entities.ToList();
         Set.AddRange(list);
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
         return list;
     }
 
-    public virtual async Task UpdateRangeAsync(IEnumerable<TEntity> entities)
+    public virtual async Task UpdateRangeAsync(IEnumerable<TEntity> entities, CancellationToken ct = default)
     {
         Set.UpdateRange(entities);
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
 
-    public virtual async Task DeleteByIdsAsync(IEnumerable<TId> ids, Expression<Func<TEntity, bool>>? filterPredicate = null)
+    public virtual async Task DeleteByIdsAsync(IEnumerable<TId> ids, Expression<Func<TEntity, bool>>? filterPredicate = null, CancellationToken ct = default)
     {
         var entities = await Set
             .OptionalWhere(filterPredicate)
             .Where(e => ids.ToList().Contains(e.Id))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         if (entities.Count == 0)
         {
@@ -106,6 +106,6 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         }
 
         Set.RemoveRange(entities);
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
 }

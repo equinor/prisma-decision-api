@@ -15,7 +15,7 @@ public class OutcomeRepository : BaseRepository<Outcome, Guid>, IOutcomeReposito
         _ruleTrigger = ruleTrigger;
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Outcome> incomingEntities, Expression<Func<Outcome, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Outcome> incomingEntities, Expression<Func<Outcome, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
@@ -23,23 +23,23 @@ public class OutcomeRepository : BaseRepository<Outcome, Guid>, IOutcomeReposito
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
         // filter out entities not found
         if (entities.Count != incomingList.Count)
             incomingList = incomingList.Where(e => entities.Select(x => x.Id).Contains(e.Id)).ToList();
-        await entities.Update(incomingList, DbContext);
+        await entities.Update(incomingList, DbContext, ct: ct);
 
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
-    public override async Task<Outcome> AddAsync(Outcome entity)
+    public override async Task<Outcome> AddAsync(Outcome entity, CancellationToken ct = default)
     {
-        await _ruleTrigger.OnUncertaintyOutcomesAddedAsync([entity.UncertaintyId], default);
-        return await base.AddAsync(entity);
+        await _ruleTrigger.OnUncertaintyOutcomesAddedAsync([entity.UncertaintyId], ct);
+        return await base.AddAsync(entity, ct);
     }
 
-    public override async Task<List<Outcome>> AddRangeAsync(IEnumerable<Outcome> entities)
+    public override async Task<List<Outcome>> AddRangeAsync(IEnumerable<Outcome> entities, CancellationToken ct = default)
     {
-        await _ruleTrigger.OnUncertaintyOutcomesAddedAsync([.. entities.Select(e => e.UncertaintyId)], default);
-        return await base.AddRangeAsync(entities);
+        await _ruleTrigger.OnUncertaintyOutcomesAddedAsync([.. entities.Select(e => e.UncertaintyId)], ct);
+        return await base.AddRangeAsync(entities, ct);
     }
 }

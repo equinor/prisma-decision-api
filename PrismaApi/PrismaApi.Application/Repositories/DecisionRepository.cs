@@ -16,7 +16,7 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
         _ruleTrigger = ruleTrigger;
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Decision> incomingEntities, Expression<Func<Decision, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Decision> incomingEntities, Expression<Func<Decision, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
@@ -24,7 +24,7 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
         List<Guid> issuesIdsTriggers = [];
         foreach (var entity in entities)
         {
@@ -33,9 +33,9 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
             {
                 continue;
             }
-            await entity.Update(incomingEntity, DbContext);
+            await entity.Update(incomingEntity, DbContext, ct: ct);
         }
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
 
     protected override IQueryable<Decision> Query()

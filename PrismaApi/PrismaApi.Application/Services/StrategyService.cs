@@ -20,38 +20,38 @@ public class StrategyService: IStrategyService
         _strategyRepository = strategyRepository;
     }
 
-    public async Task<List<StrategyOutgoingDto>> CreateAsync(List<StrategyIncomingDto> dtos, UserOutgoingDto userDto)
+    public async Task<List<StrategyOutgoingDto>> CreateAsync(List<StrategyIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         var entities = dtos.ToEntities(userDto);
-        await _strategyRepository.AddRangeAsync(entities);
+        await _strategyRepository.AddRangeAsync(entities, ct);
         var ids = dtos.Select(d => d.Id).ToList();
-        var created = await _strategyRepository.GetByIdsAsync(ids);
+        var created = await _strategyRepository.GetByIdsAsync(ids, ct: ct);
         return created.ToOutgoingDtos();
     }
 
-    public async Task<List<StrategyOutgoingDto>> UpdateAsync(List<StrategyIncomingDto> dtos, UserOutgoingDto userDto)
+    public async Task<List<StrategyOutgoingDto>> UpdateAsync(List<StrategyIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         var entities = dtos.ToEntities(userDto);
-        await _strategyRepository.UpdateRangeAsync(entities, UserFilter(userDto));
+        await _strategyRepository.UpdateRangeAsync(entities, UserFilter(userDto), ct);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _strategyRepository.GetByIdsAsync(ids, filterPredicate: UserFilter(userDto));
+        var updated = await _strategyRepository.GetByIdsAsync(ids, filterPredicate: UserFilter(userDto), ct: ct);
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        await _strategyRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
+        await _strategyRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
     }
 
-    public async Task<List<StrategyOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task<List<StrategyOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var strategies = await _strategyRepository.GetByIdsAsync(ids, filterPredicate: UserFilter(user));
+        var strategies = await _strategyRepository.GetByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
         return strategies.ToOutgoingDtos();
     }
 
-    public async Task<List<StrategyOutgoingDto>> GetAllAsync(UserOutgoingDto user)
+    public async Task<List<StrategyOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var strategies = await _strategyRepository.GetAllAsync(filterPredicate: UserFilter(user));
+        var strategies = await _strategyRepository.GetAllAsync(filterPredicate: UserFilter(user), ct: ct);
         return strategies.ToOutgoingDtos();
     }
 

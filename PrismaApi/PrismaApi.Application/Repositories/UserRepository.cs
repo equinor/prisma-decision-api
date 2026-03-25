@@ -15,7 +15,7 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
     {
     }
 
-    public override async Task UpdateRangeAsync(IEnumerable<User> incomingEntities)
+    public override async Task UpdateRangeAsync(IEnumerable<User> incomingEntities, CancellationToken ct = default)
     {
         var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
@@ -23,7 +23,7 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id));
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), ct: ct);
         foreach (var entity in entities)
         {
             var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
@@ -35,7 +35,7 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
             entity.Name = incomingEntity.Name;
         }
 
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
 
     protected override IQueryable<User> Query()
@@ -44,17 +44,17 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
             .Include(u => u.ProjectRoles);
     }
 
-    public async Task<User> GetOrAddByIdAsync(UserIncomingDto dto)
+    public async Task<User> GetOrAddByIdAsync(UserIncomingDto dto, CancellationToken ct = default)
     {
-        var existingUser = await GetByIdAsync(dto.Id);
+        var existingUser = await GetByIdAsync(dto.Id, ct: ct);
         if (existingUser != null)
         {
             return existingUser;
         }
 
         User user = dto.ToEntity();
-        await DbContext.Users.AddAsync(user);
-        await DbContext.SaveChangesAsync();
+        await DbContext.Users.AddAsync(user, ct);
+        await DbContext.SaveChangesAsync(ct);
 
         return user;
     }

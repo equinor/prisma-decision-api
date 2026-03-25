@@ -14,17 +14,17 @@ public class TableRebuildingService: ITableRebuildingService
         DbContext = dbContext;
     }
 
-    public async Task RebuildTablesAsync()
+    public async Task RebuildTablesAsync(CancellationToken ct = default)
     {
         var issueIds = DbContext.DiscreteTableSessionInfo.AffectedIssueIds;
         if (issueIds.Count == 0 || DbContext.IsDiscreteTableEventDisabled)
         {
             return;
         }
-        await RebuildIssuesFromIssueIds(issueIds);
+        await RebuildIssuesFromIssueIds(issueIds, ct);
     }
 
-    public async Task RebuildIssuesFromIssueIds(ICollection<Guid> issueIds)
+    public async Task RebuildIssuesFromIssueIds(ICollection<Guid> issueIds, CancellationToken ct = default)
     {
         var issues = await DbContext.Issues
             .AsSplitQuery()
@@ -55,25 +55,25 @@ public class TableRebuildingService: ITableRebuildingService
                         .ThenInclude(node => node.Issue!)
                             .ThenInclude(parentIssue => parentIssue.Decision!)
                                 .ThenInclude(decision => decision.Options)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         foreach (var issue in issues)
         {
             if (IsIssueType(issue.Type, IssueType.Uncertainty) && issue.Uncertainty != null)
             {
 
-                await RebuildUncertaintyTable(issue);
+                await RebuildUncertaintyTable(issue, ct);
             }
             else if (IsIssueType(issue.Type, IssueType.Utility) && issue.Utility != null)
             {
-                await RebuildUtilityTable(issue);
+                await RebuildUtilityTable(issue, ct);
             }
         }
 
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
 
-    private async Task RebuildUncertaintyTable(Issue issue)
+    private async Task RebuildUncertaintyTable(Issue issue, CancellationToken ct = default)
     {
         var uncertainty = issue.Uncertainty;
         if (uncertainty == null)
@@ -98,7 +98,7 @@ public class TableRebuildingService: ITableRebuildingService
                 };
                 //Entry(newEntry).State = EntityState.Added;
                 //uncertainty.DiscreteProbabilities.Add(newEntry);
-                await DbContext.DiscreteProbabilities.AddAsync(newEntry);
+                await DbContext.DiscreteProbabilities.AddAsync(newEntry, ct);
             }
             return;
         }
@@ -135,7 +135,7 @@ public class TableRebuildingService: ITableRebuildingService
                     }
                 ).ToList();
 
-                await DbContext.DiscreteProbabilityParentOptions.AddRangeAsync(parentOptions);
+                await DbContext.DiscreteProbabilityParentOptions.AddRangeAsync(parentOptions, ct);
 
                 var parentOutcomes = parentOutcomeIds.Select(x =>
                     new DiscreteProbabilityParentOutcome
@@ -145,12 +145,12 @@ public class TableRebuildingService: ITableRebuildingService
                     }
                 ).ToList();
 
-                await DbContext.DiscreteProbabilityParentOutcomes.AddRangeAsync(parentOutcomes);
+                await DbContext.DiscreteProbabilityParentOutcomes.AddRangeAsync(parentOutcomes, ct);
             }
         }
     }
 
-    private async Task RebuildUtilityTable(Issue issue)
+    private async Task RebuildUtilityTable(Issue issue, CancellationToken ct = default)
     {
         var utility = issue.Utility;
         if (utility == null)
@@ -187,7 +187,7 @@ public class TableRebuildingService: ITableRebuildingService
                     ValueMetricId = DomainConstants.DefaultValueMetricId,
                     UtilityId = utility.Id,
                     UtilityValue = 0,
-                });
+                }, ct);
 
 
             var parentOptions = parentOptionIds.Select(x =>
@@ -198,7 +198,7 @@ public class TableRebuildingService: ITableRebuildingService
                 }
             ).ToList();
 
-            await DbContext.DiscreteUtilityParentOptions.AddRangeAsync(parentOptions);
+            await DbContext.DiscreteUtilityParentOptions.AddRangeAsync(parentOptions, ct);
 
             var parentOutcomes = parentOutcomeIds.Select(x =>
                 new DiscreteUtilityParentOutcome
@@ -208,7 +208,7 @@ public class TableRebuildingService: ITableRebuildingService
                 }
             ).ToList();
 
-            await DbContext.DiscreteUtilityParentOutcomes.AddRangeAsync(parentOutcomes);
+            await DbContext.DiscreteUtilityParentOutcomes.AddRangeAsync(parentOutcomes, ct);
         }
 
     }

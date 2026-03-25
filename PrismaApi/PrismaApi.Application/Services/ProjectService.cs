@@ -27,11 +27,11 @@ public class ProjectService : IProjectService
         _edgeRepository = edgeRepository;
     }
 
-    public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos, bool isProjectDuplicated, UserOutgoingDto userDto)
+    public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos, bool isProjectDuplicated, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         var projectEntities = dtos.ToEntities(userDto);
 
-        await _projectRepository.AddRangeAsync(projectEntities);
+        await _projectRepository.AddRangeAsync(projectEntities, ct);
 
         if (isProjectDuplicated)
         {
@@ -47,53 +47,53 @@ public class ProjectService : IProjectService
                 };
             }).Distinct();
 
-            await _projectRoleRepository.AddRangeAsync(creatorRole.ToEntities(userDto));
+            await _projectRoleRepository.AddRangeAsync(creatorRole.ToEntities(userDto), ct);
         }
 
         var ids = projectEntities.Select(p => p.Id).ToList();
-        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false);
+        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, ct: ct);
         return projects.ToOutgoingDtos();
     }
 
-    public async Task<List<ProjectOutgoingDto>> UpdateAsync(List<ProjectIncomingDto> dtos, UserOutgoingDto userDto)
+    public async Task<List<ProjectOutgoingDto>> UpdateAsync(List<ProjectIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         var projectEntities = dtos.ToEntities(userDto);
-        var projects = await _projectRepository.UpdateRangeAsync(projectEntities, filterPredicate: UserFilter(userDto));
+        var projects = await _projectRepository.UpdateRangeAsync(projectEntities, filterPredicate: UserFilter(userDto), ct);
         return projects.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        await _projectRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
+        await _projectRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
     }
 
-    public async Task<List<ProjectOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task<List<ProjectOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
+        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return projects.ToOutgoingDtos();
     }
 
-    public async Task<List<ProjectOutgoingDto>> GetAllAsync(UserOutgoingDto user)
+    public async Task<List<ProjectOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var projects = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
+        var projects = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return projects.ToOutgoingDtos();
     }
 
-    public async Task<List<PopulatedProjectDto>> GetPopulatedAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task<List<PopulatedProjectDto>> GetPopulatedAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
+        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return projects.ToPopulatedDtos();
     }
 
-    public async Task<List<PopulatedProjectDto>> GetAllPopulatedAsync(UserOutgoingDto user)
+    public async Task<List<PopulatedProjectDto>> GetAllPopulatedAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var projects = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
+        var projects = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return projects.ToPopulatedDtos();
     }
 
-    public async Task<InfluanceDiagramDto> GetInfluanceDiagramAsync(Guid projectId, UserOutgoingDto user)
+    public async Task<InfluanceDiagramDto> GetInfluanceDiagramAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var project = await _projectRepository.GetByIdsAsync([projectId], withTracking: false, filterPredicate: UserFilter(user));
+        var project = await _projectRepository.GetByIdsAsync([projectId], withTracking: false, filterPredicate: UserFilter(user), ct: ct);
 
         if (project == null)
             throw new ArgumentNullException(nameof(project));
@@ -101,8 +101,8 @@ public class ProjectService : IProjectService
         return new InfluanceDiagramDto
         {
             projectId = projectId,
-            issues = (await _issueRepository.GetIssuesInInfluenceDiagram(projectId, IssuesUserFilter(user))).ToOutgoingDtos(),
-            edges = (await _edgeRepository.GetEdgesInInfluenceDiagram(projectId, EdgesUserFilter(user))).ToOutgoingDtos()
+            issues = (await _issueRepository.GetIssuesInInfluenceDiagram(projectId, IssuesUserFilter(user), ct)).ToOutgoingDtos(),
+            edges = (await _edgeRepository.GetEdgesInInfluenceDiagram(projectId, EdgesUserFilter(user), ct)).ToOutgoingDtos()
         };
     }
 

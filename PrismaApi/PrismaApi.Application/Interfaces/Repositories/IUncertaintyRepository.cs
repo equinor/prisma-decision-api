@@ -5,5 +5,5 @@ namespace PrismaApi.Application.Interfaces.Repositories;
 
 public interface IUncertaintyRepository : ICrudRepository<Uncertainty, Guid>
 {
-    Task UpdateRangeAsync(IEnumerable<Uncertainty> incomingEntities, Expression<Func<Uncertainty, bool>> filterPredicate);
+    Task UpdateRangeAsync(IEnumerable<Uncertainty> incomingEntities, Expression<Func<Uncertainty, bool>> filterPredicate, CancellationToken ct = default);
 }

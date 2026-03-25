@@ -20,36 +20,36 @@ public class OutcomeService: IOutcomeService
         _outcomeRepository = outcomeRepository;
     }
 
-    public async Task<List<OutcomeOutgoingDto>> CreateAsync(List<OutcomeIncomingDto> dtos)
+    public async Task<List<OutcomeOutgoingDto>> CreateAsync(List<OutcomeIncomingDto> dtos, CancellationToken ct = default)
     {
         var entities = dtos.ToEntities();
-        await _outcomeRepository.AddRangeAsync(entities);
+        await _outcomeRepository.AddRangeAsync(entities, ct);
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<OutcomeOutgoingDto>> UpdateAsync(List<OutcomeIncomingDto> dtos, UserOutgoingDto userDto)
+    public async Task<List<OutcomeOutgoingDto>> UpdateAsync(List<OutcomeIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         var entities = dtos.ToEntities();
-        await _outcomeRepository.UpdateRangeAsync(entities, UserFilter(userDto));
+        await _outcomeRepository.UpdateRangeAsync(entities, UserFilter(userDto), ct);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _outcomeRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
+        var updated = await _outcomeRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto), ct: ct);
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        await _outcomeRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
+        await _outcomeRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
     }
 
-    public async Task<List<OutcomeOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task<List<OutcomeOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _outcomeRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
+        var entities = await _outcomeRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<OutcomeOutgoingDto>> GetAllAsync(UserOutgoingDto user)
+    public async Task<List<OutcomeOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _outcomeRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
+        var entities = await _outcomeRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return entities.ToOutgoingDtos();
     }
 
