@@ -16,9 +16,9 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>, IUncerta
         _ruleTrigger = ruleTrigger;
     }
 
-    public async  Task UpdateRangeAsync(IEnumerable<Uncertainty> incommingEntities, Expression<Func<Uncertainty, bool>> filterPredicate)
+    public async  Task UpdateRangeAsync(IEnumerable<Uncertainty> incomingEntities, Expression<Func<Uncertainty, bool>> filterPredicate)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;

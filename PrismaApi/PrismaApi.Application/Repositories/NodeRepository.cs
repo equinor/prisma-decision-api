@@ -13,9 +13,9 @@ public class NodeRepository : BaseRepository<Node, Guid>, INodeRepository
     {
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Node> incommingEntities, Expression<Func<Node, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Node> incomingEntities, Expression<Func<Node, bool>> filterPredicate)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;

@@ -15,9 +15,9 @@ public class OutcomeRepository : BaseRepository<Outcome, Guid>, IOutcomeReposito
         _ruleTrigger = ruleTrigger;
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Outcome> incommingEntities, Expression<Func<Outcome, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Outcome> incomingEntities, Expression<Func<Outcome, bool>> filterPredicate)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;

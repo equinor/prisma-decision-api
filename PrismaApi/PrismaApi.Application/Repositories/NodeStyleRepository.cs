@@ -12,9 +12,9 @@ public class NodeStyleRepository : BaseRepository<NodeStyle, Guid>, INodeStyleRe
     {
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<NodeStyle> incommingEntities, Expression<Func<NodeStyle, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<NodeStyle> incomingEntities, Expression<Func<NodeStyle, bool>> filterPredicate)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;

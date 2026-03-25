@@ -16,9 +16,9 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
         _ruleTrigger = ruleTrigger;
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Decision> incommingEntities, Expression<Func<Decision, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Decision> incomingEntities, Expression<Func<Decision, bool>> filterPredicate)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;

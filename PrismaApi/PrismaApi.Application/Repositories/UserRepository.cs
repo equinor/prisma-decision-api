@@ -15,9 +15,9 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
     {
     }
 
-    public override async Task UpdateRangeAsync(IEnumerable<User> incommingEntities)
+    public override async Task UpdateRangeAsync(IEnumerable<User> incomingEntities)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;

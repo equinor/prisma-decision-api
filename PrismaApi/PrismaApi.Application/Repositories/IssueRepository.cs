@@ -31,9 +31,9 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
         await base.DeleteByIdsAsync(ids, filterPredicate);
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Issue> incommingEntities, Expression<Func<Issue, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Issue> incomingEntities, Expression<Func<Issue, bool>> filterPredicate)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;
@@ -83,10 +83,10 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
         return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId), filterPredicate);
     }
 
-    private bool WillIssueChangeTables(Issue entity, Issue incommingEntity)
+    private bool WillIssueChangeTables(Issue entity, Issue incomingEntity)
     {
-        if (entity.Type != incommingEntity.Type) return true;
-        if (entity.Boundary != incommingEntity.Boundary && (incommingEntity.Boundary == Boundary.Out.ToString() || entity.Boundary == Boundary.Out.ToString())) return true;
+        if (entity.Type != incomingEntity.Type) return true;
+        if (entity.Boundary != incomingEntity.Boundary && (incomingEntity.Boundary == Boundary.Out.ToString() || entity.Boundary == Boundary.Out.ToString())) return true;
         return false;
     }
 

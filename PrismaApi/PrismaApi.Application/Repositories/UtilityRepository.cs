@@ -13,9 +13,9 @@ public class UtilityRepository : BaseRepository<Utility, Guid>, IUtilityReposito
     {
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Utility> incommingEntities, Expression<Func<Utility, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Utility> incomingEntities, Expression<Func<Utility, bool>> filterPredicate)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;
