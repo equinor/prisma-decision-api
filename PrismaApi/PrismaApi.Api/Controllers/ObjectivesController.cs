@@ -31,7 +31,7 @@ public class ObjectivesController : PrismaBaseEntityController
         await BeginTransactionAsync(ct);
         try
         {
-            var result = await _objectiveService.CreateAsync(dtos, user);
+            var result = await _objectiveService.CreateAsync(dtos, user, ct);
             await CommitTransactionAsync(ct);
             return Ok(result);
         }
