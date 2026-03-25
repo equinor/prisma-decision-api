@@ -16,7 +16,7 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>, IUncerta
         _ruleTrigger = ruleTrigger;
     }
 
-    public async  Task UpdateRangeAsync(IEnumerable<Uncertainty> incommingEntities, Expression<Func<Uncertainty, bool>> filterPredicate)
+    public async  Task UpdateRangeAsync(IEnumerable<Uncertainty> incommingEntities, Expression<Func<Uncertainty, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -24,7 +24,7 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>, IUncerta
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
         List<Guid> issuesIdsTriggers = [];
         foreach (var entity in entities)
         {
@@ -37,12 +37,12 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>, IUncerta
                 issuesIdsTriggers.Add(entity.IssueId);
             entity.IssueId = incomingEntity.IssueId;
             entity.IsKey = incomingEntity.IsKey;
-            await entity.Outcomes.Update(incomingEntity.Outcomes, DbContext);
+            await entity.Outcomes.Update(incomingEntity.Outcomes, DbContext, ct: ct);
             entity.DiscreteProbabilities.Update(incomingEntity.DiscreteProbabilities, DbContext);
         }
 
-        await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers);
-        await DbContext.SaveChangesAsync();
+        await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers, ct);
+        await DbContext.SaveChangesAsync(ct);
     }
 
     protected override IQueryable<Uncertainty> Query()

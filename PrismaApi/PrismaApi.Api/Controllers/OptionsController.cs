@@ -30,92 +30,92 @@ public class OptionsController : PrismaBaseEntityController
     }
 
     [HttpPost("options")]
-    public async Task<ActionResult<List<OptionOutgoingDto>>> CreateOptions([FromBody] List<OptionIncomingDto> dtos)
+    public async Task<ActionResult<List<OptionOutgoingDto>>> CreateOptions([FromBody] List<OptionIncomingDto> dtos, CancellationToken ct = default)
     {
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            var result = await _optionService.CreateAsync(dtos);
-            await _tableRebuildingService.RebuildTablesAsync();
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            var result = await _optionService.CreateAsync(dtos, ct);
+            await _tableRebuildingService.RebuildTablesAsync(ct);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpGet("options/{id:guid}")]
-    public async Task<ActionResult<OptionOutgoingDto>> GetOption(Guid id)
+    public async Task<ActionResult<OptionOutgoingDto>> GetOption(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _optionService.GetAsync(new List<Guid> { id }, user);
-        return result.Count > 0 ? Ok(result[0]) : NotFound();
+        var result = await _optionService.GetAsync(new List<Guid> { id }, user, ct);
+        return result.Count > 0 ? Ok(result[0]) : NotFound(ct);
     }
 
     [HttpGet("options")]
-    public async Task<ActionResult<List<OptionOutgoingDto>>> GetAllOptions()
+    public async Task<ActionResult<List<OptionOutgoingDto>>> GetAllOptions(CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _optionService.GetAllAsync(user);
+        var result = await _optionService.GetAllAsync(user, ct);
         return Ok(result);
     }
 
     [HttpPut("options")]
-    public async Task<ActionResult<List<OptionOutgoingDto>>> UpdateOptions([FromBody] List<OptionIncomingDto> dtos)
+    public async Task<ActionResult<List<OptionOutgoingDto>>> UpdateOptions([FromBody] List<OptionIncomingDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            var result = await _optionService.UpdateAsync(dtos, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            var result = await _optionService.UpdateAsync(dtos, user, ct);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("options/{id:guid}")]
-    public async Task<IActionResult> DeleteOption(Guid id)
+    public async Task<IActionResult> DeleteOption(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _optionService.DeleteAsync(new List<Guid> { id }, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _optionService.DeleteAsync(new List<Guid> { id }, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("options")]
-    public async Task<IActionResult> DeleteOptions([FromQuery] List<Guid> ids)
+    public async Task<IActionResult> DeleteOptions([FromQuery] List<Guid> ids, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _optionService.DeleteAsync(ids, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _optionService.DeleteAsync(ids, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }

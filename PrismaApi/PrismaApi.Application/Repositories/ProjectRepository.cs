@@ -15,19 +15,20 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
         _repo = repo;
     }
 
-    public async Task<ICollection<Project>> GetProjectsWhereUserHasAccess(ICollection<Guid> projectIds, string userId)
+    public async Task<ICollection<Project>> GetProjectsWhereUserHasAccess(ICollection<Guid> projectIds, string userId, CancellationToken ct = default)
     {
         return await GetByIdsAsync(
             projectIds,
             withTracking: false,
-            filterPredicate: p => p.ProjectRoles.Any(r => r.UserId == userId)
+            filterPredicate: p => p.ProjectRoles.Any(r => r.UserId == userId),
+            ct: ct
         );
     }
 
 
-    public async Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incommingEntities, Expression<Func<Project, bool>> filterPredicate)
+    public async Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incommingEntities, Expression<Func<Project, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var entities = await GetByIdsAsync(incommingEntities.Select(e => e.Id), withTracking: true, filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incommingEntities.Select(e => e.Id), withTracking: true, filterPredicate: filterPredicate, ct: ct);
         foreach (var entity in entities)
         {
             var incommingEntity = incommingEntities.Where(x => x.Id == entity.Id).First();
@@ -45,7 +46,7 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
             entity.Strategies.Update(incommingEntity.Strategies, DbContext);
         }
 
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
         return incommingEntities;
     }
 

@@ -16,7 +16,7 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
         _ruleTrigger = ruleTrigger;
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Decision> incommingEntities, Expression<Func<Decision, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Decision> incommingEntities, Expression<Func<Decision, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -24,7 +24,7 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
         List<Guid> issuesIdsTriggers = [];
         foreach (var entity in entities)
         {
@@ -34,29 +34,29 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
                 continue;
             }
 
-            await RemoveOutOfScopeStrategyOptions(entity, incomingEntity);
+            await RemoveOutOfScopeStrategyOptions(entity, incomingEntity, ct);
 
             if (entity.Type != incomingEntity.Type && incomingEntity.Type != DecisionHierarchy.Focus.ToString())
                 issuesIdsTriggers.Add(entity.IssueId);
 
             entity.IssueId = incomingEntity.IssueId;
             entity.Type = incomingEntity.Type;
-            await entity.Options.Update(incomingEntity.Options, DbContext);
+            await entity.Options.Update(incomingEntity.Options, DbContext, ct: ct);
         }
-        await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers);
-        await DbContext.SaveChangesAsync();
+        await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers, ct);
+        await DbContext.SaveChangesAsync(ct);
     }
 
-    private async Task RemoveOutOfScopeStrategyOptions(Decision entity, Decision incommingEntity)
+    private async Task RemoveOutOfScopeStrategyOptions(Decision entity, Decision incommingEntity, CancellationToken ct = default)
     {
         if (!IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
         var strategyOptionsToBeRemoved = await DbContext.StrategyOptions
             .Where(e => e.Option!.DecisionId == entity.Id)
-            .ToListAsync();
+            .ToListAsync(ct);
         if (strategyOptionsToBeRemoved.Any())
         {
             DbContext.StrategyOptions.RemoveRange(strategyOptionsToBeRemoved);
-            await DbContext.SaveChangesAsync();
+            await DbContext.SaveChangesAsync(ct);
         }
     }
 

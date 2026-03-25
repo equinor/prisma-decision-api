@@ -20,7 +20,7 @@ public class StuctureController : PrismaBaseController
     }
 
     [HttpGet("structure/{projectId:guid}/decision_tree/v2")]
-    public async Task<ActionResult<ApiResponseDto>> GetDecisionTreeAsync([FromRoute] Guid projectId)
+    public async Task<ActionResult<ApiResponseDto>> GetDecisionTreeAsync([FromRoute] Guid projectId, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
         var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/decision_tree/v2", user);
@@ -33,7 +33,7 @@ public class StuctureController : PrismaBaseController
     }
 
     [HttpGet("structure/{projectId:guid}/influence_diagram")]
-    public async Task<ActionResult<ApiResponseDto>> GetInfluenceDiagramAsync([FromRoute] Guid projectId)
+    public async Task<ActionResult<ApiResponseDto>> GetInfluenceDiagramAsync([FromRoute] Guid projectId, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
         var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/influence_diagram", user);
@@ -46,7 +46,7 @@ public class StuctureController : PrismaBaseController
     }
 
     [HttpGet("structure/{projectId:guid}/partial_order")]
-    public async Task<ActionResult<ApiResponseDto>> GetPartialOrderAsync([FromRoute] Guid projectId)
+    public async Task<ActionResult<ApiResponseDto>> GetPartialOrderAsync([FromRoute] Guid projectId, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
         var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/partial_order", user);

@@ -22,42 +22,42 @@ public class IssueService : IIssueService
         _projectRepository = projectRepository;
     }
 
-    public async Task<List<IssueOutgoingDto>> CreateAsync(List<IssueIncomingDto> dtos, UserOutgoingDto userDto)
+    public async Task<List<IssueOutgoingDto>> CreateAsync(List<IssueIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         var projectIds = dtos.Select(d => d.ProjectId).Distinct().ToList();
-        if ((await _projectRepository.GetProjectsWhereUserHasAccess(projectIds, userDto.Id)).Count == 0)
+        if ((await _projectRepository.GetProjectsWhereUserHasAccess(projectIds, userDto.Id, ct)).Count == 0)
             throw new UnauthorizedAccessException("User does not have access to one or more projects.");
 
         EnsureNodeDefaults(dtos);
         var entities = dtos.ToEntities(userDto);
-        await _issueRepository.AddRangeAsync(entities);
+        await _issueRepository.AddRangeAsync(entities, ct);
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<IssueOutgoingDto>> UpdateAsync(List<IssueIncomingDto> dtos, UserOutgoingDto userDto)
+    public async Task<List<IssueOutgoingDto>> UpdateAsync(List<IssueIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         EnsureNodeDefaults(dtos);
         var entities = dtos.ToEntities(userDto);
-        await _issueRepository.UpdateRangeAsync(entities, UserFilter(userDto));
+        await _issueRepository.UpdateRangeAsync(entities, UserFilter(userDto), ct);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _issueRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
+        var updated = await _issueRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto), ct: ct);
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        await _issueRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
+        await _issueRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
     }
 
-    public async Task<List<IssueOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task<List<IssueOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var issues = await _issueRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
+        var issues = await _issueRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return issues.ToOutgoingDtos();
     }
 
-    public async Task<List<IssueOutgoingDto>> GetAllAsync(UserOutgoingDto user)
+    public async Task<List<IssueOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var issues = await _issueRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
+        var issues = await _issueRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return issues.ToOutgoingDtos();
     }
 

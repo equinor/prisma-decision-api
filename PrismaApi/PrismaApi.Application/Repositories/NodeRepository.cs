@@ -13,7 +13,7 @@ public class NodeRepository : BaseRepository<Node, Guid>, INodeRepository
     {
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Node> incommingEntities, Expression<Func<Node, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Node> incommingEntities, Expression<Func<Node, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -21,7 +21,7 @@ public class NodeRepository : BaseRepository<Node, Guid>, INodeRepository
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
         foreach (var entity in entities)
         {
             var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
@@ -39,7 +39,7 @@ public class NodeRepository : BaseRepository<Node, Guid>, INodeRepository
                 entity.NodeStyle = entity.NodeStyle.Update(incomingEntity.NodeStyle);
         }
 
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
 
     protected override IQueryable<Node> Query()

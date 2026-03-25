@@ -20,29 +20,29 @@ public class UtilityService: IUtilityService
         _utilityRepository = utilityRepository;
     }
 
-    public async Task<List<UtilityOutgoingDto>> UpdateAsync(List<UtilityIncomingDto> dtos, UserOutgoingDto user)
+    public async Task<List<UtilityOutgoingDto>> UpdateAsync(List<UtilityIncomingDto> dtos, UserOutgoingDto user, CancellationToken ct = default)
     {
         var entities = dtos.ToEntities();
-        await _utilityRepository.UpdateRangeAsync(entities, UserFilter(user));
+        await _utilityRepository.UpdateRangeAsync(entities, UserFilter(user), ct);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _utilityRepository.GetByIdsAsync(ids);
+        var updated = await _utilityRepository.GetByIdsAsync(ids, ct: ct);
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        await _utilityRepository.DeleteByIdsAsync(ids, UserFilter(user));
+        await _utilityRepository.DeleteByIdsAsync(ids, UserFilter(user), ct);
     }
 
-    public async Task<List<UtilityOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task<List<UtilityOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _utilityRepository.GetByIdsAsync(ids, filterPredicate: UserFilter(user));
+        var entities = await _utilityRepository.GetByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<UtilityOutgoingDto>> GetAllAsync(UserOutgoingDto user)
+    public async Task<List<UtilityOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _utilityRepository.GetAllAsync(filterPredicate: UserFilter(user));
+        var entities = await _utilityRepository.GetAllAsync(filterPredicate: UserFilter(user), ct: ct);
         return entities.ToOutgoingDtos();
     }
     private static Expression<Func<Utility, bool>> UserFilter(UserOutgoingDto user)

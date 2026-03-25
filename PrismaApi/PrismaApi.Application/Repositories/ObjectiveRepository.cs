@@ -12,7 +12,7 @@ public class ObjectiveRepository : BaseRepository<Objective, Guid>, IObjectiveRe
     {
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Objective> incommingEntities, Expression<Func<Objective, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Objective> incommingEntities, Expression<Func<Objective, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -20,7 +20,7 @@ public class ObjectiveRepository : BaseRepository<Objective, Guid>, IObjectiveRe
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
         foreach (var entity in entities)
         {
             var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
@@ -36,6 +36,6 @@ public class ObjectiveRepository : BaseRepository<Objective, Guid>, IObjectiveRe
             entity.UpdatedById = incomingEntity.UpdatedById;
         }
 
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
 }

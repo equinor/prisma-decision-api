@@ -27,92 +27,92 @@ public class OutcomesController : PrismaBaseEntityController
     }
 
     [HttpPost("outcomes")]
-    public async Task<ActionResult<List<OutcomeOutgoingDto>>> CreateOutcomes([FromBody] List<OutcomeIncomingDto> dtos)
+    public async Task<ActionResult<List<OutcomeOutgoingDto>>> CreateOutcomes([FromBody] List<OutcomeIncomingDto> dtos, CancellationToken ct = default)
     {
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            var result = await _outcomeService.CreateAsync(dtos);
-            await _tableRebuildingService.RebuildTablesAsync();
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            var result = await _outcomeService.CreateAsync(dtos, ct);
+            await _tableRebuildingService.RebuildTablesAsync(ct);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpGet("outcomes/{id:guid}")]
-    public async Task<ActionResult<OutcomeOutgoingDto>> GetOutcome(Guid id)
+    public async Task<ActionResult<OutcomeOutgoingDto>> GetOutcome(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _outcomeService.GetAsync(new List<Guid> { id }, user);
-        return result.Count > 0 ? Ok(result[0]) : NotFound();
+        var result = await _outcomeService.GetAsync(new List<Guid> { id }, user, ct);
+        return result.Count > 0 ? Ok(result[0]) : NotFound(ct);
     }
 
     [HttpGet("outcomes")]
-    public async Task<ActionResult<List<OutcomeOutgoingDto>>> GetAllOutcomes()
+    public async Task<ActionResult<List<OutcomeOutgoingDto>>> GetAllOutcomes(CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _outcomeService.GetAllAsync(user);
+        var result = await _outcomeService.GetAllAsync(user, ct);
         return Ok(result);
     }
 
     [HttpPut("outcomes")]
-    public async Task<ActionResult<List<OutcomeOutgoingDto>>> UpdateOutcomes([FromBody] List<OutcomeIncomingDto> dtos)
+    public async Task<ActionResult<List<OutcomeOutgoingDto>>> UpdateOutcomes([FromBody] List<OutcomeIncomingDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            var result = await _outcomeService.UpdateAsync(dtos, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            var result = await _outcomeService.UpdateAsync(dtos, user, ct);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("outcomes/{id:guid}")]
-    public async Task<IActionResult> DeleteOutcome(Guid id)
+    public async Task<IActionResult> DeleteOutcome(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _outcomeService.DeleteAsync(new List<Guid> { id }, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _outcomeService.DeleteAsync(new List<Guid> { id }, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("outcomes")]
-    public async Task<IActionResult> DeleteOutcomes([FromQuery] List<Guid> ids)
+    public async Task<IActionResult> DeleteOutcomes([FromQuery] List<Guid> ids, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _outcomeService.DeleteAsync(ids, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _outcomeService.DeleteAsync(ids, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }

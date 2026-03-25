@@ -20,36 +20,36 @@ public class DiscreteUtilityService : IDiscreteUtilityService
         _discreteUtilityRepository = discreteUtilityRepository;
     }
 
-    public async Task<List<DiscreteUtilityDto>> CreateAsync(List<DiscreteUtilityDto> dtos)
+    public async Task<List<DiscreteUtilityDto>> CreateAsync(List<DiscreteUtilityDto> dtos, CancellationToken ct = default)
     {
         var entities = dtos.ToEntities();
-        await _discreteUtilityRepository.AddRangeAsync(entities);
+        await _discreteUtilityRepository.AddRangeAsync(entities, ct);
         return entities.ToDtos();
     }
 
-    public async Task<List<DiscreteUtilityDto>> UpdateAsync(List<DiscreteUtilityDto> dtos, UserOutgoingDto userDto)
+    public async Task<List<DiscreteUtilityDto>> UpdateAsync(List<DiscreteUtilityDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         var entities = dtos.ToEntitiesWithoutParents();
-        await _discreteUtilityRepository.UpdateRangeAsync(entities, UserFilter(userDto));
+        await _discreteUtilityRepository.UpdateRangeAsync(entities, UserFilter(userDto), ct);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _discreteUtilityRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
+        var updated = await _discreteUtilityRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto), ct: ct);
         return updated.ToDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        await _discreteUtilityRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
+        await _discreteUtilityRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
     }
 
-    public async Task<List<DiscreteUtilityDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task<List<DiscreteUtilityDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _discreteUtilityRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
+        var entities = await _discreteUtilityRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return entities.ToDtos();
     }
 
-    public async Task<List<DiscreteUtilityDto>> GetAllAsync(UserOutgoingDto user)
+    public async Task<List<DiscreteUtilityDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _discreteUtilityRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
+        var entities = await _discreteUtilityRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return entities.ToDtos();
     }
     private static Expression<Func<DiscreteUtility, bool>> UserFilter(UserOutgoingDto user)

@@ -13,7 +13,7 @@ public class UtilityRepository : BaseRepository<Utility, Guid>, IUtilityReposito
     {
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Utility> incommingEntities, Expression<Func<Utility, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Utility> incommingEntities, Expression<Func<Utility, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -21,7 +21,7 @@ public class UtilityRepository : BaseRepository<Utility, Guid>, IUtilityReposito
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
         foreach (var entity in entities)
         {
             var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
@@ -34,7 +34,7 @@ public class UtilityRepository : BaseRepository<Utility, Guid>, IUtilityReposito
             entity.DiscreteUtilities.Update(incomingEntity.DiscreteUtilities, DbContext);
         }
 
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
 
     protected override IQueryable<Utility> Query()

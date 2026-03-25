@@ -15,7 +15,7 @@ public class OptionRepository : BaseRepository<Option, Guid>, IOptionRepository
         _ruleTrigger = ruleTrigger;
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Option> incommingEntities, Expression<Func<Option, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Option> incommingEntities, Expression<Func<Option, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -23,7 +23,7 @@ public class OptionRepository : BaseRepository<Option, Guid>, IOptionRepository
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
         foreach (var entity in entities)
         {
             var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
@@ -37,18 +37,18 @@ public class OptionRepository : BaseRepository<Option, Guid>, IOptionRepository
             entity.Utility = incomingEntity.Utility;
         }
 
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
 
-    public override async Task<Option> AddAsync(Option entity)
+    public override async Task<Option> AddAsync(Option entity, CancellationToken ct = default)
     {
-        await _ruleTrigger.OnDecisionOptionsAddedAsync([entity.DecisionId], default);
-        return await base.AddAsync(entity);
+        await _ruleTrigger.OnDecisionOptionsAddedAsync([entity.DecisionId], ct);
+        return await base.AddAsync(entity, ct);
     }
 
-    public override async Task<List<Option>> AddRangeAsync(IEnumerable<Option> entities)
+    public override async Task<List<Option>> AddRangeAsync(IEnumerable<Option> entities, CancellationToken ct = default)
     {
-        await _ruleTrigger.OnDecisionOptionsAddedAsync([.. entities.Select(e => e.DecisionId)], default);
-        return await base.AddRangeAsync(entities);
+        await _ruleTrigger.OnDecisionOptionsAddedAsync([.. entities.Select(e => e.DecisionId)], ct);
+        return await base.AddRangeAsync(entities, ct);
     }
 }

@@ -16,7 +16,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
         _ruleTrigger = ruleTrigger;
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Issue> incommingEntities, Expression<Func<Issue, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Issue> incommingEntities, Expression<Func<Issue, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -24,7 +24,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
         List<Guid> issuesIdsTriggers = [];
         foreach (var entity in entities)
         {
@@ -36,7 +36,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
 
             if (WillIssueChangeTables(entity, incomingEntity))
                 issuesIdsTriggers.Add(entity.Id);
-            await RemoveOutOfScopeStrategyOptions(entity, incomingEntity);
+            await RemoveOutOfScopeStrategyOptions(entity, incomingEntity, ct);
 
             entity.ProjectId = incomingEntity.ProjectId;
             entity.Type = incomingEntity.Type;
@@ -50,21 +50,21 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
                 entity.Node = entity.Node.Update(incomingEntity.Node, DbContext);
 
             if (incomingEntity.Decision != null && entity.Decision != null)
-                entity.Decision = await entity.Decision.Update(incomingEntity.Decision, DbContext, _ruleTrigger);
+                entity.Decision = await entity.Decision.Update(incomingEntity.Decision, DbContext, _ruleTrigger, ct);
 
             if (incomingEntity.Uncertainty != null && entity.Uncertainty != null)
-                entity.Uncertainty = await entity.Uncertainty.Update(incomingEntity.Uncertainty, DbContext, _ruleTrigger);
+                entity.Uncertainty = await entity.Uncertainty.Update(incomingEntity.Uncertainty, DbContext, _ruleTrigger, ct);
 
             if (incomingEntity.Utility != null && entity.Utility != null)
                 entity.Utility = entity.Utility.Update(incomingEntity.Utility, DbContext);
         }
-        await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers);
-        await DbContext.SaveChangesAsync();
+        await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers, ct);
+        await DbContext.SaveChangesAsync(ct);
     }
 
-    public async Task<ICollection<Issue>> GetIssuesInInfluenceDiagram(Guid projectId, Expression<Func<Issue, bool>>? filterPredicate)
+    public async Task<ICollection<Issue>> GetIssuesInInfluenceDiagram(Guid projectId, Expression<Func<Issue, bool>>? filterPredicate, CancellationToken ct = default)
     {
-        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId), filterPredicate);
+        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId), filterPredicate, ct);
     }
 
     private bool WillIssueChangeTables(Issue entity, Issue incommingEntity)
@@ -74,16 +74,16 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
         return false;
     }
 
-    private async Task RemoveOutOfScopeStrategyOptions(Issue entity, Issue incommingEntity)
+    private async Task RemoveOutOfScopeStrategyOptions(Issue entity, Issue incommingEntity, CancellationToken ct = default)
     {
         if (!IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
         var strategyOptionsToBeRemoved = await DbContext.StrategyOptions
             .Where(e => e.Option!.Decision!.IssueId == entity.Id)
-            .ToListAsync();
+            .ToListAsync(ct);
         if (strategyOptionsToBeRemoved.Any())
         {
             DbContext.StrategyOptions.RemoveRange(strategyOptionsToBeRemoved);
-            await DbContext.SaveChangesAsync();
+            await DbContext.SaveChangesAsync(ct);
         }
     }
 

@@ -18,7 +18,7 @@ public class EdgeRepository : BaseRepository<Edge, Guid>, IEdgeRepository
         _ruleTrigger = ruleTrigger;
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Edge> incommingEntities, Expression<Func<Edge, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<Edge> incommingEntities, Expression<Func<Edge, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -26,7 +26,7 @@ public class EdgeRepository : BaseRepository<Edge, Guid>, IEdgeRepository
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
         HashSet<Guid> nodeIdsToLookup = [];
         foreach (var entity in entities)
         {
@@ -47,33 +47,33 @@ public class EdgeRepository : BaseRepository<Edge, Guid>, IEdgeRepository
             entity.ProjectId = incomingEntity.ProjectId;
         }
 
-        await _ruleTrigger.OnNodeConnectionsChangedAsync(nodeIdsToLookup);
-        await DbContext.SaveChangesAsync();
+        await _ruleTrigger.OnNodeConnectionsChangedAsync(nodeIdsToLookup, ct);
+        await DbContext.SaveChangesAsync(ct);
     }
 
-    public async Task<ICollection<Edge>> GetEdgesInInfluenceDiagram(Guid projectId, Expression<Func<Edge, bool>>? filterPredicate)
+    public async Task<ICollection<Edge>> GetEdgesInInfluenceDiagram(Guid projectId, Expression<Func<Edge, bool>>? filterPredicate, CancellationToken ct = default)
     {
-        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId), filterPredicate);
+        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId), filterPredicate, ct);
     }
 
-    public override async Task<Edge> AddAsync(Edge entity)
+    public override async Task<Edge> AddAsync(Edge entity, CancellationToken ct = default)
     {
-        var res = await base.AddAsync(entity);
-        await _ruleTrigger.OnEdgesCreatedAsync([entity.Id]);
+        var res = await base.AddAsync(entity, ct);
+        await _ruleTrigger.OnEdgesCreatedAsync([entity.Id], ct);
         return res;
     }
 
-    public override async Task<List<Edge>> AddRangeAsync(IEnumerable<Edge> entities)
+    public override async Task<List<Edge>> AddRangeAsync(IEnumerable<Edge> entities, CancellationToken ct = default)
     {
-        var res = await base.AddRangeAsync(entities);
-        await _ruleTrigger.OnEdgesCreatedAsync(entities.Select(x => x.Id).ToList());
+        var res = await base.AddRangeAsync(entities, ct);
+        await _ruleTrigger.OnEdgesCreatedAsync(entities.Select(x => x.Id).ToList(), ct);
         return res;
     }
 
-    public override async Task DeleteByIdsAsync(IEnumerable<Guid> ids, Expression<Func<Edge, bool>>? filterPredicate = null)
+    public override async Task DeleteByIdsAsync(IEnumerable<Guid> ids, Expression<Func<Edge, bool>>? filterPredicate = null, CancellationToken ct = default)
     {
-        await _ruleTrigger.OnEdgesRemovedAsync(ids.ToList());
-        await base.DeleteByIdsAsync(ids, filterPredicate);
+        await _ruleTrigger.OnEdgesRemovedAsync(ids.ToList(), ct);
+        await base.DeleteByIdsAsync(ids, filterPredicate, ct);
     }
 
     protected override IQueryable<Edge> Query()

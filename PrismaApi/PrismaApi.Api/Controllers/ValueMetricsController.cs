@@ -23,69 +23,69 @@ public class ValueMetricsController : PrismaBaseEntityController
     }
 
     [HttpGet("value-metrics/{id:guid}")]
-    public async Task<ActionResult<ValueMetricOutgoingDto>> GetValueMetric(Guid id)
+    public async Task<ActionResult<ValueMetricOutgoingDto>> GetValueMetric(Guid id, CancellationToken ct = default)
     {
         var result = await _valueMetricService.GetAsync(new List<Guid> { id });
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("value-metrics")]
-    public async Task<ActionResult<List<ValueMetricOutgoingDto>>> GetAllValueMetrics()
+    public async Task<ActionResult<List<ValueMetricOutgoingDto>>> GetAllValueMetrics(CancellationToken ct = default)
     {
         var result = await _valueMetricService.GetAllAsync();
         return Ok(result);
     }
 
     [HttpPut("value-metrics")]
-    public async Task<ActionResult<List<ValueMetricOutgoingDto>>> UpdateValueMetrics([FromBody] List<ValueMetricIncomingDto> dtos)
+    public async Task<ActionResult<List<ValueMetricOutgoingDto>>> UpdateValueMetrics([FromBody] List<ValueMetricIncomingDto> dtos, CancellationToken ct = default)
     {
         return StatusCode(StatusCodes.Status501NotImplemented);
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
             var result = await _valueMetricService.UpdateAsync(dtos);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("value-metrics/{id:guid}")]
-    public async Task<IActionResult> DeleteValueMetric(Guid id)
+    public async Task<IActionResult> DeleteValueMetric(Guid id, CancellationToken ct = default)
     {
         return StatusCode(StatusCodes.Status501NotImplemented);
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
             await _valueMetricService.DeleteAsync(new List<Guid> { id });
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("value-metrics")]
-    public async Task<IActionResult> DeleteValueMetrics([FromQuery] List<Guid> ids)
+    public async Task<IActionResult> DeleteValueMetrics([FromQuery] List<Guid> ids, CancellationToken ct = default)
     {
         return StatusCode(StatusCodes.Status501NotImplemented);
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
             await _valueMetricService.DeleteAsync(ids);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }

@@ -11,7 +11,7 @@ public class ValueMetricRepository : BaseRepository<ValueMetric, Guid>, IValueMe
     {
     }
 
-    public override async Task UpdateRangeAsync(IEnumerable<ValueMetric> incommingEntities)
+    public override async Task UpdateRangeAsync(IEnumerable<ValueMetric> incommingEntities, CancellationToken ct = default)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -19,7 +19,7 @@ public class ValueMetricRepository : BaseRepository<ValueMetric, Guid>, IValueMe
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id));
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), ct: ct);
         foreach (var entity in entities)
         {
             var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
@@ -31,6 +31,6 @@ public class ValueMetricRepository : BaseRepository<ValueMetric, Guid>, IValueMe
             entity.Name = incomingEntity.Name;
         }
 
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
 }

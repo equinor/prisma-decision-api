@@ -13,7 +13,7 @@ public class ProjectRoleRepository : BaseRepository<ProjectRole, Guid>, IProject
     {
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<ProjectRole> incommingEntities, Expression<Func<ProjectRole, bool>> filterPredicate)
+    public async Task UpdateRangeAsync(IEnumerable<ProjectRole> incommingEntities, Expression<Func<ProjectRole, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incommingEntities.ToList();
         if (incomingList.Count == 0)
@@ -21,7 +21,7 @@ public class ProjectRoleRepository : BaseRepository<ProjectRole, Guid>, IProject
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
         foreach (var entity in entities)
         {
             var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
@@ -36,7 +36,7 @@ public class ProjectRoleRepository : BaseRepository<ProjectRole, Guid>, IProject
             entity.UpdatedById = incomingEntity.UpdatedById;
         }
 
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
 
     protected override IQueryable<ProjectRole> Query()

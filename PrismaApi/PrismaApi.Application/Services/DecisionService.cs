@@ -20,38 +20,38 @@ public class DecisionService: IDecisionService
         _decisionRepository = decisionRepository;
     }
 
-    public async Task<List<DecisionOutgoingDto>> CreateAsync(List<DecisionIncomingDto> dtos)
+    public async Task<List<DecisionOutgoingDto>> CreateAsync(List<DecisionIncomingDto> dtos, CancellationToken ct = default)
     {
         var entities = dtos.ToEntities();
-        await _decisionRepository.AddRangeAsync(entities);
+        await _decisionRepository.AddRangeAsync(entities, ct);
         var ids = dtos.Select(d => d.Id).ToList();
-        var created = await _decisionRepository.GetByIdsAsync(ids, withTracking: false);
+        var created = await _decisionRepository.GetByIdsAsync(ids, withTracking: false, ct: ct);
         return created.ToOutgoingDtos();
     }
 
-    public async Task<List<DecisionOutgoingDto>> UpdateAsync(List<DecisionIncomingDto> dtos, UserOutgoingDto userDto)
+    public async Task<List<DecisionOutgoingDto>> UpdateAsync(List<DecisionIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         var entities = dtos.ToEntities();
-        await _decisionRepository.UpdateRangeAsync(entities, UserFilter(userDto));
+        await _decisionRepository.UpdateRangeAsync(entities, UserFilter(userDto), ct);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _decisionRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
+        var updated = await _decisionRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto), ct: ct);
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        await _decisionRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
+        await _decisionRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
     }
 
-    public async Task<List<DecisionOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task<List<DecisionOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _decisionRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
+        var entities = await _decisionRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<DecisionOutgoingDto>> GetAllAsync(UserOutgoingDto user)
+    public async Task<List<DecisionOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _decisionRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
+        var entities = await _decisionRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return entities.ToOutgoingDtos();
     }
 

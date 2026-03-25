@@ -5,5 +5,5 @@ namespace PrismaApi.Application.Interfaces.Repositories;
 
 public interface INodeStyleRepository : ICrudRepository<NodeStyle, Guid>
 {
-    Task UpdateRangeAsync(IEnumerable<NodeStyle> incommingEntities, Expression<Func<NodeStyle, bool>> filterPredicate);
+    Task UpdateRangeAsync(IEnumerable<NodeStyle> incommingEntities, Expression<Func<NodeStyle, bool>> filterPredicate, CancellationToken ct = default);
 }

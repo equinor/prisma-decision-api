@@ -26,15 +26,15 @@ public class ProjectsController : PrismaBaseEntityController
     }
 
     [HttpPost("projects")]
-    public async Task<ActionResult<List<ProjectOutgoingDto>>> CreateProjects([FromBody] List<ProjectCreateDto> dtos)
+    public async Task<ActionResult<List<ProjectOutgoingDto>>> CreateProjects([FromBody] List<ProjectCreateDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
         bool isProjectDuplicated = false;
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            var result = await _projectService.CreateAsync(dtos, isProjectDuplicated, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            var result = await _projectService.CreateAsync(dtos, isProjectDuplicated, user, ct);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
@@ -45,54 +45,54 @@ public class ProjectsController : PrismaBaseEntityController
     }
 
     [HttpGet("projects/{id:guid}")]
-    public async Task<ActionResult<ProjectOutgoingDto>> GetProject(Guid id)
+    public async Task<ActionResult<ProjectOutgoingDto>> GetProject(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _projectService.GetAsync(new List<Guid> { id }, user);
+        var result = await _projectService.GetAsync(new List<Guid> { id }, user, ct);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("projects")]
-    public async Task<ActionResult<List<ProjectOutgoingDto>>> GetAllProjects()
+    public async Task<ActionResult<List<ProjectOutgoingDto>>> GetAllProjects(CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        var result = await _projectService.GetAllAsync(user);
+        var result = await _projectService.GetAllAsync(user, ct);
         return Ok(result);
     }
 
     [HttpPut("projects")]
-    public async Task<ActionResult<List<ProjectOutgoingDto>>> UpdateProjects([FromBody] List<ProjectIncomingDto> dtos)
+    public async Task<ActionResult<List<ProjectOutgoingDto>>> UpdateProjects([FromBody] List<ProjectIncomingDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            var result = await _projectService.UpdateAsync(dtos, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            var result = await _projectService.UpdateAsync(dtos, user, ct);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(ct);
             throw;
         }
     }
 
     [HttpDelete("projects/{id:guid}")]
-    public async Task<IActionResult> DeleteProject(Guid id)
+    public async Task<IActionResult> DeleteProject(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _projectService.DeleteAsync(new List<Guid> { id }, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _projectService.DeleteAsync(new List<Guid> { id }, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(ct);
             throw;
         }
     }

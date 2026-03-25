@@ -22,15 +22,15 @@ public class ProjectDuplicationController : PrismaBaseEntityController
     }
 
     [HttpPost("projects/{id:guid}/duplicate")]
-    public async Task<ActionResult<ProjectOutgoingDto>> DuplicateProject(Guid id)
+    public async Task<ActionResult<ProjectOutgoingDto>> DuplicateProject(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            var result = await _duplicationService.DuplicateAsync(id, user, HttpContext.RequestAborted);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            var result = await _duplicationService.DuplicateAsync(id, user, ct);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch

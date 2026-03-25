@@ -16,29 +16,29 @@ public class NodeService: INodeService
         _nodeRepository = nodeRepository;
     }
 
-    public async Task<List<NodeOutgoingDto>> UpdateAsync(List<NodeIncomingDto> dtos, UserOutgoingDto userDto)
+    public async Task<List<NodeOutgoingDto>> UpdateAsync(List<NodeIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         var entities = dtos.ToEntities();
-        await _nodeRepository.UpdateRangeAsync(entities, UserFilter(userDto));
+        await _nodeRepository.UpdateRangeAsync(entities, UserFilter(userDto), ct);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _nodeRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
+        var updated = await _nodeRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto), ct: ct);
         return updated.ToOutgoingDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        await _nodeRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
+        await _nodeRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
     }
 
-    public async Task<List<NodeOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task<List<NodeOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _nodeRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
+        var entities = await _nodeRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return entities.ToOutgoingDtos();
     }
 
-    public async Task<List<NodeOutgoingDto>> GetAllAsync(UserOutgoingDto user)
+    public async Task<List<NodeOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _nodeRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
+        var entities = await _nodeRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return entities.ToOutgoingDtos();
     }
 

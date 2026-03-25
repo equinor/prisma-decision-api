@@ -20,36 +20,36 @@ public class DiscreteProbabilityService: IDiscreteProbabilityService
         _discreteProbabilityRepository = discreteProbabilityRepository;
     }
 
-    public async Task<List<DiscreteProbabilityDto>> CreateAsync(List<DiscreteProbabilityDto> dtos)
+    public async Task<List<DiscreteProbabilityDto>> CreateAsync(List<DiscreteProbabilityDto> dtos, CancellationToken ct = default)
     {
         var entities = dtos.ToEntitiesWithoutParents();
-        await _discreteProbabilityRepository.AddRangeAsync(entities);
+        await _discreteProbabilityRepository.AddRangeAsync(entities, ct);
         return entities.ToDtos();
     }
 
-    public async Task<List<DiscreteProbabilityDto>> UpdateAsync(List<DiscreteProbabilityDto> dtos, UserOutgoingDto userDto)
+    public async Task<List<DiscreteProbabilityDto>> UpdateAsync(List<DiscreteProbabilityDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         var entities = dtos.ToEntitiesWithoutParents();
-        await _discreteProbabilityRepository.UpdateRangeAsync(entities, UserFilter(userDto));
+        await _discreteProbabilityRepository.UpdateRangeAsync(entities, UserFilter(userDto), ct);
         var ids = dtos.Select(d => d.Id).ToList();
-        var updated = await _discreteProbabilityRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto));
+        var updated = await _discreteProbabilityRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto), ct: ct);
         return updated.ToDtos();
     }
 
-    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        await _discreteProbabilityRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user));
+        await _discreteProbabilityRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
     }
 
-    public async Task<List<DiscreteProbabilityDto>> GetAsync(List<Guid> ids, UserOutgoingDto user)
+    public async Task<List<DiscreteProbabilityDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _discreteProbabilityRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user));
+        var entities = await _discreteProbabilityRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return entities.ToDtos();
     }
 
-    public async Task<List<DiscreteProbabilityDto>> GetAllAsync(UserOutgoingDto user)
+    public async Task<List<DiscreteProbabilityDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _discreteProbabilityRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user));
+        var entities = await _discreteProbabilityRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return entities.ToDtos();
     }
 

@@ -28,80 +28,80 @@ public class NodesController : PrismaBaseEntityController
     }
 
     [HttpGet("nodes/{id:guid}")]
-    public async Task<ActionResult<NodeOutgoingDto>> GetNode(Guid id)
+    public async Task<ActionResult<NodeOutgoingDto>> GetNode(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _nodeService.GetAsync(new List<Guid> { id }, user);
+        var result = await _nodeService.GetAsync(new List<Guid> { id }, user, ct);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("nodes")]
-    public async Task<ActionResult<List<NodeOutgoingDto>>> GetAllNodes()
+    public async Task<ActionResult<List<NodeOutgoingDto>>> GetAllNodes(CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _nodeService.GetAllAsync(user);
+        var result = await _nodeService.GetAllAsync(user, ct);
         return Ok(result);
     }
 
     [HttpGet("projects/{projectId:guid}/nodes")]
-    public IActionResult GetNodesByProject(Guid projectId)
+    public IActionResult GetNodesByProject(Guid projectId, CancellationToken ct = default)
     {
         return StatusCode(StatusCodes.Status501NotImplemented);
     }
 
     [HttpPut("nodes")]
-    public async Task<ActionResult<List<NodeOutgoingDto>>> UpdateNodes([FromBody] List<NodeIncomingDto> dtos)
+    public async Task<ActionResult<List<NodeOutgoingDto>>> UpdateNodes([FromBody] List<NodeIncomingDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            var result = await _nodeService.UpdateAsync(dtos, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            var result = await _nodeService.UpdateAsync(dtos, user, ct);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("nodes/{id:guid}")]
-    public async Task<IActionResult> DeleteNode(Guid id)
+    public async Task<IActionResult> DeleteNode(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _nodeService.DeleteAsync(new List<Guid> { id }, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _nodeService.DeleteAsync(new List<Guid> { id }, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("nodes")]
-    public async Task<IActionResult> DeleteNodes([FromQuery] List<Guid> ids)
+    public async Task<IActionResult> DeleteNodes([FromQuery] List<Guid> ids, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _nodeService.DeleteAsync(ids, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _nodeService.DeleteAsync(ids, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }

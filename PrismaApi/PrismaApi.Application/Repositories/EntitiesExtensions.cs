@@ -117,16 +117,16 @@ public static class EntitiesExtensions
         return entity;
     }
 
-    public static async Task<Decision> Update(this Decision entity, Decision incommingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null)
+    public static async Task<Decision> Update(this Decision entity, Decision incommingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
         if (entity.Type != incommingEntity.Type && incommingEntity.Type != DecisionHierarchy.Focus.ToString() && ruleTrigger != null)
-            await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId]);
+            await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId], ct);
         entity.Type = incommingEntity.Type;
-        await entity.Options.Update(incommingEntity.Options, context, ruleTrigger);
+        await entity.Options.Update(incommingEntity.Options, context, ruleTrigger, ct);
         return entity;
     }
 
-    public static async Task Update(this ICollection<Option> entities, ICollection<Option> incommingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null)
+    public static async Task Update(this ICollection<Option> entities, ICollection<Option> incommingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
         RepositoryUtilities.AddMissingFromCollectionMutate<Option, Guid>(incommingEntities, entities, context);
         var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Option, Guid>(incommingEntities, entities);
@@ -136,7 +136,7 @@ public static class EntitiesExtensions
             entities.Add(entityToAdd);
         }
         if (ruleTrigger != null)
-            await ruleTrigger.OnDecisionOptionsAddedAsync([.. entitiesToAdd.Select(e => e.DecisionId)]);
+            await ruleTrigger.OnDecisionOptionsAddedAsync([.. entitiesToAdd.Select(e => e.DecisionId)], ct);
 
         foreach (var entity in entities)
         {
@@ -147,18 +147,18 @@ public static class EntitiesExtensions
         }
     }
 
-    public static async Task<Uncertainty> Update(this Uncertainty entity, Uncertainty incommingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null)
+    public static async Task<Uncertainty> Update(this Uncertainty entity, Uncertainty incommingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
         if (entity.IsKey != incommingEntity.IsKey && ruleTrigger != null)
-            await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId]);
-            
-        await entity.Outcomes.Update(incommingEntity.Outcomes, context, ruleTrigger);
+            await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId], ct);
+
+        await entity.Outcomes.Update(incommingEntity.Outcomes, context, ruleTrigger, ct);
         entity.IsKey = incommingEntity.IsKey;
         entity.DiscreteProbabilities.Update(incommingEntity.DiscreteProbabilities, context);
         return entity;
     }
 
-    public static async Task Update(this ICollection<Outcome> entities, ICollection<Outcome> incommingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null)
+    public static async Task Update(this ICollection<Outcome> entities, ICollection<Outcome> incommingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
         RepositoryUtilities.RemoveMissingFromCollectionMutate<Outcome, Guid>(incommingEntities, entities);
         var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Outcome, Guid>(incommingEntities, entities);
@@ -168,7 +168,7 @@ public static class EntitiesExtensions
             entities.Add(entityToAdd);
         }
         if (ruleTrigger != null)
-            await ruleTrigger.OnUncertaintyOutcomesAddedAsync([.. entitiesToAdd.Select(e => e.UncertaintyId)]);
+            await ruleTrigger.OnUncertaintyOutcomesAddedAsync([.. entitiesToAdd.Select(e => e.UncertaintyId)], ct);
 
         foreach (var entity in entities)
         {

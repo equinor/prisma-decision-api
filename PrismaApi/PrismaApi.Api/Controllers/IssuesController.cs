@@ -32,100 +32,100 @@ public class IssuesController : PrismaBaseEntityController
     }
 
     [HttpPost("issues")]
-    public async Task<ActionResult<List<IssueOutgoingDto>>> CreateIssues([FromBody] List<IssueIncomingDto> dtos, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<List<IssueOutgoingDto>>> CreateIssues([FromBody] List<IssueIncomingDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            var result = await _issueService.CreateAsync(dtos, user);
-            await CommitTransactionAsync(cancellationToken);
+            var result = await _issueService.CreateAsync(dtos, user, ct);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(cancellationToken);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpGet("issues/{id:guid}")]
-    public async Task<ActionResult<IssueOutgoingDto>> GetIssue(Guid id)
+    public async Task<ActionResult<IssueOutgoingDto>> GetIssue(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _issueService.GetAsync(new List<Guid> { id }, user);
-        return result.Count > 0 ? Ok(result[0]) : NotFound();
+        var result = await _issueService.GetAsync(new List<Guid> { id }, user, ct);
+        return result.Count > 0 ? Ok(result[0]) : NotFound(ct);
     }
 
     [HttpGet("issues")]
-    public async Task<ActionResult<List<IssueOutgoingDto>>> GetAllIssues()
+    public async Task<ActionResult<List<IssueOutgoingDto>>> GetAllIssues(CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _issueService.GetAllAsync(user);
+        var result = await _issueService.GetAllAsync(user, ct);
         return Ok(result);
     }
 
     [HttpGet("projects/{projectId:guid}/issues")]
-    public IActionResult GetIssuesByProject(Guid projectId)
+    public IActionResult GetIssuesByProject(Guid projectId, CancellationToken ct = default)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented);
+        return StatusCode(StatusCodes.Status501NotImplemented, ct);
     }
 
     [HttpPut("issues")]
-    public async Task<ActionResult<List<IssueOutgoingDto>>> UpdateIssues([FromBody] List<IssueIncomingDto> dtos)
+    public async Task<ActionResult<List<IssueOutgoingDto>>> UpdateIssues([FromBody] List<IssueIncomingDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            var result = await _issueService.UpdateAsync(dtos, user);
-            await _tableRebuildingService.RebuildTablesAsync();
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            var result = await _issueService.UpdateAsync(dtos, user, ct);
+            await _tableRebuildingService.RebuildTablesAsync(ct);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("issues/{id:guid}")]
-    public async Task<IActionResult> DeleteIssue(Guid id)
+    public async Task<IActionResult> DeleteIssue(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _issueService.DeleteAsync(new List<Guid> { id }, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _issueService.DeleteAsync(new List<Guid> { id }, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("issues")]
-    public async Task<IActionResult> DeleteIssues([FromQuery] List<Guid> ids)
+    public async Task<IActionResult> DeleteIssues([FromQuery] List<Guid> ids, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _issueService.DeleteAsync(ids, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _issueService.DeleteAsync(ids, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }

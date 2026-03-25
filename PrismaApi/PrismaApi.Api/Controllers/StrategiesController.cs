@@ -29,99 +29,99 @@ public class StrategiesController : PrismaBaseEntityController
     }
 
     [HttpPost("strategies")]
-    public async Task<ActionResult<List<StrategyOutgoingDto>>> CreateStrategies([FromBody] List<StrategyIncomingDto> dtos)
+    public async Task<ActionResult<List<StrategyOutgoingDto>>> CreateStrategies([FromBody] List<StrategyIncomingDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
             var result = await _strategyService.CreateAsync(dtos, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpPut("strategies")]
-    public async Task<ActionResult<List<StrategyOutgoingDto>>> UpdateStrategies([FromBody] List<StrategyIncomingDto> dtos)
+    public async Task<ActionResult<List<StrategyOutgoingDto>>> UpdateStrategies([FromBody] List<StrategyIncomingDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            var result = await _strategyService.UpdateAsync(dtos, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            var result = await _strategyService.UpdateAsync(dtos, user, ct);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpGet("strategies/{id:guid}")]
-    public async Task<ActionResult<StrategyOutgoingDto>> GetStrategy(Guid id)
+    public async Task<ActionResult<StrategyOutgoingDto>> GetStrategy(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _strategyService.GetAsync(new List<Guid> { id }, user);
+        var result = await _strategyService.GetAsync(new List<Guid> { id }, user, ct);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("strategies")]
-    public async Task<ActionResult<List<StrategyOutgoingDto>>> GetAllStrategies()
+    public async Task<ActionResult<List<StrategyOutgoingDto>>> GetAllStrategies(CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _strategyService.GetAllAsync(user);
+        var result = await _strategyService.GetAllAsync(user, ct);
         return Ok(result);
     }
 
     [HttpGet("projects/{projectId:guid}/strategies")]
-    public IActionResult GetStrategiesByProject(Guid projectId)
+    public IActionResult GetStrategiesByProject(Guid projectId, CancellationToken ct = default)
     {
         return StatusCode(StatusCodes.Status501NotImplemented);
     }
 
     [HttpDelete("strategies/{id:guid}")]
-    public async Task<IActionResult> DeleteStrategy(Guid id)
+    public async Task<IActionResult> DeleteStrategy(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _strategyService.DeleteAsync(new List<Guid> { id }, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _strategyService.DeleteAsync(new List<Guid> { id }, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("strategies")]
-    public async Task<IActionResult> DeleteStrategies([FromQuery] List<Guid> ids)
+    public async Task<IActionResult> DeleteStrategies([FromQuery] List<Guid> ids, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _strategyService.DeleteAsync(ids, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _strategyService.DeleteAsync(ids, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }

@@ -30,7 +30,7 @@ public class ProjectImportController : PrismaBaseEntityController
     [HttpPost("import")]
     public async Task<ActionResult<List<ProjectOutgoingDto>>> ImportProjectsAsync(
         List<ProjectImportDto> importDtos,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         if (importDtos == null || importDtos.Count == 0)
@@ -38,19 +38,19 @@ public class ProjectImportController : PrismaBaseEntityController
             return BadRequest("No projects provided for import");
         }
 
-        
+
 
         // Get current user from claims
         var user = HttpContext.GetLoadedUser();
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
             var createdProjects = await _projectImportService.ImportFromJsonWithDuplicationLogicAsync(
                 importDtos,
                 user,
-                cancellationToken
+                ct
             );
-            await CommitTransactionAsync(cancellationToken);
+            await CommitTransactionAsync(ct);
             return Ok(createdProjects);
         }
         catch (Exception ex)

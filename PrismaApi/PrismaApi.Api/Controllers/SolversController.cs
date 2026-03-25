@@ -20,26 +20,26 @@ public class SolversController : PrismaBaseController
     }
 
     [HttpGet("solvers/project/{projectId:guid}/decision_tree/v2")]
-    public async Task<ActionResult<ApiResponseDto>> GetSolutionAsDecisionTreeAsync([FromRoute] Guid projectId)
+    public async Task<ActionResult<ApiResponseDto>> GetSolutionAsDecisionTreeAsync([FromRoute] Guid projectId, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}/decision_tree/v2", user);
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}/decision_tree/v2", user, ct);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
-            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeString() : null);
+            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeLogString() : null);
         }
 
         return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
     }
 
     [HttpGet("solvers/project/{projectId:guid}")]
-    public async Task<ActionResult<ApiResponseDto>> GetSolutionAsync([FromRoute] Guid projectId)
+    public async Task<ActionResult<ApiResponseDto>> GetSolutionAsync([FromRoute] Guid projectId, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}", user);
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}", user, ct);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
-            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeString() : null);
+            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeLogString() : null);
         }
 
         return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);

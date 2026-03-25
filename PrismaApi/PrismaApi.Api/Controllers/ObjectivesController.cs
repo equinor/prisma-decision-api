@@ -24,99 +24,99 @@ public class ObjectivesController : PrismaBaseEntityController
     }
 
     [HttpPost("objectives")]
-    public async Task<ActionResult<List<ObjectiveOutgoingDto>>> CreateObjectives([FromBody] List<ObjectiveIncomingDto> dtos)
+    public async Task<ActionResult<List<ObjectiveOutgoingDto>>> CreateObjectives([FromBody] List<ObjectiveIncomingDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
             var result = await _objectiveService.CreateAsync(dtos, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpGet("objectives/{id:guid}")]
-    public async Task<ActionResult<ObjectiveOutgoingDto>> GetObjective(Guid id)
+    public async Task<ActionResult<ObjectiveOutgoingDto>> GetObjective(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _objectiveService.GetAsync(new List<Guid> { id }, user);
+        var result = await _objectiveService.GetAsync(new List<Guid> { id }, user, ct);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("objectives")]
-    public async Task<ActionResult<List<ObjectiveOutgoingDto>>> GetAllObjectives()
+    public async Task<ActionResult<List<ObjectiveOutgoingDto>>> GetAllObjectives(CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _objectiveService.GetAllAsync(user);
+        var result = await _objectiveService.GetAllAsync(user, ct);
         return Ok(result);
     }
 
     [HttpGet("projects/{projectId:guid}/objectives")]
-    public IActionResult GetObjectivesByProject(Guid projectId)
+    public IActionResult GetObjectivesByProject(Guid projectId, CancellationToken ct = default)
     {
         return StatusCode(StatusCodes.Status501NotImplemented);
     }
 
     [HttpPut("objectives")]
-    public async Task<ActionResult<List<ObjectiveOutgoingDto>>> UpdateObjectives([FromBody] List<ObjectiveIncomingDto> dtos)
+    public async Task<ActionResult<List<ObjectiveOutgoingDto>>> UpdateObjectives([FromBody] List<ObjectiveIncomingDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            var result = await _objectiveService.UpdateAsync(dtos, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            var result = await _objectiveService.UpdateAsync(dtos, user, ct);
+            await CommitTransactionAsync(ct);
             return Ok(result);
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("objectives/{id:guid}")]
-    public async Task<IActionResult> DeleteObjective(Guid id)
+    public async Task<IActionResult> DeleteObjective(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _objectiveService.DeleteAsync(new List<Guid> { id }, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _objectiveService.DeleteAsync(new List<Guid> { id }, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
 
     [HttpDelete("objectives")]
-    public async Task<IActionResult> DeleteObjectives([FromQuery] List<Guid> ids)
+    public async Task<IActionResult> DeleteObjectives([FromQuery] List<Guid> ids, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
-        await BeginTransactionAsync(HttpContext.RequestAborted);
+        await BeginTransactionAsync(ct);
         try
         {
-            await _objectiveService.DeleteAsync(ids, user);
-            await CommitTransactionAsync(HttpContext.RequestAborted);
+            await _objectiveService.DeleteAsync(ids, user, ct);
+            await CommitTransactionAsync(ct);
             return NoContent();
         }
         catch
         {
-            await RollbackTransactionAsync(HttpContext.RequestAborted);
+            await RollbackTransactionAsync(CancellationToken.None);
             throw;
         }
     }
