@@ -55,7 +55,7 @@ public class IssuesController : PrismaBaseEntityController
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _issueService.GetAsync(new List<Guid> { id }, user, ct);
-        return result.Count > 0 ? Ok(result[0]) : NotFound(ct);
+        return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
     [HttpGet("issues")]
