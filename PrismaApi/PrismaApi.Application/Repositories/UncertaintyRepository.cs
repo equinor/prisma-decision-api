@@ -16,7 +16,7 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>, IUncerta
         _ruleTrigger = ruleTrigger;
     }
 
-    public async  Task UpdateRangeAsync(IEnumerable<Uncertainty> incommingEntities, Expression<Func<Uncertainty, bool>> filterPredicate, CancellationToken ct = default)
+    public async  Task UpdateRangeAsync(IEnumerable<Uncertainty> incomingEntities, Expression<Func<Uncertainty, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
@@ -24,7 +24,7 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>, IUncerta
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
         foreach (var entity in entities)
         {
             var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
@@ -32,10 +32,10 @@ public class UncertaintyRepository : BaseRepository<Uncertainty, Guid>, IUncerta
             {
                 continue;
             }
-            await entity.Update(incomingEntity, DbContext);
+            await entity.Update(incomingEntity, DbContext, ct: ct);
         }
 
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
 
     protected override IQueryable<Uncertainty> Query()

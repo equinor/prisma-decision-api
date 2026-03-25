@@ -26,9 +26,9 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
     }
 
 
-    public async Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incommingEntities, Expression<Func<Project, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incomingEntities, Expression<Func<Project, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var entities = await GetByIdsAsync(incomingEntities.Select(e => e.Id), withTracking: true, filterPredicate: filterPredicate);
+        var entities = await GetByIdsAsync(incomingEntities.Select(e => e.Id), withTracking: true, filterPredicate: filterPredicate, ct: ct);
         foreach (var entity in entities)
         {
             var incomingEntity = incomingEntities.Where(x => x.Id == entity.Id).First();
@@ -47,7 +47,7 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
         }
 
         await DbContext.SaveChangesAsync(ct);
-        return incommingEntities;
+        return incomingEntities;
     }
 
     protected override IQueryable<Project> Query()

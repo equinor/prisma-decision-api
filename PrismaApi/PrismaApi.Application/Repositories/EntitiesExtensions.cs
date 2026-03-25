@@ -95,7 +95,7 @@ public static class EntitiesExtensions
         }
     }
 
-    public static Node Update(this Node entity, Node incomingEntity)
+    public static Node Update(this Node entity, Node incomingEntity, CancellationToken ct = default)
     {
         entity.ProjectId = incomingEntity.ProjectId;
         entity.IssueId = incomingEntity.IssueId;
@@ -105,7 +105,7 @@ public static class EntitiesExtensions
         return entity;
     }
 
-    public static NodeStyle Update(this NodeStyle entity, NodeStyle incomingEntity)
+    public static NodeStyle Update(this NodeStyle entity, NodeStyle incomingEntity, CancellationToken ct = default)
     {
         entity.NodeId = incomingEntity.NodeId;
         entity.XPosition = incomingEntity.XPosition;
@@ -113,18 +113,18 @@ public static class EntitiesExtensions
         return entity;
     }
 
-    public static async Task<Decision> Update(this Decision entity, Decision incomingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null)
+    public static async Task<Decision> Update(this Decision entity, Decision incomingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
         if (entity.Type != incomingEntity.Type && incomingEntity.Type != DecisionHierarchy.Focus.ToString() && ruleTrigger != null)
-            await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId]);
+            await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId], ct);
         await entity.RemoveOutOfScopeStrategyOptions(incomingEntity, context);
         entity.IssueId = incomingEntity.IssueId;
         entity.Type = incomingEntity.Type;
-        await entity.Options.Update(incomingEntity.Options, context, ruleTrigger);
+        await entity.Options.Update(incomingEntity.Options, context, ruleTrigger, ct);
         return entity;
     }
 
-    public static async Task Update(this ICollection<Option> entities, ICollection<Option> incommingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
+    public static async Task Update(this ICollection<Option> entities, ICollection<Option> incomingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
         RepositoryUtilities.RemoveMissingFromCollectionMutate<Option, Guid>(incomingEntities, entities);
         var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Option, Guid>(incomingEntities, entities);
@@ -146,18 +146,18 @@ public static class EntitiesExtensions
         }
     }
 
-    public static async Task<Uncertainty> Update(this Uncertainty entity, Uncertainty incommingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
+    public static async Task<Uncertainty> Update(this Uncertainty entity, Uncertainty incomingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
-        if (entity.IsKey != incommingEntity.IsKey && ruleTrigger != null)
+        if (entity.IsKey != incomingEntity.IsKey && ruleTrigger != null)
             await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId], ct);
 
-        await entity.Outcomes.Update(incommingEntity.Outcomes, context, ruleTrigger, ct);
-        entity.IsKey = incommingEntity.IsKey;
-        entity.DiscreteProbabilities.Update(incommingEntity.DiscreteProbabilities, context);
+        await entity.Outcomes.Update(incomingEntity.Outcomes, context, ruleTrigger, ct);
+        entity.IsKey = incomingEntity.IsKey;
+        entity.DiscreteProbabilities.Update(incomingEntity.DiscreteProbabilities, context);
         return entity;
     }
 
-    public static async Task Update(this ICollection<Outcome> entities, ICollection<Outcome> incommingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
+    public static async Task Update(this ICollection<Outcome> entities, ICollection<Outcome> incomingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
         RepositoryUtilities.RemoveMissingFromCollectionMutate<Outcome, Guid>(incomingEntities, entities);
         var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Outcome, Guid>(incomingEntities, entities);
@@ -191,7 +191,7 @@ public static class EntitiesExtensions
         }
     }
 
-    public static Utility Update(this Utility entity, Utility incomingEntity, AppDbContext context)
+    public static Utility Update(this Utility entity, Utility incomingEntity, AppDbContext context, CancellationToken ct = default)
     {
         entity.IssueId = incomingEntity.IssueId;
         entity.DiscreteUtilities.Update(incomingEntity.DiscreteUtilities, context);
@@ -210,27 +210,27 @@ public static class EntitiesExtensions
         }
     }
 
-  public static async Task RemoveOutOfScopeStrategyOptions(this Issue entity, Issue incomingEntity, AppDbContext context)
+  public static async Task RemoveOutOfScopeStrategyOptions(this Issue entity, Issue incomingEntity, AppDbContext context, CancellationToken ct = default)
     {
         if (!RepositoryUtilities.IsDecisionMovedOutOfStrategyTable(entity, incomingEntity)) return;
-        await RemoveStrategyOptions(context, e => e.Option!.Decision!.IssueId == entity.Id);
+        await RemoveStrategyOptions(context, e => e.Option!.Decision!.IssueId == entity.Id, ct);
     }
 
-    public static async Task RemoveOutOfScopeStrategyOptions(this Decision entity, Decision incomingEntity, AppDbContext context)
+    public static async Task RemoveOutOfScopeStrategyOptions(this Decision entity, Decision incomingEntity, AppDbContext context, CancellationToken ct = default)
     {
         if (!RepositoryUtilities.IsDecisionMovedOutOfStrategyTable(entity, incomingEntity)) return;
-        await RemoveStrategyOptions(context, e => e.Option!.DecisionId == entity.Id);
+        await RemoveStrategyOptions(context, e => e.Option!.DecisionId == entity.Id, ct);
     }
 
-    private static async Task RemoveStrategyOptions(AppDbContext context, Expression<Func<StrategyOption, bool>> predicate)
+    private static async Task RemoveStrategyOptions(AppDbContext context, Expression<Func<StrategyOption, bool>> predicate, CancellationToken ct = default)
     {
         var strategyOptionsToBeRemoved = await context.StrategyOptions
             .Where(predicate)
-            .ToListAsync();
+            .ToListAsync(ct);
         if (strategyOptionsToBeRemoved.Count != 0)
         {
             context.StrategyOptions.RemoveRange(strategyOptionsToBeRemoved);
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(ct);
         }
     }
 }

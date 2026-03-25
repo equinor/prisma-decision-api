@@ -15,7 +15,7 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
     {
     }
 
-    public override async Task UpdateRangeAsync(IEnumerable<User> incommingEntities, CancellationToken ct = default)
+    public override async Task UpdateRangeAsync(IEnumerable<User> incomingEntities, CancellationToken ct = default)
     {
         var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)

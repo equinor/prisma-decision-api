@@ -13,7 +13,7 @@ public class UtilityRepository : BaseRepository<Utility, Guid>, IUtilityReposito
     {
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Utility> incommingEntities, Expression<Func<Utility, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task UpdateRangeAsync(IEnumerable<Utility> incomingEntities, Expression<Func<Utility, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
@@ -29,7 +29,7 @@ public class UtilityRepository : BaseRepository<Utility, Guid>, IUtilityReposito
             {
                 continue;
             }
-            entity.Update(incomingEntity, DbContext);
+            entity.Update(incomingEntity, DbContext, ct: ct);
         }
 
         await DbContext.SaveChangesAsync(ct);

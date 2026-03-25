@@ -13,7 +13,7 @@ public class NodeRepository : BaseRepository<Node, Guid>, INodeRepository
     {
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Node> incommingEntities, Expression<Func<Node, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task UpdateRangeAsync(IEnumerable<Node> incomingEntities, Expression<Func<Node, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
@@ -29,7 +29,7 @@ public class NodeRepository : BaseRepository<Node, Guid>, INodeRepository
             {
                 continue;
             }
-            entity.Update(incomingEntity);
+            entity.Update(incomingEntity, ct);
         }
 
         await DbContext.SaveChangesAsync(ct);

@@ -16,7 +16,7 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
         _ruleTrigger = ruleTrigger;
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Decision> incommingEntities, Expression<Func<Decision, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task UpdateRangeAsync(IEnumerable<Decision> incomingEntities, Expression<Func<Decision, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
@@ -33,9 +33,9 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
             {
                 continue;
             }
-            await entity.Update(incomingEntity, DbContext);
+            await entity.Update(incomingEntity, DbContext, ct: ct);
         }
-        await DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync(ct);
     }
 
     protected override IQueryable<Decision> Query()

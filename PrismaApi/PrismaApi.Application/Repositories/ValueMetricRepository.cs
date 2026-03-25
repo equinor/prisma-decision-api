@@ -11,7 +11,7 @@ public class ValueMetricRepository : BaseRepository<ValueMetric, Guid>, IValueMe
     {
     }
 
-    public override async Task UpdateRangeAsync(IEnumerable<ValueMetric> incommingEntities, CancellationToken ct = default)
+    public override async Task UpdateRangeAsync(IEnumerable<ValueMetric> incomingEntities, CancellationToken ct = default)
     {
         var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
