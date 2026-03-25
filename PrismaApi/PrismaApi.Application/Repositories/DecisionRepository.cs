@@ -18,7 +18,7 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
 
     public async Task UpdateRangeAsync(IEnumerable<Decision> incommingEntities, Expression<Func<Decision, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;
@@ -33,37 +33,9 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
             {
                 continue;
             }
-
-            await RemoveOutOfScopeStrategyOptions(entity, incomingEntity, ct);
-
-            if (entity.Type != incomingEntity.Type && incomingEntity.Type != DecisionHierarchy.Focus.ToString())
-                issuesIdsTriggers.Add(entity.IssueId);
-
-            entity.IssueId = incomingEntity.IssueId;
-            entity.Type = incomingEntity.Type;
-            await entity.Options.Update(incomingEntity.Options, DbContext, ct: ct);
+            await entity.Update(incomingEntity, DbContext);
         }
-        await _ruleTrigger.ParentIssuesChangedAsync(issuesIdsTriggers, ct);
-        await DbContext.SaveChangesAsync(ct);
-    }
-
-    private async Task RemoveOutOfScopeStrategyOptions(Decision entity, Decision incommingEntity, CancellationToken ct = default)
-    {
-        if (!IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
-        var strategyOptionsToBeRemoved = await DbContext.StrategyOptions
-            .Where(e => e.Option!.DecisionId == entity.Id)
-            .ToListAsync(ct);
-        if (strategyOptionsToBeRemoved.Any())
-        {
-            DbContext.StrategyOptions.RemoveRange(strategyOptionsToBeRemoved);
-            await DbContext.SaveChangesAsync(ct);
-        }
-    }
-
-    private static bool IsDecisionMovedOutOfStrategyTable(Decision entity, Decision incommingEntity)
-    {
-        if (entity.Type != incommingEntity.Type && entity.Type == DecisionHierarchy.Focus.ToString()) return true;
-        return false;
+        await DbContext.SaveChangesAsync();
     }
 
     protected override IQueryable<Decision> Query()

@@ -15,7 +15,7 @@ public class UtilityRepository : BaseRepository<Utility, Guid>, IUtilityReposito
 
     public async Task UpdateRangeAsync(IEnumerable<Utility> incommingEntities, Expression<Func<Utility, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;
@@ -29,9 +29,7 @@ public class UtilityRepository : BaseRepository<Utility, Guid>, IUtilityReposito
             {
                 continue;
             }
-
-            entity.IssueId = incomingEntity.IssueId;
-            entity.DiscreteUtilities.Update(incomingEntity.DiscreteUtilities, DbContext);
+            entity.Update(incomingEntity, DbContext);
         }
 
         await DbContext.SaveChangesAsync(ct);

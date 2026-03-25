@@ -15,26 +15,17 @@ public class ProjectRoleRepository : BaseRepository<ProjectRole, Guid>, IProject
 
     public async Task UpdateRangeAsync(IEnumerable<ProjectRole> incommingEntities, Expression<Func<ProjectRole, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
-        foreach (var entity in entities)
-        {
-            var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
-            if (incomingEntity == null)
-            {
-                continue;
-            }
-
-            entity.ProjectId = incomingEntity.ProjectId;
-            entity.UserId = incomingEntity.UserId;
-            entity.Role = incomingEntity.Role;
-            entity.UpdatedById = incomingEntity.UpdatedById;
-        }
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        // filter out entities not found
+        if (entities.Count != incomingList.Count)
+            incomingList = incomingList.Where(e => entities.Select(x => x.Id).Contains(e.Id)).ToList();
+        entities.Update(incomingList, DbContext);
 
         await DbContext.SaveChangesAsync(ct);
     }

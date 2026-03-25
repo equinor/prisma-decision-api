@@ -14,7 +14,7 @@ public class NodeStyleRepository : BaseRepository<NodeStyle, Guid>, INodeStyleRe
 
     public async Task UpdateRangeAsync(IEnumerable<NodeStyle> incommingEntities, Expression<Func<NodeStyle, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;
@@ -28,10 +28,7 @@ public class NodeStyleRepository : BaseRepository<NodeStyle, Guid>, INodeStyleRe
             {
                 continue;
             }
-
-            entity.NodeId = incomingEntity.NodeId;
-            entity.XPosition = incomingEntity.XPosition;
-            entity.YPosition = incomingEntity.YPosition;
+            entity.Update(incomingEntity);
         }
 
         await DbContext.SaveChangesAsync(ct);

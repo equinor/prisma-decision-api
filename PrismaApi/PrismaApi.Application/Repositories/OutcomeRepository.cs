@@ -17,25 +17,17 @@ public class OutcomeRepository : BaseRepository<Outcome, Guid>, IOutcomeReposito
 
     public async Task UpdateRangeAsync(IEnumerable<Outcome> incommingEntities, Expression<Func<Outcome, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;
         }
 
-        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate, ct: ct);
-        foreach (var entity in entities)
-        {
-            var incomingEntity = incomingList.FirstOrDefault(x => x.Id == entity.Id);
-            if (incomingEntity == null)
-            {
-                continue;
-            }
-
-            entity.UncertaintyId = incomingEntity.UncertaintyId;
-            entity.Name = incomingEntity.Name;
-            entity.Utility = incomingEntity.Utility;
-        }
+        var entities = await GetByIdsAsync(incomingList.Select(e => e.Id), filterPredicate: filterPredicate);
+        // filter out entities not found
+        if (entities.Count != incomingList.Count)
+            incomingList = incomingList.Where(e => entities.Select(x => x.Id).Contains(e.Id)).ToList();
+        await entities.Update(incomingList, DbContext);
 
         await DbContext.SaveChangesAsync(ct);
     }

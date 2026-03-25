@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces.Repositories;
+using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
@@ -11,14 +12,28 @@ namespace PrismaApi.Application.Repositories;
 public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
 {
     public readonly IDiscreteTableRuleEventHandler _ruleTrigger;
-    public IssueRepository(AppDbContext dbContext, IDiscreteTableRuleEventHandler ruleTrigger) : base(dbContext)
+    public readonly ITableRebuildingService _tableRebuildingService;
+    public IssueRepository(AppDbContext dbContext, IDiscreteTableRuleEventHandler ruleTrigger, ITableRebuildingService tableRebuildingService) : base(dbContext)
     {
         _ruleTrigger = ruleTrigger;
+        _tableRebuildingService = tableRebuildingService;
     }
 
     public async Task UpdateRangeAsync(IEnumerable<Issue> incommingEntities, Expression<Func<Issue, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var incomingList = incommingEntities.ToList();
+        var edgesToDelete = await DbContext.Edges
+            .Where(x => ids.Contains(x.HeadNode!.IssueId) || ids.Contains(x.TailNode!.IssueId))
+            .ToListAsync();
+        DbContext.Edges.RemoveRange(edgesToDelete);
+        await _ruleTrigger.OnEdgesRemovedAsync(edgesToDelete.Select(x => x.Id).ToList());
+        await _tableRebuildingService.RebuildTablesAsync();
+        await DbContext.SaveChangesAsync();
+        await base.DeleteByIdsAsync(ids, filterPredicate);
+    }
+
+    public async Task UpdateRangeAsync(IEnumerable<Issue> incomingEntities, Expression<Func<Issue, bool>> filterPredicate)
+    {
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;
@@ -36,7 +51,8 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
 
             if (WillIssueChangeTables(entity, incomingEntity))
                 issuesIdsTriggers.Add(entity.Id);
-            await RemoveOutOfScopeStrategyOptions(entity, incomingEntity, ct);
+
+            await entity.RemoveOutOfScopeStrategyOptions(incomingEntity, DbContext);
 
             entity.ProjectId = incomingEntity.ProjectId;
             entity.Type = incomingEntity.Type;
@@ -47,7 +63,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
             entity.UpdatedById = incomingEntity.UpdatedById;
 
             if (incomingEntity.Node != null && entity.Node != null)
-                entity.Node = entity.Node.Update(incomingEntity.Node, DbContext);
+                entity.Node = entity.Node.Update(incomingEntity.Node);
 
             if (incomingEntity.Decision != null && entity.Decision != null)
                 entity.Decision = await entity.Decision.Update(incomingEntity.Decision, DbContext, _ruleTrigger, ct);
@@ -67,31 +83,10 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
         return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId), filterPredicate, ct);
     }
 
-    private bool WillIssueChangeTables(Issue entity, Issue incommingEntity)
+    private bool WillIssueChangeTables(Issue entity, Issue incomingEntity)
     {
-        if (entity.Type != incommingEntity.Type) return true;
-        if (entity.Boundary != incommingEntity.Boundary && (incommingEntity.Boundary == Boundary.Out.ToString() || entity.Boundary == Boundary.Out.ToString())) return true;
-        return false;
-    }
-
-    private async Task RemoveOutOfScopeStrategyOptions(Issue entity, Issue incommingEntity, CancellationToken ct = default)
-    {
-        if (!IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
-        var strategyOptionsToBeRemoved = await DbContext.StrategyOptions
-            .Where(e => e.Option!.Decision!.IssueId == entity.Id)
-            .ToListAsync(ct);
-        if (strategyOptionsToBeRemoved.Any())
-        {
-            DbContext.StrategyOptions.RemoveRange(strategyOptionsToBeRemoved);
-            await DbContext.SaveChangesAsync(ct);
-        }
-    }
-
-    private static bool IsDecisionMovedOutOfStrategyTable(Issue entity, Issue incommingEntity)
-    {
-        if (entity.Type != incommingEntity.Type && entity.Type == IssueType.Decision.ToString()) return true;
-        if (entity.Boundary != incommingEntity.Boundary && incommingEntity.Boundary == Boundary.Out.ToString()) return true;
-        if (entity.Decision != null && incommingEntity.Decision != null && entity.Decision.Type != incommingEntity.Decision.Type && entity.Decision.Type == DecisionHierarchy.Focus.ToString()) return true;
+        if (entity.Type != incomingEntity.Type) return true;
+        if (entity.Boundary != incomingEntity.Boundary && (incomingEntity.Boundary == Boundary.Out.ToString() || entity.Boundary == Boundary.Out.ToString())) return true;
         return false;
     }
 
