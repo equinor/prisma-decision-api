@@ -5,14 +5,16 @@ using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Infrastructure.Caching;
+using Scampi.Domain.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
-public class UserService: IUserService
+public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly GraphServiceClient _graphServiceClient;
@@ -24,13 +26,6 @@ public class UserService: IUserService
         _graphServiceClient = graphServiceClient;
         _memoryCache = memoryCache;
     }
-
-    public async Task<List<UserOutgoingDto>> GetAsync(List<string> ids)
-    {
-        var users = await _userRepository.GetByIdsAsync(ids, withTracking: false);
-        return users.ToOutgoingDtos();
-    }
-
     public async Task<List<UserOutgoingDto>> GetAllAsync()
     {
         var users = await _userRepository.GetAllAsync(withTracking: false);
@@ -57,7 +52,7 @@ public class UserService: IUserService
             Name = graphUser.DisplayName ?? "",
         };
         var user = (await _userRepository.GetOrAddByIdAsync(userDto)).ToOutgoingDto();
-        
+
         if (cacheKey != null)
             _memoryCache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(30), user);
 
@@ -75,5 +70,29 @@ public class UserService: IUserService
         }
         var user = await GetOrCreateUserFromGraphMeAsync(oid);
         return user;
+    }
+    public async Task<List<UserOutgoingDto>> GetByIdsAsync(IEnumerable<string> ids)
+    {
+        var users = await _userRepository.GetByIdsAsync(ids, withTracking: false);
+        return users.ToOutgoingDtos();
+    }
+
+    public async Task<List<UserOutgoingDto>> SearchUsersFromGraphAsync(string query)
+    {
+        string sanitizedQuery = query.SanitizeQuery();
+        var users = await _graphServiceClient.Users
+            .GetAsync(config =>
+            {
+                config.QueryParameters.Search = $"\"displayName:{sanitizedQuery}\" OR \"mail:{sanitizedQuery}\"";
+                config.QueryParameters.Select = GraphApiConstants.UserSearchSelectFields;
+                config.QueryParameters.Top = GraphApiConstants.DefaultSearchTop;
+                config.Headers.Add(GraphApiConstants.ConsistencyLevelHeader, GraphApiConstants.ConsistencyLevelEventual);
+            });
+
+        return users?.Value?.Select(u => new UserOutgoingDto
+        {
+            Id = u.Id ?? "",
+            Name = u.DisplayName ?? u.UserPrincipalName ?? "",
+        }).ToList() ?? new List<UserOutgoingDto>();
     }
 }

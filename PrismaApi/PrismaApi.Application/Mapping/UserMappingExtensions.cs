@@ -13,7 +13,6 @@ public static class UserMappingExtensions
         {
             Id = entity.Id,
             Name = entity.Name,
-            ProjectRoles = entity.ProjectRoles.ToOutgoingDtos()
         };
     }
 

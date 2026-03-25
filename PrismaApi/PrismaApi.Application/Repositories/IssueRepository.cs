@@ -51,7 +51,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
 
             if (incomingEntity.Decision != null && entity.Decision != null)
                 entity.Decision = await entity.Decision.Update(incomingEntity.Decision, DbContext, _ruleTrigger);
-            
+
             if (incomingEntity.Uncertainty != null && entity.Uncertainty != null)
                 entity.Uncertainty = await entity.Uncertainty.Update(incomingEntity.Uncertainty, DbContext, _ruleTrigger);
 
@@ -98,6 +98,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
     protected override IQueryable<Issue> Query()
     {
         return DbContext.Issues
+            .AsSplitQuery()
             .Include(i => i.Node!)
                 .ThenInclude(n => n.NodeStyle)
             .Include(i => i.Node!)

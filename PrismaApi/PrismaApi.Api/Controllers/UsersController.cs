@@ -35,11 +35,25 @@ public class UsersController : PrismaBaseEntityController
         return Ok(result);
     }
 
-    [HttpGet("users/{id:int}")]
-    public async Task<ActionResult<UserOutgoingDto>> GetUser(string id)
+
+    [HttpPost("users/userIds")]
+    public async Task<ActionResult<List<UserOutgoingDto>>> GetUsersByIds([FromBody] List<string> ids)
     {
-        var result = await _userService.GetAsync(new List<string> { id });
-        return result.Count > 0 ? Ok(result[0]) : NotFound();
+        if (ids == null || ids.Count == 0)
+            return BadRequest("At least one user ID is required.");
+
+        var result = await _userService.GetByIdsAsync(ids);
+        return result.Count > 0 ? Ok(result) : NotFound();
+    }
+
+    [HttpGet("users/search")]
+    public async Task<ActionResult<List<UserOutgoingDto>>> SearchUsers([FromQuery] string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return BadRequest("Query parameter is required.");
+
+        var result = await _userService.SearchUsersFromGraphAsync(query);
+        return result.Count > 0 ? Ok(result) : NotFound();
     }
 
     [HttpGet("auth")]
