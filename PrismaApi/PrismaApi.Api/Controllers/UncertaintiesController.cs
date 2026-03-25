@@ -107,6 +107,6 @@ public class UncertaintiesController : PrismaBaseEntityController
     public async Task<IActionResult> RemakeProbabilityTable(Guid id, CancellationToken ct = default)
     {
         await _tableRebuildingService.RebuildIssuesFromIssueIds([id], ct);
-        return Ok(ct);
+        return Ok();
     }
 }

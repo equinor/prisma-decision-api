@@ -21,7 +21,7 @@ public class TableRebuildingService: ITableRebuildingService
         {
             return;
         }
-        await RebuildIssuesFromIssueIds(issueIds);
+        await RebuildIssuesFromIssueIds(issueIds, ct);
     }
 
     public async Task RebuildIssuesFromIssueIds(ICollection<Guid> issueIds, CancellationToken ct = default)

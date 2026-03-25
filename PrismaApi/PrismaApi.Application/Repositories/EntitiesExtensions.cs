@@ -117,7 +117,7 @@ public static class EntitiesExtensions
     {
         if (entity.Type != incomingEntity.Type && incomingEntity.Type != DecisionHierarchy.Focus.ToString() && ruleTrigger != null)
             await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId], ct);
-        await entity.RemoveOutOfScopeStrategyOptions(incomingEntity, context);
+        await entity.RemoveOutOfScopeStrategyOptions(incomingEntity, context, ct);
         entity.IssueId = incomingEntity.IssueId;
         entity.Type = incomingEntity.Type;
         await entity.Options.Update(incomingEntity.Options, context, ruleTrigger, ct);
@@ -152,6 +152,7 @@ public static class EntitiesExtensions
             await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId], ct);
 
         await entity.Outcomes.Update(incomingEntity.Outcomes, context, ruleTrigger, ct);
+        entity.IssueId = incomingEntity.IssueId;
         entity.IsKey = incomingEntity.IsKey;
         entity.DiscreteProbabilities.Update(incomingEntity.DiscreteProbabilities, context);
         return entity;

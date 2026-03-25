@@ -58,7 +58,7 @@ public class ProjectService : IProjectService
     public async Task<List<ProjectOutgoingDto>> UpdateAsync(List<ProjectIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         var projectEntities = dtos.ToEntities(userDto);
-        var projects = await _projectRepository.UpdateRangeAsync(projectEntities, filterPredicate: UserFilter(userDto));
+        var projects = await _projectRepository.UpdateRangeAsync(projectEntities, filterPredicate: UserFilter(userDto), ct);
         return projects.ToOutgoingDtos();
     }
 
