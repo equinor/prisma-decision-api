@@ -69,7 +69,7 @@ public class IssuesController : PrismaBaseEntityController
     [HttpGet("projects/{projectId:guid}/issues")]
     public IActionResult GetIssuesByProject(Guid projectId, CancellationToken ct = default)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, ct);
+        return StatusCode(StatusCodes.Status501NotImplemented);
     }
 
     [HttpPut("issues")]
