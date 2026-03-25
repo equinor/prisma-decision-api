@@ -26,28 +26,28 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
     }
 
 
-    public async Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incommingEntities, Expression<Func<Project, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incomingEntities, Expression<Func<Project, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var entities = await GetByIdsAsync(incommingEntities.Select(e => e.Id), withTracking: true, filterPredicate: filterPredicate, ct: ct);
+        var entities = await GetByIdsAsync(incomingEntities.Select(e => e.Id), withTracking: true, filterPredicate: filterPredicate, ct: ct);
         foreach (var entity in entities)
         {
-            var incommingEntity = incommingEntities.Where(x => x.Id == entity.Id).First();
+            var incomingEntity = incomingEntities.Where(x => x.Id == entity.Id).First();
 
-            entity.Name = incommingEntity.Name;
-            entity.OpportunityStatement = incommingEntity.OpportunityStatement;
-            entity.Public = incommingEntity.Public;
-            entity.ParentProjectId = incommingEntity.ParentProjectId;
-            entity.ParentProjectName = incommingEntity.ParentProjectName;
-            entity.EndDate = incommingEntity.EndDate;
-            entity.UpdatedById = incommingEntity.UpdatedById;
+            entity.Name = incomingEntity.Name;
+            entity.OpportunityStatement = incomingEntity.OpportunityStatement;
+            entity.Public = incomingEntity.Public;
+            entity.ParentProjectId = incomingEntity.ParentProjectId;
+            entity.ParentProjectName = incomingEntity.ParentProjectName;
+            entity.EndDate = incomingEntity.EndDate;
+            entity.UpdatedById = incomingEntity.UpdatedById;
 
-            entity.ProjectRoles.Update(incommingEntity.ProjectRoles, DbContext);
-            entity.Objectives.Update(incommingEntity.Objectives, DbContext);
-            entity.Strategies.Update(incommingEntity.Strategies, DbContext);
+            entity.ProjectRoles.Update(incomingEntity.ProjectRoles, DbContext);
+            entity.Objectives.Update(incomingEntity.Objectives, DbContext);
+            entity.Strategies.Update(incomingEntity.Strategies, DbContext);
         }
 
         await DbContext.SaveChangesAsync(ct);
-        return incommingEntities;
+        return incomingEntities;
     }
 
     protected override IQueryable<Project> Query()

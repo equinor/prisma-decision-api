@@ -16,9 +16,9 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
         _ruleTrigger = ruleTrigger;
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Decision> incommingEntities, Expression<Func<Decision, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task UpdateRangeAsync(IEnumerable<Decision> incomingEntities, Expression<Func<Decision, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;
@@ -47,9 +47,9 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
         await DbContext.SaveChangesAsync(ct);
     }
 
-    private async Task RemoveOutOfScopeStrategyOptions(Decision entity, Decision incommingEntity, CancellationToken ct = default)
+    private async Task RemoveOutOfScopeStrategyOptions(Decision entity, Decision incomingEntity, CancellationToken ct = default)
     {
-        if (!IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
+        if (!IsDecisionMovedOutOfStrategyTable(entity, incomingEntity)) return;
         var strategyOptionsToBeRemoved = await DbContext.StrategyOptions
             .Where(e => e.Option!.DecisionId == entity.Id)
             .ToListAsync(ct);
@@ -60,9 +60,9 @@ public class DecisionRepository : BaseRepository<Decision, Guid>, IDecisionRepos
         }
     }
 
-    private static bool IsDecisionMovedOutOfStrategyTable(Decision entity, Decision incommingEntity)
+    private static bool IsDecisionMovedOutOfStrategyTable(Decision entity, Decision incomingEntity)
     {
-        if (entity.Type != incommingEntity.Type && entity.Type == DecisionHierarchy.Focus.ToString()) return true;
+        if (entity.Type != incomingEntity.Type && entity.Type == DecisionHierarchy.Focus.ToString()) return true;
         return false;
     }
 

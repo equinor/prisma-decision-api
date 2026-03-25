@@ -8,12 +8,12 @@ namespace PrismaApi.Application.Repositories;
 
 public static class EntitiesExtensions
 {
-    public static void Update(this ICollection<ProjectRole> entities, ICollection<ProjectRole> incommingEntities, AppDbContext context)
+    public static void Update(this ICollection<ProjectRole> entities, ICollection<ProjectRole> incomingEntities, AppDbContext context)
     {
         // Update
         foreach (var entity in entities)
         {
-            var inncommingEntity = incommingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
+            var inncommingEntity = incomingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
             if (inncommingEntity == null) continue;
 
             entity.ProjectId = inncommingEntity.ProjectId;
@@ -23,65 +23,65 @@ public static class EntitiesExtensions
         }
 
         // delete
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<ProjectRole, Guid>(incommingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<ProjectRole, Guid>(incomingEntities, entities);
 
         // create
-        RepositoryUtilities.AddMissingFromCollectionMutate<ProjectRole, Guid>(incommingEntities, entities, context);
+        RepositoryUtilities.AddMissingFromCollectionMutate<ProjectRole, Guid>(incomingEntities, entities, context);
     }
 
-    public static void Update(this ICollection<Objective> entities, ICollection<Objective> incommingEntities, AppDbContext context)
+    public static void Update(this ICollection<Objective> entities, ICollection<Objective> incomingEntities, AppDbContext context)
     {
         // delete
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<Objective, Guid>(incommingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<Objective, Guid>(incomingEntities, entities);
 
         // create
-        RepositoryUtilities.AddMissingFromCollectionMutate<Objective, Guid>(incommingEntities, entities, context);
+        RepositoryUtilities.AddMissingFromCollectionMutate<Objective, Guid>(incomingEntities, entities, context);
 
         // update
         foreach (var entity in entities)
         {
-            var incommingEntity = incommingEntities.Where(x => x.Id == entity.Id).First();
+            var incomingEntity = incomingEntities.Where(x => x.Id == entity.Id).First();
 
-            entity.Name = incommingEntity.Name;
-            entity.Type = incommingEntity.Type;
-            entity.ProjectId = incommingEntity.ProjectId;
-            entity.Description = incommingEntity.Description;
-            entity.UpdatedById = incommingEntity.UpdatedById;
+            entity.Name = incomingEntity.Name;
+            entity.Type = incomingEntity.Type;
+            entity.ProjectId = incomingEntity.ProjectId;
+            entity.Description = incomingEntity.Description;
+            entity.UpdatedById = incomingEntity.UpdatedById;
         }
     }
 
-    public static void Update(this ICollection<Strategy> entities, ICollection<Strategy> incommingEntities, AppDbContext context)
+    public static void Update(this ICollection<Strategy> entities, ICollection<Strategy> incomingEntities, AppDbContext context)
     {
         // delete
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<Strategy, Guid>(incommingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<Strategy, Guid>(incomingEntities, entities);
 
         // create
-        RepositoryUtilities.AddMissingFromCollectionMutate<Strategy, Guid>(incommingEntities, entities, context);
+        RepositoryUtilities.AddMissingFromCollectionMutate<Strategy, Guid>(incomingEntities, entities, context);
 
         // update
         foreach (var entity in entities)
         {
-            var incommingEntity = incommingEntities.Where(x => x.Id == entity.Id).First();
+            var incomingEntity = incomingEntities.Where(x => x.Id == entity.Id).First();
 
 
-            entity.ProjectId = incommingEntity.ProjectId;
-            entity.Description = incommingEntity.Description;
-            entity.UpdatedById = incommingEntity.UpdatedById;
-            entity.StrategyOptions.Update(incommingEntity.StrategyOptions, context);
+            entity.ProjectId = incomingEntity.ProjectId;
+            entity.Description = incomingEntity.Description;
+            entity.UpdatedById = incomingEntity.UpdatedById;
+            entity.StrategyOptions.Update(incomingEntity.StrategyOptions, context);
         }
     }
 
-    public static void Update(this ICollection<StrategyOption> entities, ICollection<StrategyOption> incommingEntities, AppDbContext context)
+    public static void Update(this ICollection<StrategyOption> entities, ICollection<StrategyOption> incomingEntities, AppDbContext context)
     {
         // delete
-        var entitiesToRemove = entities.Where(e => !incommingEntities.Any(ie => ie.OptionId == e.OptionId && ie.StrategyId == e.StrategyId)).ToList();
+        var entitiesToRemove = entities.Where(e => !incomingEntities.Any(ie => ie.OptionId == e.OptionId && ie.StrategyId == e.StrategyId)).ToList();
         foreach (var entityToRemove in entitiesToRemove)
         {
             entities.Remove(entityToRemove);
         }
 
         // create
-        var entitiesToAdd = incommingEntities.Where(ie => !entities.Any(e => e.OptionId == ie.OptionId && e.StrategyId == ie.StrategyId)).ToList();
+        var entitiesToAdd = incomingEntities.Where(ie => !entities.Any(e => e.OptionId == ie.OptionId && e.StrategyId == ie.StrategyId)).ToList();
         foreach (var entityToAdd in entitiesToAdd)
         {
             context.Entry(entityToAdd).State = EntityState.Added;
@@ -89,47 +89,47 @@ public static class EntitiesExtensions
         }
     }
 
-    public static Node Update(this Node entity, Node incommingEntity, AppDbContext context)
+    public static Node Update(this Node entity, Node incomingEntity, AppDbContext context)
     {
-        entity.Name = incommingEntity.Name;
-        if (incommingEntity.NodeStyle != null && entity.NodeStyle != null)
-            entity.NodeStyle = entity.NodeStyle.Update(incommingEntity.NodeStyle);
+        entity.Name = incomingEntity.Name;
+        if (incomingEntity.NodeStyle != null && entity.NodeStyle != null)
+            entity.NodeStyle = entity.NodeStyle.Update(incomingEntity.NodeStyle);
         return entity;
     }
 
-    public static void Update(this ICollection<Edge> entities, ICollection<Edge> incommingEntities, AppDbContext context)
+    public static void Update(this ICollection<Edge> entities, ICollection<Edge> incomingEntities, AppDbContext context)
     {
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<Edge, Guid>(incommingEntities, entities);
-        RepositoryUtilities.AddMissingFromCollectionMutate<Edge, Guid>(incommingEntities, entities, context);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<Edge, Guid>(incomingEntities, entities);
+        RepositoryUtilities.AddMissingFromCollectionMutate<Edge, Guid>(incomingEntities, entities, context);
         foreach (var entity in entities)
         {
-            var inncommingEntity = incommingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
+            var inncommingEntity = incomingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
             if (inncommingEntity == null) continue;
             entity.HeadId = inncommingEntity.HeadId;
             entity.TailId = inncommingEntity.TailId;
         }
     }
 
-    public static NodeStyle Update(this NodeStyle entity, NodeStyle incommingEntity)
+    public static NodeStyle Update(this NodeStyle entity, NodeStyle incomingEntity)
     {
-        entity.XPosition = incommingEntity.XPosition;
-        entity.YPosition = incommingEntity.YPosition;
+        entity.XPosition = incomingEntity.XPosition;
+        entity.YPosition = incomingEntity.YPosition;
         return entity;
     }
 
-    public static async Task<Decision> Update(this Decision entity, Decision incommingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
+    public static async Task<Decision> Update(this Decision entity, Decision incomingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
-        if (entity.Type != incommingEntity.Type && incommingEntity.Type != DecisionHierarchy.Focus.ToString() && ruleTrigger != null)
+        if (entity.Type != incomingEntity.Type && incomingEntity.Type != DecisionHierarchy.Focus.ToString() && ruleTrigger != null)
             await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId], ct);
-        entity.Type = incommingEntity.Type;
-        await entity.Options.Update(incommingEntity.Options, context, ruleTrigger, ct);
+        entity.Type = incomingEntity.Type;
+        await entity.Options.Update(incomingEntity.Options, context, ruleTrigger, ct);
         return entity;
     }
 
-    public static async Task Update(this ICollection<Option> entities, ICollection<Option> incommingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
+    public static async Task Update(this ICollection<Option> entities, ICollection<Option> incomingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
-        RepositoryUtilities.AddMissingFromCollectionMutate<Option, Guid>(incommingEntities, entities, context);
-        var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Option, Guid>(incommingEntities, entities);
+        RepositoryUtilities.AddMissingFromCollectionMutate<Option, Guid>(incomingEntities, entities, context);
+        var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Option, Guid>(incomingEntities, entities);
         foreach (var entityToAdd in entitiesToAdd)
         {
             context.Entry(entityToAdd).State = EntityState.Added;
@@ -140,28 +140,28 @@ public static class EntitiesExtensions
 
         foreach (var entity in entities)
         {
-            var inncommingEntity = incommingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
+            var inncommingEntity = incomingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
             if (inncommingEntity == null) continue;
             entity.Name = inncommingEntity.Name;
             entity.Utility = inncommingEntity.Utility;
         }
     }
 
-    public static async Task<Uncertainty> Update(this Uncertainty entity, Uncertainty incommingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
+    public static async Task<Uncertainty> Update(this Uncertainty entity, Uncertainty incomingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
-        if (entity.IsKey != incommingEntity.IsKey && ruleTrigger != null)
+        if (entity.IsKey != incomingEntity.IsKey && ruleTrigger != null)
             await ruleTrigger.ParentIssuesChangedAsync([entity.IssueId], ct);
 
-        await entity.Outcomes.Update(incommingEntity.Outcomes, context, ruleTrigger, ct);
-        entity.IsKey = incommingEntity.IsKey;
-        entity.DiscreteProbabilities.Update(incommingEntity.DiscreteProbabilities, context);
+        await entity.Outcomes.Update(incomingEntity.Outcomes, context, ruleTrigger, ct);
+        entity.IsKey = incomingEntity.IsKey;
+        entity.DiscreteProbabilities.Update(incomingEntity.DiscreteProbabilities, context);
         return entity;
     }
 
-    public static async Task Update(this ICollection<Outcome> entities, ICollection<Outcome> incommingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
+    public static async Task Update(this ICollection<Outcome> entities, ICollection<Outcome> incomingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<Outcome, Guid>(incommingEntities, entities);
-        var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Outcome, Guid>(incommingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<Outcome, Guid>(incomingEntities, entities);
+        var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Outcome, Guid>(incomingEntities, entities);
         foreach (var entityToAdd in entitiesToAdd)
         {
             context.Entry(entityToAdd).State = EntityState.Added;
@@ -172,38 +172,38 @@ public static class EntitiesExtensions
 
         foreach (var entity in entities)
         {
-            var inncommingEntity = incommingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
+            var inncommingEntity = incomingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
             if (inncommingEntity == null) continue;
             entity.Name = inncommingEntity.Name;
             entity.Utility = inncommingEntity.Utility;
         }
     }
 
-    public static void Update(this ICollection<DiscreteProbability> entities, ICollection<DiscreteProbability> incommingEntities, AppDbContext context)
+    public static void Update(this ICollection<DiscreteProbability> entities, ICollection<DiscreteProbability> incomingEntities, AppDbContext context)
     {
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<DiscreteProbability, Guid>(incommingEntities, entities);
-        RepositoryUtilities.AddMissingFromCollectionMutate<DiscreteProbability, Guid>(incommingEntities, entities, context);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<DiscreteProbability, Guid>(incomingEntities, entities);
+        RepositoryUtilities.AddMissingFromCollectionMutate<DiscreteProbability, Guid>(incomingEntities, entities, context);
         foreach (var entity in entities)
         {
-            var inncommingEntity = incommingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
+            var inncommingEntity = incomingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
             if (inncommingEntity == null) continue;
             entity.Probability = inncommingEntity.Probability;
         }
     }
 
-    public static Utility Update(this Utility entity, Utility incommingEntity, AppDbContext context)
+    public static Utility Update(this Utility entity, Utility incomingEntity, AppDbContext context)
     {
-        entity.DiscreteUtilities.Update(incommingEntity.DiscreteUtilities, context);
+        entity.DiscreteUtilities.Update(incomingEntity.DiscreteUtilities, context);
         return entity;
     }
 
-    public static void Update(this ICollection<DiscreteUtility> entities, ICollection<DiscreteUtility> incommingEntities, AppDbContext context)
+    public static void Update(this ICollection<DiscreteUtility> entities, ICollection<DiscreteUtility> incomingEntities, AppDbContext context)
     {
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<DiscreteUtility, Guid>(incommingEntities, entities);
-        RepositoryUtilities.AddMissingFromCollectionMutate<DiscreteUtility, Guid>(incommingEntities, entities, context);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<DiscreteUtility, Guid>(incomingEntities, entities);
+        RepositoryUtilities.AddMissingFromCollectionMutate<DiscreteUtility, Guid>(incomingEntities, entities, context);
         foreach (var entity in entities)
         {
-            var inncommingEntity = incommingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
+            var inncommingEntity = incomingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
             if (inncommingEntity == null) continue;
             entity.UtilityValue = inncommingEntity.UtilityValue;
         }

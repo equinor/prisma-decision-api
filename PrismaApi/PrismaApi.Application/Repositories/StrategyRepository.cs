@@ -13,9 +13,9 @@ public class StrategyRepository : BaseRepository<Strategy, Guid>, IStrategyRepos
     {
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Strategy> incommingEntities, Expression<Func<Strategy, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task UpdateRangeAsync(IEnumerable<Strategy> incomingEntities, Expression<Func<Strategy, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;

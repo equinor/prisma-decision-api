@@ -16,9 +16,9 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
         _ruleTrigger = ruleTrigger;
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Issue> incommingEntities, Expression<Func<Issue, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task UpdateRangeAsync(IEnumerable<Issue> incomingEntities, Expression<Func<Issue, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;
@@ -67,16 +67,16 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
         return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId), filterPredicate, ct);
     }
 
-    private bool WillIssueChangeTables(Issue entity, Issue incommingEntity)
+    private bool WillIssueChangeTables(Issue entity, Issue incomingEntity)
     {
-        if (entity.Type != incommingEntity.Type) return true;
-        if (entity.Boundary != incommingEntity.Boundary && (incommingEntity.Boundary == Boundary.Out.ToString() || entity.Boundary == Boundary.Out.ToString())) return true;
+        if (entity.Type != incomingEntity.Type) return true;
+        if (entity.Boundary != incomingEntity.Boundary && (incomingEntity.Boundary == Boundary.Out.ToString() || entity.Boundary == Boundary.Out.ToString())) return true;
         return false;
     }
 
-    private async Task RemoveOutOfScopeStrategyOptions(Issue entity, Issue incommingEntity, CancellationToken ct = default)
+    private async Task RemoveOutOfScopeStrategyOptions(Issue entity, Issue incomingEntity, CancellationToken ct = default)
     {
-        if (!IsDecisionMovedOutOfStrategyTable(entity, incommingEntity)) return;
+        if (!IsDecisionMovedOutOfStrategyTable(entity, incomingEntity)) return;
         var strategyOptionsToBeRemoved = await DbContext.StrategyOptions
             .Where(e => e.Option!.Decision!.IssueId == entity.Id)
             .ToListAsync(ct);
@@ -87,11 +87,11 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
         }
     }
 
-    private static bool IsDecisionMovedOutOfStrategyTable(Issue entity, Issue incommingEntity)
+    private static bool IsDecisionMovedOutOfStrategyTable(Issue entity, Issue incomingEntity)
     {
-        if (entity.Type != incommingEntity.Type && entity.Type == IssueType.Decision.ToString()) return true;
-        if (entity.Boundary != incommingEntity.Boundary && incommingEntity.Boundary == Boundary.Out.ToString()) return true;
-        if (entity.Decision != null && incommingEntity.Decision != null && entity.Decision.Type != incommingEntity.Decision.Type && entity.Decision.Type == DecisionHierarchy.Focus.ToString()) return true;
+        if (entity.Type != incomingEntity.Type && entity.Type == IssueType.Decision.ToString()) return true;
+        if (entity.Boundary != incomingEntity.Boundary && incomingEntity.Boundary == Boundary.Out.ToString()) return true;
+        if (entity.Decision != null && incomingEntity.Decision != null && entity.Decision.Type != incomingEntity.Decision.Type && entity.Decision.Type == DecisionHierarchy.Focus.ToString()) return true;
         return false;
     }
 

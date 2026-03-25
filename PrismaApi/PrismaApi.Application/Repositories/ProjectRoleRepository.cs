@@ -13,9 +13,9 @@ public class ProjectRoleRepository : BaseRepository<ProjectRole, Guid>, IProject
     {
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<ProjectRole> incommingEntities, Expression<Func<ProjectRole, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task UpdateRangeAsync(IEnumerable<ProjectRole> incomingEntities, Expression<Func<ProjectRole, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;

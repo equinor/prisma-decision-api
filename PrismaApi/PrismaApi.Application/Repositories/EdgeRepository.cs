@@ -18,9 +18,9 @@ public class EdgeRepository : BaseRepository<Edge, Guid>, IEdgeRepository
         _ruleTrigger = ruleTrigger;
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Edge> incommingEntities, Expression<Func<Edge, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task UpdateRangeAsync(IEnumerable<Edge> incomingEntities, Expression<Func<Edge, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;

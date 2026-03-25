@@ -15,9 +15,9 @@ public class OptionRepository : BaseRepository<Option, Guid>, IOptionRepository
         _ruleTrigger = ruleTrigger;
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Option> incommingEntities, Expression<Func<Option, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task UpdateRangeAsync(IEnumerable<Option> incomingEntities, Expression<Func<Option, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;

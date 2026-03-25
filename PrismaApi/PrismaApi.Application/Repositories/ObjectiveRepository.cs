@@ -12,9 +12,9 @@ public class ObjectiveRepository : BaseRepository<Objective, Guid>, IObjectiveRe
     {
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Objective> incommingEntities, Expression<Func<Objective, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task UpdateRangeAsync(IEnumerable<Objective> incomingEntities, Expression<Func<Objective, bool>> filterPredicate, CancellationToken ct = default)
     {
-        var incomingList = incommingEntities.ToList();
+        var incomingList = incomingEntities.ToList();
         if (incomingList.Count == 0)
         {
             return;
