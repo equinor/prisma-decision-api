@@ -2,7 +2,6 @@ using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
-using PrismaApi.Api;
 using PrismaApi.Api.Configuration.Extensions;
 using PrismaApi.Api.Configuration.JsonResponseOptions;
 using PrismaApi.Api.SecurityPolicy;
@@ -10,10 +9,13 @@ using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Application.Services;
-using PrismaApi.Infrastructure;
 using PrismaApi.Infrastructure.Context;
 using PrismaApi.Infrastructure.DiscreteTables;
 using PrismaApi.Infrastructure.Interfaces;
+
+bool NotRunningIntegrationTests = !string.Equals(
+        Environment.GetEnvironmentVariable("INTEGRATION_TEST_RUN"), "true",
+        StringComparison.OrdinalIgnoreCase);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +46,9 @@ if (!string.IsNullOrEmpty(appInsightsConnectionString) && builder.Environment.En
         options.ConnectionString = appInsightsConnectionString;
     });
 }
+
+builder.Services
+    .AddPrismaRateLimiter(NotRunningIntegrationTests);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
