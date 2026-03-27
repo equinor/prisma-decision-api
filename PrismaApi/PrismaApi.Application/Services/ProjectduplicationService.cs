@@ -34,6 +34,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
 
     public async Task<ProjectOutgoingDto> DuplicateAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
     {
+        bool createDefaultRole = false;
         var fullProject = await _duplicationRepo.GetFullProjectForDuplicationAsync(projectId, user, ct);
         if (fullProject is null)
             throw new KeyNotFoundException($"Project {projectId} not found or access denied.");
@@ -50,7 +51,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
             mappings);
 
         var createProjectDto = CreateProjectDto(fullProject, newProjectId);
-        var createdProjects = await _projectService.CreateAsync([createProjectDto], isProjectDuplicated: false, userDto: user);
+        var createdProjects = await _projectService.CreateAsync([createProjectDto], createDefaultRole, userDto: user);
         var createdProject = createdProjects[0];
 
         var issueDtos = new List<IssueIncomingDto>();
@@ -121,7 +122,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         mappings.Project[importedProjectId] = newProjectId;
 
         var createProjectDto = CreateProjectDtoFromImport(dto.Projects, newProjectId);
-        var createdProjects = await _projectService.CreateAsync([createProjectDto], isProjectDuplicated: false, userDto: user);
+        var createdProjects = await _projectService.CreateAsync([createProjectDto], createDefaultRole: false, userDto: user);
         if (createdProjects.Count == 0)
             return null;
 

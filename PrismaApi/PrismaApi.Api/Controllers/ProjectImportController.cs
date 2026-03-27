@@ -27,7 +27,7 @@ public class ProjectImportController : PrismaBaseEntityController
     }
 
 
-    [HttpPost("import")]
+    [HttpPost("projects/import")]
     public async Task<ActionResult<List<ProjectOutgoingDto>>> ImportProjectsAsync(
         List<ProjectImportDto> importDtos,
         CancellationToken ct = default

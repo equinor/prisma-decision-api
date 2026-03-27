@@ -1,5 +1,5 @@
-﻿using Microsoft.OpenApi.Models;
-using System.Reflection;
+﻿using System.Threading.RateLimiting;
+using Microsoft.OpenApi.Models;
 
 namespace PrismaApi.Api.Configuration.Extensions;
 
@@ -60,5 +60,45 @@ public static class ServiceCollectionExtensions
             //options.OAuthClientSecret(configuration.GetValue<string>("AzureAd:ClientSecret"));
             options.OAuthUsePkce();
         });
+    }
+    public static IServiceCollection AddPrismaRateLimiter(this IServiceCollection services,
+        bool notRunningIntegrationTests = true)
+    {
+        const int defaultLimit = 150;
+
+        services.AddRateLimiter(options =>
+        {
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
+                httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        httpContext.User.Identity?.Name ??
+                        httpContext.Request.Headers.Host.ToString(),
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = defaultLimit,
+                            QueueLimit = defaultLimit * 2,
+                            Window = notRunningIntegrationTests
+                                ? TimeSpan.FromSeconds(2)
+                                : TimeSpan.FromSeconds(30)
+                        }));
+
+            options.OnRejected = async (context, token) =>
+            {
+                context.HttpContext.Response.Headers.ContentType = "application/json";
+                context.HttpContext.Response.StatusCode = 429;
+                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                {
+                    context.HttpContext.Response.Headers.RetryAfter = $"{retryAfter.TotalSeconds}";
+
+                    await context.HttpContext.Response.WriteAsync($"Too many requests. Please try again after {retryAfter.TotalSeconds} second(s).", cancellationToken: token);
+                }
+                else
+                {
+                    await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", cancellationToken: token);
+                }
+            };
+        });
+        return services;
     }
 }
