@@ -1,0 +1,42 @@
+using PrismaApi.Application.Interfaces.Repositories;
+using PrismaApi.Application.Interfaces.Services;
+using PrismaApi.Application.Mapping;
+using PrismaApi.Domain.Dtos;
+
+namespace PrismaApi.Application.Services;
+
+public class ValueMetricService: IValueMetricService
+{
+    private readonly IValueMetricRepository _valueMetricRepository;
+
+    public ValueMetricService(IValueMetricRepository valueMetricRepository)
+    {
+        _valueMetricRepository = valueMetricRepository;
+    }
+
+    public async Task<List<ValueMetricOutgoingDto>> UpdateAsync(List<ValueMetricIncomingDto> dtos)
+    {
+        var entities = dtos.ToEntities();
+        await _valueMetricRepository.UpdateRangeAsync(entities);
+        var ids = dtos.Select(d => d.Id).ToList();
+        var updated = await _valueMetricRepository.GetByIdsAsync(ids);
+        return updated.ToOutgoingDtos();
+    }
+
+    public async Task DeleteAsync(List<Guid> ids)
+    {
+        await _valueMetricRepository.DeleteByIdsAsync(ids);
+    }
+
+    public async Task<List<ValueMetricOutgoingDto>> GetAsync(List<Guid> ids)
+    {
+        var entities = await _valueMetricRepository.GetByIdsAsync(ids);
+        return entities.ToOutgoingDtos();
+    }
+
+    public async Task<List<ValueMetricOutgoingDto>> GetAllAsync()
+    {
+        var entities = await _valueMetricRepository.GetAllAsync();
+        return entities.ToOutgoingDtos();
+    }
+}

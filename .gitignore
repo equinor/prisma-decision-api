@@ -20,6 +20,7 @@ parts/
 sdist/
 var/
 wheels/
+.vscode/
 share/python-wheels/
 *.egg-info/
 .installed.cfg
@@ -156,7 +157,7 @@ dmypy.json
 
 # pytype static type analyzer
 .pytype/
-
+**/.DS_Store
 # Cython debug symbols
 cython_debug/
 
@@ -172,6 +173,14 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# .NET / Visual Studio (PrismaApi)
+.vs/
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userprefs
 
 # .NET build artifacts (PrismaApi)
 PrismaApi/**/bin/
