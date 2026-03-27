@@ -34,14 +34,14 @@ public class ProjectImportService : IProjectImportService
 
             foreach (var userDto in dto.Projects.Users)
             {
-                if (userDto != null && userDto.AzureId != null)
-                    userDto.UserId = userDto.AzureId.Value.ToString();
+                if (userDto != null && userDto.UserId != null)
+                    userDto.UserId = userDto.UserId; // Ensure UserId is not null for GetOrAddByIdAsync
 
                 // make sure all users are in the database
                 if (userDto != null)
                 {
                     var userForRole = new UserIncomingDto { Id = userDto.UserId, Name = userDto.Name };
-                    await _userRepository.GetOrAddByIdAsync(userForRole);
+                    await _userRepository.GetOrAddByIdAsync(userForRole, cancellationToken);
                 }
             }
 
