@@ -60,8 +60,8 @@ public class ProjectService : IProjectService
 
     public async Task<List<ProjectOutgoingDto>> UpdateAsync(List<ProjectIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
-        var newUserIds = dtos.SelectMany(d => d.Users).Select(u => new { u.UserId, u.Name }).Distinct();
-        foreach (var u in newUserIds)
+        var userIds = dtos.SelectMany(d => d.Users).Select(u => new { u.UserId, u.Name }).Distinct();
+        foreach (var u in userIds)
         {
             await _userRepository.GetOrAddByIdAsync(new UserIncomingDto { Id = u.UserId, Name = u.Name }, ct);
         }

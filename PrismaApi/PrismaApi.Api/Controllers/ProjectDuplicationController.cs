@@ -21,7 +21,7 @@ public class ProjectDuplicationController : PrismaBaseEntityController
         _userService = userService;
     }
 
-    [HttpPost("project/{id:guid}/duplicate")]
+    [HttpPost("projects/{id:guid}/duplicate")]
     public async Task<ActionResult<ProjectOutgoingDto>> DuplicateProject(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
