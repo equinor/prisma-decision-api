@@ -2,11 +2,13 @@
 using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Api.Attributes;
 using PrismaApi.Api.SecurityPolicy;
+using PrismaApi.Application.Filters;
 
 namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [LoadUser]
+[ApiExceptionFilter]
 [Authorize(Policy = AppRolesPolicy.UserRoleRequired)]
 public class PrismaBaseController: ControllerBase
 {
