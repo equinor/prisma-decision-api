@@ -181,3 +181,7 @@ cython_debug/
 *.user
 *.suo
 *.userprefs
+
+# .NET build artifacts (PrismaApi)
+PrismaApi/**/bin/
+PrismaApi/**/obj/
