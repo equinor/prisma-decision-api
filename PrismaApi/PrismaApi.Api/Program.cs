@@ -134,6 +134,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseRateLimiter();
+
 // Use CORS - must be before UseAuthorization
 app.UseCors(CorsPolicy.AllowOriginsPolicy);
 
