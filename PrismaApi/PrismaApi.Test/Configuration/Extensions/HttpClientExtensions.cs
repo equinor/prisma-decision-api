@@ -14,7 +14,7 @@ public static class TestHttpClientExtensions
     {
         var testToken = new TestToken
         {
-            AzureUniqueId = testUser.AzureUniqueId,
+            AzureUniqueId = testUser.Id,
             Name = testUser.Name,
             Upn = testUser.Mail,
             Roles = testUser.Roles,

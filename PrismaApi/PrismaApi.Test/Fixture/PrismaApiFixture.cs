@@ -14,9 +14,9 @@ public class PrismaApiFixture : IAsyncLifetime
     {
         ApiFactory = new PrismaWebAppFactory();
 
-        WarpUser = new TestPersonProfile
+        PrismaUser = new TestPersonProfile
         {
-            AzureUniqueId = Guid.NewGuid(),
+            Id = Guid.NewGuid().ToString(),
             Name = "Test User A",
             Mail = "noreplyTestA@mail.com",
             Scopes = new[] { "Read" },
@@ -26,15 +26,7 @@ public class PrismaApiFixture : IAsyncLifetime
 
     public TestArguments TestArgs { get; set; } = new();
 
-    public TestPersonProfile WarpUser { get; }
-    public TestPersonProfile RandomUser { get; }
-    public TestPersonProfile AdminUser { get; }
-    public TestPersonProfile FieldASpecificEditorUser { get; }
-    public TestPersonProfile FieldASpecificReadOnlyUser { get; }
-    public TestPersonProfile FieldBSpecificReadOnlyUser { get; }
-    public TestPersonProfile FieldBSpecificEditorUser { get; }
-    public TestPersonProfile NoFieldAccessUser { get; }
-    public TestPersonProfile AsgardUser { get; }
+    public TestPersonProfile PrismaUser { get; }
 
     public async Task InitializeAsync() =>
         TestArgs = await TestModelBuilder.BuildFreshTestDataAsync(this);
@@ -49,21 +41,5 @@ public class PrismaApiFixture : IAsyncLifetime
         await Task.CompletedTask;
     }
 
-    public TestClientScope UserScope() => new(WarpUser);
-
-    public TestClientScope RandomUserScope() => new(RandomUser);
-
-    public TestClientScope AdminScope() => new(AdminUser);
-
-    public TestClientScope FieldASpecificEditorScope() => new(FieldASpecificEditorUser);
-
-    public TestClientScope FieldASpecificReadOnlyScope() => new(FieldASpecificReadOnlyUser);
-
-    public TestClientScope NoFieldAccessScope() => new(NoFieldAccessUser);
-
-    public TestClientScope FieldBSpecificReadOnlyScope() => new(FieldBSpecificReadOnlyUser);
-
-    public TestClientScope FieldBSpecificEditorScope() => new(FieldBSpecificEditorUser);
-
-    public TestClientScope AsgardScope() => new(AsgardUser);
+    public TestClientScope UserScope() => new(PrismaUser);
 }
