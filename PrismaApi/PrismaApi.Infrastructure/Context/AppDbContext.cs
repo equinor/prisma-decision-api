@@ -340,7 +340,7 @@ public class AppDbContext : DbContext
             entity.HasMany(e => e.StrategyOptions)
                 .WithOne(e => e.Strategy)
                 .HasForeignKey(e => e.StrategyId)
-                .OnDelete(DeleteBehavior.ClientCascade);
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<StrategyOption>(entity =>
