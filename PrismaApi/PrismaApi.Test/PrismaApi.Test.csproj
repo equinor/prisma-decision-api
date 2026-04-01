@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PrismaApi.Api\PrismaApi.Api.csproj" />
+    <ProjectReference Include="..\PrismaApi.Application\PrismaApi.Application.csproj" />
     <ProjectReference Include="..\PrismaApi.Domain\PrismaApi.Domain.csproj" />
     <ProjectReference Include="..\PrismaApi.Infrastructure\PrismaApi.Infrastructure.csproj" />
   </ItemGroup>

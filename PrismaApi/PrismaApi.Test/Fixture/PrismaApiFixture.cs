@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Infrastructure.Context;
 using PrismaApi.Test.Configuration;
 using PrismaApi.Test.Configuration.User;
@@ -20,7 +21,7 @@ public class PrismaApiFixture : IAsyncLifetime
             Name = "Test User A",
             Mail = "noreplyTestA@mail.com",
             Scopes = new[] { "Read" },
-            Roles = new[] { "PrismaUser" }
+            Roles = new[] { AppRoles.PrismaDecisionUser }
         };
     }
 

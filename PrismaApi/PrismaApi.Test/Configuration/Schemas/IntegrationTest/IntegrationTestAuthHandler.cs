@@ -62,10 +62,10 @@ internal class IntegrationTestAuthHandler : AuthenticationHandler<IntegrationTes
                 ex);
         }
 
-        var uniqueId = $"{tokenDeserialized.AzureUniqueId}";
+        var uniqueId = tokenDeserialized.Id;
         var authType = tokenDeserialized.IsAppToken ? AuthType.Application : AuthType.Delegated;
 
-        var claims = new List<Claim> { new(TestClaimTypes.AzureUniquePersonId, uniqueId) };
+        var claims = new List<Claim> { new(TestClaimTypes.AzureUniquePersonId, uniqueId!) };
 
         if (tokenDeserialized.Scopes != null)
         {

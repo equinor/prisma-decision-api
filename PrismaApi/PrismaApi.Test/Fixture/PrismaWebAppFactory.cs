@@ -3,11 +3,14 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Logging;
 using PrismaApi.Api;
+using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Infrastructure.Context;
 using PrismaApi.Test.Configuration.Constants;
 using PrismaApi.Test.Configuration.Extensions;
+using PrismaApi.Test.Mocks;
 
 namespace PrismaApi.Test.Fixture;
 
@@ -58,6 +61,8 @@ public class PrismaWebAppFactory : WebApplicationFactory<Program>
         builder.ConfigureTestServices(services =>
         {
             services.AddIntegrationTestingAuthentication();
+            services.RemoveAll<IUserService>();
+            services.AddScoped<IUserService, TestUserService>();
             services.AddDbContext<AppDbContext>((serviceProvider, options) =>
             {
                 options.UseSqlServer(_testDbConnectionString);
