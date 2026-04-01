@@ -23,12 +23,22 @@ public class PrismaApiFixture : IAsyncLifetime
             Scopes = new[] { "Read" },
             Roles = new[] { AppRoles.PrismaDecisionUser }
         };
+
+        SecundaryUser = new TestPersonProfile
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = "Test User A",
+            Mail = "noreplyTestA@mail.com",
+            Scopes = new[] { "Read" },
+            Roles = new[] { AppRoles.PrismaDecisionUser }
+        };
     }
 
     public TestArguments TestArgs { get; set; } = new();
 
     public TestPersonProfile PrismaUser { get; }
-
+    public TestPersonProfile SecundaryUser { get; }
+    
     public async Task InitializeAsync() =>
         TestArgs = await TestModelBuilder.BuildFreshTestDataAsync(this);
 

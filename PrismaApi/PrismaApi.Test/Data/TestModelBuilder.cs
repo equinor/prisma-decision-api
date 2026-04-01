@@ -12,10 +12,8 @@ public class TestModelBuilder
     {
         using var scope = fixture.ApiFactory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var anyDataFound = db.Projects.Any();
         var args = new TestArguments();
-
-        var secondaryUserId = Guid.NewGuid().ToString();
-        args.SecondaryUserId = secondaryUserId;
 
         var primaryUser = new Domain.Entities.User
         {
@@ -24,10 +22,13 @@ public class TestModelBuilder
         };
         var secondaryUser = new Domain.Entities.User
         {
-            Id = secondaryUserId,
-            Name = "Test User B"
+            Id = fixture.SecundaryUser.Id!,
+            Name = fixture.SecundaryUser.Name!
         };
-        db.Users.AddRange(primaryUser, secondaryUser);
+        if (!anyDataFound)
+        {
+            db.Users.AddRange(primaryUser, secondaryUser);
+        }
 
         var primaryProject = new Project
         {

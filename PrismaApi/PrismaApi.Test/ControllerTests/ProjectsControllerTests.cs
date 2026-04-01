@@ -3,28 +3,34 @@ using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Test.Configuration;
 using PrismaApi.Test.Configuration.Extensions;
+using PrismaApi.Test.Data;
 using PrismaApi.Test.Fixture;
 
 namespace PrismaApi.Test.ControllerTests;
 
 [Collection(nameof(PrismaCollection))]
-public class ProjectsControllerTests
+public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>, IAsyncLifetime
 {
     private readonly PrismaApiFixture _fixture;
-    private readonly HttpClient _client;
 
     public ProjectsControllerTests(PrismaApiFixture fixture)
     {
         _fixture = fixture;
-        _client = fixture.ApiFactory.CreateClient();
     }
+    private HttpClient Client => _fixture.ApiFactory.CreateClient();
+    private TestArguments TestArgs { get; set; } = new();
+    public async Task InitializeAsync()
+    {
+        TestArgs = await TestModelBuilder.BuildFreshTestDataAsync(_fixture);
+    }
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task GetAllProjects_ReturnsProjectsForUser()
     {
         using var scope = _fixture.UserScope();
 
-        var response = await _client.TestClientGetAsync<List<ProjectOutgoingDto>>("projects");
+        var response = await Client.TestClientGetAsync<List<ProjectOutgoingDto>>("projects");
 
         Assert.Equal(HttpStatusCode.OK, response.Response.StatusCode);
         Assert.Contains(response.Value, project => project.Id == _fixture.TestArgs.TestProjectId);
@@ -35,7 +41,7 @@ public class ProjectsControllerTests
     {
         using var scope = _fixture.UserScope();
 
-        var response = await _client.TestClientGetAsync<ProjectOutgoingDto>($"projects/{_fixture.TestArgs.TestProjectId}");
+        var response = await Client.TestClientGetAsync<ProjectOutgoingDto>($"projects/{_fixture.TestArgs.TestProjectId}");
 
         Assert.Equal(HttpStatusCode.OK, response.Response.StatusCode);
         Assert.Equal(_fixture.TestArgs.TestProjectId, response.Value.Id);
@@ -68,7 +74,7 @@ public class ProjectsControllerTests
             }
         };
 
-        var response = await _client.TestClientPostAsync<List<ProjectOutgoingDto>>("projects", payload);
+        var response = await Client.TestClientPostAsync<List<ProjectOutgoingDto>>("projects", payload);
 
         Assert.Equal(HttpStatusCode.OK, response.Response.StatusCode);
         Assert.Contains(response.Value, project => project.Id == projectId);
@@ -101,7 +107,7 @@ public class ProjectsControllerTests
             }
         };
 
-        var response = await _client.TestClientPutAsync<List<ProjectOutgoingDto>>("projects", payload);
+        var response = await Client.TestClientPutAsync<List<ProjectOutgoingDto>>("projects", payload);
 
         Assert.Equal(HttpStatusCode.OK, response.Response.StatusCode);
         Assert.Contains(response.Value, project => project.Id == _fixture.TestArgs.TestProjectId && project.Name == updatedName);
@@ -112,32 +118,7 @@ public class ProjectsControllerTests
     {
         using var scope = _fixture.UserScope();
 
-        var projectId = Guid.NewGuid();
-        var createPayload = new List<ProjectCreateDto>
-        {
-            new()
-            {
-                Id = projectId,
-                Name = "Project To Delete",
-                OpportunityStatement = "Delete test",
-                Users = new List<ProjectRoleCreateDto>
-                {
-                    new()
-                    {
-                        Id = Guid.NewGuid(),
-                        ProjectId = projectId,
-                        UserId = _fixture.PrismaUser.Id!,
-                        Name = _fixture.PrismaUser.Name!,
-                        Role = ProjectRoleType.DecisionMaker.ToString()
-                    }
-                }
-            }
-        };
-
-        var createResponse = await _client.TestClientPostAsync<List<ProjectOutgoingDto>>("projects", createPayload);
-        Assert.Equal(HttpStatusCode.OK, createResponse.Response.StatusCode);
-
-        var deleteResponse = await _client.TestClientDeleteAsync<string>($"projects/{projectId}");
+        var deleteResponse = await Client.TestClientDeleteAsync<string>($"projects/{TestArgs.TestProjectId.ToString()}");
 
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.Response.StatusCode);
     }
