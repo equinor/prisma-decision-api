@@ -272,7 +272,7 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.Utility)
                 .WithMany(e => e.DiscreteUtilities)
                 .HasForeignKey(e => e.UtilityId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasMany(e => e.ParentOutcomes)
                 .WithOne(e => e.DiscreteUtility)
