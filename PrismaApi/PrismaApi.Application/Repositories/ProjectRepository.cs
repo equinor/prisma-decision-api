@@ -15,6 +15,15 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
         _repo = repo;
     }
 
+    public override async Task DeleteByIdsAsync(IEnumerable<Guid> ids, Expression<Func<Project, bool>>? filterPredicate = null, CancellationToken ct = default)
+    {
+        var edgesToDelete = await DbContext.Edges
+            .Where(x => ids.Contains(x.HeadNode!.ProjectId) || ids.Contains(x.TailNode!.ProjectId))
+            .ToListAsync(ct);
+        DbContext.Edges.RemoveRange(edgesToDelete);
+        await base.DeleteByIdsAsync(ids, filterPredicate, ct);
+    }
+
     public async Task<ICollection<Project>> GetProjectsWhereUserHasAccess(ICollection<Guid> projectIds, string userId, CancellationToken ct = default)
     {
         return await GetByIdsAsync(
