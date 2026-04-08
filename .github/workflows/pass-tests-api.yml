@@ -22,17 +22,17 @@ jobs:
                   path: |
                       ~/.nuget/packages
                       ~/.dotnet/tools
-                      ./src/PrismaApi.Application/bin
-                      ./src/PrismaApi.Domain/bin
-                      ./src/PrismaApi.Infrastructure/bin
-                      ./src/PrismaApi.Api/bin
+                      ./PrismaApi/PrismaApi.Application/bin
+                      ./PrismaApi/PrismaApi.Domain/bin
+                      ./PrismaApi/PrismaApi.Infrastructure/bin
+                      ./PrismaApi/PrismaApi.Api/bin
                   key: ${{ runner.os }}-dotnet-${{ hashFiles('**/PrismaApi*.csproj') }}
 
             - name: Restore NuGet packages
-              run: dotnet restore src/PrismaApi.sln
+              run: dotnet restore PrismaApi/PrismaApi.sln
 
             - name: Build projects and their dependencies
-              run: dotnet build --no-restore -warnaserror src/PrismaApi.sln
+              run: dotnet build --no-restore -warnaserror PrismaApi/PrismaApi.sln
 
     integration-tests:
         name: Integration tests
@@ -48,10 +48,10 @@ jobs:
                   path: |
                       ~/.nuget/packages
                       ~/.dotnet/tools
-                      ./src/PrismaApi.Application/bin
-                      ./src/PrismaApi.Domain/bin
-                      ./src/PrismaApi.Infrastructure/bin
-                      ./src/PrismaApi.Api/bin
+                      ./PrismaApi/PrismaApi.Application/bin
+                      ./PrismaApi/PrismaApi.Domain/bin
+                      ./PrismaApi/PrismaApi.Infrastructure/bin
+                      ./PrismaApi/PrismaApi.Api/bin
                   key: ${{ runner.os }}-dotnet-${{ hashFiles('**/PrismaApi*.csproj') }}
 
             - name: Setup SQL Server
@@ -81,14 +81,14 @@ jobs:
               run: echo "sqlConnString=Server=${{ steps.sql-server-ip.outputs.ip }},1433;Database=sqldb-Prisma-intgtest-${{ steps.random-string.outputs.astring }}" >> $GITHUB_OUTPUT
 
             - name: Restore NuGet packages
-              run: dotnet restore src/PrismaApi.sln
+              run: dotnet restore PrismaApi/PrismaApi.sln
 
             - name: Run tests
               env:
                   GITHUB_TEST_CONNECTION_STRING: "${{ steps.construct-connection-string.outputs.sqlConnString }};User Id=sa;Password=${{steps.random-password.outputs.password}};TrustServerCertificate=true;Encrypt=false;"
               run: |
-                  dotnet build src/PrismaApi.sln --configuration Release --no-restore
-                  dotnet test src/PrismaApi.Test/PrismaApi.Test.csproj --configuration Release --no-build --collect:"XPlat Code Coverage"
+                  dotnet build PrismaApi/PrismaApi.sln --configuration Release --no-restore
+                  dotnet test PrismaApi/PrismaApi.Test/PrismaApi.Test.csproj --configuration Release --no-build --collect:"XPlat Code Coverage"
 
             - name: Stop SQL Server Container
               run: docker stop sql-server || true
@@ -100,12 +100,12 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: TestResults
-                  path: ./src/PrismaApi.Test/TestResults
+                  path: ./PrismaApi/PrismaApi.Test/TestResults
 
             - name: ReportGenerator
               uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
               with:
-                  reports: ./src/PrismaApi.Test/TestResults/**/*.cobertura.xml
+                  reports: ./PrismaApi/PrismaApi.Test/TestResults/**/*.cobertura.xml
                   targetdir: coveragereport
                   reporttypes: Html;MarkdownSummaryGithub
 
