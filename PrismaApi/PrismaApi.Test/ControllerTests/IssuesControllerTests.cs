@@ -133,31 +133,4 @@ public class IssuesControllerTests : IClassFixture<PrismaApiFixture>
             }
         };
     }
-
-    private static IssueIncomingDto BuildUncertaintyIssue(Guid issueId, Guid projectId, int order)
-    {
-        return new IssueIncomingDto
-        {
-            Id = issueId,
-            ProjectId = projectId,
-            Name = "Uncertainty Issue",
-            Description = "Uncertainty issue description",
-            Order = order,
-            Type = IssueType.Uncertainty.ToString(),
-            Boundary = Boundary.In.ToString(),
-            Node = new NodeIncomingDto
-            {
-                Id = issueId,
-                ProjectId = projectId,
-                IssueId = issueId,
-                Name = "Uncertainty Node"
-            },
-            Uncertainty = new UncertaintyIncomingDto
-            {
-                Id = issueId,
-                IssueId = issueId,
-                IsKey = true
-            }
-        };
-    }
 }

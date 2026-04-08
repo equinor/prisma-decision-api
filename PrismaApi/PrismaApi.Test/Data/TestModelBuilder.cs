@@ -8,6 +8,37 @@ namespace PrismaApi.Test.Data;
 
 public class TestModelBuilder
 {
+    static Issue BuildIssue(Guid issueId, Guid projectId, string name, string type, string boundary, int order, string userId) =>
+        new()
+        {
+            Id = issueId,
+            ProjectId = projectId,
+            Type = type,
+            Boundary = boundary,
+            Name = name,
+            Description = $"{name} description",
+            Order = order,
+            CreatedById = userId,
+            UpdatedById = userId
+        };
+
+    static Node BuildNode(Guid issueId, Guid projectId, string name) =>
+        new()
+        {
+            Id = issueId,
+            ProjectId = projectId,
+            IssueId = issueId,
+            Name = name
+        };
+
+    static NodeStyle BuildNodeStyle(Guid nodeId, double xPosition, double yPosition) =>
+        new()
+        {
+            Id = nodeId,
+            NodeId = nodeId,
+            XPosition = xPosition,
+            YPosition = yPosition
+        };
     internal static async Task<TestArguments> BuildFreshTestDataAsync(PrismaApiFixture fixture)
     {
         using var scope = fixture.ApiFactory.Services.CreateScope();
@@ -15,12 +46,12 @@ public class TestModelBuilder
         var anyDataFound = db.Projects.Any();
         var args = new TestArguments();
 
-        var primaryUser = new Domain.Entities.User
+        var primaryUser = new User
         {
             Id = fixture.PrismaUser.Id!,
             Name = fixture.PrismaUser.Name!
         };
-        var secondaryUser = new Domain.Entities.User
+        var secondaryUser = new User
         {
             Id = fixture.SecundaryUser.Id!,
             Name = fixture.SecundaryUser.Name!
@@ -75,38 +106,6 @@ public class TestModelBuilder
                 CreatedById = secondaryUser.Id,
                 UpdatedById = secondaryUser.Id
             });
-
-        static Issue BuildIssue(Guid issueId, Guid projectId, string name, string type, string boundary, int order, string userId) =>
-            new()
-            {
-                Id = issueId,
-                ProjectId = projectId,
-                Type = type,
-                Boundary = boundary,
-                Name = name,
-                Description = $"{name} description",
-                Order = order,
-                CreatedById = userId,
-                UpdatedById = userId
-            };
-
-        static Node BuildNode(Guid issueId, Guid projectId, string name) =>
-            new()
-            {
-                Id = issueId,
-                ProjectId = projectId,
-                IssueId = issueId,
-                Name = name
-            };
-
-        static NodeStyle BuildNodeStyle(Guid nodeId, double xPosition, double yPosition) =>
-            new()
-            {
-                Id = nodeId,
-                NodeId = nodeId,
-                XPosition = xPosition,
-                YPosition = yPosition
-            };
 
         var primaryDecision1Id = args.DecisionIssueId;
         var primaryUncertainty1Id = args.UncertaintyIssueId;
