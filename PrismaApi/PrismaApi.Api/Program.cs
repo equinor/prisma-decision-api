@@ -75,6 +75,8 @@ builder.Services.AddScoped<IProjectRoleRepository, ProjectRoleRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IProjectDuplicationRepository, ProjectDuplicationRepository>();
+builder.Services.AddScoped<IAssessmentRepository, AssessmentRepository>();
+builder.Services.AddScoped<ISpiderAssessmentRepository, SpiderAssessmentRepository>();
 
 builder.Services.AddScoped<ITableRebuildingService, TableRebuildingService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
@@ -96,6 +98,8 @@ builder.Services.AddScoped<IProjectRoleService, ProjectRoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IProjectDuplicationService, ProjectDuplicationService>();
 builder.Services.AddScoped<IProjectImportService, ProjectImportService>();
+builder.Services.AddScoped<IAssessmentService, AssessmentService>();
+builder.Services.AddScoped<ISpiderAssessmentService, SpiderAssessmentService>();
 builder.Services.AddHttpClient<IFastApiService, FastApiService>();
 
 builder.Services.AddControllers()
