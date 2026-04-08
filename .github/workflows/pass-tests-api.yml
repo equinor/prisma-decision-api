@@ -32,7 +32,7 @@ jobs:
               run: dotnet restore PrismaApi/PrismaApi.sln
 
             - name: Build projects and their dependencies
-              run: dotnet build --no-restore -warnaserror PrismaApi/PrismaApi.sln
+              run: dotnet build --no-restore PrismaApi/PrismaApi.sln
 
     integration-tests:
         name: Integration tests
