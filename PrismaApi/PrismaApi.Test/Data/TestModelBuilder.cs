@@ -53,8 +53,8 @@ public class TestModelBuilder
         };
         var secondaryUser = new User
         {
-            Id = fixture.SecundaryUser.Id!,
-            Name = fixture.SecundaryUser.Name!
+            Id = fixture.SecondaryUser.Id!,
+            Name = fixture.SecondaryUser.Name!
         };
         if (!anyDataFound)
         {
