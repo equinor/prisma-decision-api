@@ -37,7 +37,7 @@ public class PrismaApiFixture : IAsyncLifetime
     public TestArguments TestArgs { get; set; } = new();
 
     public TestPersonProfile PrismaUser { get; }
-    public TestPersonProfile SecundaryUser { get; }
+    public TestPersonProfile SecondaryUser { get; }
     
     public async Task InitializeAsync() =>
         TestArgs = await TestModelBuilder.BuildFreshTestDataAsync(this);
