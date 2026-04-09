@@ -70,7 +70,7 @@ jobs:
 
             - name: Get SQL Server Container IP
               id: sql-server-ip
-              run: echo "ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' sql-server)" >> $GITHUB_OUTPUT
+              run: echo "ip=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' sql-server)" >> $GITHUB_OUTPUT
 
             - name: Wait for SQL Server to Start
               run: docker ps | grep -q "sql-server" && echo "SQL Server is up" || (echo "SQL Server did not start" && exit 1)
