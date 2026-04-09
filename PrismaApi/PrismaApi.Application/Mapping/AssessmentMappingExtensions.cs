@@ -16,7 +16,8 @@ namespace PrismaApi.Application.Mapping
             {
                 Id = entity.Id,
                 Name = entity.Name,
-                ProjectId = entity.ProjectId
+                ProjectId = entity.ProjectId,
+                DecisionQualityAssessments = entity.DecisionQualityAssessments?.Select(sa => sa.ToOutgoingDto()).ToList() ?? new()
             };
         }
 

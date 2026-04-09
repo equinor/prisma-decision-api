@@ -14,5 +14,5 @@ public class Assessment : AuditableEntity, IBaseEntity<Guid>
     [Column("project_id")]
     public Guid ProjectId { get; set; }
     public Project? Project { get; set; }
-    public ICollection<SpiderAssessment> SpiderAssessments { get; set; } = new List<SpiderAssessment>();
+    public ICollection<DecisionQualityAssessment> DecisionQualityAssessments { get; set; } = new List<DecisionQualityAssessment>();
 }

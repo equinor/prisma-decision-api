@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PrismaApi.Domain.Entities;
 
-public class SpiderAssessment : AuditableEntity, IBaseEntity<Guid>
+public class DecisionQualityAssessment : AuditableEntity, IBaseEntity<Guid>
 {
     [Column("id")]
     public Guid Id { get; set; }
@@ -21,7 +21,7 @@ public class SpiderAssessment : AuditableEntity, IBaseEntity<Guid>
     public string Comment { get; set; } = string.Empty;
 
     [Column("doable_alternatives")]
-    public int[] DoableAlternatives { get; set; } = Array.Empty<int>();
+    public int DoableAlternatives { get; set; }
     [Column("assessment_id")]
     public Guid AssessmentId { get; set; }
     public Assessment? Assessment { get; set; }

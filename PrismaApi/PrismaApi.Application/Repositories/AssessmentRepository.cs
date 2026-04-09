@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
@@ -10,6 +11,11 @@ namespace PrismaApi.Application.Repositories
     {
         public AssessmentRepository(AppDbContext dbContext) : base(dbContext)
         {
+        }
+
+        protected override IQueryable<Assessment> Query()
+        {
+            return DbContext.Assessments.Include(a => a.DecisionQualityAssessments);
         }
 
         public async Task UpdateAsync(List<Assessment> incommingEntities, Expression<Func<Assessment, bool>> filterPredicate, CancellationToken ct)

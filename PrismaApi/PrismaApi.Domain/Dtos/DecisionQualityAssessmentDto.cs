@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PrismaApi.Domain.Dtos
 {
-    public class SpiderAssessmentDto
+    public class DecisionQualityAssessmentDto
     {
         [JsonPropertyName("id")]
         public Guid Id { get; set; }
@@ -24,16 +24,22 @@ namespace PrismaApi.Domain.Dtos
         [JsonPropertyName("comment")]
         public string Comment { get; set; } = string.Empty;
         [JsonPropertyName("doable_alternatives")]
-        public int[] DoableAlternatives { get; set; } = Array.Empty<int>();
+        public int DoableAlternatives { get; set; }
         [JsonPropertyName("assessment_id")]
         public Guid AssessmentId { get; set; }
 
+        [JsonPropertyName("created_at")]
+        public DateTime CreatedAt { get; set; }
+
+        [JsonPropertyName("updated_at")]
+        public DateTime UpdatedAt { get; set; }
+
     }
 
-    public class SpiderAssessmentIncomingDto : SpiderAssessmentDto
+    public class DecisionQualityAssessmentIncomingDto : DecisionQualityAssessmentDto
     {
     }
-    public class SpiderAssessmentOutgoingDto : SpiderAssessmentDto
+    public class DecisionQualityAssessmentOutgoingDto : DecisionQualityAssessmentDto
     { }
 
 }

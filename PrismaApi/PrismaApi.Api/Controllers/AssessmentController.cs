@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using PrismaApi.Api.Extensions;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure.Context;
@@ -20,14 +21,14 @@ namespace PrismaApi.Api.Controllers
         [HttpGet("assessments/{id}")]
         public async Task<ActionResult<AssessmentOutgoingDto>> GetAssessments(Guid id, CancellationToken ct = default)
         {
-            UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+            UserOutgoingDto user = HttpContext.GetLoadedUser();
             var result = await _assessmentService.GetAsync(new List<Guid> { id }, user, ct);
             return result != null && result.Count > 0 ? Ok(result[0]) : NotFound();
         }
         [HttpGet("assessments")]
         public async Task<ActionResult<List<AssessmentOutgoingDto>>> GetAllAssessments(CancellationToken ct = default)
         {
-            UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+            UserOutgoingDto user = HttpContext.GetLoadedUser();
             var result = await _assessmentService.GetAllAsync(user, ct);
             return Ok(result);
         }
@@ -35,23 +36,42 @@ namespace PrismaApi.Api.Controllers
         [HttpPost("assessments")]
         public async Task<ActionResult<List<AssessmentOutgoingDto>>> CreateAssessment([FromBody] List<AssessmentIncomingDto> dtos, CancellationToken ct = default)
         {
-            UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
-            var result = await _assessmentService.CreateAsync(dtos, user, ct);
-            return result != null && result.Count > 0 ? Ok(result) : NotFound();
-
+            UserOutgoingDto user = HttpContext.GetLoadedUser();
+            await BeginTransactionAsync(ct);
+            try
+            {
+                var result = await _assessmentService.CreateAsync(dtos, user, ct);
+                await CommitTransactionAsync(ct);
+                return result != null && result.Count > 0 ? Ok(result) : NotFound();
+            }
+            catch
+            {
+                await RollbackTransactionAsync(CancellationToken.None);
+                throw;
+            }
         }
         [HttpPut("assessments")]
         public async Task<ActionResult<List<AssessmentOutgoingDto>>> UpdateAssessment([FromBody] List<AssessmentIncomingDto> dtos, CancellationToken ct = default)
         {
-            UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
-            await _assessmentService.UpdateRangeAsync(dtos, user, ct);
-            return NoContent();
-
+            UserOutgoingDto user = HttpContext.GetLoadedUser();
+            await BeginTransactionAsync(ct);
+            try
+            {
+                await _assessmentService.UpdateRangeAsync(dtos, user, ct);
+                await CommitTransactionAsync(ct);
+                return NoContent();
+            }
+            catch
+            {
+                await RollbackTransactionAsync(CancellationToken.None);
+                throw;
+            }
         }
         [HttpDelete("assessments/{id:guid}")]
         public async Task<ActionResult<List<AssessmentOutgoingDto>>> DeleteAssessment(Guid id, CancellationToken ct = default)
         {
-            UserOutgoingDto user = await _userService.GetOrCreateUserFromGraphMeAsync(GetUserCacheKeyFromClaims());
+            UserOutgoingDto user = HttpContext.GetLoadedUser();
+            await BeginTransactionAsync(ct);
             try
             {
                 await _assessmentService.DeleteAsync(id, user, ct);
@@ -60,10 +80,9 @@ namespace PrismaApi.Api.Controllers
             }
             catch
             {
-                await RollbackTransactionAsync(ct);
+                await RollbackTransactionAsync(CancellationToken.None);
                 throw;
             }
-
         }
     }
 

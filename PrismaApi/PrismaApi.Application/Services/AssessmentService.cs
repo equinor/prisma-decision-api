@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 
@@ -20,7 +21,7 @@ namespace PrismaApi.Application.Services
         }
         public async Task<List<AssessmentOutgoingDto>?> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
         {
-            var entities = await _assessmentRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
+            var entities = await _assessmentRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: GetUserFilter(user), ct: ct);
             if (entities == null || !entities.Any())
             {
                 return null;
@@ -56,6 +57,8 @@ namespace PrismaApi.Application.Services
             await _assessmentRepository.UpdateAsync(entities, filterPredicate: UserFilter(userDto), ct: ct);
         }
         private static Expression<Func<Assessment, bool>> UserFilter(UserOutgoingDto user)
+        => e => e!.Project!.ProjectRoles.Any(p => p.UserId == user.Id.ToString() && p.Role == ProjectRoleType.Facilitator.ToString());
+        private static Expression<Func<Assessment, bool>> GetUserFilter(UserOutgoingDto user)
         => e => e!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
     }
 }

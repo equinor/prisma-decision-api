@@ -22,6 +22,7 @@ namespace PrismaApi.Domain.Dtos
     }
     public class AssessmentOutgoingDto : AssessmentDto
     {
-
+        [JsonPropertyName("decision_quality_assessments")]
+        public List<DecisionQualityAssessmentOutgoingDto> DecisionQualityAssessments { get; set; } = new();
     }
 }

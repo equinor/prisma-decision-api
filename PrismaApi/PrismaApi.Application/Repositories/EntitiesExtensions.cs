@@ -67,13 +67,13 @@ public static class EntitiesExtensions
 
         }
     }
-    public static void Update(this ICollection<SpiderAssessment> entities, ICollection<SpiderAssessment> incomingEntities, AppDbContext context)
+    public static void Update(this ICollection<DecisionQualityAssessment> entities, ICollection<DecisionQualityAssessment> incomingEntities, AppDbContext context)
     {
         // delete
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<SpiderAssessment, Guid>(incomingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<DecisionQualityAssessment, Guid>(incomingEntities, entities);
 
         // create
-        RepositoryUtilities.AddMissingFromCollectionMutate<SpiderAssessment, Guid>(incomingEntities, entities, context);
+        RepositoryUtilities.AddMissingFromCollectionMutate<DecisionQualityAssessment, Guid>(incomingEntities, entities, context);
 
         // update
         foreach (var entity in entities)

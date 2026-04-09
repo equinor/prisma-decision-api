@@ -5,11 +5,11 @@ using PrismaApi.Domain.Entities;
 
 namespace PrismaApi.Application.Mapping
 {
-    public static class SpiderAssessmentMappingExtensions
+    public static class DecisionQualityAssessmentMappingExtensions
     {
-        public static SpiderAssessmentOutgoingDto ToOutgoingDto(this SpiderAssessment entity)
+        public static DecisionQualityAssessmentOutgoingDto ToOutgoingDto(this DecisionQualityAssessment entity)
         {
-            return new SpiderAssessmentOutgoingDto
+            return new DecisionQualityAssessmentOutgoingDto
             {
                 Id = entity.Id,
                 AppropriateFrame = entity.AppropriateFrame,
@@ -19,18 +19,20 @@ namespace PrismaApi.Application.Mapping
                 CommitmentToAction = entity.CommitmentToAction,
                 Comment = entity.Comment,
                 DoableAlternatives = entity.DoableAlternatives,
-                AssessmentId = entity.AssessmentId
+                AssessmentId = entity.AssessmentId,
+                CreatedAt = entity.CreatedAt.UtcDateTime,
+                UpdatedAt = entity.UpdatedAt.UtcDateTime
             };
         }
 
-        public static List<SpiderAssessmentOutgoingDto> ToOutgoingDtos(this IEnumerable<SpiderAssessment> entities)
+        public static List<DecisionQualityAssessmentOutgoingDto> ToOutgoingDtos(this IEnumerable<DecisionQualityAssessment> entities)
         {
             return entities.Select(ToOutgoingDto).ToList();
         }
 
-        public static SpiderAssessment ToEntity(this SpiderAssessmentIncomingDto dto, UserOutgoingDto userDto)
+        public static DecisionQualityAssessment ToEntity(this DecisionQualityAssessmentIncomingDto dto, UserOutgoingDto userDto)
         {
-            return new SpiderAssessment
+            return new DecisionQualityAssessment
             {
                 Id = dto.Id,
                 AssessmentId = dto.AssessmentId,
@@ -46,7 +48,7 @@ namespace PrismaApi.Application.Mapping
             };
         }
 
-        public static List<SpiderAssessment> ToEntities(this List<SpiderAssessmentIncomingDto> dtos, UserOutgoingDto userDto)
+        public static List<DecisionQualityAssessment> ToEntities(this List<DecisionQualityAssessmentIncomingDto> dtos, UserOutgoingDto userDto)
         {
             return dtos.Select(dto => dto.ToEntity(userDto)).ToList();
         }

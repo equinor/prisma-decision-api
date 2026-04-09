@@ -7,15 +7,15 @@ using PrismaApi.Infrastructure.Context;
 
 namespace PrismaApi.Application.Repositories
 {
-    public class SpiderAssessmentRepository : BaseRepository<SpiderAssessment, Guid>, ISpiderAssessmentRepository
+    public class DecisionQualityAssessmentRepository : BaseRepository<DecisionQualityAssessment, Guid>, IDecisionQualityAssessmentRepository
     {
 
-        public SpiderAssessmentRepository(AppDbContext dbContext) : base(dbContext)
+        public DecisionQualityAssessmentRepository(AppDbContext dbContext) : base(dbContext)
         {
 
         }
 
-        public async Task UpdateRangeAsync(List<SpiderAssessment> incomingEntities, Expression<Func<SpiderAssessment, bool>> filterPredicate, CancellationToken ct)
+        public async Task UpdateRangeAsync(List<DecisionQualityAssessment> incomingEntities, Expression<Func<DecisionQualityAssessment, bool>> filterPredicate, CancellationToken ct)
         {
 
             var incomingList = incomingEntities.ToList();
