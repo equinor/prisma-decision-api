@@ -64,6 +64,7 @@ public static class EntitiesExtensions
         {
             var incomingEntity = incomingEntities.Where(x => x.Id == entity.Id).First();
             entity.Name = incomingEntity.Name;
+            entity.IsAssessmentCompleted = incomingEntity.IsAssessmentCompleted;
 
         }
     }
