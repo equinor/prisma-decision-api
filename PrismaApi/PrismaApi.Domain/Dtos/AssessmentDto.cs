@@ -9,12 +9,12 @@ namespace PrismaApi.Domain.Dtos
     public class AssessmentDto
     {
         [JsonPropertyName("id")]
-        public Guid Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
-        [JsonPropertyName("is_assessment_completed")]
-        public bool IsAssessmentCompleted { get; set; } = false;
+        [JsonPropertyName("is_completed")]
+        public bool IsCompleted { get; set; } = false;
 
         [JsonPropertyName("project_id")]
         public Guid ProjectId { get; set; }

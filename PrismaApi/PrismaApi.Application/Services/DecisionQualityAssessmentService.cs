@@ -44,10 +44,6 @@ namespace PrismaApi.Application.Services
         {
             var entities = dtos.ToEntities(user);
 
-            foreach (var entity in entities.Where(x => x.Id == Guid.Empty))
-            {
-                entity.Id = Guid.NewGuid();
-            }
 
             await _DecisionQualityAssessmentRepository.AddRangeAsync(entities);
             return entities.ToOutgoingDtos();

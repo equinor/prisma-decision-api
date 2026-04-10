@@ -16,9 +16,9 @@ namespace PrismaApi.Infrastructure.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    name = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    project_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    is_assessment_completed = table.Column<bool>(type: "bit", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    ProjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IsCompleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: false),
@@ -28,8 +28,8 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Assessments", x => x.id);
                     table.ForeignKey(
-                        name: "FK_Assessments_Projects_project_id",
-                        column: x => x.project_id,
+                        name: "FK_Assessments_Projects_ProjectId",
+                        column: x => x.ProjectId,
                         principalTable: "Projects",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -52,14 +52,14 @@ namespace PrismaApi.Infrastructure.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    appropriate_frame = table.Column<int>(type: "int", nullable: false),
-                    trade_off_analysis = table.Column<int>(type: "int", nullable: false),
-                    reasoning_correctness = table.Column<int>(type: "int", nullable: false),
-                    information_reliability = table.Column<int>(type: "int", nullable: false),
-                    commitment_to_action = table.Column<int>(type: "int", nullable: false),
-                    comment = table.Column<string>(type: "nvarchar(max)", maxLength: 6000, nullable: false),
-                    doable_alternatives = table.Column<int>(type: "int", nullable: false),
-                    assessment_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AppropriateFrame = table.Column<int>(type: "int", nullable: false),
+                    TradeOffAnalysis = table.Column<int>(type: "int", nullable: false),
+                    ReasoningCorrectness = table.Column<int>(type: "int", nullable: false),
+                    InformationReliability = table.Column<int>(type: "int", nullable: false),
+                    CommitmentToAction = table.Column<int>(type: "int", nullable: false),
+                    Comment = table.Column<string>(type: "nvarchar(max)", maxLength: 6000, nullable: false),
+                    DoableAlternatives = table.Column<int>(type: "int", nullable: false),
+                    AssessmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: false),
@@ -69,8 +69,8 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_DecisionQualityAssessments", x => x.id);
                     table.ForeignKey(
-                        name: "FK_DecisionQualityAssessments_Assessments_assessment_id",
-                        column: x => x.assessment_id,
+                        name: "FK_DecisionQualityAssessments_Assessments_AssessmentId",
+                        column: x => x.AssessmentId,
                         principalTable: "Assessments",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
@@ -94,9 +94,9 @@ namespace PrismaApi.Infrastructure.Migrations
                 column: "CreatedById");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Assessments_project_id",
+                name: "IX_Assessments_ProjectId",
                 table: "Assessments",
-                column: "project_id");
+                column: "ProjectId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Assessments_UpdatedById",
@@ -104,9 +104,9 @@ namespace PrismaApi.Infrastructure.Migrations
                 column: "UpdatedById");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DecisionQualityAssessments_assessment_id",
+                name: "IX_DecisionQualityAssessments_AssessmentId",
                 table: "DecisionQualityAssessments",
-                column: "assessment_id");
+                column: "AssessmentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DecisionQualityAssessments_CreatedById",

@@ -12,7 +12,7 @@ using PrismaApi.Infrastructure.Context;
 namespace PrismaApi.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260410085059_AddAssessmentAndDQAssessment")]
+    [Migration("20260410093057_AddAssessmentAndDQAssessment")]
     partial class AddAssessmentAndDQAssessment
     {
         /// <inheritdoc />
@@ -39,19 +39,16 @@ namespace PrismaApi.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<bool>("IsAssessmentCompleted")
-                        .HasColumnType("bit")
-                        .HasColumnName("is_assessment_completed");
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<Guid>("ProjectId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("project_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -107,22 +104,18 @@ namespace PrismaApi.Infrastructure.Migrations
                         .HasColumnName("id");
 
                     b.Property<int>("AppropriateFrame")
-                        .HasColumnType("int")
-                        .HasColumnName("appropriate_frame");
+                        .HasColumnType("int");
 
                     b.Property<Guid>("AssessmentId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("assessment_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Comment")
                         .IsRequired()
                         .HasMaxLength(6000)
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("comment");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("CommitmentToAction")
-                        .HasColumnType("int")
-                        .HasColumnName("commitment_to_action");
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -132,20 +125,16 @@ namespace PrismaApi.Infrastructure.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("DoableAlternatives")
-                        .HasColumnType("int")
-                        .HasColumnName("doable_alternatives");
+                        .HasColumnType("int");
 
                     b.Property<int>("InformationReliability")
-                        .HasColumnType("int")
-                        .HasColumnName("information_reliability");
+                        .HasColumnType("int");
 
                     b.Property<int>("ReasoningCorrectness")
-                        .HasColumnType("int")
-                        .HasColumnName("reasoning_correctness");
+                        .HasColumnType("int");
 
                     b.Property<int>("TradeOffAnalysis")
-                        .HasColumnType("int")
-                        .HasColumnName("trade_off_analysis");
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("datetimeoffset");

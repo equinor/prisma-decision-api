@@ -10,7 +10,7 @@ namespace PrismaApi.Domain.Dtos
     public class DecisionQualityAssessmentDto
     {
         [JsonPropertyName("id")]
-        public Guid Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
         [JsonPropertyName("appropriate_frame")]
         public int AppropriateFrame { get; set; }
         [JsonPropertyName("trade_off_analysis")]
