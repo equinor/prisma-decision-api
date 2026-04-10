@@ -1,11 +1,12 @@
-﻿namespace PrismaApi.Test.Configuration.Constants;
+﻿using Microsoft.Identity.Web;
+
+namespace PrismaApi.Test.Configuration.Constants;
 
 public class TestClaimTypes
 {
-    public const string AzureUniquePersonId =
-        "http://schemas.microsoft.com/identity/claims/objectidentifier";
+    public const string AzureUniquePersonId = ClaimConstants.Oid;
 
     public const string ApplicationId = "appid";
 
-    public const string Scope = "http://schemas.microsoft.com/identity/claims/scope";
+    public const string Scope = ClaimConstants.Scp;
 }

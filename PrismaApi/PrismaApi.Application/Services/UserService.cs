@@ -8,9 +8,7 @@ using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Infrastructure.Caching;
 using Scampi.Domain.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Microsoft.Identity.Web;
 
 namespace PrismaApi.Application.Services;
 
@@ -61,8 +59,8 @@ public class UserService : IUserService
 
     public async Task<UserOutgoingDto> GetOrCreateUserFromContextAsync(HttpContext context)
     {
-        var oid = context.User.Claims
-            .FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+        var oid = context.User.Claims.FirstOrDefault(c => c.Type == ClaimConstants.Oid)?.Value 
+            ?? context.User.Claims.FirstOrDefault(c => c.Type == ClaimConstants.ObjectId)?.Value;
 
         if (string.IsNullOrEmpty(oid))
         {

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Identity.Web;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
@@ -46,8 +47,8 @@ public class TestUserService : IUserService
 
     public async Task<UserOutgoingDto> GetOrCreateUserFromContextAsync(HttpContext context)
     {
-        var oid = context.User.Claims
-            .FirstOrDefault(c => c.Type == "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+        var oid = context.User.Claims.FirstOrDefault(c => c.Type == ClaimConstants.Oid)?.Value 
+            ?? context.User.Claims.FirstOrDefault(c => c.Type == ClaimConstants.ObjectId)?.Value;
 
         if (string.IsNullOrEmpty(oid))
         {
