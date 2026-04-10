@@ -26,12 +26,12 @@ namespace PrismaApi.Application.Services
 
         public async Task<List<DecisionQualityAssessmentOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
         {
-            var entities = await _DecisionQualityAssessmentRepository.GetAllAsync(withTracking: false, filterPredicate: GetUserFilter(user), ct: ct);
+            var entities = await _DecisionQualityAssessmentRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
             return entities.ToOutgoingDtos();
         }
         public async Task<DecisionQualityAssessmentOutgoingDto> GetAsync(Guid id, UserOutgoingDto user, CancellationToken ct = default)
         {
-            var entity = await _DecisionQualityAssessmentRepository.GetByIdAsync(id, withTracking: false, filterPredicate: GetUserFilter(user), ct: ct);
+            var entity = await _DecisionQualityAssessmentRepository.GetByIdAsync(id, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
             if (entity == null)
             {
                 throw new KeyNotFoundException($"DecisionQualityAssessment with id {id} not found.");
@@ -61,12 +61,12 @@ namespace PrismaApi.Application.Services
 
         public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
         {
-            await _DecisionQualityAssessmentRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
+            await _DecisionQualityAssessmentRepository.DeleteByIdsAsync(ids, filterPredicate: FacillitatorFilter(user), ct: ct);
         }
-        private static Expression<Func<DecisionQualityAssessment, bool>> GetUserFilter(UserOutgoingDto user)
+        private static Expression<Func<DecisionQualityAssessment, bool>> UserFilter(UserOutgoingDto user)
         => e => e!.Assessment!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 
-        private static Expression<Func<DecisionQualityAssessment, bool>> UserFilter(UserOutgoingDto user)
+        private static Expression<Func<DecisionQualityAssessment, bool>> FacillitatorFilter(UserOutgoingDto user)
         => e => e!.Assessment!.Project!.ProjectRoles.Any(p => p.UserId == user.Id && p.Role == ProjectRoleType.Facilitator.ToString());
     }
 }

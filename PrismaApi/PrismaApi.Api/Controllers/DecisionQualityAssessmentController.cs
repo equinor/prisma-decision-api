@@ -22,7 +22,7 @@ namespace PrismaApi.Api.Controllers
             _DecisionQualityAssessmentService = DecisionQualityAssessmentService;
         }
 
-        [HttpGet("dqassessments/{id}")]
+        [HttpGet("dq_assessments/{id}")]
         public async Task<ActionResult<DecisionQualityAssessmentOutgoingDto>> GetDecisionQualityAssessment(Guid id, CancellationToken ct = default)
         {
             UserOutgoingDto user = HttpContext.GetLoadedUser();
@@ -30,7 +30,7 @@ namespace PrismaApi.Api.Controllers
             return result != null ? Ok(result) : NotFound();
         }
 
-        [HttpGet("dqassessments")]
+        [HttpGet("dq_assessments")]
         public async Task<ActionResult<List<DecisionQualityAssessmentOutgoingDto>>> GetAllDecisionQualityAssessments(CancellationToken ct = default)
         {
             UserOutgoingDto user = HttpContext.GetLoadedUser();
@@ -38,7 +38,7 @@ namespace PrismaApi.Api.Controllers
             return Ok(result);
         }
 
-        [HttpPost("dqassessments")]
+        [HttpPost("dq_assessments")]
         public async Task<ActionResult<List<DecisionQualityAssessmentOutgoingDto>>> CreateDecisionQualityAssessment([FromBody] List<DecisionQualityAssessmentIncomingDto> dtos, CancellationToken ct = default)
         {
             UserOutgoingDto user = HttpContext.GetLoadedUser();
@@ -56,7 +56,7 @@ namespace PrismaApi.Api.Controllers
             }
         }
 
-        [HttpPut("dqassessments")]
+        [HttpPut("dq_assessments")]
         public async Task<ActionResult<List<DecisionQualityAssessmentOutgoingDto>>> UpdateDecisionQualityAssessment([FromBody] List<DecisionQualityAssessmentIncomingDto> dtos, CancellationToken ct = default)
         {
             UserOutgoingDto user = HttpContext.GetLoadedUser();
@@ -74,7 +74,7 @@ namespace PrismaApi.Api.Controllers
             }
         }
 
-        [HttpDelete("dqassessments/{id:guid}")]
+        [HttpDelete("dq_assessments/{id:guid}")]
         public async Task<ActionResult> DeleteDecisionQualityAssessment(Guid id, CancellationToken ct = default)
         {
             UserOutgoingDto user = HttpContext.GetLoadedUser();
