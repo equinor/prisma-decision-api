@@ -14,11 +14,58 @@ spec:
   components:
     - name: api
       src: .
-      dockerfile: .
+      dockerfileName: api.Dockerfile
+      ports:
+        - name: http
+          port: 7075
+      publicPort: http
+      secrets:
+        - CLIENT_SECRET
+        - APPLICATION_INSIGHTS_CONNECTIONSTRING
+      resources:
+        requests:
+          memory: '2000Mi'
+          cpu: '200m'
+        limits:
+          memory: '10000Mi'
+          cpu: '1000m'
+        horizontalScaling:
+          resources:
+            memory:
+              averageUtilization: 75
+            cpu:
+              averageUtilization: 85
+          minReplicas: 1
+          maxReplicas: 3
+      environmentConfig:
+        - environment: prod
+          replicas: 1
+          variables:
+            ASPNETCORE_ENVIRONMENT: 'Production'
+          identity:
+            azure:
+                clientId: 4acc192d-fb5b-4c32-becb-5ab84231c033
+        - environment: test
+          replicas: 1
+          variables:
+            ASPNETCORE_ENVIRONMENT: 'Test'
+          identity:
+            azure:
+              clientId: 5efd12e5-f713-4eb2-93a3-2cd466689a20
+        - environment: dev
+          replicas: 1
+          variables:
+            ASPNETCORE_ENVIRONMENT: 'Development'
+          identity:
+            azure:
+              clientId: 9ddb8304-fd8c-4a35-8324-e0317a7fda45
+
+    - name: fastapi
+      src: .
+      dockerfileName: fastApi.Dockerfile
       ports:
         - name: http
           port: 8000
-      publicPort: http
       secrets:
         - CLIENT_SECRET
         - APPINSIGHTS_CONNECTIONSTRING

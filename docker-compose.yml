@@ -1,0 +1,26 @@
+services:
+  fastapi:
+    build:
+      context: .
+      dockerfile: fastApi.Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - appnet
+
+  api:
+    build:
+      context: .
+      dockerfile: api.dockerfile
+    ports:
+      - "7075:7075"
+    depends_on:
+      - fastapi
+    # environment:
+    #   FASTAPI_BASE_URL: http://fastapi:8000
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    driver: bridge

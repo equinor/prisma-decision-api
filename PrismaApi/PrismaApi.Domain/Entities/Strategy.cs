@@ -1,0 +1,20 @@
+using PrismaApi.Domain.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace PrismaApi.Domain.Entities;
+
+public class Strategy : AuditableEntity, IBaseEntity<Guid>
+{
+    public Guid Id { get; set; }
+    public Guid ProjectId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Rationale { get; set; } = string.Empty;
+    public string Icon { get; set; } = string.Empty;
+    public string IconColor { get; set; } = string.Empty;
+
+    public Project? Project { get; set; }
+    public ICollection<StrategyOption> StrategyOptions { get; set; } = new List<StrategyOption>();
+}
