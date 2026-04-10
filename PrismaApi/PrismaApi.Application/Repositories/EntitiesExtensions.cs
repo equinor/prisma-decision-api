@@ -51,6 +51,43 @@ public static class EntitiesExtensions
             entity.UpdatedById = incomingEntity.UpdatedById;
         }
     }
+    public static void Update(this ICollection<Assessment> entities, ICollection<Assessment> incomingEntities, AppDbContext context)
+    {
+        // delete
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<Assessment, Guid>(incomingEntities, entities);
+
+        // create
+        RepositoryUtilities.AddMissingFromCollectionMutate<Assessment, Guid>(incomingEntities, entities, context);
+
+        // update
+        foreach (var entity in entities)
+        {
+            var incomingEntity = incomingEntities.Where(x => x.Id == entity.Id).First();
+            entity.Name = incomingEntity.Name;
+            entity.IsCompleted = incomingEntity.IsCompleted;
+
+        }
+    }
+    public static void Update(this ICollection<DecisionQualityAssessment> entities, ICollection<DecisionQualityAssessment> incomingEntities, AppDbContext context)
+    {
+        // delete
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<DecisionQualityAssessment, Guid>(incomingEntities, entities);
+
+        // create
+        RepositoryUtilities.AddMissingFromCollectionMutate<DecisionQualityAssessment, Guid>(incomingEntities, entities, context);
+
+        // update
+        foreach (var entity in entities)
+        {
+            var incomingEntity = incomingEntities.Where(x => x.Id == entity.Id).First();
+            entity.AppropriateFrame = incomingEntity.AppropriateFrame;
+            entity.TradeOffAnalysis = incomingEntity.TradeOffAnalysis;
+            entity.ReasoningCorrectness = incomingEntity.ReasoningCorrectness;
+            entity.InformationReliability = incomingEntity.InformationReliability;
+            entity.CommitmentToAction = incomingEntity.CommitmentToAction;
+            entity.Comment = incomingEntity.Comment;
+        }
+    }
 
     public static void Update(this ICollection<Strategy> entities, ICollection<Strategy> incomingEntities, AppDbContext context)
     {
@@ -211,7 +248,7 @@ public static class EntitiesExtensions
         }
     }
 
-  public static async Task RemoveOutOfScopeStrategyOptions(this Issue entity, Issue incomingEntity, AppDbContext context, CancellationToken ct = default)
+    public static async Task RemoveOutOfScopeStrategyOptions(this Issue entity, Issue incomingEntity, AppDbContext context, CancellationToken ct = default)
     {
         if (!RepositoryUtilities.IsDecisionMovedOutOfStrategyTable(entity, incomingEntity)) return;
         await RemoveStrategyOptions(context, e => e.Option!.Decision!.IssueId == entity.Id, ct);
