@@ -16,6 +16,7 @@ class Type(str, Enum):
     UNCERTAINTY = "Uncertainty"
     FACT = "Fact"
     UTILITY = "Utility"
+    END = "End"
 
 
 class ObjectiveTypes(str, Enum):

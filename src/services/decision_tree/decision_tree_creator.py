@@ -89,7 +89,7 @@ class DecisionTreeGraph:
         # calculate expected values for the tree_nodes
         self.final_expected_value = await self.calculate_expected_values(tree_structure)
         time2 = time.time()
-        print("Elapsed time opt:", time2 - time1, "seconds")
+        print("Elapsed time:", time2 - time1, "seconds")
         return tree_structure
 
     async def calculate_expected_values(self, decision_tree: DecisionTreeDto | None) -> float:
