@@ -36,6 +36,10 @@ namespace PrismaApi.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<bool>("IsAssessmentCompleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_assessment_completed");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(1000)

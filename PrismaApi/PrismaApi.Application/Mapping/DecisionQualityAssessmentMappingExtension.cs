@@ -20,6 +20,7 @@ namespace PrismaApi.Application.Mapping
                 Comment = entity.Comment,
                 DoableAlternatives = entity.DoableAlternatives,
                 AssessmentId = entity.AssessmentId,
+                CreatedById = entity.CreatedById,
                 CreatedAt = entity.CreatedAt.UtcDateTime,
                 UpdatedAt = entity.UpdatedAt.UtcDateTime
             };

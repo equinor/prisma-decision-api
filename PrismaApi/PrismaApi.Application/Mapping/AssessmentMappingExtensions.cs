@@ -17,6 +17,7 @@ namespace PrismaApi.Application.Mapping
                 Id = entity.Id,
                 Name = entity.Name,
                 ProjectId = entity.ProjectId,
+                IsAssessmentCompleted = entity.IsAssessmentCompleted,
                 DecisionQualityAssessments = entity.DecisionQualityAssessments?.Select(sa => sa.ToOutgoingDto()).ToList() ?? new()
             };
         }
@@ -33,6 +34,7 @@ namespace PrismaApi.Application.Mapping
                 Id = dto.Id,
                 Name = dto.Name,
                 ProjectId = dto.ProjectId,
+                IsAssessmentCompleted = dto.IsAssessmentCompleted,
                 CreatedById = userDto.Id, // Set the CreatedById from the userDto
                 UpdatedById = userDto.Id  // Set the UpdatedById from the userDto
             };

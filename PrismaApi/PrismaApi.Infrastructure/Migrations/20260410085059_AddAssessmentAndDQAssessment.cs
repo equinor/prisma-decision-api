@@ -18,6 +18,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     name = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     project_id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    is_assessment_completed = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: false),

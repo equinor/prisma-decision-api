@@ -12,7 +12,7 @@ using PrismaApi.Infrastructure.Context;
 namespace PrismaApi.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260409063135_AddAssessmentAndDQAssessment")]
+    [Migration("20260410085059_AddAssessmentAndDQAssessment")]
     partial class AddAssessmentAndDQAssessment
     {
         /// <inheritdoc />
@@ -38,6 +38,10 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Property<string>("CreatedById")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsAssessmentCompleted")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_assessment_completed");
 
                     b.Property<string>("Name")
                         .IsRequired()

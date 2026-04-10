@@ -40,6 +40,9 @@ namespace PrismaApi.Domain.Dtos
     {
     }
     public class DecisionQualityAssessmentOutgoingDto : DecisionQualityAssessmentDto
-    { }
+    {
+        [JsonPropertyName("created_by_id")]
+        public string CreatedById { get; set; } = string.Empty;
+    }
 
 }

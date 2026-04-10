@@ -13,6 +13,9 @@ public class Assessment : AuditableEntity, IBaseEntity<Guid>
 
     [Column("project_id")]
     public Guid ProjectId { get; set; }
+
+    [Column("is_assessment_completed")]
+    public bool IsAssessmentCompleted { get; set; } = false;
     public Project? Project { get; set; }
     public ICollection<DecisionQualityAssessment> DecisionQualityAssessments { get; set; } = new List<DecisionQualityAssessment>();
 }
