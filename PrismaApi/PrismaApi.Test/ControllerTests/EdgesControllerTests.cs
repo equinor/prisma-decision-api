@@ -59,6 +59,18 @@ public class EdgesControllerTests : IClassFixture<PrismaApiFixture>
     }
 
     [Fact]
+    public async Task GetEdgeWithoutProjectAccess_ReturnsNotFound()
+    {
+        using var scope = _fixture.SecondaryUserScope();
+
+        var edgeId = _fixture.TestArgs.EdgeId;
+
+        var getResponse = await Client.TestClientGetAsync<EdgeOutgoingDto>($"edges/{edgeId}");
+
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.Response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetAllEdges_ReturnsEdges()
     {
         using var scope = _fixture.UserScope();

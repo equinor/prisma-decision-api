@@ -71,6 +71,18 @@ public class StrategiesControllerTests : IClassFixture<PrismaApiFixture>
     }
 
     [Fact]
+    public async Task GetStrategyWithoutAccess_ReturnsNotFound()
+    {
+        using var scope = _fixture.SecondaryUserScope();
+
+        var strategyId = _fixture.TestArgs.StrategyId;
+
+        var getResponse = await Client.TestClientGetAsync<StrategyOutgoingDto>($"strategies/{strategyId}");
+
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.Response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetAllStrategies_ReturnsStrategies()
     {
         using var scope = _fixture.UserScope();

@@ -32,6 +32,18 @@ public class UncertaintiesControllerTests : IClassFixture<PrismaApiFixture>
     }
 
     [Fact]
+    public async Task GetUncertaintyWithoutAccess_ReturnsNotFound()
+    {
+        using var scope = _fixture.SecondaryUserScope();
+
+        var uncertaintyId = _fixture.TestArgs.UncertaintyIssueId;
+
+        var getResponse = await Client.TestClientGetAsync<UncertaintyOutgoingDto>($"uncertainties/{uncertaintyId}");
+
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.Response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetAllUncertainties_ReturnsUncertainties()
     {
         using var scope = _fixture.UserScope();

@@ -55,6 +55,18 @@ public class OutcomesControllerTests : IClassFixture<PrismaApiFixture>
     }
 
     [Fact]
+    public async Task GetOutcomeWithoutAccess_ReturnsNotFound()
+    {
+        using var scope = _fixture.SecondaryUserScope();
+
+        var outcomeId = _fixture.TestArgs.OutcomeId;
+
+        var getResponse = await Client.TestClientGetAsync<OutcomeOutgoingDto>($"outcomes/{outcomeId}");
+
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.Response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetAllOutcomes_ReturnsOutcomes()
     {
         using var scope = _fixture.UserScope();

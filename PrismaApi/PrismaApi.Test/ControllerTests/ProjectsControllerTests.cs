@@ -9,7 +9,7 @@ using PrismaApi.Test.Fixture;
 namespace PrismaApi.Test.ControllerTests;
 
 [Collection(nameof(PrismaCollection))]
-public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>, IAsyncLifetime
+public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>
 {
     private readonly PrismaApiFixture _fixture;
 
@@ -19,11 +19,6 @@ public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>, IAsyncLi
     }
     private HttpClient Client => _fixture.ApiFactory.CreateClient();
     private TestArguments TestArgs { get; set; } = new();
-    public async Task InitializeAsync()
-    {
-        TestArgs = await TestModelBuilder.BuildFreshTestDataAsync(_fixture);
-    }
-    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task GetAllProjects_ReturnsProjectsForUser()
@@ -45,6 +40,16 @@ public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>, IAsyncLi
 
         Assert.Equal(HttpStatusCode.OK, response.Response.StatusCode);
         Assert.Equal(_fixture.TestArgs.TestProjectId, response.Value.Id);
+    }
+
+    [Fact]
+    public async Task GetProjectWithoutAccess_ReturnsNotFound()
+    {
+        using var scope = _fixture.SecondaryUserScope();
+
+        var response = await Client.TestClientGetAsync<ProjectOutgoingDto>($"projects/{_fixture.TestArgs.TestProjectId}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.Response.StatusCode);
     }
 
     [Fact]

@@ -53,4 +53,5 @@ public class PrismaApiFixture : IAsyncLifetime
     }
 
     public TestClientScope UserScope() => new(PrismaUser);
+    public TestClientScope SecondaryUserScope() => new(SecondaryUser);
 }

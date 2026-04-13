@@ -55,6 +55,18 @@ public class OptionsControllerTests : IClassFixture<PrismaApiFixture>
     }
 
     [Fact]
+    public async Task GetOptionWithoutAccess_ReturnsNotFound()
+    {
+        using var scope = _fixture.SecondaryUserScope();
+
+        var optionId = _fixture.TestArgs.OptionId;
+
+        var getResponse = await Client.TestClientGetAsync<OptionOutgoingDto>($"options/{optionId}");
+
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.Response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetAllOptions_ReturnsOptions()
     {
         using var scope = _fixture.UserScope();

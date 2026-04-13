@@ -32,6 +32,18 @@ public class NodesControllerTests : IClassFixture<PrismaApiFixture>
     }
 
     [Fact]
+    public async Task GetNodeWithoutAccess_ReturnsNotfound()
+    {
+        using var scope = _fixture.SecondaryUserScope();
+
+        var nodeId = _fixture.TestArgs.DecisionIssueId;
+
+        var getResponse = await Client.TestClientGetAsync<NodeOutgoingDto>($"nodes/{nodeId}");
+
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.Response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetAllNodes_ReturnsNodes()
     {
         using var scope = _fixture.UserScope();

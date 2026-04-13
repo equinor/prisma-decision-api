@@ -56,6 +56,18 @@ public class DiscreteUtilitiesControllerTests : IClassFixture<PrismaApiFixture>
     }
 
     [Fact]
+    public async Task GetDiscreteUtilityWithoutProjectAccess_ReturnsNotFound()
+    {
+        using var scope = _fixture.SecondaryUserScope();
+
+        var discreteUtilityId = _fixture.TestArgs.DiscreteUtilityId;
+
+        var getResponse = await Client.TestClientGetAsync<DiscreteUtilityDto>($"discrete_utilities/{discreteUtilityId}");
+
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.Response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetAllDiscreteUtilities_ReturnsUtilities()
     {
         using var scope = _fixture.UserScope();
