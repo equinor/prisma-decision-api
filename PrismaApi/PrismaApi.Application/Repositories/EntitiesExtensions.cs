@@ -85,6 +85,7 @@ public static class EntitiesExtensions
             entity.ReasoningCorrectness = incomingEntity.ReasoningCorrectness;
             entity.InformationReliability = incomingEntity.InformationReliability;
             entity.CommitmentToAction = incomingEntity.CommitmentToAction;
+            entity.DoableAlternatives = incomingEntity.DoableAlternatives;
             entity.Comment = incomingEntity.Comment;
         }
     }
