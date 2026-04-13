@@ -38,6 +38,8 @@ public class AppDbContext : DbContext
     public DbSet<Objective> Objectives => Set<Objective>();
     public DbSet<ProjectRole> ProjectRoles => Set<ProjectRole>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<Assessment> Assessments => Set<Assessment>();
+    public DbSet<DecisionQualityAssessment> DecisionQualityAssessments => Set<DecisionQualityAssessment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -89,7 +91,12 @@ public class AppDbContext : DbContext
                 .WithOne(e => e.Project)
                 .HasForeignKey(e => e.ProjectId)
                 .OnDelete(DeleteBehavior.NoAction); // will be cascade deleted through Issues -> Nodes
+            entity.HasMany(e => e.Assessments)
+                .WithOne(e => e.Project)
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
+
 
         modelBuilder.Entity<Issue>(entity =>
         {
@@ -206,7 +213,7 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.UncertaintyId);
             entity.Property(e => e.Probability).HasPrecision(DomainConstants.FloatPrecision);
 
-            entity.HasOne(e => e.Outcome) 
+            entity.HasOne(e => e.Outcome)
                 .WithMany()
                 .HasForeignKey(e => e.OutcomeId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -398,6 +405,40 @@ public class AppDbContext : DbContext
             CreatedAt = new DateTimeOffset(new DateTime(2020, 1, 1, 1, 1, 1, 1, DateTimeKind.Utc).AddTicks(1), TimeSpan.Zero),
             UpdatedAt = new DateTimeOffset(new DateTime(2020, 1, 1, 1, 1, 1, 1, DateTimeKind.Utc).AddTicks(2), TimeSpan.Zero)
         });
+        modelBuilder.Entity<Assessment>(entity =>
+        {
+            entity.ToTable("Assessments");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
+            entity.HasOne(e => e.CreatedBy)
+            .WithMany()
+            .HasForeignKey(e => e.CreatedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasMany(e => e.DecisionQualityAssessments)
+                .WithOne(e => e.Assessment)
+                .HasForeignKey(e => e.AssessmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<DecisionQualityAssessment>(entity =>
+        {
+            entity.ToTable("DecisionQualityAssessments");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Comment).HasMaxLength(DomainConstants.MaxLongStringLength);
+            entity.HasOne(e => e.CreatedBy)
+            .WithMany()
+            .HasForeignKey(e => e.CreatedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
     }
 
     public override int SaveChanges()
@@ -576,7 +617,7 @@ public class AppDbContext : DbContext
             .ToHashSet();
     }
 
-    
+
     public EntityEntry<IBaseEntity<Guid>> CreateEntryFromCollectionAsAdded(IBaseEntity<Guid> entity)
     {
         Entry(entity).State = EntityState.Added;
