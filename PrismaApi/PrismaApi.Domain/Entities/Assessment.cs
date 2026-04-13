@@ -5,7 +5,6 @@ namespace PrismaApi.Domain.Entities;
 
 public class Assessment : AuditableEntity, IBaseEntity<Guid>
 {
-    [Column("id")]
     public Guid Id { get; set; }
 
     public string Name { get; set; } = string.Empty;

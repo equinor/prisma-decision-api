@@ -12,7 +12,7 @@ using PrismaApi.Infrastructure.Context;
 namespace PrismaApi.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260410093057_AddAssessmentAndDQAssessment")]
+    [Migration("20260413095409_AddAssessmentAndDQAssessment")]
     partial class AddAssessmentAndDQAssessment
     {
         /// <inheritdoc />
@@ -29,8 +29,7 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -100,8 +99,7 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("AppropriateFrame")
                         .HasColumnType("int");

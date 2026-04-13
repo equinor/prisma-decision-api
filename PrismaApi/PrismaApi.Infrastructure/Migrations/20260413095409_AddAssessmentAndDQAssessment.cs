@@ -15,7 +15,7 @@ namespace PrismaApi.Infrastructure.Migrations
                 name: "Assessments",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     ProjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     IsCompleted = table.Column<bool>(type: "bit", nullable: false),
@@ -26,7 +26,7 @@ namespace PrismaApi.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Assessments", x => x.id);
+                    table.PrimaryKey("PK_Assessments", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Assessments_Projects_ProjectId",
                         column: x => x.ProjectId,
@@ -51,7 +51,7 @@ namespace PrismaApi.Infrastructure.Migrations
                 name: "DecisionQualityAssessments",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     AppropriateFrame = table.Column<int>(type: "int", nullable: false),
                     TradeOffAnalysis = table.Column<int>(type: "int", nullable: false),
                     ReasoningCorrectness = table.Column<int>(type: "int", nullable: false),
@@ -67,12 +67,12 @@ namespace PrismaApi.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DecisionQualityAssessments", x => x.id);
+                    table.PrimaryKey("PK_DecisionQualityAssessments", x => x.Id);
                     table.ForeignKey(
                         name: "FK_DecisionQualityAssessments_Assessments_AssessmentId",
                         column: x => x.AssessmentId,
                         principalTable: "Assessments",
-                        principalColumn: "id",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_DecisionQualityAssessments_Users_CreatedById",

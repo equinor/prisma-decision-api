@@ -5,7 +5,6 @@ namespace PrismaApi.Domain.Entities;
 
 public class DecisionQualityAssessment : AuditableEntity, IBaseEntity<Guid>
 {
-    [Column("id")]
     public Guid Id { get; set; }
     public int AppropriateFrame { get; set; }
     public int TradeOffAnalysis { get; set; }
