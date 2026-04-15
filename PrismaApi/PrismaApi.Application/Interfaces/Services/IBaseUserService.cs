@@ -3,13 +3,10 @@ using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Interfaces.Services;
 
-public interface IUserService
+public interface IBaseUserService
 {
     Task<List<UserOutgoingDto>> GetAllAsync();
-    Task<UserOutgoingDto> GetOrCreateUserByIdAsync(UserIncomingDto dto);
-    Task<UserOutgoingDto> GetOrCreateUserFromGraphMeAsync(string? cacheKey);
-    Task<List<UserOutgoingDto>> SearchUsersFromGraphAsync(string query);
-
+    Task<List<UserOutgoingDto>> SearchUsersAsync(string query);
     Task<UserOutgoingDto> GetOrCreateUserFromContextAsync(HttpContext context);
     Task<List<UserOutgoingDto>> GetByIdsAsync(IEnumerable<string> ids);
 }

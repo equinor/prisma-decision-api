@@ -14,7 +14,7 @@ public class AppRolesPolicy
     {
         var acceptedScope = ReadScope;
 
-        Claim? scopeClaim = context?.User?.FindFirst(ClaimConstants.Scp) 
+        Claim? scopeClaim = context?.User?.FindFirst(ClaimConstants.Scp)
             ?? context?.User?.FindFirst(ClaimConstants.Scope);
 
         // Check for appid and roles claims
@@ -36,5 +36,10 @@ public class AppRolesPolicy
         policy.RequireAuthenticatedUser();
         policy.RequireRole(AppRoles.PrismaDecisionUser)
             .RequireAssertion(context => HandleCustomAuthorization(context));
+    }
+
+    public static void AddPublicInstancePolicy(AuthorizationPolicyBuilder policy)
+    {
+        policy.RequireAssertion(_ => true);
     }
 }

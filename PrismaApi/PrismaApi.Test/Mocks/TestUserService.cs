@@ -2,37 +2,22 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Identity.Web;
 using PrismaApi.Application.Interfaces.Repositories;
-using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
+using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Test.Mocks;
 
-public class TestUserService : IUserService
+public class TestUserService : BaseUserService
 {
-    private readonly IUserRepository _userRepository;
-
-    public TestUserService(IUserRepository userRepository)
+    public TestUserService(IUserRepository userRepository) : base(userRepository)
     {
-        _userRepository = userRepository;
     }
 
-    public async Task<List<UserOutgoingDto>> GetAllAsync()
+    protected override async Task<UserOutgoingDto> ResolveUserAsync(string? userId)
     {
-        var users = await _userRepository.GetAllAsync(withTracking: false);
-        return users.ToOutgoingDtos();
-    }
-
-    public async Task<UserOutgoingDto> GetOrCreateUserByIdAsync(UserIncomingDto dto)
-    {
-        var user = await _userRepository.GetOrAddByIdAsync(dto);
-        return user.ToOutgoingDto();
-    }
-
-    public async Task<UserOutgoingDto> GetOrCreateUserFromGraphMeAsync(string? cacheKey)
-    {
-        var id = cacheKey ?? Guid.NewGuid().ToString();
-        var user = await _userRepository.GetOrAddByIdAsync(new UserIncomingDto
+        var id = userId ?? Guid.NewGuid().ToString();
+        var user = await UserRepository.GetOrAddByIdAsync(new UserIncomingDto
         {
             Id = id,
             Name = "Test User"
@@ -40,14 +25,14 @@ public class TestUserService : IUserService
         return user.ToOutgoingDto();
     }
 
-    public Task<List<UserOutgoingDto>> SearchUsersFromGraphAsync(string query)
+    public override Task<List<UserOutgoingDto>> SearchUsersAsync(string query)
     {
         return Task.FromResult(new List<UserOutgoingDto>());
     }
 
-    public async Task<UserOutgoingDto> GetOrCreateUserFromContextAsync(HttpContext context)
+    public override async Task<UserOutgoingDto> GetOrCreateUserFromContextAsync(HttpContext context)
     {
-        var oid = context.User.Claims.FirstOrDefault(c => c.Type == ClaimConstants.Oid)?.Value 
+        var oid = context.User.Claims.FirstOrDefault(c => c.Type == ClaimConstants.Oid)?.Value
             ?? context.User.Claims.FirstOrDefault(c => c.Type == ClaimConstants.ObjectId)?.Value;
 
         if (string.IsNullOrEmpty(oid))
@@ -56,18 +41,12 @@ public class TestUserService : IUserService
         }
 
         var name = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "Test User";
-        var user = await _userRepository.GetOrAddByIdAsync(new UserIncomingDto
+        var user = await UserRepository.GetOrAddByIdAsync(new UserIncomingDto
         {
             Id = oid,
             Name = name
         });
 
         return user.ToOutgoingDto();
-    }
-
-    public async Task<List<UserOutgoingDto>> GetByIdsAsync(IEnumerable<string> ids)
-    {
-        var users = await _userRepository.GetByIdsAsync(ids, withTracking: false);
-        return users.ToOutgoingDtos();
     }
 }

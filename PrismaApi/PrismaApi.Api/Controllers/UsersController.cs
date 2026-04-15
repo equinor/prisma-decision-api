@@ -52,7 +52,7 @@ public class UsersController : PrismaBaseEntityController
         if (string.IsNullOrWhiteSpace(query))
             return BadRequest("Query parameter is required.");
 
-        var result = await _userService.SearchUsersFromGraphAsync(query);
+        var result = await _userService.SearchUsersAsync(query);
         return result.Count > 0 ? Ok(result) : NotFound();
     }
 

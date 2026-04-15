@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.Filters;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Constants;
 
@@ -14,11 +15,17 @@ public class LoadUser : Attribute, IAsyncActionFilter
         // Get the UserService from DI
         var userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
 
-        var user = await userService.GetOrCreateUserFromContextAsync(context.HttpContext);
+        try
+        {
+            var user = await userService.GetOrCreateUserFromContextAsync(context.HttpContext);
+            context.HttpContext.Items[CurrentUserKey] = user;
+        }
+        catch (InvalidOperationException ex)
+        {
+            context.Result = new BadRequestObjectResult(new { error = ex.Message });
+            return;
+        }
 
-        context.HttpContext.Items[CurrentUserKey] = user;
-
-        // Continue with the action execution
         await next();
     }
 }
