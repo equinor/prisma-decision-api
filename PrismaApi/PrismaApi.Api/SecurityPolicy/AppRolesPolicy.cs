@@ -37,6 +37,4 @@ public class AppRolesPolicy
         policy.RequireRole(AppRoles.PrismaDecisionUser)
             .RequireAssertion(context => HandleCustomAuthorization(context));
     }
-
-
 }
