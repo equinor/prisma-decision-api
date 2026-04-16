@@ -2,35 +2,35 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Identity.Web;
 using PrismaApi.Application.Interfaces.Repositories;
+using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
-using PrismaApi.Application.Services;
 using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Test.Mocks;
 
-public class TestUserService : BaseUserService
+public class TestUserService : IUserService
 {
-    public TestUserService(IUserRepository userRepository) : base(userRepository)
+    private readonly IUserRepository _userRepository;
+
+    public TestUserService(IUserRepository userRepository)
     {
+        _userRepository = userRepository;
     }
 
-    protected override async Task<UserOutgoingDto> ResolveUserAsync(string? userId)
+    public async Task<List<UserOutgoingDto>> GetAllAsync()
     {
-        var id = userId ?? Guid.NewGuid().ToString();
-        var user = await UserRepository.GetOrAddByIdAsync(new UserIncomingDto
-        {
-            Id = id,
-            Name = "Test User"
-        });
-        return user.ToOutgoingDto();
+        var users = await _userRepository.GetAllAsync(withTracking: false);
+        return users.ToOutgoingDtos();
     }
 
-    public override Task<List<UserOutgoingDto>> SearchUsersAsync(string query)
+    public async Task<List<UserOutgoingDto>> SearchUsersAsync(string query)
     {
-        return Task.FromResult(new List<UserOutgoingDto>());
+        var users = await _userRepository.GetAllAsync(withTracking: false);
+        return users.Where(u => u.Name.Contains(query, StringComparison.OrdinalIgnoreCase)).ToOutgoingDtos();
     }
 
-    public override async Task<UserOutgoingDto> GetOrCreateUserFromContextAsync(HttpContext context)
+
+    public async Task<UserOutgoingDto> GetOrCreateUserFromContextAsync(HttpContext context)
     {
         var oid = context.User.Claims.FirstOrDefault(c => c.Type == ClaimConstants.Oid)?.Value
             ?? context.User.Claims.FirstOrDefault(c => c.Type == ClaimConstants.ObjectId)?.Value;
@@ -41,12 +41,18 @@ public class TestUserService : BaseUserService
         }
 
         var name = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "Test User";
-        var user = await UserRepository.GetOrAddByIdAsync(new UserIncomingDto
+        var user = await _userRepository.GetOrAddByIdAsync(new UserIncomingDto
         {
             Id = oid,
             Name = name
         });
 
         return user.ToOutgoingDto();
+    }
+
+    public async Task<List<UserOutgoingDto>> GetByIdsAsync(IEnumerable<string> ids)
+    {
+        var users = await _userRepository.GetByIdsAsync(ids, withTracking: false);
+        return users.ToOutgoingDtos();
     }
 }

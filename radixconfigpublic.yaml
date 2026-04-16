@@ -1,0 +1,74 @@
+apiVersion: radix.equinor.com/v1
+kind: RadixApplication
+metadata:
+  name: prisma-decision-api-public
+spec:
+  environments:
+    - name: public
+      build:
+        from: public|public-deploy*
+  components:
+    - name: api
+      src: .
+      dockerfileName: api.Dockerfile
+      ports:
+        - name: http
+          port: 7075
+      publicPort: http
+      secrets:
+        - APPLICATION_INSIGHTS_CONNECTIONSTRING
+      resources:
+        requests:
+          memory: '2000Mi'
+          cpu: '200m'
+        limits:
+          memory: '10000Mi'
+          cpu: '1000m'
+        horizontalScaling:
+          resources:
+            memory:
+              averageUtilization: 75
+            cpu:
+              averageUtilization: 85
+          minReplicas: 1
+          maxReplicas: 3
+      environmentConfig:
+        - environment: public
+          replicas: 1
+          variables:
+            ASPNETCORE_ENVIRONMENT: 'Public'
+          identity:
+            azure:
+                clientId: 4acc192d-fb5b-4c32-becb-5ab84231c033
+    - name: fastapi
+      src: .
+      dockerfileName: fastApi.Dockerfile
+      ports:
+        - name: http
+          port: 8000
+      secrets:
+        - APPINSIGHTS_CONNECTIONSTRING
+      resources:
+        requests:
+          memory: '2000Mi'
+          cpu: '200m'
+        limits:
+          memory: '10000Mi'
+          cpu: '1000m'
+        horizontalScaling:
+          resources:
+            memory:
+              averageUtilization: 75
+            cpu:
+              averageUtilization: 85
+          minReplicas: 1
+          maxReplicas: 3
+      environmentConfig:
+        - environment: public
+          replicas: 1
+          variables:
+            APP_ENV: 'prod'
+            DATABASE_CONN_PROD: 'DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-public.database.windows.net;Database=sqldb-prisma-decision-public;'
+          identity:
+            azure:
+                clientId: 4acc192d-fb5b-4c32-becb-5ab84231c033

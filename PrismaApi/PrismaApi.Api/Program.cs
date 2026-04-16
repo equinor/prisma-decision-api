@@ -27,8 +27,7 @@ public class Program
 
         var builder = WebApplication.CreateBuilder(args);
 
-        var isPublicInstance = builder.Configuration.GetValue<bool>("IsPublicInstance");
-
+        var isPublicInstance = builder.Environment.EnvironmentName.Equals("Public", StringComparison.OrdinalIgnoreCase);
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
@@ -111,12 +110,14 @@ public class Program
 
         if (isPublicInstance)
         {
-            builder.Services.AddScoped<IBaseUserService, PublicUserService>();
+            builder.Services.AddScoped<IUserProvider, PublicUserService>();
         }
         else
         {
-            builder.Services.AddScoped<IBaseUserService, UserService>();
+            builder.Services.AddScoped<IUserProvider, InternalUserService>();
         }
+
+        builder.Services.AddScoped<IUserService, UserService>();
 
         builder.Services.AddScoped<IProjectDuplicationService, ProjectDuplicationService>();
         builder.Services.AddScoped<IProjectImportService, ProjectImportService>();

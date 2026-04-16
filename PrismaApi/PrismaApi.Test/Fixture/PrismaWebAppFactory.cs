@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Logging;
 using PrismaApi.Api;
 using PrismaApi.Application.Interfaces.Services;
+using PrismaApi.Application.Services;
 using PrismaApi.Infrastructure.Context;
 using PrismaApi.Test.Configuration.Constants;
 using PrismaApi.Test.Configuration.Extensions;
@@ -62,6 +63,8 @@ public class PrismaWebAppFactory : WebApplicationFactory<Program>
         {
             services.AddIntegrationTestingAuthentication();
             services.RemoveAll<IUserService>();
+            services.RemoveAll<IUserProvider>();
+            services.AddScoped<IUserProvider, InternalUserService>();
             services.AddScoped<IUserService, TestUserService>();
             services.AddDbContext<AppDbContext>((serviceProvider, options) =>
             {

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using PrismaApi.Application.Interfaces.Repositories;
+using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
@@ -7,22 +8,16 @@ using Scampi.Domain.Extensions;
 
 namespace PrismaApi.Application.Services;
 
-public class PublicUserService : BaseUserService
+public class PublicUserService : IUserProvider
 {
-    public PublicUserService(IUserRepository userRepository) : base(userRepository)
+    private readonly IUserRepository _userRepository;
+
+    public PublicUserService(IUserRepository userRepository)
     {
+        _userRepository = userRepository;
     }
 
-    protected override async Task<UserOutgoingDto> ResolveUserAsync(string? userId)
-    {
-        if (string.IsNullOrEmpty(userId))
-            throw new InvalidOperationException("A user ID is required for public instance.");
-
-        var dto = new UserIncomingDto { Id = userId, Name = "Public User" };
-        return (await UserRepository.GetOrAddByIdAsync(dto)).ToOutgoingDto();
-    }
-
-    public override async Task<UserOutgoingDto> GetOrCreateUserFromContextAsync(HttpContext context)
+    public async Task<UserOutgoingDto> ResolveUserFromContextAsync(HttpContext context)
     {
         var userName = context.Request.Headers[AppConstants.PublicUsernameHeader].FirstOrDefault();
         if (string.IsNullOrEmpty(userName))
@@ -31,13 +26,13 @@ public class PublicUserService : BaseUserService
         }
 
         var dto = new UserIncomingDto { Id = Guid.NewGuid().ToString(), Name = userName };
-        return (await UserRepository.GetOrAddByUserNameAsync(dto)).ToOutgoingDto();
+        return (await _userRepository.GetOrAddByUserNameAsync(dto)).ToOutgoingDto();
     }
 
-    public override async Task<List<UserOutgoingDto>> SearchUsersAsync(string query)
+    public async Task<List<UserOutgoingDto>> SearchUsersAsync(string query)
     {
         string sanitizedQuery = query.SanitizeQuery();
-        var users = await UserRepository.GetAllAsync(
+        var users = await _userRepository.GetAllAsync(
             withTracking: false,
             filterPredicate: u => u.Name.Contains(sanitizedQuery));
 

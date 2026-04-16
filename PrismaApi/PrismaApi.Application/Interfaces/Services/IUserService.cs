@@ -3,7 +3,7 @@ using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Interfaces.Services;
 
-public interface IBaseUserService
+public interface IUserService
 {
     Task<List<UserOutgoingDto>> GetAllAsync();
     Task<List<UserOutgoingDto>> SearchUsersAsync(string query);
