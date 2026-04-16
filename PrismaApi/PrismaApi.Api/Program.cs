@@ -48,6 +48,18 @@ public class Program
                 .AddMicrosoftGraph(builder.Configuration.GetSection("GraphApi"))
                 .AddInMemoryTokenCaches();
         }
+        else
+        {
+            var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
+            if (!string.IsNullOrEmpty(clientSecret))
+            {
+                builder.Configuration["AzureAd:ClientSecret"] = clientSecret;
+            }
+            builder.Services.AddMicrosoftIdentityWebAppAuthentication(builder.Configuration, "AzureAd")
+                .EnableTokenAcquisitionToCallDownstreamApi()
+                .AddDownstreamApi("FastApi", builder.Configuration.GetSection("FastApiService"))
+                .AddInMemoryTokenCaches();
+        }
 
         builder.Services.AddMemoryCache();
 
@@ -134,16 +146,20 @@ public class Program
             });
 
         builder.Services.AddSwagger(builder.Configuration);
-        if (!isPublicInstance)
+        builder.Services.AddAuthorization(options =>
         {
-            builder.Services.AddAuthorization(options =>
+            options.AddPolicy(AppRolesPolicy.UserRoleRequired, policy =>
             {
-                options.AddPolicy(AppRolesPolicy.UserRoleRequired, policy =>
+                if (isPublicInstance)
+                {
+                    policy.RequireAssertion(_ => true);
+                }
+                else
                 {
                     AppRolesPolicy.AddPrismaDecisionUserPolicy(policy);
-                });
+                }
             });
-        }
+        });
 
         string[] allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()!;
         builder.Services.AddCors(options =>
@@ -170,8 +186,10 @@ public class Program
         // Use CORS - must be before UseAuthorization
         app.UseCors(CorsPolicy.AllowOriginsPolicy);
 
-        // Authentication/authorization hook - intentionally permissive for local testing.
-        app.UseAuthorization();
+        if (!isPublicInstance)
+        {
+            app.UseAuthorization();
+        }
 
         app.MapControllers();
 

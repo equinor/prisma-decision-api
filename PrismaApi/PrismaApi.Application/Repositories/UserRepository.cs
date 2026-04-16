@@ -47,6 +47,7 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
     private async Task<User?> GetByUserNameAsync(string userName, CancellationToken ct = default)
     {
         return await Query()
+            .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Name.ToLower() == userName.ToLower(), ct);
     }
 

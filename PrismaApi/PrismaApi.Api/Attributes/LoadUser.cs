@@ -12,8 +12,8 @@ public class LoadUser : Attribute, IAsyncActionFilter
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
-        // Get the UserService from DI
         var userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
+        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<LoadUser>>();
 
         try
         {
@@ -22,6 +22,7 @@ public class LoadUser : Attribute, IAsyncActionFilter
         }
         catch (InvalidOperationException ex)
         {
+            logger.LogWarning(ex, "Failed to resolve user for request : {Message}", ex.Message);
             context.Result = new BadRequestObjectResult(new { error = ex.Message });
             return;
         }
