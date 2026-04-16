@@ -28,6 +28,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         var isPublicInstance = builder.Environment.EnvironmentName.Equals("Public", StringComparison.OrdinalIgnoreCase);
+
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
@@ -133,21 +134,17 @@ public class Program
             });
 
         builder.Services.AddSwagger(builder.Configuration);
-
-        builder.Services.AddAuthorization(options =>
+        if (!isPublicInstance)
         {
-            options.AddPolicy(AppRolesPolicy.UserRoleRequired, policy =>
+            builder.Services.AddAuthorization(options =>
             {
-                if (isPublicInstance)
-                {
-                    AppRolesPolicy.AddPublicInstancePolicy(policy);
-                }
-                else
+                options.AddPolicy(AppRolesPolicy.UserRoleRequired, policy =>
                 {
                     AppRolesPolicy.AddPrismaDecisionUserPolicy(policy);
-                }
+                });
             });
-        });
+        }
+
         string[] allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()!;
         builder.Services.AddCors(options =>
         {

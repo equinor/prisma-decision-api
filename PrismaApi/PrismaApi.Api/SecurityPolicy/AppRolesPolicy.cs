@@ -38,8 +38,5 @@ public class AppRolesPolicy
             .RequireAssertion(context => HandleCustomAuthorization(context));
     }
 
-    public static void AddPublicInstancePolicy(AuthorizationPolicyBuilder policy)
-    {
-        policy.RequireAssertion(_ => true);
-    }
+
 }
