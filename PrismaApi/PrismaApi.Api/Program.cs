@@ -1,14 +1,19 @@
+using System.Security.Cryptography;
+using System.Text;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Identity.Web;
 using PrismaApi.Api.Configuration.Extensions;
 using PrismaApi.Api.Configuration.JsonResponseOptions;
 using PrismaApi.Api.SecurityPolicy;
+using PrismaApi.Api.Utils;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Application.Services;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Infrastructure.Context;
 using PrismaApi.Infrastructure.DiscreteTables;
 using PrismaApi.Infrastructure.Interfaces;
@@ -72,10 +77,22 @@ public class Program
             .AddPrismaRateLimiter(NotRunningIntegrationTests);
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+        var sqliteConnectionString = builder.Configuration.GetConnectionString("SqliteConnection");
+
+        if (!string.IsNullOrEmpty(sqliteConnectionString))
         {
-            options.UseSqlServer(connectionString);
-        });
+            builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+            {
+                options.UseSqlite(sqliteConnectionString);
+            });
+        }
+        else
+        {
+            builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+            {
+                options.UseSqlServer(connectionString);
+            });
+        }
 
         builder.Services.AddScoped<IDiscreteTableRuleEventHandler, DiscreteTableRuleEventHandler>();
         builder.Services.AddScoped<IIssueRepository, IssueRepository>();
@@ -168,7 +185,7 @@ public class Program
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
+        if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Local"))
         {
             app.UseSwagger();
             app.UseSwaggerWithAuth(builder.Configuration);
@@ -189,6 +206,27 @@ public class Program
 
         app.MapControllers();
 
+        // If using Sqlite, ensure the DB schema matches the current DbContext model hash.
+        // The model hash is stored and compared on startup.
+        // If it changed, the Sqlite file is deleted (data lost) and recreated.
+        if (!string.IsNullOrEmpty(sqliteConnectionString))
+        {
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var modelHash = SqliteUtils.ComputeModelHash(db);
+                var storedHash = SqliteUtils.ReadStoredModelHash();
+
+                if (!string.Equals(modelHash, storedHash, StringComparison.Ordinal))
+                {
+                    db.Database.EnsureDeleted();
+                }
+
+                db.Database.EnsureCreated();
+                SqliteUtils.WriteStoredModelHash(modelHash);
+            }
+        }
         app.Run();
+
     }
 }
