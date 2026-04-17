@@ -33,13 +33,13 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
+        var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
+        if (!string.IsNullOrEmpty(clientSecret))
+        {
+            builder.Configuration["AzureAd:ClientSecret"] = clientSecret;
+        }
         if (!isPublicInstance)
         {
-            var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
-            if (!string.IsNullOrEmpty(clientSecret))
-            {
-                builder.Configuration["AzureAd:ClientSecret"] = clientSecret;
-            }
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddMicrosoftIdentityWebApi(builder.Configuration, "AzureAd")
@@ -50,11 +50,7 @@ public class Program
         }
         else
         {
-            var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
-            if (!string.IsNullOrEmpty(clientSecret))
-            {
-                builder.Configuration["AzureAd:ClientSecret"] = clientSecret;
-            }
+
             builder.Services.AddMicrosoftIdentityWebAppAuthentication(builder.Configuration, "AzureAd")
                 .EnableTokenAcquisitionToCallDownstreamApi()
                 .AddDownstreamApi("FastApi", builder.Configuration.GetSection("FastApiService"))

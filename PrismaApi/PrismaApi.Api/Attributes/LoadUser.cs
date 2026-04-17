@@ -22,7 +22,7 @@ public class LoadUser : Attribute, IAsyncActionFilter
         }
         catch (InvalidOperationException ex)
         {
-            logger.LogWarning(ex, "Failed to resolve user for request : {Message}", ex.Message);
+            logger.LogError(ex, "Failed to resolve user for request : {Message}", ex.Message);
             context.Result = new BadRequestObjectResult(new { error = ex.Message });
             return;
         }
