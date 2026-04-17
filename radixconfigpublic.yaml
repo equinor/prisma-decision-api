@@ -16,6 +16,7 @@ spec:
           port: 7075
       publicPort: http
       secrets:
+        - CLIENT_SECRET
         - APPLICATION_INSIGHTS_CONNECTIONSTRING
       resources:
         requests:
@@ -39,7 +40,7 @@ spec:
             ASPNETCORE_ENVIRONMENT: 'Public'
           identity:
             azure:
-                clientId: 4acc192d-fb5b-4c32-becb-5ab84231c033
+                clientId: 23042ef9-dbae-40e9-9345-626087966321
     - name: fastapi
       src: .
       dockerfileName: fastApi.Dockerfile
@@ -47,6 +48,7 @@ spec:
         - name: http
           port: 8000
       secrets:
+        - CLIENT_SECRET
         - APPINSIGHTS_CONNECTIONSTRING
       resources:
         requests:
@@ -67,8 +69,8 @@ spec:
         - environment: public
           replicas: 1
           variables:
-            APP_ENV: 'prod'
-            DATABASE_CONN_PROD: 'DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-public.database.windows.net;Database=sqldb-prisma-decision-public;'
+            APP_ENV: 'public'
+            DATABASE_CONN_PUBLIC: 'DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-public.database.windows.net;Database=sqldb-prisma-decision-public;'
           identity:
             azure:
-                clientId: 4acc192d-fb5b-4c32-becb-5ab84231c033
+                clientId: 23042ef9-dbae-40e9-9345-626087966321
