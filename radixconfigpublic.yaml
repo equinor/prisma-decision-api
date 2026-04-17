@@ -69,6 +69,10 @@ spec:
         - environment: public
           replicas: 1
           variables:
+            CLIENT_ID: '418f5a86-0b39-46bb-9a83-ea12b33d8b5b'
+            REDIRECT_URL: 'https://api-prisma-decision-api-dev.radix.equinor.com/docs/oauth2-redirect'
+            AUDIENCE: "418f5a86-0b39-46bb-9a83-ea12b33d8b5b"
+            SCOPE: '418f5a86-0b39-46bb-9a83-ea12b33d8b5b/Read'
             APP_ENV: 'public'
             DATABASE_CONN_PUBLIC: 'DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-public.database.windows.net;Database=sqldb-prisma-decision-public;'
           identity:

@@ -4,9 +4,7 @@ import requests
 from authlib.jose.errors import JoseError
 from authlib.jose import JsonWebToken
 import time
-from src.constants import AccessRoles
 from src.config import config
-from src.utils.timed_cache import timed_lru_cache
 
 oauth2_scheme = OAuth2AuthorizationCodeBearer(
     authorizationUrl=config.AUTH_URL,
@@ -48,9 +46,6 @@ def verify_token(token: str = Depends(oauth2_scheme)) -> str:
         )
         claims = jwt.decode(token, jwks, claims_options=claims_options)
         claims.validate(now=time.time(), leeway=1)
-        roles = claims.get("roles", [])
-        if AccessRoles.User.value not in roles and claims.get('oid') != '538f7e3c-0801-4af8-be08-e981b796e9ae':
-            raise HTTPException(status_code=403, detail="Forbidden: Insufficient role")
         return token
     except JoseError as e:
         raise HTTPException(
