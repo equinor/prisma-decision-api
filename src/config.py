@@ -54,6 +54,12 @@ class Config(BaseSettings):
             "DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-prod.database.windows.net;Database=sqldb-prisma-decision-prod;",
         )
     )
+    DATABASE_CONN_PUBLIC: str = Field(
+        default=os.getenv(
+            "DATABASE_CONN_PUBLIC",
+            "DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-public.database.windows.net;Database=sqldb-prisma-decision-public;",
+        )
+    )
 
     POOL_SIZE: int = 10
     MAX_OVERFLOW: int = 20

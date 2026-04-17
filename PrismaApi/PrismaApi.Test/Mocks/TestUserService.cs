@@ -23,31 +23,16 @@ public class TestUserService : IUserService
         return users.ToOutgoingDtos();
     }
 
-    public async Task<UserOutgoingDto> GetOrCreateUserByIdAsync(UserIncomingDto dto)
+    public async Task<List<UserOutgoingDto>> SearchUsersAsync(string query)
     {
-        var user = await _userRepository.GetOrAddByIdAsync(dto);
-        return user.ToOutgoingDto();
+        var users = await _userRepository.GetAllAsync(withTracking: false);
+        return users.Where(u => u.Name.Contains(query, StringComparison.OrdinalIgnoreCase)).ToOutgoingDtos();
     }
 
-    public async Task<UserOutgoingDto> GetOrCreateUserFromGraphMeAsync(string? cacheKey)
-    {
-        var id = cacheKey ?? Guid.NewGuid().ToString();
-        var user = await _userRepository.GetOrAddByIdAsync(new UserIncomingDto
-        {
-            Id = id,
-            Name = "Test User"
-        });
-        return user.ToOutgoingDto();
-    }
-
-    public Task<List<UserOutgoingDto>> SearchUsersFromGraphAsync(string query)
-    {
-        return Task.FromResult(new List<UserOutgoingDto>());
-    }
 
     public async Task<UserOutgoingDto> GetOrCreateUserFromContextAsync(HttpContext context)
     {
-        var oid = context.User.Claims.FirstOrDefault(c => c.Type == ClaimConstants.Oid)?.Value 
+        var oid = context.User.Claims.FirstOrDefault(c => c.Type == ClaimConstants.Oid)?.Value
             ?? context.User.Claims.FirstOrDefault(c => c.Type == ClaimConstants.ObjectId)?.Value;
 
         if (string.IsNullOrEmpty(oid))

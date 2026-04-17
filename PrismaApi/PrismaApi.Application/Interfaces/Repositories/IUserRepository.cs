@@ -8,4 +8,5 @@ namespace PrismaApi.Application.Interfaces.Repositories;
 public interface IUserRepository : ICrudRepository<User, string>
 {
     Task<User> GetOrAddByIdAsync(UserIncomingDto dto, CancellationToken ct = default);
+    Task<User> GetOrAddByUserNameAsync(UserIncomingDto dto, CancellationToken ct = default);
 }

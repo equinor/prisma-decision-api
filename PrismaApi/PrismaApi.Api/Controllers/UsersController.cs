@@ -46,13 +46,13 @@ public class UsersController : PrismaBaseEntityController
         return result.Count > 0 ? Ok(result) : NotFound();
     }
 
-    [HttpGet("graph/users/search")]
+    [HttpGet("users/search")]
     public async Task<ActionResult<List<UserOutgoingDto>>> SearchUsers([FromQuery] string query, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(query))
             return BadRequest("Query parameter is required.");
 
-        var result = await _userService.SearchUsersFromGraphAsync(query);
+        var result = await _userService.SearchUsersAsync(query);
         return result.Count > 0 ? Ok(result) : NotFound();
     }
 

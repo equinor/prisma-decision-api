@@ -14,7 +14,7 @@ public class AppRolesPolicy
     {
         var acceptedScope = ReadScope;
 
-        Claim? scopeClaim = context?.User?.FindFirst(ClaimConstants.Scp) 
+        Claim? scopeClaim = context?.User?.FindFirst(ClaimConstants.Scp)
             ?? context?.User?.FindFirst(ClaimConstants.Scope);
 
         // Check for appid and roles claims
