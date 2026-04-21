@@ -1,19 +1,14 @@
-using System.Security.Cryptography;
-using System.Text;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Identity.Web;
 using PrismaApi.Api.Configuration.Extensions;
 using PrismaApi.Api.Configuration.JsonResponseOptions;
 using PrismaApi.Api.SecurityPolicy;
-using PrismaApi.Api.Utils;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Repositories;
 using PrismaApi.Application.Services;
-using PrismaApi.Domain.Constants;
 using PrismaApi.Infrastructure.Context;
 using PrismaApi.Infrastructure.DiscreteTables;
 using PrismaApi.Infrastructure.Interfaces;
@@ -83,14 +78,16 @@ public class Program
         {
             builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
             {
-                options.UseSqlite(sqliteConnectionString);
+                options.UseSqlite(sqliteConnectionString, 
+                    x => x.MigrationsAssembly("SqliteMigrations"));
             });
         }
         else
         {
             builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
             {
-                options.UseSqlServer(connectionString);
+                options.UseSqlServer(connectionString, 
+                    x => x.MigrationsAssembly("SqlServerMigrations"));
             });
         }
 
@@ -214,16 +211,7 @@ public class Program
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var modelHash = SqliteUtils.ComputeModelHash(db);
-                var storedHash = SqliteUtils.ReadStoredModelHash();
-
-                if (!string.Equals(modelHash, storedHash, StringComparison.Ordinal))
-                {
-                    db.Database.EnsureDeleted();
-                }
-
-                db.Database.EnsureCreated();
-                SqliteUtils.WriteStoredModelHash(modelHash);
+                db.Database.Migrate();
             }
         }
         app.Run();
