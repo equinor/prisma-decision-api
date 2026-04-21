@@ -185,3 +185,8 @@ cython_debug/
 # .NET build artifacts (PrismaApi)
 PrismaApi/**/bin/
 PrismaApi/**/obj/
+
+# sqlite files
+PrismaApi/PrismaApi.Api/Prisma.db
+PrismaApi/PrismaApi.Api/Prisma.db-shm
+PrismaApi/PrismaApi.Api/Prisma.db-wal
