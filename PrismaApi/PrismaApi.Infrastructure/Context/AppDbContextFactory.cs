@@ -33,9 +33,8 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 
         if (provider.Equals("sqlite", StringComparison.OrdinalIgnoreCase))
         {
-            optionsBuilder.UseSqlite(connectionString
-                //x => x.MigrationsAssembly("SqliteMigrations")
-                );
+            optionsBuilder.UseSqlite(connectionString,
+                x => x.MigrationsAssembly("SqliteMigrations"));
         }
         else
         {
