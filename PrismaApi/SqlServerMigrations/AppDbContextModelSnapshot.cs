@@ -89,7 +89,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasIndex("IssueId")
                         .IsUnique();
 
-                    b.ToTable("Decisions");
+                    b.ToTable("Decisions", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DecisionQualityAssessment", b =>
@@ -177,7 +177,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UncertaintyId");
 
-                    b.ToTable("DiscreteProbabilities");
+                    b.ToTable("DiscreteProbabilities", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteProbabilityParentOption", b =>
@@ -192,7 +192,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ParentOptionId");
 
-                    b.ToTable("DiscreteProbabilityParentOptions");
+                    b.ToTable("DiscreteProbabilityParentOptions", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteProbabilityParentOutcome", b =>
@@ -207,7 +207,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ParentOutcomeId");
 
-                    b.ToTable("DiscreteProbabilityParentOutcomes");
+                    b.ToTable("DiscreteProbabilityParentOutcomes", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteUtility", b =>
@@ -238,7 +238,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ValueMetricId");
 
-                    b.ToTable("DiscreteUtilities");
+                    b.ToTable("DiscreteUtilities", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteUtilityParentOption", b =>
@@ -253,7 +253,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ParentOptionId");
 
-                    b.ToTable("DiscreteUtilityParentOptions");
+                    b.ToTable("DiscreteUtilityParentOptions", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteUtilityParentOutcome", b =>
@@ -268,7 +268,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ParentOutcomeId");
 
-                    b.ToTable("DiscreteUtilityParentOutcomes");
+                    b.ToTable("DiscreteUtilityParentOutcomes", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Edge", b =>
@@ -300,7 +300,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("TailId");
 
-                    b.ToTable("Edges");
+                    b.ToTable("Edges", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Issue", b =>
@@ -357,7 +357,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.ToTable("Issues");
+                    b.ToTable("Issues", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Node", b =>
@@ -390,7 +390,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("Nodes");
+                    b.ToTable("Nodes", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.NodeStyle", b =>
@@ -419,7 +419,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasIndex("NodeId")
                         .IsUnique();
 
-                    b.ToTable("NodeStyles");
+                    b.ToTable("NodeStyles", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Objective", b =>
@@ -468,7 +468,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.ToTable("Objectives");
+                    b.ToTable("Objectives", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Option", b =>
@@ -498,7 +498,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("DecisionId");
 
-                    b.ToTable("Options");
+                    b.ToTable("Options", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Outcome", b =>
@@ -528,7 +528,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UncertaintyId");
 
-                    b.ToTable("Outcomes");
+                    b.ToTable("Outcomes", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Project", b =>
@@ -580,7 +580,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.ToTable("Projects");
+                    b.ToTable("Projects", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.ProjectRole", b =>
@@ -625,7 +625,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ProjectRoles");
+                    b.ToTable("ProjectRoles", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Strategy", b =>
@@ -682,7 +682,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.ToTable("Strategies");
+                    b.ToTable("Strategies", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.StrategyOption", b =>
@@ -697,7 +697,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("OptionId");
 
-                    b.ToTable("StrategyOptions");
+                    b.ToTable("StrategyOptions", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Uncertainty", b =>
@@ -723,7 +723,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasIndex("IssueId")
                         .IsUnique();
 
-                    b.ToTable("Uncertainties");
+                    b.ToTable("Uncertainties", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.User", b =>
@@ -744,7 +744,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Utility", b =>
@@ -767,7 +767,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasIndex("IssueId")
                         .IsUnique();
 
-                    b.ToTable("Utilities");
+                    b.ToTable("Utilities", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.ValueMetric", b =>
@@ -789,7 +789,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ValueMetrics");
+                    b.ToTable("ValueMetrics", (string)null);
 
                     b.HasData(
                         new

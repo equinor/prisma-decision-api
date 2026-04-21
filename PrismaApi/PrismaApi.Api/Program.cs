@@ -203,9 +203,6 @@ public class Program
 
         app.MapControllers();
 
-        // If using Sqlite, ensure the DB schema matches the current DbContext model hash.
-        // The model hash is stored and compared on startup.
-        // If it changed, the Sqlite file is deleted (data lost) and recreated.
         if (!string.IsNullOrEmpty(sqliteConnectionString))
         {
             using (var scope = app.Services.CreateScope())
