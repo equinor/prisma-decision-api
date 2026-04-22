@@ -22,9 +22,7 @@ public class DiscreteProbabilityService: IDiscreteProbabilityService
 
     public async Task<List<DiscreteProbabilityDto>> CreateAsync(List<DiscreteProbabilityDto> dtos, CancellationToken ct = default)
     {
-        var entities = dtos
-            .Select(x => x.ToEntity())
-            .ToList();
+        var entities = dtos.ToEntities();
         await _discreteProbabilityRepository.AddRangeAsync(entities, ct);
         return entities.ToDtos();
     }
