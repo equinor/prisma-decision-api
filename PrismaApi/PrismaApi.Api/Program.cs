@@ -203,7 +203,7 @@ public class Program
 
         app.MapControllers();
 
-        if (!string.IsNullOrEmpty(sqliteConnectionString))
+        if (!string.IsNullOrEmpty(sqliteConnectionString) && NotRunningIntegrationTests)
         {
             using (var scope = app.Services.CreateScope())
             {

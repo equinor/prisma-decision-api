@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -17,20 +18,18 @@ namespace PrismaApi.Test.Fixture;
 
 public class PrismaWebAppFactory : WebApplicationFactory<Program>
 {
-    private readonly string _databaseName =
-        $"Database=sqldb-ep-Prisma-intgtest-{DateTimeOffset.Now:yyyy-MM-dd-HHmmss}-{Guid.NewGuid()};";
-
-    private readonly string _testDbConnectionString =
-        Environment.GetEnvironmentVariable("GITHUB_TEST_CONNECTION_STRING") ??
-        "Server=(localdb)\\mssqllocaldb;Trusted_Connection=True;Max Pool Size = 32767;Pooling=true;";
+    private readonly SqliteConnection _connection;
+    private readonly string _testDbConnectionString = "DataSource=:memory:";
 
     public PrismaWebAppFactory()
     {
-        _testDbConnectionString += _databaseName;
+        _connection = new SqliteConnection("DataSource=:memory:");
+        _connection.Open();
 
         IdentityModelEventSource.ShowPII = true;
 
         Environment.SetEnvironmentVariable("SqlDb:ConnectionString", _testDbConnectionString);
+        Environment.SetEnvironmentVariable("ConnectionStrings:SqliteConnection", _testDbConnectionString);
 
         Environment.SetEnvironmentVariable(IntegrationTestEnvVariables.IntegrationTestMarker,
             "true");
@@ -46,7 +45,7 @@ public class PrismaWebAppFactory : WebApplicationFactory<Program>
         var services = new ServiceCollection();
         services.AddDbContext<AppDbContext>(options =>
         {
-            options.UseSqlServer(_testDbConnectionString);
+            options.UseSqlite(_connection);
         });
 
         using var sp = services.BuildServiceProvider();
@@ -68,7 +67,7 @@ public class PrismaWebAppFactory : WebApplicationFactory<Program>
             services.AddScoped<IUserService, TestUserService>();
             services.AddDbContext<AppDbContext>((serviceProvider, options) =>
             {
-                options.UseSqlServer(_testDbConnectionString);
+                options.UseSqlite(_connection);
             });
 
 
