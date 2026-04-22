@@ -18,7 +18,6 @@ public static class AppConstants
 {
     public const string CurrentUserKey = "CurrentUser";
     public const string PublicUsernameHeader = "X-Username";
-    public const string SqliteHashStorageName = "DatabaseModelHash.txt";
 }
 
 public static class GraphApiConstants
