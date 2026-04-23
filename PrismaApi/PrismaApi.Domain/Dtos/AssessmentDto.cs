@@ -18,6 +18,8 @@ namespace PrismaApi.Domain.Dtos
 
         [JsonPropertyName("project_id")]
         public Guid ProjectId { get; set; }
+        [JsonPropertyName("created_at")]
+        public DateTime CreatedAt { get; set; }
 
     }
     public class AssessmentIncomingDto : AssessmentDto
