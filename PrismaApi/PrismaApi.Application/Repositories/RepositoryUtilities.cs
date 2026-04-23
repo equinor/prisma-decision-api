@@ -69,7 +69,7 @@ public static class RepositoryUtilities
     public static bool IsDecisionMovedOutOfStrategyTable(Issue entity, Issue incomingEntity)
     {
         if (entity.Type != incomingEntity.Type && entity.Type == IssueType.Decision.ToString()) return true;
-        if (!entity.Boundary.Equals(incomingEntity.Boundary, StringComparison.CurrentCultureIgnoreCase) && incomingEntity.Boundary.Equals(Boundary.Out.ToString(), StringComparison.CurrentCultureIgnoreCase)) return true;
+        if (!entity.Boundary.Equals(incomingEntity.Boundary, StringComparison.OrdinalIgnoreCase) && incomingEntity.Boundary.Equals(Boundary.Out.ToString(), StringComparison.OrdinalIgnoreCase)) return true;
         if (entity.Decision != null && incomingEntity.Decision != null && entity.Decision.Type != incomingEntity.Decision.Type && entity.Decision.Type == DecisionHierarchy.Focus.ToString()) return true;
         return false;
     }

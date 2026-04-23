@@ -86,8 +86,8 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
     private bool WillIssueChangeTables(Issue entity, Issue incomingEntity)
     {
         if (entity.Type != incomingEntity.Type) return true;
-        if (!string.Equals(entity.Boundary, incomingEntity.Boundary, StringComparison.CurrentCultureIgnoreCase)
-            && (incomingEntity.Boundary.Equals(Boundary.Out.ToString(), StringComparison.CurrentCultureIgnoreCase) || entity.Boundary.Equals(Boundary.Out.ToString(), StringComparison.CurrentCultureIgnoreCase))) 
+        if (!string.Equals(entity.Boundary, incomingEntity.Boundary, StringComparison.OrdinalIgnoreCase)
+            && (incomingEntity.Boundary.Equals(Boundary.Out.ToString(), StringComparison.OrdinalIgnoreCase) || entity.Boundary.Equals(Boundary.Out.ToString(), StringComparison.OrdinalIgnoreCase))) 
             return true;
         return false;
     }
