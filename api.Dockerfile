@@ -6,14 +6,14 @@ WORKDIR /App
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 # Copy project file first (layer cache)
-COPY ["PrismaApi/PrismaApi.Api/PrismaApi.Api.csproj", "PrismaApi/PrismaApi.Api/"]
+COPY ["PrismaDotnetApi/PrismaApi.Api/PrismaApi.Api.csproj", "PrismaDotnetApi/PrismaApi.Api/"]
 
 # Copy full source, then publish
 COPY . .
 
-RUN dotnet restore "PrismaApi/PrismaApi.Api/PrismaApi.Api.csproj"
+RUN dotnet restore "PrismaDotnetApi/PrismaApi.Api/PrismaApi.Api.csproj"
 
-RUN dotnet publish "PrismaApi/PrismaApi.Api/PrismaApi.Api.csproj" --no-restore -c Release -o /App/out
+RUN dotnet publish "PrismaDotnetApi/PrismaApi.Api/PrismaApi.Api.csproj" --no-restore -c Release -o /App/out
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
