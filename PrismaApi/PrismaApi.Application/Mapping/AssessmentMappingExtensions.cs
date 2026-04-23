@@ -18,6 +18,7 @@ namespace PrismaApi.Application.Mapping
                 Name = entity.Name,
                 ProjectId = entity.ProjectId,
                 IsCompleted = entity.IsCompleted,
+                CreatedAt = entity.CreatedAt.UtcDateTime,
                 DecisionQualityAssessments = entity.DecisionQualityAssessments?.Select(sa => sa.ToOutgoingDto()).ToList() ?? new()
             };
         }
