@@ -91,14 +91,14 @@ public static class EdgeQueryableExtensions
         return query
             .Where(e =>
                 e.ProjectId == projectId &&
-                (e.TailNode!.Issue!.Boundary == Boundary.In.ToString() || e.TailNode.Issue.Boundary == Boundary.On.ToString()) &&
+                (e.TailNode!.Issue!.Boundary.ToUpper() == Boundary.In.ToString().ToUpper() || e.TailNode.Issue.Boundary.ToUpper() == Boundary.On.ToString().ToUpper()) &&
                 (e.TailNode.Issue.Type == IssueType.Uncertainty.ToString() || e.TailNode.Issue.Type == IssueType.Decision.ToString() || e.TailNode.Issue.Type == IssueType.Utility.ToString()) &&
                 (
                     (e.TailNode.Issue.Type == IssueType.Uncertainty.ToString() && e.TailNode.Issue.Uncertainty!.IsKey == true) ||
                     (e.TailNode.Issue.Type == IssueType.Decision.ToString() && e.TailNode.Issue.Decision!.Type == DecisionHierarchy.Focus.ToString()) ||
                     (e.TailNode.Issue.Type == IssueType.Utility.ToString())
                 ) &&
-                (e.HeadNode!.Issue!.Boundary == Boundary.In.ToString() || e.HeadNode.Issue.Boundary == Boundary.On.ToString()) &&
+                (e.HeadNode!.Issue!.Boundary.ToUpper() == Boundary.In.ToString().ToUpper() || e.HeadNode.Issue.Boundary.ToUpper() == Boundary.On.ToString().ToUpper()) &&
                 (e.HeadNode.Issue.Type == IssueType.Uncertainty.ToString() || e.HeadNode.Issue.Type == IssueType.Decision.ToString() || e.HeadNode.Issue.Type == IssueType.Utility.ToString()) &&
                 (
                     (e.HeadNode.Issue.Type == IssueType.Uncertainty.ToString() && e.HeadNode.Issue.Uncertainty!.IsKey == true) ||
