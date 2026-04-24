@@ -54,47 +54,13 @@ jobs:
                       ./PrismaApi/PrismaApi.Api/bin
                   key: ${{ runner.os }}-dotnet-${{ hashFiles('**/PrismaApi*.csproj') }}
 
-            - name: Setup SQL Server
-              uses: docker/setup-qemu-action@v3
-
-            - name: Generate random string
-              id: random-string
-              run: echo "astring=$(cat /proc/sys/kernel/random/uuid)" >> $GITHUB_OUTPUT
-
-            - name: Generate random password
-              id: random-password
-              run: echo "password=$(cat /proc/sys/kernel/random/uuid)" >> $GITHUB_OUTPUT
-
-            - name: Start SQL Server Container
-              run: docker run --name sql-server -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=${{steps.random-password.outputs.password}}" -d -p 1433:1433 mcr.microsoft.com/mssql/server
-
-            - name: Get SQL Server Container IP
-              id: sql-server-ip
-              run: echo "ip=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' sql-server)" >> $GITHUB_OUTPUT
-
-            - name: Wait for SQL Server to Start
-              run: docker ps | grep -q "sql-server" && echo "SQL Server is up" || (echo "SQL Server did not start" && exit 1)
-              timeout-minutes: 2
-
-            - name: Construct Connection String
-              id: construct-connection-string
-              run: echo "sqlConnString=Server=${{ steps.sql-server-ip.outputs.ip }},1433;Database=sqldb-Prisma-intgtest-${{ steps.random-string.outputs.astring }}" >> $GITHUB_OUTPUT
-
             - name: Restore NuGet packages
               run: dotnet restore PrismaApi/PrismaApi.sln
 
             - name: Run tests
-              env:
-                  GITHUB_TEST_CONNECTION_STRING: "${{ steps.construct-connection-string.outputs.sqlConnString }};User Id=sa;Password=${{steps.random-password.outputs.password}};TrustServerCertificate=true;Encrypt=false;"
               run: |
                   dotnet build PrismaApi/PrismaApi.sln --configuration Release --no-restore
                   dotnet test PrismaApi/PrismaApi.Test/PrismaApi.Test.csproj --configuration Release --no-build --collect:"XPlat Code Coverage"
-
-            - name: Stop SQL Server Container
-              run: docker stop sql-server || true
-
-            - name: Remove SQL Server Container
-              run: docker rm sql-server || true
 
             - name: Publish test results
               uses: actions/upload-artifact@v4

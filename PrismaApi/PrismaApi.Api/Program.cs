@@ -72,10 +72,24 @@ public class Program
             .AddPrismaRateLimiter(NotRunningIntegrationTests);
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+        var sqliteConnectionString = builder.Configuration.GetConnectionString("SqliteConnection");
+
+        if (!string.IsNullOrEmpty(sqliteConnectionString))
         {
-            options.UseSqlServer(connectionString);
-        });
+            builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+            {
+                options.UseSqlite(sqliteConnectionString, 
+                    x => x.MigrationsAssembly("SqliteMigrations"));
+            });
+        }
+        else
+        {
+            builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+            {
+                options.UseSqlServer(connectionString, 
+                    x => x.MigrationsAssembly("SqlServerMigrations"));
+            });
+        }
 
         builder.Services.AddScoped<IDiscreteTableRuleEventHandler, DiscreteTableRuleEventHandler>();
         builder.Services.AddScoped<IIssueRepository, IssueRepository>();
@@ -168,7 +182,7 @@ public class Program
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
+        if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Local"))
         {
             app.UseSwagger();
             app.UseSwaggerWithAuth(builder.Configuration);
@@ -189,6 +203,15 @@ public class Program
 
         app.MapControllers();
 
+        if (!string.IsNullOrEmpty(sqliteConnectionString) && NotRunningIntegrationTests)
+        {
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                db.Database.Migrate();
+            }
+        }
         app.Run();
+
     }
 }
