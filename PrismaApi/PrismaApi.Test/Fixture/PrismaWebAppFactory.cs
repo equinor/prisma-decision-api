@@ -23,7 +23,7 @@ public class PrismaWebAppFactory : WebApplicationFactory<Program>
 
     public PrismaWebAppFactory()
     {
-        _connection = new SqliteConnection("DataSource=:memory:");
+        _connection = new SqliteConnection(_testDbConnectionString);
         _connection.Open();
 
         IdentityModelEventSource.ShowPII = true;
