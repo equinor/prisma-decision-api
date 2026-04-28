@@ -450,6 +450,7 @@ public class AppDbContext : DbContext
     public async override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         UpdateTimestamps();
+        await EnforceMinimumProjectRoles(cancellationToken);
         await OnNodeDeletedCleanupAsync(cancellationToken);
         await OnOutcomeDeletedCleanupAsync(cancellationToken);
         await OnOptionDeletedCleanupAsync(cancellationToken);
@@ -491,6 +492,32 @@ public class AppDbContext : DbContext
             }
 
             entry.Entity.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+    }
+
+    private async Task EnforceMinimumProjectRoles(CancellationToken cancellationToken)
+    {
+        var deletedProjectRoles = ChangeTracker
+            .Entries<ProjectRole>()
+            .Where(e => e.State == EntityState.Deleted)
+            .Select(e => e.Entity)
+            .ToList();
+
+        if (deletedProjectRoles.Count == 0)
+            return; 
+
+        var projectIds = deletedProjectRoles
+            .Select(x => x.ProjectId);
+        var projects = await Projects
+            .AsNoTracking()
+            .Include(y => y.ProjectRoles)
+            .Where(x => projectIds.Contains(x.Id))
+            .ToListAsync(cancellationToken);
+
+        // if any project would contain zero project roles after the current transaction raise exception
+        if (projects.Any(p => p.ProjectRoles.Count - deletedProjectRoles.Count(dr => dr.ProjectId == p.Id) == 0))
+        {
+            throw new InvalidOperationException("Projects must have at least one Role assignment.");
         }
     }
 

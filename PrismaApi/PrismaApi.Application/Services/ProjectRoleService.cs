@@ -43,6 +43,30 @@ public class ProjectRoleService: IProjectRoleService
 
     public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
+        // var rolesToDelete = await _projectRoleRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
+
+        // if (rolesToDelete.Count == 0)
+        // {
+        //     return;
+        // }
+
+        // var affectedProjectIds = rolesToDelete.Select(r => r.ProjectId).Distinct().ToList();
+        // var allRolesInAffectedProjects = await _projectRoleRepository.GetAllAsync(
+        //     withTracking: false,
+        //     filterPredicate: r => affectedProjectIds.Contains(r.ProjectId),
+        //     ct: ct);
+
+        // // affectedProjectIds should in most cases only have a length of 1
+        // foreach (var projectId in affectedProjectIds)
+        // {
+        //     var totalRoles = allRolesInAffectedProjects.Count(r => r.ProjectId == projectId);
+        //     var deletingCount = rolesToDelete.Count(r => r.ProjectId == projectId);
+        //     if (totalRoles - deletingCount == 0)
+        //     {
+        //         throw new ArgumentException("Project(s) must have at least one project role.");
+        //     }
+        // }
+
         await _projectRoleRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
     }
 
