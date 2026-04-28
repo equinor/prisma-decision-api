@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces.Repositories;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
@@ -35,12 +36,24 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
     }
 
 
-    public async Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incomingEntities, Expression<Func<Project, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incomingEntities, UserOutgoingDto userDto, Expression<Func<Project, bool>> filterPredicate, CancellationToken ct = default)
     {
         var entities = await GetByIdsAsync(incomingEntities.Select(e => e.Id), withTracking: true, filterPredicate: filterPredicate, ct: ct);
         foreach (var entity in entities)
         {
             var incomingEntity = incomingEntities.Where(x => x.Id == entity.Id).First();
+
+            // if user is not a facillitator, they cannnot change the role type.
+            bool isUserFacillitator = entity.ProjectRoles
+                .Any(r => string.Equals(r.Role, ProjectRoleType.Facilitator.ToString(), StringComparison.OrdinalIgnoreCase) && r.UserId == userDto.Id);
+
+            var willAnyRoleChange = incomingEntities.Any(x =>
+                x.ProjectRoles.Any(ir =>
+                    entities.FirstOrDefault(e => e.Id == x.Id)
+                        ?.ProjectRoles.Any(er => er.UserId == ir.UserId && er.Role != ir.Role) == true));
+
+            if (!isUserFacillitator && willAnyRoleChange)
+                throw new UnauthorizedAccessException("Only facilitators can update project roles.");
 
             entity.Name = incomingEntity.Name;
             entity.OpportunityStatement = incomingEntity.OpportunityStatement;

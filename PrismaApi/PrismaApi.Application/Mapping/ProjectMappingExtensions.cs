@@ -1,5 +1,4 @@
-using System.Collections.Generic;
-using System.Linq;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 
@@ -70,6 +69,12 @@ public static class ProjectMappingExtensions
         };
     }
 
+    private static void ValidateFacilitatorRoles<T>(IEnumerable<T> users, Func<T, string> getRole, Func<T, string> getUserId, UserOutgoingDto userDto)
+    {
+        if (users.All(r => !string.Equals(getRole(r), ProjectRoleType.Facilitator.ToString(), StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Projects must have at least one facilitator.");
+    }
+
     public static Project ToEntity(this ProjectCreateDto dto, UserOutgoingDto userDto)
     {
         return new Project
@@ -90,6 +95,8 @@ public static class ProjectMappingExtensions
 
     public static Project ToEntity(this ProjectIncomingDto dto, UserOutgoingDto userDto)
     {
+        ValidateFacilitatorRoles(dto.Users, r => r.Role, r => r.UserId, userDto);
+
         return new Project
         {
             Id = dto.Id,
