@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.4.11620.152 stable
+VisualStudioVersion = 18.4.11620.152
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrismaApi.Api", "PrismaApi.Api\PrismaApi.Api.csproj", "{D642B543-628D-4C4D-82F4-A865C84E45C2}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -30,6 +30,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrismaApi.Test", "PrismaApi
 		{D642B543-628D-4C4D-82F4-A865C84E45C2} = {D642B543-628D-4C4D-82F4-A865C84E45C2}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlServerMigrations", "SqlServerMigrations\SqlServerMigrations.csproj", "{E305450E-FD42-4694-A669-37483665BB81}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqliteMigrations", "SqliteMigrations\SqliteMigrations.csproj", "{3BFBA452-5B2A-4565-A9DE-D2AEC3C9C118}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +60,14 @@ Global
 		{DE2A2E88-651A-4208-AE5E-3CC5D0820D1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE2A2E88-651A-4208-AE5E-3CC5D0820D1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE2A2E88-651A-4208-AE5E-3CC5D0820D1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E305450E-FD42-4694-A669-37483665BB81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E305450E-FD42-4694-A669-37483665BB81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E305450E-FD42-4694-A669-37483665BB81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E305450E-FD42-4694-A669-37483665BB81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BFBA452-5B2A-4565-A9DE-D2AEC3C9C118}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BFBA452-5B2A-4565-A9DE-D2AEC3C9C118}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BFBA452-5B2A-4565-A9DE-D2AEC3C9C118}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BFBA452-5B2A-4565-A9DE-D2AEC3C9C118}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
