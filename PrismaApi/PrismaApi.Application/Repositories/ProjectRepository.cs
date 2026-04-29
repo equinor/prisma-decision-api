@@ -52,8 +52,20 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
                     entities.FirstOrDefault(e => e.Id == x.Id)
                         ?.ProjectRoles.Any(er => er.UserId == ir.UserId && er.Role != ir.Role) == true));
 
-            if (!isUserFacillitator && willAnyRoleChange)
-                throw new UnauthorizedAccessException("Only facilitators can update project roles.");
+            // prevent non facilitators from deleting/creating facillitator roles
+            var newFacillitators = incomingEntity.ProjectRoles
+                .Where(ir => ir.Role == ProjectRoleType.Facilitator.ToString() && !entity.ProjectRoles.Any(er => er.UserId == ir.UserId))
+                .ToList();
+
+            var facillitatorsToDelete = entity.ProjectRoles
+                .Where(er => er.Role == ProjectRoleType.Facilitator.ToString() && !incomingEntity.ProjectRoles.Any(ir => ir.UserId == er.UserId))
+                .ToList();
+
+            if (incomingEntity.ProjectRoles.Count != 0 && !isUserFacillitator && willAnyRoleChange)
+                throw new InvalidOperationException("Only facilitators can update project roles.");
+
+            if (incomingEntity.ProjectRoles.Count != 0 && !isUserFacillitator && (newFacillitators.Count != 0 || facillitatorsToDelete.Count != 0))
+                throw new InvalidOperationException("Only facilitators can create/delete Facillitator roles.");
 
             entity.Name = incomingEntity.Name;
             entity.OpportunityStatement = incomingEntity.OpportunityStatement;
@@ -63,7 +75,8 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
             entity.EndDate = incomingEntity.EndDate;
             entity.UpdatedById = incomingEntity.UpdatedById;
 
-            entity.ProjectRoles.Update(incomingEntity.ProjectRoles, DbContext);
+            if (incomingEntity.ProjectRoles.Count != 0)
+                entity.ProjectRoles.Update(incomingEntity.ProjectRoles, DbContext);
             entity.Objectives.Update(incomingEntity.Objectives, DbContext);
             entity.Strategies.Update(incomingEntity.Strategies, DbContext);
         }

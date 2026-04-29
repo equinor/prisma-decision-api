@@ -497,27 +497,28 @@ public class AppDbContext : DbContext
 
     private async Task EnforceMinimumProjectRoles(CancellationToken cancellationToken)
     {
-        var deletedProjectRoles = ChangeTracker
+        var deletedFacilitatorsByProject = ChangeTracker
             .Entries<ProjectRole>()
-            .Where(e => e.State == EntityState.Deleted)
-            .Select(e => e.Entity)
-            .ToList();
+            .Where(e => e.State == EntityState.Deleted &&
+                   string.Equals(e.Entity.Role, ProjectRoleType.Facilitator.ToString(), StringComparison.OrdinalIgnoreCase))
+            .GroupBy(e => e.Entity.ProjectId)
+            .ToDictionary(g => g.Key, g => g.Count());
 
-        if (deletedProjectRoles.Count == 0)
-            return; 
+        if (deletedFacilitatorsByProject.Count == 0)
+            return;
 
-        var projectIds = deletedProjectRoles
-            .Select(x => x.ProjectId);
-        var projects = await Projects
-            .AsNoTracking()
-            .Include(y => y.ProjectRoles)
-            .Where(x => projectIds.Contains(x.Id))
-            .ToListAsync(cancellationToken);
+        var facilitatorRole = ProjectRoleType.Facilitator.ToString();
 
-        // if any project would contain zero project roles after the current transaction raise exception
-        if (projects.Any(p => p.ProjectRoles.Count - deletedProjectRoles.Count(dr => dr.ProjectId == p.Id) == 0))
+        foreach (var (projectId, deletedCount) in deletedFacilitatorsByProject)
         {
-            throw new InvalidOperationException("Projects must have at least one Role assignment.");
+            var currentCount = await ProjectRoles
+                .AsNoTracking()
+                .CountAsync(r => r.ProjectId == projectId &&
+                            string.Equals(r.Role, facilitatorRole, StringComparison.OrdinalIgnoreCase),
+                            cancellationToken);
+
+            if (currentCount - deletedCount == 0)
+                throw new InvalidOperationException("Projects must have at least one Facillitators.");
         }
     }
 

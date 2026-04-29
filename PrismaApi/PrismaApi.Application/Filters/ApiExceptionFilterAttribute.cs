@@ -235,7 +235,7 @@ public class ApiExceptionFilterAttribute : ExceptionFilterAttribute
 
     private static void HandleInvalidOperationException(ExceptionContext context)
     {
-        var exception = (ArgumentException)context.Exception;
+        var exception = (InvalidOperationException)context.Exception;
 
         var details = new ProblemDetails
         {
