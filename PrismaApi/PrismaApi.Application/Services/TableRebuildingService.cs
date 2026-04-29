@@ -1,12 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Constants;
+using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
 
 namespace PrismaApi.Application.Services;
 
-public class TableRebuildingService: ITableRebuildingService
+public class TableRebuildingService : ITableRebuildingService
 {
     protected readonly AppDbContext DbContext;
     public TableRebuildingService(AppDbContext dbContext)
@@ -243,6 +244,65 @@ public class TableRebuildingService: ITableRebuildingService
         }
 
         return (parentOutcomesList, parentOptionsList);
+    }
+
+    public async Task RemoveExcessDataInTables(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
+    {
+        var uncertaintyIds = await DbContext.Uncertainties
+            .Where(x => x.Issue!.ProjectId == projectId && x.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id))
+            .Select(e => e.Id).ToListAsync(ct);
+        var utilityIds = await DbContext.Utilities
+            .Where(x => x.Issue!.ProjectId == projectId && x.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id))
+            .Select(e => e.Id).ToListAsync(ct);
+        foreach (var id in uncertaintyIds) await RemoveExcessProbabilities(id, ct);
+        foreach (var id in utilityIds) await RemoveExcessUtilities(id, ct);
+        await DbContext.SaveChangesAsync(ct);
+    }
+
+    public async Task RemoveExcessProbabilities(Guid uncertaintyId, CancellationToken ct = default)
+    {
+        var probs = await FindExcessProbabilities(uncertaintyId, ct);
+        RemoveDiscreteProbabilities(probs);
+    }
+
+    public async Task RemoveExcessUtilities(Guid utilityId, CancellationToken ct = default)
+    {
+        var utls = await FindExcessUtility(utilityId, ct);
+        RemoveDiscreteUtilities(utls);
+    }
+
+    private async Task<IEnumerable<DiscreteProbability>> FindExcessProbabilities(Guid uncertaintyId, CancellationToken ct = default)
+    {
+        var probabilities = await DbContext.DiscreteProbabilities
+            .Where(p => p.UncertaintyId == uncertaintyId)
+            .Include(p => p.ParentOutcomes)
+            .Include(p => p.ParentOptions)
+            .ToListAsync(ct);
+
+        return probabilities
+            .GroupBy(p => (
+                p.OutcomeId,
+                ParentOutcomes: string.Join(",", p.ParentOutcomes.Select(o => o.ParentOutcomeId).OrderBy(id => id)),
+                ParentOptions: string.Join(",", p.ParentOptions.Select(o => o.ParentOptionId).OrderBy(id => id))
+            ))
+            .SelectMany(group => group.Skip(1));
+    }
+
+    private async Task<IEnumerable<DiscreteUtility>> FindExcessUtility(Guid utilityId, CancellationToken ct = default)
+    {
+        var utilities = await DbContext.DiscreteUtilities
+            .Where(p => p.UtilityId == utilityId)
+            .Include(p => p.ParentOutcomes)
+            .Include(p => p.ParentOptions)
+            .ToListAsync(ct);
+
+        return utilities
+            .GroupBy(p => (
+                p.ValueMetricId,
+                ParentOutcomes: string.Join(",", p.ParentOutcomes.Select(o => o.ParentOutcomeId).OrderBy(id => id)),
+                ParentOptions: string.Join(",", p.ParentOptions.Select(o => o.ParentOptionId).OrderBy(id => id))
+            ))
+            .SelectMany(group => group.Skip(1));
     }
 
     private void RemoveDiscreteProbabilities(IEnumerable<DiscreteProbability> probabilities)
