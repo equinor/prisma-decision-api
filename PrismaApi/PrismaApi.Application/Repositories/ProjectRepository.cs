@@ -47,25 +47,28 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
             bool isUserFacillitator = entity.ProjectRoles
                 .Any(r => string.Equals(r.Role, ProjectRoleType.Facilitator.ToString(), StringComparison.OrdinalIgnoreCase) && r.UserId == userDto.Id);
 
-            var willAnyRoleChange = incomingEntities.Any(x =>
-                x.ProjectRoles.Any(ir =>
-                    entities.FirstOrDefault(e => e.Id == x.Id)
-                        ?.ProjectRoles.Any(er => er.UserId == ir.UserId && er.Role != ir.Role) == true));
+            if (!isUserFacillitator && incomingEntity.ProjectRoles.Count != 0)
+            {
+                var willAnyRoleChange = incomingEntities.Any(x =>
+                    x.ProjectRoles.Any(ir =>
+                        entities.FirstOrDefault(e => e.Id == x.Id)
+                            ?.ProjectRoles.Any(er => er.UserId == ir.UserId && er.Role != ir.Role) == true));
 
-            // prevent non facilitators from deleting/creating facillitator roles
-            var newFacillitators = incomingEntity.ProjectRoles
-                .Where(ir => ir.Role == ProjectRoleType.Facilitator.ToString() && !entity.ProjectRoles.Any(er => er.UserId == ir.UserId))
-                .ToList();
+                // prevent non facilitators from deleting/creating facillitator roles
+                var newFacillitators = incomingEntity.ProjectRoles
+                    .Where(ir => ir.Role == ProjectRoleType.Facilitator.ToString() && !entity.ProjectRoles.Any(er => er.UserId == ir.UserId))
+                    .ToList();
 
-            var facillitatorsToDelete = entity.ProjectRoles
-                .Where(er => er.Role == ProjectRoleType.Facilitator.ToString() && !incomingEntity.ProjectRoles.Any(ir => ir.UserId == er.UserId))
-                .ToList();
+                var facillitatorsToDelete = entity.ProjectRoles
+                    .Where(er => er.Role == ProjectRoleType.Facilitator.ToString() && !incomingEntity.ProjectRoles.Any(ir => ir.UserId == er.UserId))
+                    .ToList();
 
-            if (incomingEntity.ProjectRoles.Count != 0 && !isUserFacillitator && willAnyRoleChange)
-                throw new InvalidOperationException("Only facilitators can update project roles.");
+                if (willAnyRoleChange)
+                    throw new InvalidOperationException("Only facilitators can update project roles.");
 
-            if (incomingEntity.ProjectRoles.Count != 0 && !isUserFacillitator && (newFacillitators.Count != 0 || facillitatorsToDelete.Count != 0))
-                throw new InvalidOperationException("Only facilitators can create/delete Facillitator roles.");
+                if ((newFacillitators.Count != 0 || facillitatorsToDelete.Count != 0))
+                    throw new InvalidOperationException("Only facilitators can create/delete Facillitator roles.");
+            }
 
             entity.Name = incomingEntity.Name;
             entity.OpportunityStatement = incomingEntity.OpportunityStatement;
