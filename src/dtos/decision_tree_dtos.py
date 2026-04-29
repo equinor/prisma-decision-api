@@ -50,6 +50,7 @@ class TreeNodeDto(BaseModel):
     utilities: Optional[list[UtilityDTDto]] = None
     children: Optional[List["DecisionTreeDto"]] = None
 
+
 class TreeNodeDto2(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     issue_id: uuid.UUID
@@ -59,24 +60,11 @@ class TreeNodeDto2(BaseModel):
     cumulative_probability: Optional[float] = None #only for endpoint nodes
     probabilities: Optional[list[ProbabilityDto2]] = None
     utilities: Optional[list[UtilityDTDto2]] = None
-    children: Optional[List["DecisionTreeDto2"]] = None
+    children: Optional[List["TreeNodeDto2"]] = None
 
-class TreeNodeDto3(BaseModel):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    issue_id: uuid.UUID
-    type: str = Type.UNASSIGNED.value
-    expected_value: Optional[float] = None #only for decision and uncertainty nodes
-    endpoint_value: Optional[float] = None #only for endpoint nodes
-    cumulative_probability: Optional[float] = None #only for endpoint nodes
-    probabilities: Optional[list[ProbabilityDto2]] = None
-    utilities: Optional[list[UtilityDTDto2]] = None
-    children: Optional[List["TreeNodeDto3"]] = None    
 
 class DecisionTreeDto(BaseModel):
     tree_node: TreeNodeDto
-
-class DecisionTreeDto2(BaseModel):
-    tree_node: TreeNodeDto2   
 
 
 class PartialOrderDto(BaseModel):

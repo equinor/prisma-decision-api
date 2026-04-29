@@ -42,8 +42,12 @@ class TreeNodeLookup:
 class NodeTreeNodeLookup:
     def __init__(self):
         self.node_dtos: Dict[uuid.UUID, IssueOutgoingDto | EndPointNodeDto] = {}  # dto_id -> DTO instance
-        #self.node_id_to_treenode_ids: Dict[uuid.UUID, List[uuid.UUID]] = {}  # dto_id -> list of uuids
         self.treenode_id_to_node_id: Dict[uuid.UUID, uuid.UUID] = {}   # treenode_id -> dto_id
+
+        self.treenode_id_to_utility_id: Dict[uuid.UUID, uuid.UUID] = {}
+
+    def add_utility(self, treenode_id: uuid.UUID, utility_id: uuid.UUID) -> None:
+        self.treenode_id_to_utility_id[treenode_id] = utility_id
 
     def add_dto(self, node_dto: IssueOutgoingDto | EndPointNodeDto):
         self.node_dtos[node_dto.id] = node_dto
@@ -74,37 +78,4 @@ class NodeTreeNodeLookup:
         treenode_ids = [k for k, v in self.treenode_id_to_node_id.items() if v == node_id]
         return treenode_ids
 
-
-
-class NodeTreeNodeLookup_OLD:
-    def __init__(self):
-        self.node_dtos: Dict[uuid.UUID, IssueOutgoingDto | EndPointNodeDto] = {}  # dto_id -> DTO instance
-        self.node_id_to_treenode_ids: Dict[uuid.UUID, List[uuid.UUID]] = {}  # dto_id -> list of uuids
-        self.treenode_id_to_node_id: Dict[uuid.UUID, uuid.UUID] = {}   # treenode_id -> dto_id
-
-    def add_dto(self, node_dto: IssueOutgoingDto | EndPointNodeDto):
-        self.node_dtos[node_dto.id] = node_dto
-
-    def add_node_dto_and_treenode_id(self, node_dto: IssueOutgoingDto | EndPointNodeDto, treenode_id: uuid.UUID):
-        self.node_dtos[node_dto.id] = node_dto
-        self.associate_uuid(node_dto.id, treenode_id) 
-
-    def associate_uuid(self, node_id: uuid.UUID, treenode_id: uuid.UUID):
-        # Add uuid to dto_id_to_uuids
-        self.node_id_to_treenode_ids.setdefault(node_id, []).append(treenode_id)
-        # Add mapping in uuid_to_dto_id
-        self.treenode_id_to_node_id[treenode_id] = node_id
-
-    def get_node_dto(self, node_id: uuid.UUID) -> IssueOutgoingDto | EndPointNodeDto | None:
-        return self.node_dtos.get(node_id)
-
-    def get_treenode_ids_for_dto(self, node_id: uuid.UUID) -> List[uuid.UUID]:
-        return self.node_id_to_treenode_ids.get(node_id, [])
-
-    def get_dto_id_for_treenode_id(self, treenode_id: uuid.UUID) -> uuid.UUID | None:
-        return self.treenode_id_to_node_id.get(treenode_id)
-
-    def get_dto_for_treenode_id(self, treenode_id: uuid.UUID) -> IssueOutgoingDto | EndPointNodeDto | None:
-        node_id = self.get_dto_id_for_treenode_id(treenode_id)
-        return self.get_node_dto(node_id)
     

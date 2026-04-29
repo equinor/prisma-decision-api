@@ -54,13 +54,6 @@ class DecisionTreeGraph:
         return parents[0] if (parents and len(parents) > 0) else None  # type: ignore
 
     async def populate_utility_lookup(self) -> None:
-
-        #ff = self.treenode_lookup.get_list_of_nodes()
-        # for f in ff:
-        #     print(f.issue.type)
-        # gg = self.nx.nodes
-        # ff1 = len(ff)
-        # gg1 = len(gg)
         for node in self.treenode_lookup.get_list_of_nodes():
             if isinstance(node.issue, EndPointNodeDto) or node.issue.type != Type.UTILITY.value:
                 continue
@@ -625,9 +618,6 @@ class DecisionTreeCreator:
                 element[0].head = endpoint_end
                 await decision_tree.add_edge(element[0])  # node is added when the branch is added
 
-
-        # for k,v in self.treenode_lookup.items():
-        #     print(v.issue.type)
         await decision_tree.populate_treenode_lookup(self.treenode_lookup)
         decision_tree.outcomes_lookup = copy.deepcopy(self.outcomes_lookup)
         return decision_tree

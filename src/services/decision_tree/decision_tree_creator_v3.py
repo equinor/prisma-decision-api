@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import logging
 import uuid
-import itertools
-import time
 import numpy as np
 import networkx as nx
+from collections import defaultdict
 from typing import Optional, Dict, Any, Union, List, Tuple, Iterator, Set, cast
 from fastapi import HTTPException
 from src.constants import Type
@@ -17,7 +16,7 @@ from src.dtos.outcome_dtos import OutcomeOutgoingDto
 from src.dtos.decision_tree_dtos import (
     EdgeUUIDDto,
     EndPointNodeDto,
-    TreeNodeDto3,
+    TreeNodeDto2,
     ProbabilityDto2,
     UtilityDTDto2,
 )
@@ -36,18 +35,25 @@ class DecisionTreeGraph_v3:
         self.nx.add_node(self.root)  # type: ignore
         self.edge_names: Dict[Tuple[uuid.UUID, uuid.UUID], str] = {}
         self.utility_lookup : Dict[tuple[str, ...], List[float]] = {}
+        # self.discrete_probability_lookup : Dict[tuple[str, ...], List[tuple[uuid.UUID, float]]] = defaultdict(set)
+        self.discrete_probability_lookup = defaultdict(set)
         self.node_treenode_lookup : NodeTreeNodeLookup
         self.final_expected_value : float = 0
+        self.treenodeid_map : Dict[uuid.UUID, uuid.UUID] = {}
+        self.treenodeid_parent_map : Dict[uuid.UUID, uuid.UUID] = {}
 
     async def add_edge(self, edge: EdgeUUIDDto) -> None:
         self.nx.add_edge(edge.tail, edge.head, name=edge.name)  # type: ignore
+        self.treenodeid_parent_map[edge.head] = edge.tail
 
     async def transfer_node_treenode_lookup(self, lookup: NodeTreeNodeLookup) -> None:
         self.node_treenode_lookup = lookup    
 
     async def get_parent(self, node: uuid.UUID) -> Optional[uuid.UUID]:
+        return self.treenodeid_parent_map.get(node)
         parents = list(self.nx.predecessors(node))  # type: ignore
         return parents[0] if (parents and len(parents) > 0) else None  # type: ignore
+
 
     async def populate_utility_lookup(self) -> None:
         for node_id in self.node_treenode_lookup.treenode_id_to_node_id.values(): # type: ignore
@@ -58,23 +64,40 @@ class DecisionTreeGraph_v3:
                 utility = node.utility
                 if utility and utility.discrete_utilities:
                     for discrete_utility in utility.discrete_utilities:
-                        if discrete_utility.utility_value:
-                            parents = tuple(
-                                sorted(p.__str__() for p in discrete_utility.parent_outcome_ids + discrete_utility.parent_option_ids)
-                            )
-                            self.utility_lookup.setdefault(parents, []).append(discrete_utility.utility_value)
+                        # if discrete_utility.utility_value is not None:
+                        parents = tuple(
+                            sorted(p.__str__() for p in discrete_utility.parent_outcome_ids + discrete_utility.parent_option_ids)
+                        )
+                        self.utility_lookup.setdefault(parents, []).append(discrete_utility.utility_value)
+
+
+    async def populate_discrete_probabilities_lookup(self) -> None:
+        for node_id in self.node_treenode_lookup.treenode_id_to_node_id.values(): # type: ignore
+            node = self.node_treenode_lookup.get_node_dto(node_id)
+            if node:
+                if isinstance(node, EndPointNodeDto) or node.type != Type.UNCERTAINTY.value:
+                    continue
+                uncertainty = node.uncertainty
+                if uncertainty and uncertainty.discrete_probabilities:
+                    for discrete_probability in uncertainty.discrete_probabilities:
+                        parents = tuple(
+                            sorted(str(p) for p in discrete_probability.parent_outcome_ids + discrete_probability.parent_option_ids)
+                        )
+                        self.discrete_probability_lookup[parents].add((
+                            discrete_probability.outcome_id,
+                            discrete_probability.probability))
 
     async def get_dto_map(self):
-        dto_map: Dict[uuid.UUID, TreeNodeDto3] = {}
+        dto_map: Dict[uuid.UUID, TreeNodeDto2] = {}
         for treenode_id in self.nx.nodes: # type: ignore
             treenode_id = cast(uuid.UUID, treenode_id)
             if (node := self.node_treenode_lookup.get_dto_for_treenode_id(treenode_id)):
                 type = Type.END.value if isinstance(node, EndPointNodeDto) else node.type
-                dto = TreeNodeDto3(
+                dto = TreeNodeDto2(
                     id=treenode_id,
                     issue_id = node.id,
                     type = type,
-                    probabilities = await self.get_probability_dtos(treenode_id, node),
+                    probabilities = await self.get_discrete_probability_dtos(treenode_id, node),
                     utilities = await self.get_utility_dtos(treenode_id, node),
                     children=[],
                 )
@@ -90,7 +113,7 @@ class DecisionTreeGraph_v3:
                 parent_dto.children = [dto_map[child_id] for child_id in child_ids if child_id in dto_map]
         return dto_map    
 
-    async def topological_sort(self, dto_map: Dict[uuid.UUID, TreeNodeDto3]) -> List[uuid.UUID]:
+    async def topological_sort(self, dto_map: Dict[uuid.UUID, TreeNodeDto2]) -> List[uuid.UUID]:
         visited: Set[uuid.UUID] = set()
         order: List[uuid.UUID] = []
 
@@ -108,31 +131,26 @@ class DecisionTreeGraph_v3:
             visit(node_id)
         return order   
     
-    async def to_issue_dtos(self) -> Optional[TreeNodeDto3]:
-        time1 = time.time()
+    async def to_issue_dtos(self) -> Optional[TreeNodeDto2]:
         await self.populate_utility_lookup() # create lookup for discrete utilities
+        await self.populate_discrete_probabilities_lookup() # create lookup for discrete probabilities
         self.edge_names = nx.get_edge_attributes(self.nx, "name") # type: ignore
         dto_map = await self.get_dto_map()
-
         await self.calculate_endpoint_nodes(self.root, dto_map)
         self.final_expected_value = await self.compute_expected_values(self.root, dto_map)
         dto_map = await self.calculate_treenode_ids_from_branches(dto_map)
-        
         root_id = await self.find_root_id(dto_map)
-
-        time2 = time.time()
-        print("Elapsed time opt:", time2 - time1, "seconds")
         return dto_map[root_id]
     
-    async def calculate_treenode_ids_from_branches(self, dto_map: Dict[uuid.UUID, TreeNodeDto3]) -> Dict[uuid.UUID, TreeNodeDto3]:
-        new_map: Dict[uuid.UUID, TreeNodeDto3] = {}
+    async def calculate_treenode_ids_from_branches(self, dto_map: Dict[uuid.UUID, TreeNodeDto2]) -> Dict[uuid.UUID, TreeNodeDto2]:
+        new_map: Dict[uuid.UUID, TreeNodeDto2] = {}
         for old_key, dto in dto_map.items():
-            new_id = await self.create_treenode_id(old_key)
+            new_id = self.treenodeid_map[old_key]
             dto.id = new_id  # Update the dto's id
             new_map[new_id] = dto
         return new_map
     
-    async def find_root_id(self, dto_map: Dict[uuid.UUID, TreeNodeDto3]) -> uuid.UUID:
+    async def find_root_id(self, dto_map: Dict[uuid.UUID, TreeNodeDto2]) -> uuid.UUID:
         all_ids: Set[uuid.UUID] = set(dto_map.keys())
         child_ids: Set[uuid.UUID] = set(
             child.id
@@ -144,31 +162,44 @@ class DecisionTreeGraph_v3:
             raise ValueError("No root node found")
         return root_ids[0]  # or return all roots if you expect a forest
 
-    async def compute_expected_values(self, root_id: uuid.UUID, dto_map: Dict[uuid.UUID, TreeNodeDto3]) -> float:
+    async def get_probabilities (self, id : uuid.UUID, parent_node: TreeNodeDto2) -> float:
+        branch_id = self.edge_names[(parent_node.id, id)]
+        prob = await self.get_probability_for_branch(parent_node, branch_id) if parent_node else 0
+        return prob
+    
+    async def compute_expected_values(self, root_id: uuid.UUID, dto_map: Dict[uuid.UUID, TreeNodeDto2]) -> float:
         order = await self.topological_sort(dto_map)
         for node_id in order:
-            node = dto_map[node_id]
-            if node.type == Type.END.value:
-                node.expected_value = None #node.endpoint_value
-            elif node.type == Type.UNCERTAINTY.value:
-                child_values = np.array([child.endpoint_value if child.type == Type.END.value else child.expected_value for child in node.children])
-                probabilities = np.array([prob.probability_value for prob in node.probabilities])
-                node.expected_value = np.dot(probabilities, child_values)
-            elif node.type == Type.DECISION.value:
-                child_values = np.array([child.expected_value for child in node.children])
-                node.expected_value = np.max(child_values)
+            try:
+                node = dto_map[node_id]
+                if node.type == Type.END.value:
+                    node.expected_value = None #node.endpoint_value
+                elif node.type == Type.UNCERTAINTY.value:
+                    child_ids = [child.id for child in node.children]
+                    child_values = np.array([child.endpoint_value if child.type == Type.END.value else child.expected_value for child in node.children])
+                    probabilities = np.array([await self.get_probabilities(id, node) for id in child_ids])
+                    node.expected_value = np.dot(probabilities, child_values)
+                elif node.type == Type.DECISION.value:
+                    child_values = np.array([child.expected_value for child in node.children])
+                    node.expected_value = np.max(child_values)
+            except Exception as e:
+                print(f"Exception at node_id={node_id}: {e}")
+                import traceback; traceback.print_exc()
+                break    
+
         return dto_map[root_id].expected_value
 
-    async def calculate_endpoint_nodes(self, root_id: uuid.UUID, dto_map: Dict[uuid.UUID, TreeNodeDto3]) -> None:
+    async def calculate_endpoint_nodes(self, root_id: uuid.UUID, dto_map: Dict[uuid.UUID, TreeNodeDto2]) -> None:
         stack = [dto_map[root_id]]
         while stack:
             node = stack.pop()
             if node.type == Type.END.value:
                 node.endpoint_value, node.cumulative_probability = await self.calculate_endpoint_value(node.id, dto_map)
+                await self.create_treenode_ids_from_endnode(node.id)
             elif node.children:
-                stack.extend(node.children)                        
-            
-    async def calculate_endpoint_value(self, id: uuid.UUID, dto_map: Dict[uuid.UUID, TreeNodeDto3]) -> Tuple[float, float]:
+                stack.extend(node.children)
+
+    async def calculate_endpoint_value(self, id: uuid.UUID, dto_map: Dict[uuid.UUID, TreeNodeDto2]) -> Tuple[float, float]:
         if not id:
             return 0, 0
 
@@ -179,7 +210,7 @@ class DecisionTreeGraph_v3:
         node_value = 0
         cumulative_probability = 1
         branch_id = self.edge_names[(parent_id, id)]
-        while parent_id and count < 1000:
+        while parent_id and count < 10000:
             parent_node = dto_map[parent_id]
             node_value += await self.get_utility_for_branch(parent_node, branch_id) if parent_node else 0
 
@@ -191,9 +222,9 @@ class DecisionTreeGraph_v3:
                 branch_id = self.edge_names[(parent_id, id)]
             count += 1
         return node_value, cumulative_probability
-
+    
     async def get_utility_for_branch(
-        self, node: TreeNodeDto3, branch_id: str
+        self, node: TreeNodeDto2, branch_id: str
     ) -> float:
         if node.utilities:
             for utility in node.utilities:
@@ -203,7 +234,7 @@ class DecisionTreeGraph_v3:
         return 0
     
     async def get_probability_for_branch(
-        self, node: TreeNodeDto3, branch_id: str
+        self, node: TreeNodeDto2, branch_id: str
     ) -> float:
         if node.probabilities:
             for probability in node.probabilities:
@@ -211,19 +242,34 @@ class DecisionTreeGraph_v3:
                     return probability.probability_value
         return 0
     
-    async def create_treenode_id(self, treenode_id: uuid.UUID) -> uuid.UUID:
-        id_string = ""
-        parent_id = await self.get_parent(treenode_id)
+    async def create_treenode_ids_from_endnode(self, treenode_id: uuid.UUID) -> None:
+        node_id = treenode_id
+        id_to_branchname_map: Dict[uuid.UUID, str] = {}
+        parent_id = await self.get_parent(node_id)
         count = 0
         while parent_id and count < 1000:
-            n = self.edge_names[(parent_id, treenode_id)]
-            id_string = n if id_string == "" else n + " - " + id_string
-            treenode_id = parent_id
-            parent_id = await self.get_parent(treenode_id)
+            n = self.edge_names[(parent_id, node_id)]
+            id_to_branchname_map[node_id] = n
+            node_id = parent_id
+            parent_id = await self.get_parent(node_id)
             count += 1
 
-        id_string = "root" if id_string == "" else "root" + " - " + id_string
-        return GenerateUuid.as_uuid(id_string)
+        #assume parent_id is root
+        if self.treenodeid_map.get(node_id) == None:
+            self.treenodeid_map[node_id] = GenerateUuid.as_uuid("root")    
+
+        while id_to_branchname_map:
+            id_string = ""
+            first_key = next(iter(id_to_branchname_map))
+            if self.treenodeid_map.get(first_key) == None:
+                values = list(id_to_branchname_map.values())
+                id_string = '-'.join(values)
+                id_string = "root" if id_string == "" else "root" + " - " + id_string
+                new_id = GenerateUuid.as_uuid(id_string)
+                self.treenodeid_map[first_key] = new_id
+                id_to_branchname_map.pop(first_key)
+            else:
+                break    
     
     async def find_matching_probabilities_dtos(
         self, object_uuids: list[uuid.UUID], in_dtos: list[DiscreteProbabilityOutgoingDto]
@@ -235,7 +281,7 @@ class DecisionTreeGraph_v3:
                 out_dtos.append(dto)
         return out_dtos
 
-    async def get_probability_dtos(
+    async def get_discrete_probability_dtos(
         self, treenode_id : uuid.UUID, node: IssueOutgoingDto | EndPointNodeDto
     ) -> Optional[list[ProbabilityDto2]]:
         
@@ -247,28 +293,59 @@ class DecisionTreeGraph_v3:
             and node.uncertainty is not None
             and len(node.uncertainty.discrete_probabilities) > 0
         ):
-            parent_labels: list[uuid.UUID] = []
-            parent_id = await self.get_parent(treenode_id)
-            count = 0
-            while parent_id and count < 1000:
-                parent_labels.append(uuid.UUID(self.edge_names[(parent_id, treenode_id)]))
-                treenode_id = parent_id
-                parent_id = await self.get_parent(treenode_id)
-                count += 1
+            ancestors_ids = await self.get_ancestors_ids(treenode_id)
+            parent_ids_list : list[set[str]]= []
+            for dto in node.uncertainty.discrete_probabilities:
+                parent_ids : set[uuid.UUID] = set(dto.parent_option_ids).union(set(dto.parent_outcome_ids))
+                parent_ids_str : set[str] = {str(uuid) for uuid in parent_ids}
+                if set(parent_ids_str).issubset(set(ancestors_ids)) and parent_ids_str not in parent_ids_list:
+                    parent_ids_list.append(parent_ids_str)
 
-            discrete_prob_dtos = await self.find_matching_probabilities_dtos(
-                parent_labels, node.uncertainty.discrete_probabilities
-            )
-
-            for dto in discrete_prob_dtos:
-                if dto.probability is not None:
+            for parents in parent_ids_list: 
+                parent_ids_t = tuple(sorted(p for p in parents))
+                discrete_probs = self.discrete_probability_lookup[parent_ids_t]
+                for probs in discrete_probs:
                     probability_dto = ProbabilityDto2(
-                        outcome_id=dto.outcome_id,
-                        probability_value=dto.probability,
+                        outcome_id=probs[0],
+                        probability_value=probs[1],
                     )
                     probability_dtos.append(probability_dto)
-
         return probability_dtos
+    
+    async def get_ancestors_ids(self, treenode_id: uuid.UUID) -> list[str]:
+        ancestors_ids: list[str] = []
+        parent_id = await self.get_parent(treenode_id)
+        count = 0
+        while parent_id and count < 10000:
+            ancestors_ids.append(self.edge_names[(parent_id, treenode_id)])
+            treenode_id = parent_id
+            parent_id = await self.get_parent(treenode_id)
+            count += 1
+        return ancestors_ids     
+
+    async def get_discrete_probability_value(
+        self, treenode_id: uuid.UUID, dto : OptionOutgoingDto | OutcomeOutgoingDto
+    ) -> float:
+        
+        # last_node_id = self.node_treenode_lookup.get_dto_id_for_treenode_id(treenode_id)
+        # if last_node_id not in self.node_treenode_lookup.treenode_id_to_utility_id:
+        #     return 0
+        
+        branch_label = dto.id.__str__()
+        if not any(branch_label in key for key in self.discrete_probability_lookup.keys()):
+            return 0
+
+        branch_labels = [branch_label]
+        # Add branch labels for predecessors to the treenode branch
+        ancestors_ids = await self.get_ancestors_ids(treenode_id)
+        branch_labels.extend(ancestors_ids)
+
+        branch_labels_list = tuple(branch_labels)
+        matching_keys = [k for k in self.discrete_probability_lookup.keys() if set(k).issubset(branch_labels_list)]
+        key = matching_keys[0]
+        value = sum(self.discrete_probability_lookup[key])
+
+        return value
 
     async def get_utility_dtos(
         self, treenode_id: uuid.UUID, node: IssueOutgoingDto | EndPointNodeDto
@@ -295,43 +372,27 @@ class DecisionTreeGraph_v3:
                 utility_dtos.append(utility_dto)
 
         return utility_dtos
-
+    
     async def get_discrete_utility_value(
         self, treenode_id: uuid.UUID, dto : OptionOutgoingDto | OutcomeOutgoingDto
     ) -> float:
-        branch_label = dto.id.__str__()
-        if not any(branch_label in key for key in self.utility_lookup.keys()):
+        last_node_id = self.node_treenode_lookup.get_dto_id_for_treenode_id(treenode_id)
+        if last_node_id not in self.node_treenode_lookup.treenode_id_to_utility_id:
             return 0
+        branch_label = dto.id.__str__()
+        # if not any(branch_label in key for key in self.utility_lookup.keys()):
+        #     return 0
 
-        node_id = treenode_id
         branch_labels = [branch_label]
-
         # Add branch labels for predecessors to the treenode branch
-        parent_id = await self.get_parent(node_id)
-        count = 0
-        while parent_id and count < 1000:
-            branch_labels.append(self.edge_names[(parent_id, node_id)])
-            node_id = parent_id
-            parent_id = await self.get_parent(node_id)
-            count += 1
+        ancestors_ids = await self.get_ancestors_ids(treenode_id)
+        branch_labels.extend(ancestors_ids)
 
-        # Create list of branch combinations, must include branch label for treenode
-        branch_combinations : list[tuple[str, ...]] = [
-            combo for r in range(2, len(branch_labels) + 1)
-            for combo in itertools.combinations(branch_labels, r)
-            if branch_label in combo]
-
-        # Loop through branch_combinations
-        # and add discrete utility for current treenode (from combinations present in utility_lookup)
-        total_discrete_utility_value = sum(
-                sum(self.utility_lookup[key])
-                for combination in branch_combinations
-                if (key := tuple(sorted(combination))) in self.utility_lookup
-            ) if len(branch_labels) > 1 else 0
-
-        return total_discrete_utility_value
-
-
+        branch_labels_list = tuple(branch_labels)
+        matching_keys = [k for k in self.utility_lookup.keys() if set(k).issubset(branch_labels_list)]
+        key = matching_keys[0]
+        value = sum(self.utility_lookup[key])
+        return value
 
 class DecisionTreeCreator_v3:
     def __init__(self) -> None:
@@ -366,6 +427,7 @@ class DecisionTreeCreator_v3:
     ) -> None:
         for node in nodes:
             treenode_id = uuid.uuid4()
+
             self.node_treenode_lookup.add_node_dto_and_treenode_id(node, treenode_id)
             await self.add_node(treenode_id)
 
@@ -453,7 +515,7 @@ class DecisionTreeCreator_v3:
                     cid_copy.nx.remove_node(node)  # type: ignore
         return decisions
 
-    async def calculate_partial_order_issues(self) -> List[uuid.UUID | None]:
+    async def calculate_partial_order_issue_ids(self) -> List[uuid.UUID | None]:
         partial_order = await self.calculate_partial_order()
         partial_order_issues = [self.node_treenode_lookup.get_dto_id_for_treenode_id(id) for id in partial_order]
         return partial_order_issues
@@ -461,10 +523,10 @@ class DecisionTreeCreator_v3:
     async def calculate_partial_order(self) -> list[uuid.UUID]:
         """Partial order algorithm
         """
-
         # get all chance nodes and sort according to child/parent relationship
         uncertainty_subgraph = self.nx.subgraph(await self.get_uncertainty_nodes()) # type: ignore
         uncertainty_nodes = list(nx.topological_sort(uncertainty_subgraph))   # type: ignore
+        #uncertainty_nodes = await self.get_uncertainty_nodes() old version
 
         elimination_order = await self.decision_elimination_order()
         # TODO: Add utility nodes
@@ -545,8 +607,10 @@ class DecisionTreeCreator_v3:
                     endpoint_end = await self.create_endpoint_node(project_id=project_id)
 
                 element[0].head = endpoint_end
+
                 await decision_tree.add_edge(element[0])  # node is added when the branch is added
 
+        await self.find_nodes_for_utilities(partial_order)
         await decision_tree.transfer_node_treenode_lookup(self.node_treenode_lookup)
         return decision_tree
 
@@ -563,3 +627,14 @@ class DecisionTreeCreator_v3:
         treenode_id = uuid.uuid4()
         self.node_treenode_lookup.add_node_dto_and_treenode_id(node, treenode_id)
         return treenode_id
+    
+    async def find_nodes_for_utilities(self, partial_order: List[uuid.UUID]):
+        for treenode_id in self.nx.nodes:
+            node = self.node_treenode_lookup.get_dto_for_treenode_id(treenode_id)
+            if node.type ==  Type.UTILITY.value:
+                edges_with_same_head = [s for s, t in self.nx.in_edges(treenode_id)]
+
+                indices = {elem: partial_order.index(elem) for elem in edges_with_same_head if elem in partial_order}
+                last_elem = max(indices, key=lambda k: indices[k])
+                last_node_id = self.node_treenode_lookup.get_dto_id_for_treenode_id(last_elem)
+                self.node_treenode_lookup.add_utility(last_node_id, treenode_id)
