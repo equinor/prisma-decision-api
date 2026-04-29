@@ -28,7 +28,6 @@ public class PrismaWebAppFactory : WebApplicationFactory<Program>
 
         IdentityModelEventSource.ShowPII = true;
 
-        Environment.SetEnvironmentVariable("SqlDb:ConnectionString", _testDbConnectionString);
         Environment.SetEnvironmentVariable("ConnectionStrings:SqliteConnection", _testDbConnectionString);
 
         Environment.SetEnvironmentVariable(IntegrationTestEnvVariables.IntegrationTestMarker,
