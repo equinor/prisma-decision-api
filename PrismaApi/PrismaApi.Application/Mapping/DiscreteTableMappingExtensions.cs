@@ -64,6 +64,11 @@ public static class DiscreteTableMappingExtensions
         return entities.Select(ToDto).ToList();
     }
 
+    public static List<DiscreteProbability> ToEntities(this IEnumerable<DiscreteProbabilityDto> dtos)
+    {
+        return dtos.Select(ToEntity).ToList();
+    }
+
     public static DiscreteProbabilityParentOutcomeDto ToDto(this DiscreteProbabilityParentOutcome entity)
     {
         return new DiscreteProbabilityParentOutcomeDto

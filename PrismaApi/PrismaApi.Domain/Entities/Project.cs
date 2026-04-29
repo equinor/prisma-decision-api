@@ -18,4 +18,6 @@ public class Project : AuditableEntity, IBaseEntity<Guid>
     public ICollection<Issue> Issues { get; set; } = new List<Issue>();
     public ICollection<Node> Nodes { get; set; } = new List<Node>();
     public ICollection<Edge> Edges { get; set; } = new List<Edge>();
+    public ICollection<Assessment> Assessments { get; set; } = new List<Assessment>();
+
 }

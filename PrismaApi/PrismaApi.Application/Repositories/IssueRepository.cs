@@ -86,7 +86,9 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
     private bool WillIssueChangeTables(Issue entity, Issue incomingEntity)
     {
         if (entity.Type != incomingEntity.Type) return true;
-        if (entity.Boundary != incomingEntity.Boundary && (incomingEntity.Boundary == Boundary.Out.ToString() || entity.Boundary == Boundary.Out.ToString())) return true;
+        if (!string.Equals(entity.Boundary, incomingEntity.Boundary, StringComparison.OrdinalIgnoreCase)
+            && (incomingEntity.Boundary.Equals(Boundary.Out.ToString(), StringComparison.OrdinalIgnoreCase) || entity.Boundary.Equals(Boundary.Out.ToString(), StringComparison.OrdinalIgnoreCase))) 
+            return true;
         return false;
     }
 
@@ -127,7 +129,7 @@ public static class IssueQueryableExtensions
         return query
             .Where(e =>
                 e.ProjectId == projectId &&
-                (e.Boundary == Boundary.In.ToString() || e.Boundary == Boundary.On.ToString()) &&
+                (e.Boundary.ToUpper() == Boundary.In.ToString().ToUpper() || e.Boundary.ToUpper() == Boundary.On.ToString().ToUpper()) &&
                 (e.Type == IssueType.Uncertainty.ToString() || e.Type == IssueType.Decision.ToString() || e.Type == IssueType.Utility.ToString()) &&
                 (
                     (e.Type == IssueType.Uncertainty.ToString() && e.Uncertainty!.IsKey == true) ||

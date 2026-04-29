@@ -22,6 +22,48 @@ namespace PrismaApi.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("PrismaApi.Domain.Entities.Assessment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UpdatedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("Assessments", (string)null);
+                });
+
             modelBuilder.Entity("PrismaApi.Domain.Entities.Decision", b =>
                 {
                     b.Property<Guid>("Id")
@@ -48,6 +90,63 @@ namespace PrismaApi.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Decisions");
+                });
+
+            modelBuilder.Entity("PrismaApi.Domain.Entities.DecisionQualityAssessment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AppropriateFrame")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("AssessmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasMaxLength(6000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CommitmentToAction")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("DoableAlternatives")
+                        .HasColumnType("int");
+
+                    b.Property<int>("InformationReliability")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReasoningCorrectness")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TradeOffAnalysis")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UpdatedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssessmentId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("DecisionQualityAssessments", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteProbability", b =>
@@ -702,6 +801,33 @@ namespace PrismaApi.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PrismaApi.Domain.Entities.Assessment", b =>
+                {
+                    b.HasOne("PrismaApi.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
+                        .WithMany("Assessments")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PrismaApi.Domain.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("PrismaApi.Domain.Entities.Decision", b =>
                 {
                     b.HasOne("PrismaApi.Domain.Entities.Issue", "Issue")
@@ -711,6 +837,33 @@ namespace PrismaApi.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Issue");
+                });
+
+            modelBuilder.Entity("PrismaApi.Domain.Entities.DecisionQualityAssessment", b =>
+                {
+                    b.HasOne("PrismaApi.Domain.Entities.Assessment", "Assessment")
+                        .WithMany("DecisionQualityAssessments")
+                        .HasForeignKey("AssessmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PrismaApi.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PrismaApi.Domain.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Assessment");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteProbability", b =>
@@ -1082,6 +1235,11 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Navigation("Issue");
                 });
 
+            modelBuilder.Entity("PrismaApi.Domain.Entities.Assessment", b =>
+                {
+                    b.Navigation("DecisionQualityAssessments");
+                });
+
             modelBuilder.Entity("PrismaApi.Domain.Entities.Decision", b =>
                 {
                     b.Navigation("Options");
@@ -1128,6 +1286,8 @@ namespace PrismaApi.Infrastructure.Migrations
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Project", b =>
                 {
+                    b.Navigation("Assessments");
+
                     b.Navigation("Edges");
 
                     b.Navigation("Issues");

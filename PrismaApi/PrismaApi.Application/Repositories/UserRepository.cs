@@ -44,9 +44,30 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
             .Include(u => u.ProjectRoles);
     }
 
+    private async Task<User?> GetByUserNameAsync(string userName, CancellationToken ct = default)
+    {
+        return await Query()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Name.ToLower() == userName.ToLower(), ct);
+    }
+
     public async Task<User> GetOrAddByIdAsync(UserIncomingDto dto, CancellationToken ct = default)
     {
         var existingUser = await GetByIdAsync(dto.Id, ct: ct);
+        if (existingUser != null)
+        {
+            return existingUser;
+        }
+
+        User user = dto.ToEntity();
+        await DbContext.Users.AddAsync(user, ct);
+        await DbContext.SaveChangesAsync(ct);
+
+        return user;
+    }
+    public async Task<User> GetOrAddByUserNameAsync(UserIncomingDto dto, CancellationToken ct = default)
+    {
+        var existingUser = await GetByUserNameAsync(dto.Name, ct: ct);
         if (existingUser != null)
         {
             return existingUser;

@@ -22,6 +22,8 @@ class DatabaseConnectionStrings(Enum):
             return config.DATABASE_CONN_TEST
         elif app_env == "prod":
             return config.DATABASE_CONN_PROD
+        elif app_env == "public":
+            return config.DATABASE_CONN_PUBLIC
         else:
             raise ValueError(f"Unknown environment: {app_env}")
 
