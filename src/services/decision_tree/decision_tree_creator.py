@@ -72,7 +72,6 @@ class DecisionTreeGraph:
             self.treenode_lookup.add_with_original_id(uuid.UUID(id), node)
 
     async def to_issue_dtos(self) -> Optional[DecisionTreeDto]:
-        time1 = time.time()
         await self.populate_utility_lookup()
         self.edge_names = nx.get_edge_attributes(self.nx, "name")  # type: ignore
         tg = nx.readwrite.json_graph.tree_data(self.nx, self.root)  # type: ignore
@@ -81,8 +80,6 @@ class DecisionTreeGraph:
         await self.calculate_endpointnode_values(tree_structure)
         # calculate expected values for the tree_nodes
         self.final_expected_value = await self.calculate_expected_values(tree_structure)
-        time2 = time.time()
-        print("Elapsed time:", time2 - time1, "seconds")
         return tree_structure
 
     async def calculate_expected_values(self, decision_tree: DecisionTreeDto | None) -> float:
