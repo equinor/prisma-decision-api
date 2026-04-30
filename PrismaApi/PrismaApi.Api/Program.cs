@@ -112,6 +112,7 @@ public class Program
         builder.Services.AddScoped<IProjectDuplicationRepository, ProjectDuplicationRepository>();
         builder.Services.AddScoped<IAssessmentRepository, AssessmentRepository>();
         builder.Services.AddScoped<IDecisionQualityAssessmentRepository, DecisionQualityAssessmentRepository>();
+        builder.Services.AddScoped<IBoardNodeRepository, BoardNodeRepository>();
 
         builder.Services.AddScoped<ITableRebuildingService, TableRebuildingService>();
         builder.Services.AddScoped<IProjectService, ProjectService>();
@@ -130,6 +131,7 @@ public class Program
         builder.Services.AddScoped<IStrategyService, StrategyService>();
         builder.Services.AddScoped<IObjectiveService, ObjectiveService>();
         builder.Services.AddScoped<IProjectRoleService, ProjectRoleService>();
+        builder.Services.AddScoped<IBoardNodeService, BoardNodeService>();
 
         if (isPublicInstance)
         {

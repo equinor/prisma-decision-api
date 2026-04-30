@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Interfaces.Repositories;
 
-public interface IObjectiveRepository : ICrudRepository<Objective, Guid>
+public interface IBoardNodeRepository : ICrudRepository<BoardNode, Guid>
 {
-    Task UpdateRangeAsync(IEnumerable<Objective> incomingEntities, Expression<Func<Objective, bool>> filterPredicate, CancellationToken ct = default);
+    Task UpdateRangeAsync(IEnumerable<BoardNode> incomingEntities, Expression<Func<BoardNode, bool>> filterPredicate, CancellationToken ct = default);
 }
