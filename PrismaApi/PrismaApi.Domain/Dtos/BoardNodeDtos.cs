@@ -30,7 +30,7 @@ public class BoardNodeIncomingDto : BoardNodeDto
 {
     [JsonPropertyName("type")]
     [EnumDataType(typeof(BoardNodeTypes), ErrorMessage = "Invalid Type")]
-    public string Type { get; set; } = BoardNodeTypes.Text.ToString();
+    public required string Type { get; set; }
 }
 
 public class BoardNodeOutgoingDto : BoardNodeDto
