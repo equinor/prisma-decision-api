@@ -132,7 +132,7 @@ class DecisionTreeGraph_v3:
         return order   
     
     def to_issue_dtos(self) -> Optional[TreeNodeDto2]:
-        self.populate_utility_lookup() # create lookup for discrete utilitiesgit 
+        self.populate_utility_lookup() # create lookup for discrete utilities
         self.populate_discrete_probabilities_lookup() # create lookup for discrete probabilities
         self.edge_names = nx.get_edge_attributes(self.nx, "name") # type: ignore
         dto_map = self.get_dto_map()
@@ -150,7 +150,7 @@ class DecisionTreeGraph_v3:
             new_map[new_id] = dto
         return new_map
     
-    def find_root_id(self, dto_map: Dict[uuid.UUID, TreeNodeDto2]) -> uuid.UUID | None:
+    def find_root_id(self, dto_map: Dict[uuid.UUID, TreeNodeDto2]) -> Optional[uuid.UUID | None]:
         all_ids: Set[uuid.UUID] = set(dto_map.keys())
         child_ids: Set[uuid.UUID] = set(
             child.id
@@ -488,7 +488,7 @@ class DecisionTreeCreator_v3:
                     cid_copy.nx.remove_node(node)  # type: ignore
         return decisions
 
-    def calculate_partial_order_issue_ids(self) -> List[uuid.UUID | None]:
+    def calculate_partial_order_issue_ids(self) -> Optional[List[uuid.UUID | None]]:
         partial_order = self.calculate_partial_order()
         partial_order_issues = [self.node_treenode_lookup.get_dto_id_for_treenode_id(id) for id in partial_order]
         return partial_order_issues
