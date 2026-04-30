@@ -1,5 +1,6 @@
-using System;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using PrismaApi.Domain.Constants;
 
 namespace PrismaApi.Domain.Dtos;
 
@@ -9,8 +10,6 @@ public class BoardNodeDto
     public Guid Id { get; set; }
     [JsonPropertyName("project_id")]
     public Guid ProjectId { get; set; }
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = string.Empty;
     [JsonPropertyName("height")]
     public double Height { get; set; }
     [JsonPropertyName("width")]
@@ -29,8 +28,13 @@ public class BoardNodeDto
 
 public class BoardNodeIncomingDto : BoardNodeDto
 {
+    [JsonPropertyName("type")]
+    [EnumDataType(typeof(BoardNodeTypes), ErrorMessage = "Invalid Type")]
+    public string Type { get; set; } = BoardNodeTypes.Text.ToString();
 }
 
 public class BoardNodeOutgoingDto : BoardNodeDto
 {
+    [JsonPropertyName("type")]
+    public required string Type { get; set; }
 }

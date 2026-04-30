@@ -16,13 +16,3 @@ public class BoardNode : AuditableEntity, IBaseEntity<Guid>
     public string Color { get; set; } = string.Empty;
     public Project? Project { get; set; }
 }
-
-public enum BoardNodeTypes
-{
-    Rectagle,
-    Freehand,
-    Text,
-    Arrow,
-    Circle,
-    Issue
-}
