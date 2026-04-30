@@ -1,6 +1,7 @@
 import uuid
 from typing import List, Optional
 from pydantic import BaseModel, Field
+from src.constants import Type
 from src.dtos.issue_dtos import IssueOutgoingDto
 
 
@@ -24,6 +25,9 @@ class ProbabilityDto(BaseModel):
     probability_value: float
     discrete_probability_id: uuid.UUID
 
+class ProbabilityDto2(BaseModel):
+    outcome_id: uuid.UUID
+    probability_value: float
 
 class UtilityDTDto(BaseModel):
     option_name: Optional[str] = None
@@ -31,6 +35,11 @@ class UtilityDTDto(BaseModel):
     outcome_name: Optional[str] = None
     outcome_id: Optional[uuid.UUID] = None
     utility_value: float
+
+class UtilityDTDto2(BaseModel):
+    option_id: Optional[uuid.UUID] = None
+    outcome_id: Optional[uuid.UUID] = None
+    utility_value: float    
 
 
 class TreeNodeDto(BaseModel):
@@ -40,6 +49,18 @@ class TreeNodeDto(BaseModel):
     probabilities: Optional[list[ProbabilityDto]] = None
     utilities: Optional[list[UtilityDTDto]] = None
     children: Optional[List["DecisionTreeDto"]] = None
+
+
+class TreeNodeDto2(BaseModel):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4)
+    issue_id: uuid.UUID
+    type: str = Type.UNASSIGNED.value
+    expected_value: Optional[float] = None #only for decision and uncertainty nodes
+    endpoint_value: Optional[float] = None #only for endpoint nodes
+    cumulative_probability: Optional[float] = None #only for endpoint nodes
+    probabilities: Optional[list[ProbabilityDto2]] = None
+    utilities: Optional[list[UtilityDTDto2]] = None
+    children: Optional[List["TreeNodeDto2"]] = None
 
 
 class DecisionTreeDto(BaseModel):
