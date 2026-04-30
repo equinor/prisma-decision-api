@@ -38,6 +38,8 @@ public class ProjectRoleService: IProjectRoleService
         var entities = dtos.ToEntities(userDto);
         // FacilitatorUserFilter restricts updates to facilitators only, since Role is the sole protected property.
         // If non-facilitators need to update other ProjectRole properties in the future, split the filter logic accordingly.
+        if (!await _projectRoleRepository.IsUserFacilitatorFromRoleIdsAsync(dtos.Select(x => x.Id).ToList(), userDto, ct))
+            throw new InvalidOperationException("Only facilitators can update project roles.");
         await _projectRoleRepository.UpdateRangeAsync(entities, FacilitatorUserFilter(userDto), ct);
         var ids = dtos.Select(d => d.Id).ToList();
         var updated = await _projectRoleRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(userDto), ct: ct);
@@ -46,6 +48,13 @@ public class ProjectRoleService: IProjectRoleService
 
     public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
+        if (!await _projectRoleRepository.IsUserFacilitatorFromRoleIdsAsync(ids, user, ct))
+        {
+            var roles = await _projectRoleRepository.GetByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
+            if (!roles.All(x => x.UserId == user.Id))
+                throw new InvalidOperationException("Users can only delete their own project roles.");
+        }
+
         await _projectRoleRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
     }
 
