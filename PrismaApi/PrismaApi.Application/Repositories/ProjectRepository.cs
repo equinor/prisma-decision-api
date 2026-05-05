@@ -62,6 +62,7 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
             }
             entity.Objectives.Update(incomingEntity.Objectives, DbContext);
             entity.Strategies.Update(incomingEntity.Strategies, DbContext);
+            entity.BoardNodes.Update(incomingEntity.BoardNodes, DbContext);
         }
 
         await DbContext.SaveChangesAsync(ct);
@@ -72,6 +73,7 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
     {
         return DbContext.Projects
             .Include(p => p.Objectives)
+            .Include(p => p.BoardNodes)
             .Include(p => p.ProjectRoles)
                 .ThenInclude(pr => pr.User)
             .Include(p => p.Strategies)

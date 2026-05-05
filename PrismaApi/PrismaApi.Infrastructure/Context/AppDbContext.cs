@@ -40,6 +40,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Assessment> Assessments => Set<Assessment>();
     public DbSet<DecisionQualityAssessment> DecisionQualityAssessments => Set<DecisionQualityAssessment>();
+    public DbSet<BoardNode> BoardNodes => Set<BoardNode>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -86,6 +87,11 @@ public class AppDbContext : DbContext
                 .WithOne(e => e.Project)
                 .HasForeignKey(e => e.ProjectId)
                 .OnDelete(DeleteBehavior.NoAction); // will be cascade deleted through Issues
+
+            entity.HasMany(e => e.BoardNodes)
+                .WithOne(e => e.Project)
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasMany(e => e.Edges)
                 .WithOne(e => e.Project)
@@ -429,6 +435,22 @@ public class AppDbContext : DbContext
             entity.ToTable("DecisionQualityAssessments");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Comment).HasMaxLength(DomainConstants.MaxLongStringLength);
+            entity.HasOne(e => e.CreatedBy)
+            .WithMany()
+            .HasForeignKey(e => e.CreatedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<BoardNode>(entity =>
+        {
+            entity.ToTable("BoardNode");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Color).HasMaxLength(DomainConstants.MaxShortStringLength);
+            entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.HasOne(e => e.CreatedBy)
             .WithMany()
             .HasForeignKey(e => e.CreatedById)

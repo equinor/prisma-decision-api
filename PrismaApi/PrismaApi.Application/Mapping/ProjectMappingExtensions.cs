@@ -19,7 +19,8 @@ public static class ProjectMappingExtensions
             EndDate = entity.EndDate,
             Objectives = entity.Objectives.ToOutgoingDtos(),
             Strategies = entity.Strategies.ToOutgoingDtos(),
-            Users = entity.ProjectRoles.ToOutgoingDtos()
+            Users = entity.ProjectRoles.ToOutgoingDtos(),
+            BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
         };
     }
 
@@ -36,7 +37,8 @@ public static class ProjectMappingExtensions
             EndDate = entity.EndDate,
             Objectives = entity.Objectives.ToOutgoingDtos(),
             Strategies = entity.Strategies.ToOutgoingDtos(),
-            Users = entity.ProjectRoles.ToOutgoingDtos()
+            Users = entity.ProjectRoles.ToOutgoingDtos(),
+            BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
         };
     }
 
@@ -65,7 +67,8 @@ public static class ProjectMappingExtensions
             Strategies = entity.Strategies.ToOutgoingDtos(),
             Users = entity.ProjectRoles.ToOutgoingDtos(),
             Issues = entity.Issues.ToOutgoingDtos(),
-            Edges = entity.Edges.ToOutgoingDtos()
+            Edges = entity.Edges.ToOutgoingDtos(),
+            BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
         };
     }
 
@@ -83,7 +86,8 @@ public static class ProjectMappingExtensions
             CreatedById = userDto.Id,
             UpdatedById = userDto.Id,
             Objectives = dto.Objectives.ToEntities(dto.Id, userDto),
-            ProjectRoles = dto.Users.ToEntities(userDto)
+            ProjectRoles = dto.Users.ToEntities(userDto),
+            BoardNodes = dto.BoardNodes.ToEntities(userDto),
         };
     }
 
@@ -102,7 +106,8 @@ public static class ProjectMappingExtensions
             UpdatedById = userDto.Id,
             Objectives = dto.Objectives.ToEntities(dto.Id, userDto),
             Strategies = dto.Strategies.ToEntities(userDto),
-            ProjectRoles = dto.Users.ToEntities(userDto)
+            ProjectRoles = dto.Users.ToEntities(userDto),
+            BoardNodes = dto.BoardNodes.ToEntities(userDto),
         };
     }
 
