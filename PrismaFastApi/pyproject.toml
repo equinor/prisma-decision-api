@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Python Fast Api for the Decision Optimization Project"
 authors = ["EinarSalbouvet <esalo@equinor.com>"]
 license = "GNU GENERAL PUBLIC LICENSE"
-readme = "README.md"
+readme = "../README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
