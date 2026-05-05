@@ -1,8 +1,6 @@
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from src.session_manager import sessionmanager
 from src.services.pyagrum_solver import PyagrumSolver
-from src.services.project_service import ProjectService
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator
 from src.services.decision_tree_pruning_service import (
     DecisionTreePruningService,
@@ -22,34 +20,27 @@ executor = ThreadPoolExecutor()
 class SolverService:
     def __init__(
         self,
-        project_service: ProjectService,
     ):
-        self.project_service = project_service
+        pass
 
-    async def find_optimal_decision_pyagrum(self, project_id: uuid.UUID) -> SolutionDto:
-        async for session in sessionmanager.get_session():
-            (
-                issues,
-                edges,
-            ) = await self.project_service.get_influence_diagram_data(session, project_id)
+    async def find_optimal_decision_pyagrum(
+        self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]
+    ) -> SolutionDto:
 
         solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
 
         return solution
 
     async def find_optimal_decision_pyagrum_from_dtos(
-        self, issues: list[IssueOutgoingDto] = [], edges: list[EdgeOutgoingDto] = []
+        self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]
     ):
         solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
 
         return solution
 
-    async def get_decision_tree_for_optimal_decisions_old(self, project_id: uuid.UUID):
-        async for session in sessionmanager.get_session():
-            (
-                issues,
-                edges,
-            ) = await self.project_service.get_influence_diagram_data(session, project_id)
+    async def get_decision_tree_for_optimal_decisions_old(
+        self, project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]
+    ):
 
         solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
 
@@ -62,16 +53,15 @@ class SolverService:
         )
 
         dt_dtos = await decision_tree.to_issue_dtos_old()
+        if dt_dtos is None:
+            raise ValueError("Failed to generate decision tree")
 
         pruning_service = DecisionTreePruningServiceOld(pruner=OptimalDecisionTreePrunerOld())
         return pruning_service.prune_tree_for_optimal_decisions(dt_dtos, solution)
 
-    async def get_decision_tree_for_optimal_decisions(self, project_id: uuid.UUID):
-        async for session in sessionmanager.get_session():
-            (
-                issues,
-                edges,
-            ) = await self.project_service.get_influence_diagram_data(session, project_id)
+    async def get_decision_tree_for_optimal_decisions(
+        self, project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]
+    ):
 
         solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
 
@@ -84,6 +74,8 @@ class SolverService:
         )
 
         dt_dtos = await decision_tree.to_issue_dtos()
+        if dt_dtos is None:
+            raise ValueError("Failed to generate decision tree")
 
         pruning_service = DecisionTreePruningService(pruner=OptimalDecisionTreePruner())
         return pruning_service.prune_tree_for_optimal_decisions(dt_dtos, solution)
@@ -91,8 +83,8 @@ class SolverService:
     async def get_decision_tree_for_optimal_decisions_from_dtos(
         self,
         project_id: uuid.UUID,
-        issues: list[IssueOutgoingDto] = [],
-        edges: list[EdgeOutgoingDto] = [],
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
     ):
         solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
 
@@ -105,6 +97,8 @@ class SolverService:
         )
 
         dt_dtos = await decision_tree.to_issue_dtos()
+        if dt_dtos is None:
+            raise ValueError("Failed to generate decision tree")
 
         pruning_service = DecisionTreePruningService(pruner=OptimalDecisionTreePruner())
         return pruning_service.prune_tree_for_optimal_decisions(dt_dtos, solution)

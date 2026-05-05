@@ -71,7 +71,7 @@ spec:
         - APPINSIGHTS_CONNECTIONSTRING
       resources:
         requests:
-          memory: '2000Mi'
+          memory: '10000Mi'
           cpu: '200m'
         limits:
           memory: '10000Mi'
