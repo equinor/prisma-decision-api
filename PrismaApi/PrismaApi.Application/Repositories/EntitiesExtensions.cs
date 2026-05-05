@@ -12,7 +12,7 @@ public static class EntitiesExtensions
     public static void Update(this ICollection<ProjectRole> entities, ICollection<ProjectRole> incomingEntities, AppDbContext context)
     {
         // delete
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<ProjectRole, Guid>(incomingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<ProjectRole, Guid>(incomingEntities, entities, context);
 
         // create
         RepositoryUtilities.AddMissingFromCollectionMutate<ProjectRole, Guid>(incomingEntities, entities, context);
@@ -34,7 +34,7 @@ public static class EntitiesExtensions
     public static void Update(this ICollection<Objective> entities, ICollection<Objective> incomingEntities, AppDbContext context)
     {
         // delete
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<Objective, Guid>(incomingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<Objective, Guid>(incomingEntities, entities, context);
 
         // create
         RepositoryUtilities.AddMissingFromCollectionMutate<Objective, Guid>(incomingEntities, entities, context);
@@ -54,7 +54,7 @@ public static class EntitiesExtensions
     public static void Update(this ICollection<Assessment> entities, ICollection<Assessment> incomingEntities, AppDbContext context)
     {
         // delete
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<Assessment, Guid>(incomingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<Assessment, Guid>(incomingEntities, entities, context);
 
         // create
         RepositoryUtilities.AddMissingFromCollectionMutate<Assessment, Guid>(incomingEntities, entities, context);
@@ -71,7 +71,7 @@ public static class EntitiesExtensions
     public static void Update(this ICollection<DecisionQualityAssessment> entities, ICollection<DecisionQualityAssessment> incomingEntities, AppDbContext context)
     {
         // delete
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<DecisionQualityAssessment, Guid>(incomingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<DecisionQualityAssessment, Guid>(incomingEntities, entities, context);
 
         // create
         RepositoryUtilities.AddMissingFromCollectionMutate<DecisionQualityAssessment, Guid>(incomingEntities, entities, context);
@@ -93,7 +93,7 @@ public static class EntitiesExtensions
     public static void Update(this ICollection<Strategy> entities, ICollection<Strategy> incomingEntities, AppDbContext context)
     {
         // delete
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<Strategy, Guid>(incomingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<Strategy, Guid>(incomingEntities, entities, context);
 
         // create
         RepositoryUtilities.AddMissingFromCollectionMutate<Strategy, Guid>(incomingEntities, entities, context);
@@ -164,7 +164,7 @@ public static class EntitiesExtensions
 
     public static async Task Update(this ICollection<Option> entities, ICollection<Option> incomingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<Option, Guid>(incomingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<Option, Guid>(incomingEntities, entities, context);
         var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Option, Guid>(incomingEntities, entities);
         foreach (var entityToAdd in entitiesToAdd)
         {
@@ -198,7 +198,7 @@ public static class EntitiesExtensions
 
     public static async Task Update(this ICollection<Outcome> entities, ICollection<Outcome> incomingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<Outcome, Guid>(incomingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<Outcome, Guid>(incomingEntities, entities, context);
         var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Outcome, Guid>(incomingEntities, entities);
         foreach (var entityToAdd in entitiesToAdd)
         {
@@ -220,7 +220,7 @@ public static class EntitiesExtensions
 
     public static void Update(this ICollection<DiscreteProbability> entities, ICollection<DiscreteProbability> incomingEntities, AppDbContext context)
     {
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<DiscreteProbability, Guid>(incomingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<DiscreteProbability, Guid>(incomingEntities, entities, context);
         RepositoryUtilities.AddMissingFromCollectionMutate<DiscreteProbability, Guid>(incomingEntities, entities, context);
         foreach (var entity in entities)
         {
@@ -239,7 +239,7 @@ public static class EntitiesExtensions
 
     public static void Update(this ICollection<DiscreteUtility> entities, ICollection<DiscreteUtility> incomingEntities, AppDbContext context)
     {
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<DiscreteUtility, Guid>(incomingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<DiscreteUtility, Guid>(incomingEntities, entities, context);
         RepositoryUtilities.AddMissingFromCollectionMutate<DiscreteUtility, Guid>(incomingEntities, entities, context);
         foreach (var entity in entities)
         {

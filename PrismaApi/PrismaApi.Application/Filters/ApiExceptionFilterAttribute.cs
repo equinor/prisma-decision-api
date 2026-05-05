@@ -20,6 +20,7 @@ public class ApiExceptionFilterAttribute : ExceptionFilterAttribute
             { typeof(NullReferenceException), HandleNullReferenceException },
             { typeof(ArgumentOutOfRangeException), HandleArgumentOutOfRangeException },
             { typeof(ArgumentException), HandleArgumentException },
+            { typeof(InvalidOperationException), HandleInvalidOperationException },
             { typeof(DbUpdateException), HandleDbUpdateException },
             { typeof(UnauthorizedAccessException), HandleUnauthorizedAccessException },
             { typeof(TaskCanceledException), HandleTaskCanceledException },
@@ -231,6 +232,22 @@ public class ApiExceptionFilterAttribute : ExceptionFilterAttribute
 
         context.ExceptionHandled = true;
     }
+
+    private static void HandleInvalidOperationException(ExceptionContext context)
+    {
+        var exception = (InvalidOperationException)context.Exception;
+
+        var details = new ProblemDetails
+        {
+            Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1",
+            Detail = exception.GetInnermostExceptionMessage()
+        };
+
+        context.Result = new BadRequestObjectResult(details);
+
+        context.ExceptionHandled = true;
+    }
+    
 
     private static void HandleInvalidModelStateException(ExceptionContext context)
     {

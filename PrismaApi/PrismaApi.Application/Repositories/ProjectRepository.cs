@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces.Repositories;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
@@ -35,12 +36,17 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
     }
 
 
-    public async Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incomingEntities, Expression<Func<Project, bool>> filterPredicate, CancellationToken ct = default)
+    public async Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incomingEntities, UserOutgoingDto userDto, Expression<Func<Project, bool>> filterPredicate, CancellationToken ct = default)
     {
         var entities = await GetByIdsAsync(incomingEntities.Select(e => e.Id), withTracking: true, filterPredicate: filterPredicate, ct: ct);
         foreach (var entity in entities)
         {
             var incomingEntity = incomingEntities.Where(x => x.Id == entity.Id).First();
+
+            // if user is not a facillitator, they cannnot change the role type.
+            bool isUserFacillitator = entity.ProjectRoles
+                .Any(r => string.Equals(r.Role, ProjectRoleType.Facilitator.ToString(), StringComparison.OrdinalIgnoreCase) && r.UserId == userDto.Id);
+
 
             entity.Name = incomingEntity.Name;
             entity.OpportunityStatement = incomingEntity.OpportunityStatement;
@@ -50,7 +56,10 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
             entity.EndDate = incomingEntity.EndDate;
             entity.UpdatedById = incomingEntity.UpdatedById;
 
-            entity.ProjectRoles.Update(incomingEntity.ProjectRoles, DbContext);
+            if (isUserFacillitator && incomingEntity.ProjectRoles.Count != 0)
+            {
+                entity.ProjectRoles.Update(incomingEntity.ProjectRoles, DbContext);
+            }
             entity.Objectives.Update(incomingEntity.Objectives, DbContext);
             entity.Strategies.Update(incomingEntity.Strategies, DbContext);
         }

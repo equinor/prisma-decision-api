@@ -450,6 +450,7 @@ public class AppDbContext : DbContext
     public async override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         UpdateTimestamps();
+        await EnforceMinimumProjectRoles(cancellationToken);
         await OnNodeDeletedCleanupAsync(cancellationToken);
         await OnOutcomeDeletedCleanupAsync(cancellationToken);
         await OnOptionDeletedCleanupAsync(cancellationToken);
@@ -491,6 +492,43 @@ public class AppDbContext : DbContext
             }
 
             entry.Entity.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+    }
+
+    private async Task EnforceMinimumProjectRoles(CancellationToken cancellationToken)
+    {
+        // get the roles that have been deleted or modified and group by the project id
+        // to make it easier to iterate over the projects
+        var affectedByProject = ChangeTracker
+            .Entries<ProjectRole>()
+            .Where(e => e.State == EntityState.Deleted || e.State == EntityState.Modified)
+            .GroupBy(e => e.Entity.ProjectId)
+            .ToDictionary(g => g.Key, g => g);
+
+        if (affectedByProject.Count == 0)
+            return;
+
+        foreach (var (projectId, roles) in affectedByProject)
+        {
+            var facilitatorsBeingRemoved = roles.Count(role =>
+                role.State == EntityState.Deleted
+                    ? string.Equals(role.Entity.Role, ProjectRoleType.Facilitator.ToString(), StringComparison.OrdinalIgnoreCase)
+                    : string.Equals(
+                        role.OriginalValues.GetValue<string>(nameof(ProjectRole.Role)),
+                        ProjectRoleType.Facilitator.ToString(),
+                        StringComparison.OrdinalIgnoreCase));
+
+            if (facilitatorsBeingRemoved == 0)
+                continue;
+
+            var currentFacilitatorCount = await ProjectRoles
+                .AsNoTracking()
+                .CountAsync(r => r.ProjectId == projectId &&
+                                 r.Role.ToUpper() == ProjectRoleType.Facilitator.ToString().ToUpper(),
+                             cancellationToken);
+
+            if (currentFacilitatorCount - facilitatorsBeingRemoved <= 0)
+                throw new InvalidOperationException("Projects must have at least one Facilitator.");
         }
     }
 
