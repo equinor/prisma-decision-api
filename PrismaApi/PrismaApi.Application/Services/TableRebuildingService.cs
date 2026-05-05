@@ -1,12 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Constants;
+using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
 
 namespace PrismaApi.Application.Services;
 
-public class TableRebuildingService: ITableRebuildingService
+public class TableRebuildingService : ITableRebuildingService
 {
     protected readonly AppDbContext DbContext;
     public TableRebuildingService(AppDbContext dbContext)
@@ -245,34 +246,93 @@ public class TableRebuildingService: ITableRebuildingService
         return (parentOutcomesList, parentOptionsList);
     }
 
-    private void RemoveDiscreteProbabilities(IEnumerable<DiscreteProbability> probabilities)
+    public async Task RemoveExcessDataInTables(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var probabilityIds = probabilities.Select(probability => probability.Id).ToList();
-        if (probabilityIds.Count == 0)
+        var discreteUncertaintyIds = await DbContext.Uncertainties
+            .Where(x => x.Issue!.ProjectId == projectId && x.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id))
+            .Select(e => e.Id).ToListAsync(ct);
+        var discreteUtilityIds = await DbContext.Utilities
+            .Where(x => x.Issue!.ProjectId == projectId && x.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id))
+            .Select(e => e.Id).ToListAsync(ct);
+        foreach (var id in discreteUncertaintyIds) await RemoveExcessDiscreteProbabilities(id, ct);
+        foreach (var id in discreteUtilityIds) await RemoveExcessDiscreteUtilities(id, ct);
+        await DbContext.SaveChangesAsync(ct);
+    }
+
+    public async Task RemoveExcessDiscreteProbabilities(Guid uncertaintyId, CancellationToken ct = default)
+    {
+        var discreteProbabilities = await FindExcessDiscreteProbabilities(uncertaintyId, ct);
+        RemoveDiscreteProbabilities(discreteProbabilities);
+    }
+
+    public async Task RemoveExcessDiscreteUtilities(Guid utilityId, CancellationToken ct = default)
+    {
+        var discreteUtilities = await FindExcessDiscreteUtility(utilityId, ct);
+        RemoveDiscreteUtilities(discreteUtilities);
+    }
+
+    private async Task<IEnumerable<DiscreteProbability>> FindExcessDiscreteProbabilities(Guid uncertaintyId, CancellationToken ct = default)
+    {
+        var discreteProbabilities = await DbContext.DiscreteProbabilities
+            .Where(p => p.UncertaintyId == uncertaintyId)
+            .Include(p => p.ParentOutcomes)
+            .Include(p => p.ParentOptions)
+            .ToListAsync(ct);
+
+        return discreteProbabilities
+            .GroupBy(p => (
+                p.OutcomeId,
+                ParentOutcomes: string.Join(",", p.ParentOutcomes.Select(o => o.ParentOutcomeId).OrderBy(id => id)),
+                ParentOptions: string.Join(",", p.ParentOptions.Select(o => o.ParentOptionId).OrderBy(id => id))
+            ))
+            .SelectMany(group => group.Skip(1));
+    }
+
+    private async Task<IEnumerable<DiscreteUtility>> FindExcessDiscreteUtility(Guid utilityId, CancellationToken ct = default)
+    {
+        var discreteUtilities = await DbContext.DiscreteUtilities
+            .Where(p => p.UtilityId == utilityId)
+            .Include(p => p.ParentOutcomes)
+            .Include(p => p.ParentOptions)
+            .ToListAsync(ct);
+
+        return discreteUtilities
+            .GroupBy(p => (
+                p.ValueMetricId,
+                ParentOutcomes: string.Join(",", p.ParentOutcomes.Select(o => o.ParentOutcomeId).OrderBy(id => id)),
+                ParentOptions: string.Join(",", p.ParentOptions.Select(o => o.ParentOptionId).OrderBy(id => id))
+            ))
+            .SelectMany(group => group.Skip(1));
+    }
+
+    private void RemoveDiscreteProbabilities(IEnumerable<DiscreteProbability> discreteProbabilities)
+    {
+        var discreteProbabilityIds = discreteProbabilities.Select(probability => probability.Id).ToList();
+        if (discreteProbabilityIds.Count == 0)
         {
             return;
         }
 
         DbContext.DiscreteProbabilityParentOutcomes.RemoveRange(
-            DbContext.DiscreteProbabilityParentOutcomes.Where(parent => probabilityIds.Contains(parent.DiscreteProbabilityId)));
+            DbContext.DiscreteProbabilityParentOutcomes.Where(parent => discreteProbabilityIds.Contains(parent.DiscreteProbabilityId)));
         DbContext.DiscreteProbabilityParentOptions.RemoveRange(
-            DbContext.DiscreteProbabilityParentOptions.Where(parent => probabilityIds.Contains(parent.DiscreteProbabilityId)));
-        DbContext.DiscreteProbabilities.RemoveRange(probabilities);
+            DbContext.DiscreteProbabilityParentOptions.Where(parent => discreteProbabilityIds.Contains(parent.DiscreteProbabilityId)));
+        DbContext.DiscreteProbabilities.RemoveRange(discreteProbabilities);
     }
 
-    private void RemoveDiscreteUtilities(IEnumerable<DiscreteUtility> utilities)
+    private void RemoveDiscreteUtilities(IEnumerable<DiscreteUtility> discreteUtilities)
     {
-        var utilityIds = utilities.Select(utility => utility.Id).ToList();
-        if (utilityIds.Count == 0)
+        var discreteUtilityIds = discreteUtilities.Select(utility => utility.Id).ToList();
+        if (discreteUtilityIds.Count == 0)
         {
             return;
         }
 
         DbContext.DiscreteUtilityParentOutcomes.RemoveRange(
-            DbContext.DiscreteUtilityParentOutcomes.Where(parent => utilityIds.Contains(parent.DiscreteUtilityId)));
+            DbContext.DiscreteUtilityParentOutcomes.Where(parent => discreteUtilityIds.Contains(parent.DiscreteUtilityId)));
         DbContext.DiscreteUtilityParentOptions.RemoveRange(
-            DbContext.DiscreteUtilityParentOptions.Where(parent => utilityIds.Contains(parent.DiscreteUtilityId)));
-        DbContext.DiscreteUtilities.RemoveRange(utilities);
+            DbContext.DiscreteUtilityParentOptions.Where(parent => discreteUtilityIds.Contains(parent.DiscreteUtilityId)));
+        DbContext.DiscreteUtilities.RemoveRange(discreteUtilities);
     }
 
     private static List<List<Guid>> BuildCombinations(List<List<Guid>> groups)
