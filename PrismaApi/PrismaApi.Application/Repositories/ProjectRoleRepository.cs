@@ -37,7 +37,6 @@ public class ProjectRoleRepository : BaseRepository<ProjectRole, Guid>, IProject
             .Where(x => projectIds.Contains(x.ProjectId) 
                 && x.Role.ToUpper() == ProjectRoleType.Facilitator.ToString().ToUpper()
                 && x.UserId == userDto.Id)
-            .DistinctBy(y => y.ProjectId) // in case user has several facilitator roles for one project
             .CountAsync(ct);
     }
 
@@ -47,7 +46,6 @@ public class ProjectRoleRepository : BaseRepository<ProjectRole, Guid>, IProject
             .Where(x => roleIds.Contains(x.Id)
                 && x.Role.ToUpper() == ProjectRoleType.Facilitator.ToString().ToUpper()
                 && x.UserId == userDto.Id)
-            .DistinctBy(y => y.ProjectId) // incase user has several facilitator roles for one project
             .CountAsync(ct);
     }
 
