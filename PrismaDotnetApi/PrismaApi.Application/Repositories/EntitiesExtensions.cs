@@ -55,7 +55,7 @@ public static class EntitiesExtensions
     public static void Update(this ICollection<BoardNode> entities, ICollection<BoardNode> incomingEntities, AppDbContext context)
     {
         // delete
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<BoardNode, Guid>(incomingEntities, entities);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<BoardNode, Guid>(incomingEntities, entities, context);
 
         // create
         RepositoryUtilities.AddMissingFromCollectionMutate<BoardNode, Guid>(incomingEntities, entities, context);
