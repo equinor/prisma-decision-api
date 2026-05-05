@@ -51,6 +51,33 @@ public static class EntitiesExtensions
             entity.UpdatedById = incomingEntity.UpdatedById;
         }
     }
+
+    public static void Update(this ICollection<BoardNode> entities, ICollection<BoardNode> incomingEntities, AppDbContext context)
+    {
+        // delete
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<BoardNode, Guid>(incomingEntities, entities);
+
+        // create
+        RepositoryUtilities.AddMissingFromCollectionMutate<BoardNode, Guid>(incomingEntities, entities, context);
+
+        // update
+        foreach (var entity in entities)
+        {
+            var incomingEntity = incomingEntities.Where(x => x.Id == entity.Id).First();
+
+            entity.ProjectId = incomingEntity.ProjectId;
+            entity.Type = incomingEntity.Type;
+            entity.Data = incomingEntity.Data;
+            entity.Color = incomingEntity.Color;
+            entity.Width = incomingEntity.Width;
+            entity.Height = incomingEntity.Height;
+            entity.Rotation = incomingEntity.Rotation;
+            entity.XPosition = incomingEntity.XPosition;
+            entity.YPosition = incomingEntity.YPosition;
+            entity.UpdatedById = incomingEntity.UpdatedById;
+        }
+    }
+
     public static void Update(this ICollection<Assessment> entities, ICollection<Assessment> incomingEntities, AppDbContext context)
     {
         // delete

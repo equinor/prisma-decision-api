@@ -75,3 +75,13 @@ public enum NodeState
     Option,
     Outcome
 }
+
+public enum BoardNodeTypes
+{
+    Rectagle,
+    Freehand,
+    Text,
+    Arrow,
+    Circle,
+    Issue
+}
