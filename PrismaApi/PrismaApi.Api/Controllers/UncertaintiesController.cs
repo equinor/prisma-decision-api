@@ -120,7 +120,7 @@ public class UncertaintiesController : PrismaBaseEntityController
             // check that the user has access to the uncertainty
             var uncertainty = await _uncertaintyService.GetAsync([id], user, ct) ?? throw new ArgumentException($"Uncertainty {id} not found or User lacks access to the Project");
 
-            await _tableRebuildingService.RemoveExcessProbabilities(id, ct);
+            await _tableRebuildingService.RemoveExcessDiscreteProbabilities(id, ct);
             await CommitTransactionAsync(ct);
             return NoContent();
         }

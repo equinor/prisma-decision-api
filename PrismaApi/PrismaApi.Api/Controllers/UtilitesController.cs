@@ -113,7 +113,7 @@ public class utilitiesController : PrismaBaseEntityController
             // check that the user has access to the utility
             var utility = await _utilityService.GetAsync([id], user, ct) ?? throw new ArgumentException($"Utility {id} not found or User lacks access to the Project");
 
-            await _tableRebuildingService.RemoveExcessUtilities(id, ct);
+            await _tableRebuildingService.RemoveExcessDiscreteUtilities(id, ct);
             await CommitTransactionAsync(ct);
             return NoContent();
         }
