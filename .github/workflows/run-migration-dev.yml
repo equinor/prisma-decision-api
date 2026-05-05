@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "alembic/**"
+      - "PrismaDotnetApi/SqlServerMigrations/**"
   workflow_dispatch:
 
 permissions: {}

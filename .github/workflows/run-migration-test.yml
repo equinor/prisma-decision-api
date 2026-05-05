@@ -5,7 +5,7 @@ on:
     tags:
       - "v*"
     paths:
-      - "alembic/**"
+      - "PrismaDotnetApi/SqlServerMigrations/**"
   workflow_dispatch:
 
 permissions: {}

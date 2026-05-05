@@ -77,7 +77,7 @@ jobs:
                   path: ./PrismaDotnetApi/PrismaApi.Test/TestResults
 
             - name: ReportGenerator
-              uses: danielpalme/ReportGenerator-GitHub-Action@62f9e7e02ebfc65363ab41a791f5765e25f80b7c # 5.2.0
+              uses: danielpalme/ReportGenerator-GitHub-Action@c31aa4ed4f12f147061186cf2a029f307b5c3636 # 5.2.0
               with:
                   reports: ./PrismaDotnetApi/PrismaApi.Test/TestResults/**/*.cobertura.xml
                   targetdir: coveragereport

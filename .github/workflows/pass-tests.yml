@@ -28,5 +28,6 @@ jobs:
           pip install poetry
 
       - name: Install dependencies
+        working-directory: PrismaFastApi
         run: |
           poetry install
