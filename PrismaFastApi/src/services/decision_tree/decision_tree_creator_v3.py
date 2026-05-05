@@ -7,8 +7,8 @@ import networkx as nx
 from collections import defaultdict
 from typing import Optional, Dict, Any, Union, List, Tuple, Iterator, Set, cast
 from fastapi import HTTPException
+from src.utils.generate_uuid import GenerateUuid
 from src.constants import Type
-from src.seed_database import GenerateUuid
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.dtos.option_dtos import OptionOutgoingDto

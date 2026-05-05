@@ -1,4 +1,0 @@
-[flake8]
-max-line-length = 100
-exclude = PrismaFastApi/src/config.py,PrismaFastApi/src/models/__init__.py,PrismaFastApi/src/seed_database.py
-ignore =  E501, W503
