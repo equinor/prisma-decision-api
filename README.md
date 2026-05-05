@@ -1,46 +1,45 @@
-# dot-api
+# Prisma Decisions API
 
-## Architecture and Guidelines
+Two APIs working together:
+- **.NET API** — handles the database and delegates to the Python API
+- **Python (FastAPI)** — interfaces with Python packages such as [pyagrum](https://pyagrum.readthedocs.io/)
 
-This API follows a service/repositories pattern. The main components are entities (SQLAlchemy declarative base) and Data Transfer Objects (DTOs, Pydantic classes). Here are some guidelines:
+## Quick start
 
-1. Each entity should have a dedicated repository to manage SQL queries using SQLAlchemy.
-1. Repositories should handle entities or related parameters as both input and output.
-1. Services are responsible for coordinating interactions between repositories.
-1. Services should accept incoming DTOs as input and return outgoing DTOs.
-1. Routes should primarily call a series of services and contain minimal logic.
-1. Each entity should have one or more DTOs representing versions that can be processed in the code.
-1. Transformation between entities and DTOs should be managed by a DTO mapper specific to each entity.
+### Python API ([Python 3.12+](https://www.python.org/downloads/))
 
-## SQLAlchemy Notes for Developers
+```bash
+pip install poetry
+poetry install
+uvicorn src.main:app --port 8080
+```
 
-When deleting entities, use iterative deletion rather than bulk `delete(self.model).where(self.model.id.in_(ids))`. Bulk deletes bypass SQLAlchemy's ORM cascade rules, so related objects may not be removed as expected. To ensure proper cascading and integrity, delete entities individually through the session.
+### .NET API ([.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0))
 
-## Get Started
+```bash
+cd PrismaApi
+dotnet build
+dotnet run
+```
 
-### Add Secrets
+## Database Migrations
 
-The secrets for this application are managed as environment variables. To add secrets locally, follow these steps:
+Migrations use Entity Framework Core with separate projects for SQLite and SQL Server ([docs](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/projects?tabs=dotnet-core-cli)).
 
-1. Create a `.env` file in the root of this repository.
-2. Add your secrets to the file. For example:
-    ```
-    CLIENT_SECRET=your_key
-    ```
+**Using scripts** (recommended — syncs both providers at once):
 
-Environment variables used can be found in `src/config.py`
+| Script | Purpose |
+|---|---|
+| `scripts/Add-Migrations.sh` | Add migration to SQLite and SQL Server |
+| `scripts/Remove-Last-Migration.sh` | Remove the last migration |
+| `scripts/Update-Sqlite-Database.sh` | Apply migrations to SQLite |
+| `scripts/Update-SqlServer-Database.sh` | Apply migrations to SQL Server |
 
-## Alembic
+Usage instructions are at the top of each script file.
 
-### Usefull commands
+**Manually** (from `PrismaApi/`):
 
--   Create migration: `alembic revision --autogenerate -m "Create a baseline migrations"`
--   Display the current revision for a database: `alembic current`
--   View migrations history: `alembic history --verbose`
--   Revert all migrations: `alembic downgrade base`
--   Apply all migrations:`alembic upgrade head`
--   Revert migrations one by one: `alembic downgrade -1`
--   Merge two migrations: `alembic merge head1 head2`
--   Apply migrations one by one: `alembic upgrade +1`
--   Display all raw SQL: `alembic upgrade head --sql`
--   Reset the database: `alembic downgrade base && alembic upgrade head`
+```bash
+dotnet ef migrations add YourMigrationName --project ./SqliteMigrations/SqliteMigrations.csproj --startup-project ./PrismaApi.Api/PrismaApi.Api.csproj -- --provider=sqlite
+dotnet ef migrations add YourMigrationName --project ./SqlServerMigrations/SqlServerMigrations.csproj --startup-project ./PrismaApi.Api/PrismaApi.Api.csproj -- --provider=sqlserver
+```

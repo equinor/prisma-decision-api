@@ -11,6 +11,10 @@
     <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.4.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.13" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.13" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.13">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Identity.Web" Version="4.3.0" />
     <PackageReference Include="Microsoft.Identity.Web.DownstreamApi" Version="4.3.0" />
     <PackageReference Include="Microsoft.Identity.Web.GraphServiceClient" Version="4.3.0" />
@@ -21,6 +25,8 @@
     <ProjectReference Include="..\PrismaApi.Application\PrismaApi.Application.csproj" />
     <ProjectReference Include="..\PrismaApi.Infrastructure\PrismaApi.Infrastructure.csproj" />
     <ProjectReference Include="..\PrismaApi.Domain\PrismaApi.Domain.csproj" />
+    <ProjectReference Include="..\SqliteMigrations\SqliteMigrations.csproj" />
+    <ProjectReference Include="..\SqlServerMigrations\SqlServerMigrations.csproj" />
   </ItemGroup>
 
 </Project>

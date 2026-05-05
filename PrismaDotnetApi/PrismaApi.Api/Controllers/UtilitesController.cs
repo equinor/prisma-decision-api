@@ -12,48 +12,48 @@ namespace PrismaApi.Api.Controllers;
 
 [ApiController]
 [Route("")]
-public class UncertaintiesController : PrismaBaseEntityController
+public class utilitiesController : PrismaBaseEntityController
 {
-    private readonly IUncertaintyService _uncertaintyService;
+    private readonly IUtilityService _utilityService;
     private readonly ITableRebuildingService _tableRebuildingService;
     private readonly IUserService _userService;
-    public UncertaintiesController(
-        IUncertaintyService uncertaintyService,
+    public utilitiesController(
+        IUtilityService utilityService,
         AppDbContext dbContext,
         ITableRebuildingService tableRebuildingService,
         IUserService userService)
         : base(dbContext)
     {
-        _uncertaintyService = uncertaintyService;
+        _utilityService = utilityService;
         _tableRebuildingService = tableRebuildingService;
         _userService = userService;
     }
 
-    [HttpGet("uncertainties/{id:guid}")]
-    public async Task<ActionResult<UncertaintyOutgoingDto>> GetUncertainty(Guid id, CancellationToken ct = default)
+    [HttpGet("utilities/{id:guid}")]
+    public async Task<ActionResult<UtilityOutgoingDto>> GetUtility(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _uncertaintyService.GetAsync(new List<Guid> { id }, user, ct);
+        var result = await _utilityService.GetAsync(new List<Guid> { id }, user, ct);
         return result.Count > 0 ? Ok(result[0]) : NotFound();
     }
 
-    [HttpGet("uncertainties")]
-    public async Task<ActionResult<List<UncertaintyOutgoingDto>>> GetAllUncertainties(CancellationToken ct = default)
+    [HttpGet("utilities")]
+    public async Task<ActionResult<List<UtilityOutgoingDto>>> GetAllutilities(CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var result = await _uncertaintyService.GetAllAsync(user, ct);
+        var result = await _utilityService.GetAllAsync(user, ct);
         return Ok(result);
     }
 
-    [HttpPut("uncertainties")]
-    public async Task<ActionResult<List<UncertaintyOutgoingDto>>> UpdateUncertainties([FromBody] List<UncertaintyIncomingDto> dtos, CancellationToken ct = default)
+    [HttpPut("utilities")]
+    public async Task<ActionResult<List<UtilityOutgoingDto>>> Updateutilities([FromBody] List<UtilityIncomingDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(ct);
         try
         {
-            var result = await _uncertaintyService.UpdateAsync(dtos, user, ct);
+            var result = await _utilityService.UpdateAsync(dtos, user, ct);
             await _tableRebuildingService.RebuildTablesAsync(ct);
             await CommitTransactionAsync(ct);
             return Ok(result);
@@ -65,15 +65,15 @@ public class UncertaintiesController : PrismaBaseEntityController
         }
     }
 
-    [HttpDelete("uncertainties/{id:guid}")]
-    public async Task<IActionResult> DeleteUncertainty(Guid id, CancellationToken ct = default)
+    [HttpDelete("utilities/{id:guid}")]
+    public async Task<IActionResult> DeleteUtility(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(ct);
         try
         {
-            await _uncertaintyService.DeleteAsync(new List<Guid> { id }, user, ct);
+            await _utilityService.DeleteAsync(new List<Guid> { id }, user, ct);
             await CommitTransactionAsync(ct);
             return NoContent();
         }
@@ -84,15 +84,15 @@ public class UncertaintiesController : PrismaBaseEntityController
         }
     }
 
-    [HttpDelete("uncertainties")]
-    public async Task<IActionResult> DeleteUncertainties([FromQuery] List<Guid> ids, CancellationToken ct = default)
+    [HttpDelete("utilities")]
+    public async Task<IActionResult> Deleteutilities([FromQuery] List<Guid> ids, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
         await BeginTransactionAsync(ct);
         try
         {
-            await _uncertaintyService.DeleteAsync(ids, user, ct);
+            await _utilityService.DeleteAsync(ids, user, ct);
             await CommitTransactionAsync(ct);
             return NoContent();
         }
@@ -103,24 +103,17 @@ public class UncertaintiesController : PrismaBaseEntityController
         }
     }
 
-    [HttpPost("uncertainties/{id:guid}/remake-probability-table")]
-    public async Task<IActionResult> RemakeProbabilityTable(Guid id, CancellationToken ct = default)
-    {
-        await _tableRebuildingService.RebuildIssuesFromIssueIds([id], ct);
-        return Ok();
-    }
-
-    [HttpPost("uncertainties/{id:guid}/table_cleanup")]
-    public async Task<IActionResult> CleanupProbabilityTableAsync([FromQuery] Guid id, CancellationToken ct = default)
+    [HttpPost("utilities/{id:guid}/table_cleanup")]
+    public async Task<IActionResult> CleanupUtilityTableAsync([FromQuery] Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
         await BeginTransactionAsync(ct);
         try
         {
-            // check that the user has access to the uncertainty
-            var uncertainty = await _uncertaintyService.GetAsync([id], user, ct) ?? throw new ArgumentException($"Uncertainty {id} not found or User lacks access to the Project");
+            // check that the user has access to the utility
+            var utility = await _utilityService.GetAsync([id], user, ct) ?? throw new ArgumentException($"Utility {id} not found or User lacks access to the Project");
 
-            await _tableRebuildingService.RemoveExcessDiscreteProbabilities(id, ct);
+            await _tableRebuildingService.RemoveExcessDiscreteUtilities(id, ct);
             await CommitTransactionAsync(ct);
             return NoContent();
         }

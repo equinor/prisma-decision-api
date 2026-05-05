@@ -67,7 +67,7 @@ public class ProjectService : IProjectService
         }
 
         var projectEntities = dtos.ToEntities(userDto);
-        var projects = await _projectRepository.UpdateRangeAsync(projectEntities, filterPredicate: UserFilter(userDto), ct);
+        var projects = await _projectRepository.UpdateRangeAsync(projectEntities, userDto, filterPredicate: UserFilter(userDto), ct);
         return projects.ToOutgoingDtos();
     }
 
