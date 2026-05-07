@@ -70,11 +70,11 @@ jobs:
         run: dotnet tool install --global dotnet-ef
 
       - name: Run migration
-        working-directory: PrismaDotnetApi/PrismaApi.Infrastructure
+        working-directory: PrismaDotnetApi/
         env:
           ASPNETCORE_ENVIRONMENT: ${{ inputs.env-name }}
         run: |
-          dotnet ef database update --startup-project ../PrismaApi.Api -- --provider=sqlserver
+          dotnet ef database update --project ./SqlServerMigrations/SqlServerMigrations.csproj --startup-project ../PrismaApi.Api -- --provider=sqlserver
 
       - name: Remove Firewall Rule
         env:

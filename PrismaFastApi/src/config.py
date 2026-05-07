@@ -17,16 +17,8 @@ class Config(BaseSettings):
 
     APPINSIGHTS_CONNECTIONSTRING: str = Field(default=os.getenv("APPINSIGHTS_CONNECTIONSTRING", ""))
     APP_ENV: str = Field(default=os.getenv("APP_ENV", "local"))
-    POOL_SIZE: int = 10
-    MAX_OVERFLOW: int = 20
-    POOL_RECYCLE: int = 1800
     # Database token duration in seconds (default: 50 minutes)
-    DB_TOKEN_DURATION: int = 3000
     DEBUG: bool = False
-
-    # Cache for 60 minutes
-    CACHE_DURATION: int = 3600
-    CACHE_MAX_SIZE: int = 256
 
     # use to enable PyInstrumentMiddleWare
     # this will generate a profile.html at repository root
