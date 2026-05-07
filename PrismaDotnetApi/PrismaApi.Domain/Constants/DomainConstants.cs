@@ -78,7 +78,7 @@ public enum NodeState
 
 public enum BoardNodeTypes
 {
-    Rectagle,
+    Rectangle,
     Freehand,
     Text,
     Arrow,
