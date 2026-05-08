@@ -74,7 +74,7 @@ jobs:
         env:
           ASPNETCORE_ENVIRONMENT: ${{ inputs.env-name }}
         run: |
-          dotnet ef database update --project ./SqlServerMigrations/SqlServerMigrations.csproj --startup-project ../PrismaApi.Api -- --provider=sqlserver
+          dotnet ef database update --project ./SqlServerMigrations/SqlServerMigrations.csproj --startup-project ./PrismaApi.Api/PrismaApi.Api.cspro -- --provider=sqlserver
 
       - name: Remove Firewall Rule
         env:
