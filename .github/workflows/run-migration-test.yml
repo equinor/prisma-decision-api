@@ -5,14 +5,16 @@ on:
     tags:
       - "v*"
     paths:
-      - "alembic/**"
+      - "PrismaDotnetApi/SqlServerMigrations/**"
   workflow_dispatch:
 
-permissions:
-  id-token: write
-  contents: read
+permissions: {}
+
 jobs:
   call-deploy-infra:
+    permissions:
+      id-token: write
+      contents: read
     uses: ./.github/workflows/run-migration.yml
     with:
       env-name: test

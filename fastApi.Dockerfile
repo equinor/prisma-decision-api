@@ -33,13 +33,13 @@ RUN apt-get update
 RUN env ACCEPT_EULA=Y apt-get install -y msodbcsql18
 
 # Copy necessary files for poetry install
-COPY pyproject.toml poetry.lock* README.md /code/
+COPY /PrismaFastApi/pyproject.toml /PrismaFastApi/poetry.lock* /code/
 
 # Install project dependencies
 RUN poetry install --no-root --only main
 
 # Copy the rest of the application code
-COPY . /code/
+COPY /PrismaFastApi/ /code/
 
 WORKDIR /code/src
 
