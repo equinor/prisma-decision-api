@@ -1,6 +1,6 @@
 import uuid
 from fastapi import APIRouter, Depends, HTTPException
-from PrismaFastApi.src.project_lock_manager import ProjectQueueManager
+from src.project_lock_manager import ProjectQueueManager
 from src.services.solver_service import SolverService
 from src.dependencies import get_solver_service, get_project_lock_manager
 from src.services.decision_tree_pruning_service import DecisionTreePruningException
