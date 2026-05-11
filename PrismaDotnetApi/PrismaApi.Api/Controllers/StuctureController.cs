@@ -58,4 +58,30 @@ public class StuctureController : PrismaBaseController
 
         return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
     }
+
+    [HttpGet("structure/{projectId:guid}/decision_tree/v3")]
+    public async Task<ActionResult<ApiResponseDto>> GetDecisionTreeV3Async([FromRoute] Guid projectId, CancellationToken ct = default)
+    {
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/decision_tree/v3", user);
+        if (fastApiResponse.StatusCode == HttpStatusCode.OK)
+        {
+            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeLogString() : null);
+        }
+
+        return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
+    }
+
+    [HttpPost("structure/{projectId:guid}/partial_decision_tree/v3")]
+    public async Task<ActionResult<ApiResponseDto>> GetPartialDecisionTreeV3Async([FromRoute] Guid projectId, [FromBody] List<List<Guid>> paths, CancellationToken ct = default)
+    {
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
+        var fastApiResponse = await _fastApiService.SendPartialInfluenceDiagramToFastApiAsync(projectId, $"/structure/{projectId}/partial_decision_tree/v3", paths, user);
+        if (fastApiResponse.StatusCode == HttpStatusCode.OK)
+        {
+            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeLogString() : null);
+        }
+
+        return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
+    }
 }

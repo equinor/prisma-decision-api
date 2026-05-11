@@ -60,4 +60,17 @@ public class FastApiService : IFastApiService
         var content = new StringContent(JsonSerializer.Serialize(influanceDiagram), Encoding.UTF8, "application/json");
         return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
     }
+
+    public async Task<ApiResponseDto> SendPartialInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, List<List<Guid>> paths, UserOutgoingDto user, CancellationToken ct = default)
+    {
+        var influanceDiagram = await _projectService.GetInfluanceDiagramAsync(projectId, user, ct);
+        var payload = new
+        {
+            issues = influanceDiagram.issues,
+            edges = influanceDiagram.edges,
+            paths
+        };
+        var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+        return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
+    }
 }
