@@ -6,6 +6,8 @@ from src.dependencies import get_solver_service, get_project_lock_manager
 from src.services.decision_tree_pruning_service import DecisionTreePruningException
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
+from src.dtos.model_solution_dtos import SolutionDto
+
 
 router = APIRouter(tags=["solvers"])
 
@@ -15,7 +17,7 @@ async def get_optimal_decisions_for_project_from_dtos(
     issues: list[IssueOutgoingDto],
     edges: list[EdgeOutgoingDto],
     solver_service: SolverService = Depends(get_solver_service),
-):
+) -> SolutionDto:
     try:
         return await solver_service.find_optimal_decision_pyagrum_from_dtos(issues, edges)
     except Exception as e:

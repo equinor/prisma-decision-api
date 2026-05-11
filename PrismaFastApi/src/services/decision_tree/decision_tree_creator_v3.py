@@ -105,12 +105,14 @@ class DecisionTreeGraph_v3:
             treenode_id = cast(uuid.UUID, treenode_id)
             if node := self.node_treenode_lookup.get_dto_for_treenode_id(treenode_id):
                 type = Type.END.value if isinstance(node, EndPointNodeDto) else node.type
+                parent_state_id: Optional[str] = self.edge_names.get((self.get_parent(treenode_id), treenode_id))
                 dto = TreeNodeDto2(
+                    parent_state_id=parent_state_id,
                     id=treenode_id,
-                    issue_id=node.id,
-                    type=type,
-                    probabilities=self.get_discrete_probability_dtos(treenode_id, node),
-                    utilities=self.get_utility_dtos(treenode_id, node),
+                    issue_id = node.id,
+                    type = type,
+                    probabilities = self.get_discrete_probability_dtos(treenode_id, node),
+                    utilities = self.get_utility_dtos(treenode_id, node),
                     children=[],
                 )
                 dto_map[treenode_id] = dto
@@ -145,26 +147,61 @@ class DecisionTreeGraph_v3:
             visit(node_id)
         return order
 
-    def to_issue_dtos(self) -> Optional[TreeNodeDto2]:
-        self.populate_utility_lookup()  # create lookup for discrete utilities
-        self.populate_discrete_probabilities_lookup()  # create lookup for discrete probabilities
-        self.edge_names = nx.get_edge_attributes(self.nx, "name")  # type: ignore
+    def to_issue_dtos(self, backwards_calc_expected_values: bool = True) -> Optional[TreeNodeDto2]:
+        self.populate_utility_lookup() # create lookup for discrete utilities
+        self.populate_discrete_probabilities_lookup() # create lookup for discrete probabilities
+        self.edge_names = nx.get_edge_attributes(self.nx, "name") # type: ignore
         dto_map = self.get_dto_map()
         self.calculate_endpoint_nodes(self.root, dto_map)
-        self.final_expected_value = self.compute_expected_values(self.root, dto_map)
+        if backwards_calc_expected_values:
+            self.final_expected_value = self.compute_expected_values(self.root, dto_map)
         dto_map = self.calculate_treenode_ids_from_branches(dto_map)
         root_id = self.find_root_id(dto_map)
         return dto_map[root_id] if root_id else None
-
-    def calculate_treenode_ids_from_branches(
-        self, dto_map: Dict[uuid.UUID, TreeNodeDto2]
-    ) -> Dict[uuid.UUID, TreeNodeDto2]:
+    
+    def calculate_treenode_ids_from_branches(self, dto_map: Dict[uuid.UUID, TreeNodeDto2]) -> Dict[uuid.UUID, TreeNodeDto2]:
         new_map: Dict[uuid.UUID, TreeNodeDto2] = {}
         for old_key, dto in dto_map.items():
-            new_id = self.treenode_oldid_to_newid_map[old_key]
+            # Partial trees may not include any end nodes, so the usual end-node walk
+            # never populates the map; derive a deterministic id from the branch path.
+            new_id = self.get_or_create_treenode_new_id(old_key)
             dto.id = new_id  # Update the dto's id
             new_map[new_id] = dto
         return new_map
+
+    def get_or_create_treenode_new_id(self, treenode_id: uuid.UUID) -> uuid.UUID:
+        """
+        Create a stable treenode id even when no end nodes exist.
+
+        Partial decision trees often stop before endpoints, so the end-node traversal
+        that normally builds treenode_oldid_to_newid_map never runs. In that case we
+        still need deterministic ids for consumers, so we derive them from ancestor
+        branch labels.
+        """
+        existing_id = self.treenode_oldid_to_newid_map.get(treenode_id)
+        if existing_id is not None:
+            return existing_id
+
+        labels: list[str] = []
+        current_id = treenode_id
+        parent_id = self.get_parent(current_id)
+        count = 0
+        while parent_id and count < self.MAXDEPTH:
+            labels.append(self.edge_names[(parent_id, current_id)])
+            current_id = parent_id
+            parent_id = self.get_parent(current_id)
+            count += 1
+
+        if count >= self.MAXDEPTH:
+            raise MaxDepthExceededError(
+                f"Maximum depth of {self.MAXDEPTH} reached while traversing parents."
+            )
+
+        id_string = self.DASH.join(labels)
+        id_string = self.ROOT if id_string == "" else self.ROOT + self.DASH + id_string
+        new_id = GenerateUuid.as_uuid(id_string)
+        self.treenode_oldid_to_newid_map[treenode_id] = new_id
+        return new_id
 
     def find_root_id(self, dto_map: Dict[uuid.UUID, TreeNodeDto2]) -> Optional[uuid.UUID]:
         all_ids: Set[uuid.UUID] = set(dto_map.keys())
@@ -441,6 +478,16 @@ class DecisionTreeCreator_v3:
         return self.convert_to_decision_tree(
             project_id=self.project_id, partial_order=partial_order
         )
+    
+    def create_decision_tree_partial(
+        self, partial_order: Optional[list[uuid.UUID]] = None,
+        paths: Optional[list[list[uuid.UUID]]] = None,
+    ) -> DecisionTreeGraph_v3:
+        if paths is None:
+            paths = []
+        return self.convert_to_decision_tree_partial(
+            project_id=self.project_id, partial_order=partial_order, paths=paths
+        )
 
     def create_data_structure(
         self, nodes: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]
@@ -630,6 +677,64 @@ class DecisionTreeCreator_v3:
 
                 decision_tree.add_edge(element[0])  # node is added when the branch is added
 
+        self.find_nodes_for_utilities(partial_order)
+        decision_tree.transfer_node_treenode_lookup(self.node_treenode_lookup)
+        return decision_tree
+    
+    def convert_to_decision_tree_partial(
+            self, 
+            project_id: uuid.UUID, 
+            partial_order: Optional[list[uuid.UUID]] = None,
+            paths: Optional[list[list[uuid.UUID]]] = None,
+    ) -> DecisionTreeGraph_v3:
+        """
+        Make the decision tree structure for only the provided paths.
+        Must expand the tree so that the given paths reprent the tail tree node, 
+        meaning that the tree is expanded 1 depth greater than specified allowing for iterative interaction from an interface.
+        If no paths are provided, only the root node and it's children should be expanded and returned.
+        Arguments: 
+            project_id: uuid.UUID
+                The id of the decision project
+            partial_order: Optional[list[uuid.UUID]]
+                list of issue ids and represents the order of the issues, the first element being the root node
+            paths: list[list[uuid.UUID]] = []
+                list of state ids (outcome/option ids) each path must represent the full path. 
+                Example:
+                paths = [[option_A_id, outcome_A_id], [option_A_id, outcome_B_id]]
+        """
+
+        if not partial_order:
+            partial_order = self.calculate_partial_order()
+        root_node = partial_order[0]
+        decision_tree = DecisionTreeGraph_v3(root=root_node)
+
+        if paths is None:
+            paths = []
+        current_paths: list[list[uuid.UUID]] = []
+        prefix_to_treenode = {(): root_node}
+
+        visited_states = set()
+
+        for path in paths:
+            for k, state_id in enumerate(path):
+                if state_id in visited_states:
+                    continue
+                else:
+                    visited_states.add(state_id)
+                prefix = tuple(path[:k])
+                tail_id = prefix_to_treenode[prefix]
+
+                if k + 1 < len(partial_order):
+                    # create a unique treenode per branch
+                    head_id = self.copy_treenode(partial_order[k + 1])
+                else:
+                    head_id = self.create_endpoint_node(project_id)
+
+                prefix_to_treenode[tuple(path[:k + 1])] = head_id
+
+                edge = EdgeUUIDDto(tail=tail_id, name=str(state_id), head=head_id)
+                decision_tree.add_edge(edge)
+        
         self.find_nodes_for_utilities(partial_order)
         decision_tree.transfer_node_treenode_lookup(self.node_treenode_lookup)
         return decision_tree

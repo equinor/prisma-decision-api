@@ -27,6 +27,8 @@ class PyagrumSolver:
         self.diagram = gum.InfluenceDiagram()
         self.issues: list[IssueOutgoingDto] = []
         self.edges: list[EdgeOutgoingDto] = []
+        self.ie: Optional[gum.ShaferShenoyLIMIDInference] = None
+        self.partial_order: Optional[list[uuid.UUID]] = None
 
     def _reset_diagram(self):
         self.diagram = gum.InfluenceDiagram()
@@ -166,15 +168,24 @@ class PyagrumSolver:
             decision_solutions=[self.get_optimal_decisions(ie, x) for x in decisions]
         )
 
-    async def find_optimal_decisions(
-        self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]
-    ) -> SolutionDto:
+    def get_inference(self) -> gum.ShaferShenoyLIMIDInference:
+        if self.ie is None:
+            raise RuntimeError("Inference engine has not been initialized. Call find_optimal_decisions first.")
+        return self.ie
+    
+    def get_partial_order(self) -> list[uuid.UUID]:
+        if self.partial_order is None:
+            raise RuntimeError("Partial order has not been calculated. Call find_optimal_decisions first.")
+        return self.partial_order
+    
+    async def build_inference_engine(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]) -> gum.ShaferShenoyLIMIDInference:
         self.build_influence_diagram(issues, edges)
 
-        decision_tree_creator = await DecisionTreeCreator.initialize(
-            project_id=issues[0].project_id, nodes=issues, edges=edges
+        decision_tree_creator = await DecisionTreeCreator.initialize(project_id = issues[0].project_id,
+            nodes = issues,
+            edges = edges
         )
-
+        
         partial_order = await decision_tree_creator.calculate_partial_order()
 
         partial_order = [
@@ -182,24 +193,48 @@ class PyagrumSolver:
             for tree_node_id in partial_order
         ]
 
-        partial_order = [tree_node.issue.id for tree_node in partial_order if tree_node is not None]
-
-        partial_order_decisions = [
-            x
-            for x in partial_order
-            if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]
+        self.partial_order = [
+            tree_node.issue.id
+            for tree_node in partial_order if tree_node is not None
         ]
-        ie = gum.ShaferShenoyLIMIDInference(self.diagram)
 
-        ie.addNoForgettingAssumption([str(x) for x in partial_order_decisions])  # type: ignore
+        partial_order_decisions = [x for x in self.partial_order if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]]
+        self.ie = gum.ShaferShenoyLIMIDInference(self.diagram)
+        self.ie.addNoForgettingAssumption([str(x) for x in partial_order_decisions]) # type: ignore
 
-        if not ie.isSolvable():
+        if not self.ie.isSolvable():
             raise RuntimeError("Influence diagram is not solvable")
-        ie.makeInference()
+        self.ie.makeInference()
+        
+        return self.ie
 
-        solution = self.get_solution(ie, [str(x) for x in partial_order_decisions])
-
+    async def find_optimal_decisions(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]) -> SolutionDto:
+        await self.build_inference_engine(issues, edges)
+        solution =  self.get_solution(self.get_inference(), [str(x) for x in self.get_partial_order() if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
         return solution
+    
+    # method for adding evidence to the inference engine, takes a list of state_id, method internally finds the corresponding issue and state, then adds the evidence to the inference engine
+    def set_evidence(self, ie: gum.ShaferShenoyLIMIDInference, state_ids: list[str]):
+        ie.eraseAllEvidence() # type: ignore
+        evidence: dict[str, str] = {}
+        for state_id in state_ids:
+            state = self._find_state(state_id)
+            if isinstance(state, OptionOutgoingDto):
+                issue = [issue for issue in self.issues if issue.decision is not None and any(option.id == state.id for option in issue.decision.options)][0]
+                node_id = self.node_lookup[issue.id.__str__()]
+                evidence[node_id] = str(state.id)
+            elif isinstance(state, OutcomeOutgoingDto): # type: ignore
+                issue = [issue for issue in self.issues if issue.uncertainty is not None and any(outcome.id == state.id for outcome in issue.uncertainty.outcomes)][0]
+                node_id = self.node_lookup[issue.id.__str__()]
+                evidence[node_id] = str(state.id)
+        ie.setEvidence(evidence)
+        ie.makeInference()
+        return ie
+    
+    def get_expected_utility_given_path(self, issue_id: str, state_ids: list[str]) -> float:
+        ie = self.get_inference()
+        ie_with_evidence = self.set_evidence(ie, state_ids)
+        return self._pyagrum_get_mean_utility(ie_with_evidence, issue_id)
 
     def add_node(self, issue: IssueOutgoingDto):
         if issue.type == Type.DECISION:
