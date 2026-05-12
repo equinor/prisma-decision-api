@@ -1,7 +1,7 @@
 import uuid
 import asyncio
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from src.project_lock_manager import ProjectQueueManager
 from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.dtos.issue_dtos import IssueOutgoingDto
@@ -22,14 +22,9 @@ async def get_influence_diagram_from_dtos(
     issues: list[IssueOutgoingDto],
     edges: list[EdgeOutgoingDto],
 ) -> tuple[list[IssueOutgoingDto], list[EdgeOutgoingDto]]:
-    try:
-        influence_diagram = await asyncio.to_thread(lambda: InfluenceDiagramDOT(edges, issues))
-        await asyncio.to_thread(influence_diagram.validate_diagram)
-        return influence_diagram.issues, influence_diagram.edges
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    influence_diagram = await asyncio.to_thread(lambda: InfluenceDiagramDOT(edges, issues))
+    await asyncio.to_thread(influence_diagram.validate_diagram)
+    return influence_diagram.issues, influence_diagram.edges
 
 
 @router.post("/structure/{project_id}/partial_order")
@@ -39,10 +34,7 @@ async def get_partial_order_from_dtos(
     edges: list[EdgeOutgoingDto],
     structure_service: StructureService = Depends(get_structure_service),
 ) -> Optional[PartialOrderDto]:
-    try:
-        return await structure_service.create_partial_order_from_dtos(project_id, issues, edges)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return await structure_service.create_partial_order_from_dtos(project_id, issues, edges)
 
 
 @router.post("/structure/{project_id}/decision_tree/v2")
@@ -52,10 +44,7 @@ async def build_decision_tree_from_dtos(
     edges: list[EdgeOutgoingDto],
     structure_service: StructureService = Depends(get_structure_service),
 ) -> Optional[DecisionTreeDto]:
-    try:
-        return await structure_service.create_decision_tree_from_dtos(project_id, issues, edges)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return await structure_service.create_decision_tree_from_dtos(project_id, issues, edges)
 
 
 @router.post("/structure/{project_id}/decision_tree/v3")
@@ -66,10 +55,5 @@ async def build_decision_tree_from_dtos_optimal(
     structure_service: StructureService = Depends(get_structure_service),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ) -> Optional[TreeNodeDto2]:
-    try:
-        async with lock_manager.acquire_project_lock(project_id):
-            return structure_service.create_decision_tree_from_dtos_optimal(
-                project_id, issues, edges
-            )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    async with lock_manager.acquire_project_lock(project_id):
+        return structure_service.create_decision_tree_from_dtos_optimal(project_id, issues, edges)
