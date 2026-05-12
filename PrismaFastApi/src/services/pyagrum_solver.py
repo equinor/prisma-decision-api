@@ -235,7 +235,17 @@ class PyagrumSolver:
         ie = self.get_inference()
         ie_with_evidence = self.set_evidence(ie, state_ids)
         return self._pyagrum_get_mean_utility(ie_with_evidence, issue_id)
+    
+    def get_posterior_given_path(self, issue_id: str, state_ids: list[str]) -> dict[str, float]:
+        ie = self.get_inference()
+        ie_with_evidence = self.set_evidence(ie, state_ids)
 
+        # For chance/uncertainty nodes, posterior returns a Potential
+        pot = ie_with_evidence.posterior(issue_id)  # issue_id is the node name
+        labels = self._pyagrum_get_node_labels(issue_id)
+        probs = pot.toarray().tolist()
+        return {label: prob for label, prob in zip(labels, probs)}
+    
     def add_node(self, issue: IssueOutgoingDto):
         if issue.type == Type.DECISION:
             assert issue.decision is not None

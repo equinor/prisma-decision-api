@@ -173,17 +173,24 @@ class SolverService:
                         break
 
             elif issue.type == Type.UNCERTAINTY.value:
-                dpt = discrete_probability_tables[str(issue_id)]
-                probabilities: list[float] = dpt.get_probabilities_for_combination([str(x) for x in current_path])
-                sorted_outcomes = sorted(issue.uncertainty.outcomes, key=lambda x: x.id)
-                for i, prob in enumerate(probabilities):
-                    if prob > 0:
-                        outcome_id = sorted_outcomes[i].id
-                        new_path = current_path + [outcome_id]
-                        if next_issue_id is not None:
+                # dpt = discrete_probability_tables[str(issue_id)]
+                # probabilities: list[float] = dpt.get_probabilities_for_combination([str(x) for x in current_path])
+                for outcome in issue.uncertainty.outcomes:
+                    new_path = current_path + [outcome.id]
+                    if next_issue_id is not None:
                             add_to_paths(issue_id=next_issue_id, current_path=new_path)
-                        else:
-                            paths.append(new_path)
+                    else:
+                        paths.append(new_path)
+
+                # sorted_outcomes = sorted(issue.uncertainty.outcomes, key=lambda x: x.id)
+                # for i, prob in enumerate(probabilities):
+                #     if prob > 0:
+                #         outcome_id = sorted_outcomes[i].id
+                #         new_path = current_path + [outcome_id]
+                #         if next_issue_id is not None:
+                #             add_to_paths(issue_id=next_issue_id, current_path=new_path)
+                #         else:
+                #             paths.append(new_path)
             
 
         add_to_paths(issue_id=partial_order[0], current_path=[])

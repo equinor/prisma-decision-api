@@ -1,4 +1,5 @@
-from src.dtos.decision_tree_dtos import TreeNodeDto2
+import uuid
+from src.dtos.decision_tree_dtos import TreeNodeDto2, ProbabilityDto2
 from src.services.pyagrum_solver import PyagrumSolver
 from src.constants import Type
 
@@ -29,12 +30,27 @@ def visit_tree_node_and_populate_with_expected_utility(
         if state_id is None:
             raise ValueError("State id is None for child node, cannot calculate expected utility")
         temp_path = current_path + [state_id.__str__()]
-        try:
-            expected_utility = solver.get_expected_utility_given_path(
+
+        if child.type == Type.UNCERTAINTY.value and res.probabilities is not None:
+            posterior = solver.get_posterior_given_path(
+                issue_id=child.issue_id.__str__(),
+                state_ids=temp_path,
+            )
+            if child.probabilities is None:
+                    child.probabilities = []
+            if len(child.probabilities) == 0: # arc reversal required
+                for prob in posterior.keys():
+                    child.probabilities.append(ProbabilityDto2(outcome_id=uuid.UUID(prob), probability_value=posterior[prob]))
+                # sort the probabilities so they fit the order of the children
+                order_lookup = {str(c.parent_state_id): i for i, c in enumerate(child.children or [])}
+                child.probabilities.sort(key=lambda prob: order_lookup.get(str(prob.outcome_id), float("inf")))
+            else:
+                for probability in child.probabilities:
+                    probability.probability_value = posterior[str(probability.outcome_id)]
+                
+        expected_utility = solver.get_expected_utility_given_path(
             issue_id=child.issue_id.__str__(),
             state_ids=temp_path,
         )
-        except Exception as e:
-            raise e
         child.expected_value = expected_utility
         visit_tree_node_and_populate_with_expected_utility(solver, temp_path, child)
