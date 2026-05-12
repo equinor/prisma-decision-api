@@ -26,6 +26,8 @@ async def get_influence_diagram_from_dtos(
         influence_diagram = await asyncio.to_thread(lambda: InfluenceDiagramDOT(edges, issues))
         await asyncio.to_thread(influence_diagram.validate_diagram)
         return influence_diagram.issues, influence_diagram.edges
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
