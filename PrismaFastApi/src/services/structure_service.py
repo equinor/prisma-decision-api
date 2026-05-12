@@ -5,7 +5,7 @@ from src.dtos.decision_tree_dtos import DecisionTreeDto, PartialOrderDto, TreeNo
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator
-from src.utils.visit_tree_node_and_populate_with_expected_utility import visit_tree_node_and_populate_with_expected_utility
+from src.utils.visit_tree_node_and_populate import visit_tree_node_and_populate
 from src.services.pyagrum_solver import PyagrumSolver
 
 
@@ -75,5 +75,5 @@ class StructureService:
 
         solver = PyagrumSolver()
         await solver.build_inference_engine(issues=issues, edges=edges)
-        visit_tree_node_and_populate_with_expected_utility(solver, [], res)
+        visit_tree_node_and_populate(solver, [], res)
         return res

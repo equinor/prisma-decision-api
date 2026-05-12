@@ -1,5 +1,5 @@
 import uuid
-from src.utils.visit_tree_node_and_populate_with_expected_utility import visit_tree_node_and_populate_with_expected_utility
+from src.utils.visit_tree_node_and_populate import visit_tree_node_and_populate
 from src.services.decision_tree.decision_tree_creator_v3 import DecisionTreeCreator_v3
 from concurrent.futures import ThreadPoolExecutor
 from src.services.pyagrum_solver import PyagrumSolver
@@ -128,9 +128,8 @@ class SolverService:
 
         dt_dtos = decision_tree.to_issue_dtos(backwards_calc_expected_values=False)
 
-        visit_tree_node_and_populate_with_expected_utility(solver, [], dt_dtos)
+        visit_tree_node_and_populate(solver, [], dt_dtos)
         return dt_dtos
-        
     
     def construct_paths_from_solution(
         self,
@@ -140,58 +139,44 @@ class SolverService:
     ) -> list[list[uuid.UUID]]:
         if not partial_order:
             return []
-        
-        # decision id to a dictionary of the parent state ids to the optimal option id
+
         optimal_option_lookup = solution.get_lookup()
-
-        discrete_probability_tables: dict[str, DiscreteProbabilityArrayManager] = {}
-        [
-            discrete_probability_tables.__setitem__(str(x.id), DiscreteProbabilityArrayManager(x.uncertainty.discrete_probabilities)) 
-            for x in issues if x.type == Type.UNCERTAINTY.value
-        ]
-
-        # iterate through the partial order and use the lookups to construct the possible paths, 
-        # at a decision select the optimal option based on the current path using the optimal_option_lookup
-        # at an uncertainty use the discrete_probability_tables to find the probabilities based on the current path and only add to the path the outcomes that are not 0 probability
+        issue_by_id = {i.id: i for i in issues}
+        order_index = {issue_id: idx for idx, issue_id in enumerate(partial_order)}
         paths: list[list[uuid.UUID]] = []
 
-        def add_to_paths(issue_id: uuid.UUID, current_path: list[uuid.UUID]):
-            issue = [x for x in issues if x.id == issue_id][0]
-            issue_position = partial_order.index(issue_id)
-            next_issue_id = partial_order[issue_position + 1] if issue_position + 1 < len(partial_order) else None
+        stack: list[tuple[uuid.UUID, list[uuid.UUID]]] = [(partial_order[0], [])]
+
+        while stack:
+            issue_id, current_path = stack.pop()
+            issue = issue_by_id[issue_id]
+            issue_position = order_index[issue_id]
+            next_issue_id = (
+                partial_order[issue_position + 1]
+                if issue_position + 1 < len(partial_order)
+                else None
+            )
 
             if issue.type == Type.DECISION.value:
                 path_to_options = optimal_option_lookup[str(issue.id)]
-                for key in path_to_options.keys():
-                    if set(key).issubset(set([str(x) for x in current_path])):
-                        optimal_option_id = path_to_options[key]
-                        current_path = current_path + [uuid.UUID(optimal_option_id)]
+                path_str_set = set(str(x) for x in current_path)
+
+                for key, optimal_option_id in path_to_options.items():
+                    if set(key).issubset(path_str_set):
+                        new_path = current_path + [uuid.UUID(optimal_option_id)]
                         if next_issue_id is not None:
-                            add_to_paths(issue_id=next_issue_id, current_path=current_path)
+                            stack.append((next_issue_id, new_path))
                         else:
-                            paths.append(current_path)
+                            paths.append(new_path)
                         break
 
             elif issue.type == Type.UNCERTAINTY.value:
-                # dpt = discrete_probability_tables[str(issue_id)]
-                # probabilities: list[float] = dpt.get_probabilities_for_combination([str(x) for x in current_path])
                 for outcome in issue.uncertainty.outcomes:
                     new_path = current_path + [outcome.id]
                     if next_issue_id is not None:
-                            add_to_paths(issue_id=next_issue_id, current_path=new_path)
+                        stack.append((next_issue_id, new_path))
                     else:
                         paths.append(new_path)
 
-                # sorted_outcomes = sorted(issue.uncertainty.outcomes, key=lambda x: x.id)
-                # for i, prob in enumerate(probabilities):
-                #     if prob > 0:
-                #         outcome_id = sorted_outcomes[i].id
-                #         new_path = current_path + [outcome_id]
-                #         if next_issue_id is not None:
-                #             add_to_paths(issue_id=next_issue_id, current_path=new_path)
-                #         else:
-                #             paths.append(new_path)
-            
-
-        add_to_paths(issue_id=partial_order[0], current_path=[])
         return paths
+    
