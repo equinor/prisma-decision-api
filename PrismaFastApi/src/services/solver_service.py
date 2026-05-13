@@ -16,7 +16,6 @@ from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.dtos.model_solution_dtos import SolutionDto
 from src.constants import Type
-from src.utils.discrete_probability_array_manager import DiscreteProbabilityArrayManager
 
 executor = ThreadPoolExecutor()
 
@@ -110,9 +109,14 @@ class SolverService:
     async def get_decision_tree_for_optimal_decisions_from_dtos_by_constructing_paths(
             self, 
             project_id: uuid.UUID, 
-            issues: list[IssueOutgoingDto] = [], 
-            edges: list[EdgeOutgoingDto] = []
+            issues: list[IssueOutgoingDto] | None = None, 
+            edges: list[EdgeOutgoingDto] | None = None
         ):
+        if not issues:
+            raise ValueError("issues must be provided and non-empty")
+        if edges is None:
+            edges = []
+
         solver = PyagrumSolver()
         solution = await solver.find_optimal_decisions(issues=issues, edges=edges)
 

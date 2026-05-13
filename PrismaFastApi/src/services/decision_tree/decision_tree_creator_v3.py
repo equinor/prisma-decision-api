@@ -698,7 +698,7 @@ class DecisionTreeCreator_v3:
         Make the decision tree structure for only the provided paths.
         Must expand the tree so that the given paths reprent the tail tree node, 
         meaning that the tree is expanded 1 depth greater than specified allowing for iterative interaction from an interface.
-        If no paths are provided, only the root node and it's children should be expanded and returned.
+        If no paths are provided, the returned tree contains only the root node and no expanded branches.
         Arguments: 
             project_id: uuid.UUID
                 The id of the decision project
