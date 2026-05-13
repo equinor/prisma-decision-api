@@ -148,13 +148,20 @@ class DecisionTreeGraph_v3:
             visit(node_id)
         return order
 
-    def to_issue_dtos(self, backwards_calc_expected_values: bool = True) -> Optional[TreeNodeDto2]:
+    def to_issue_dtos(self, backwards_calc: bool = True) -> Optional[TreeNodeDto2]:
+        """
+        backwards_calc: 
+            if true, calculate expected values and probabilities from the bottom up; 
+            if false, skip calculations and just convert structure to dtos 
+            (used for partial trees where endpoints may be missing)
+        """
         self.populate_utility_lookup() # create lookup for discrete utilities
-        self.populate_discrete_probabilities_lookup() # create lookup for discrete probabilities
+        if backwards_calc:
+            self.populate_discrete_probabilities_lookup() # create lookup for discrete probabilities
         self.edge_names = nx.get_edge_attributes(self.nx, "name") # type: ignore
         dto_map = self.get_dto_map()
         self.calculate_endpoint_nodes(self.root, dto_map)
-        if backwards_calc_expected_values:
+        if backwards_calc:
             self.final_expected_value = self.compute_expected_values(self.root, dto_map)
         dto_map = self.calculate_treenode_ids_from_branches(dto_map)
         root_id = self.find_root_id(dto_map)

@@ -67,7 +67,7 @@ class StructureService:
             project_id=project_id, nodes=issues, edges=edges
         )
         dt = decision_tree_creator.create_decision_tree_partial(paths=paths)
-        res: Optional[TreeNodeDto2] = dt.to_issue_dtos(backwards_calc_expected_values=False)
+        res: Optional[TreeNodeDto2] = dt.to_issue_dtos(backwards_calc=False)
         if res is None:
             raise ValueError("Failed to create partial decision tree from DTOs")
         

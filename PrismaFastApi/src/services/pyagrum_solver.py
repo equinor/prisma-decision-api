@@ -234,8 +234,9 @@ class PyagrumSolver:
     def get_expected_utility_given_path(self, issue_id: str, state_ids: list[str]) -> float:
         ie = self.get_inference()
         ie_with_evidence = self.set_evidence(ie, state_ids)
-        return self._pyagrum_get_mean_utility(ie_with_evidence, issue_id)
-    
+        expected_utility = self._pyagrum_get_mean_utility(ie_with_evidence, issue_id)
+        return expected_utility
+     
     def get_posterior_given_path(self, issue_id: str, state_ids: list[str]) -> dict[str, float]:
         ie = self.get_inference()
         ie_with_evidence = self.set_evidence(ie, state_ids)
@@ -244,7 +245,8 @@ class PyagrumSolver:
         pot = ie_with_evidence.posterior(issue_id)  # issue_id is the node name
         labels = self._pyagrum_get_node_labels(issue_id)
         probs = pot.toarray().tolist()
-        return {label: prob for label, prob in zip(labels, probs)}
+        state_to_probability = {label: prob for label, prob in zip(labels, probs)}
+        return state_to_probability
     
     def add_node(self, issue: IssueOutgoingDto):
         if issue.type == Type.DECISION:

@@ -107,7 +107,7 @@ class SolverService:
         pruning_service = DecisionTreePruningService(pruner=OptimalDecisionTreePruner())
         return pruning_service.prune_tree_for_optimal_decisions(dt_dtos, solution)
         
-    async def get_decision_tree_for_optimal_decisions_from_dtos(
+    async def get_decision_tree_for_optimal_decisions_from_dtos_by_constructing_paths(
             self, 
             project_id: uuid.UUID, 
             issues: list[IssueOutgoingDto] = [], 
@@ -126,7 +126,7 @@ class SolverService:
         paths = self.construct_paths_from_solution(solution, DT_partial_order, issues)
         decision_tree = decision_tree_creator.convert_to_decision_tree_partial(project_id=issues[0].project_id, paths=paths)
 
-        dt_dtos = decision_tree.to_issue_dtos(backwards_calc_expected_values=False)
+        dt_dtos = decision_tree.to_issue_dtos(backwards_calc=False)
 
         visit_tree_node_and_populate(solver, [], dt_dtos)
         return dt_dtos
@@ -139,7 +139,6 @@ class SolverService:
     ) -> list[list[uuid.UUID]]:
         if not partial_order:
             return []
-
         optimal_option_lookup = solution.get_lookup()
         issue_by_id = {i.id: i for i in issues}
         order_index = {issue_id: idx for idx, issue_id in enumerate(partial_order)}

@@ -1,4 +1,5 @@
 import uuid
+import math
 from src.dtos.decision_tree_dtos import TreeNodeDto2, ProbabilityDto2
 from src.services.pyagrum_solver import PyagrumSolver
 from src.constants import Type
@@ -13,6 +14,9 @@ def _populate_uncertainty_probabilities(
         issue_id=node.issue_id.__str__(),
         state_ids=path_to_node,
     )
+    for key in posterior.keys():
+        if math.isnan(posterior[key]):
+            posterior[key] = 0
     if node.probabilities is None:
         node.probabilities = []
     if len(node.probabilities) == 0:  # arc reversal required
@@ -41,10 +45,13 @@ def visit_tree_node_and_populate(
             issue_id=res.issue_id.__str__(),
             state_ids=current_path,
         )
-        res.expected_value = expected_utility
+        if math.isnan(expected_utility):
+            res.expected_value = 0
+        else:
+            res.expected_value = expected_utility
 
-    if res.type == Type.UNCERTAINTY.value:
-        _populate_uncertainty_probabilities(solver, res, current_path)
+        if res.type == Type.UNCERTAINTY.value:
+            _populate_uncertainty_probabilities(solver, res, current_path)
 
     if res.type == Type.END.value:
         res.cumulative_probability = cumulative_probability
@@ -85,7 +92,11 @@ def visit_tree_node_and_populate(
             issue_id=child.issue_id.__str__(),
             state_ids=next_path,
         )
-        child.expected_value = expected_utility
+        if math.isnan(expected_utility):
+            child.expected_value = 0
+        else:
+            child.expected_value = expected_utility
+            
         visit_tree_node_and_populate(
             solver,
             next_path,
