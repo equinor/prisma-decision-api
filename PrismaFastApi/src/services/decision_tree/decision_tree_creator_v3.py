@@ -720,15 +720,16 @@ class DecisionTreeCreator_v3:
         current_paths: list[list[uuid.UUID]] = []
         prefix_to_treenode = {(): root_node}
 
-        visited_states = set()
+        visited_states: set[tuple[tuple[uuid.UUID, ...], uuid.UUID]] = set()
 
         for path in paths:
             for k, state_id in enumerate(path):
-                if state_id in visited_states:
+                prefix = tuple(path[:k])
+                visit_key = (prefix, state_id)
+                if visit_key in visited_states:
                     continue
                 else:
-                    visited_states.add(state_id)
-                prefix = tuple(path[:k])
+                    visited_states.add(visit_key)
                 tail_id = prefix_to_treenode[prefix]
 
                 if k + 1 < len(partial_order):
