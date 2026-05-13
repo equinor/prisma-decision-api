@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using PrismaApi.Domain.Dtos;
@@ -14,7 +15,9 @@ public static class OptionMappingExtensions
             Id = entity.Id,
             Name = entity.Name,
             DecisionId = entity.DecisionId,
-            Utility = entity.Utility
+            Utility = entity.Utility,
+            CreatedAt = entity.CreatedAt
+
         };
     }
 
@@ -30,7 +33,8 @@ public static class OptionMappingExtensions
             Id = dto.Id,
             Name = dto.Name,
             DecisionId = dto.DecisionId,
-            Utility = dto.Utility
+            Utility = dto.Utility,
+            CreatedAt = dto.CreatedAt
         };
     }
 

@@ -510,7 +510,11 @@ public class AppDbContext : DbContext
         {
             if (entry.State == EntityState.Added)
             {
-                entry.Entity.CreatedAt = DateTimeOffset.UtcNow;
+                if (entry.Entity.CreatedAt == default)
+                {
+                    entry.Entity.CreatedAt = DateTimeOffset.UtcNow;
+                }
+
             }
 
             entry.Entity.UpdatedAt = DateTimeOffset.UtcNow;
