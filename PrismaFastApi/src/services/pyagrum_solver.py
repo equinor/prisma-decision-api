@@ -170,7 +170,9 @@ class PyagrumSolver:
 
     def get_inference(self) -> gum.ShaferShenoyLIMIDInference:
         if self.ie is None:
-            raise RuntimeError("Inference engine has not been initialized. Call find_optimal_decisions first.")
+            raise RuntimeError(
+                "Inference engine has not been initialized. Call build_inference_engine or find_optimal_decisions first."
+            )
         return self.ie
     
     def get_partial_order(self) -> list[uuid.UUID]:
