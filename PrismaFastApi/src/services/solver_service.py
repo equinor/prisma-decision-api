@@ -1,5 +1,6 @@
 import uuid
 from src.utils.visit_tree_node_and_populate import visit_tree_node_and_populate
+from src.utils.path_utils import expand_all_paths_by_one_depth
 from src.services.decision_tree.decision_tree_creator_v3 import DecisionTreeCreator_v3
 from concurrent.futures import ThreadPoolExecutor
 from src.services.pyagrum_solver import PyagrumSolver
@@ -122,6 +123,8 @@ class SolverService:
         solution = await solver.find_optimal_decisions(issues=issues, edges=edges)
 
         decision_tree_creator = DecisionTreeCreator_v3.initialize(project_id, nodes = issues, edges = edges)
+        partial_order = decision_tree_creator.calculate_partial_order_issue_ids()
+        paths = expand_all_paths_by_one_depth(partial_order, issues, paths, solution)
 
         decision_tree = decision_tree_creator.convert_to_decision_tree_partial(project_id=issues[0].project_id, paths=paths)
 

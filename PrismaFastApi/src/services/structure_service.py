@@ -7,7 +7,7 @@ from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator
 from src.utils.visit_tree_node_and_populate import visit_tree_node_and_populate
 from src.services.pyagrum_solver import PyagrumSolver
-
+from src.utils.path_utils import expand_all_paths_by_one_depth
 
 
 class StructureService:
@@ -68,8 +68,10 @@ class StructureService:
         )
         solver = PyagrumSolver()
         await solver.build_inference_engine(issues=issues, edges=edges)
+        paths = expand_all_paths_by_one_depth(partial_order, issues, paths)
 
         dt = decision_tree_creator.create_decision_tree_partial(paths=paths)
+        partial_order = decision_tree_creator.calculate_partial_order_issue_ids()
         res: Optional[TreeNodeDto2] = dt.to_issue_dtos(backwards_calc=False)
         if res is None:
             raise ValueError("Failed to create partial decision tree from DTOs")
