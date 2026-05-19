@@ -121,6 +121,8 @@ class SolverService:
         solver = PyagrumSolver()
         solution = await solver.find_optimal_decisions(issues=issues, edges=edges)
 
+        paths = self.filter_paths_from_solution(solution, paths, issues)
+
         decision_tree_creator = DecisionTreeCreator_v3.initialize(project_id, nodes = issues, edges = edges)
 
         decision_tree = decision_tree_creator.convert_to_decision_tree_partial(project_id=issues[0].project_id, paths=paths)
@@ -130,51 +132,44 @@ class SolverService:
         visit_tree_node_and_populate(solver, [], dt_dtos, solution=solution)
         return dt_dtos
     
-    def construct_paths_from_solution(
+    def filter_paths_from_solution(
         self,
         solution: SolutionDto,
-        partial_order: list[uuid.UUID],
+        paths: list[list[uuid.UUID]],
         issues: list[IssueOutgoingDto],
     ) -> list[list[uuid.UUID]]:
-        if not partial_order:
-            return []
         optimal_option_lookup = solution.get_lookup()
-        issue_by_id = {i.id: i for i in issues}
-        order_index = {issue_id: idx for idx, issue_id in enumerate(partial_order)}
-        paths: list[list[uuid.UUID]] = []
 
-        stack: list[tuple[uuid.UUID, list[uuid.UUID]]] = [(partial_order[0], [])]
+        decision_state_to_issue: dict[uuid.UUID, IssueOutgoingDto] = {
+            option.id: issue
+            for issue in issues
+            if issue.type == Type.DECISION.value and issue.decision
+            for option in issue.decision.options
+        }
+        uncertainty_state_ids: set[uuid.UUID] = {
+            outcome.id
+            for issue in issues
+            if issue.type == Type.UNCERTAINTY.value and issue.uncertainty
+            for outcome in issue.uncertainty.outcomes
+        }
 
-        while stack:
-            issue_id, current_path = stack.pop()
-            issue = issue_by_id[issue_id]
-            issue_position = order_index[issue_id]
-            next_issue_id = (
-                partial_order[issue_position + 1]
-                if issue_position + 1 < len(partial_order)
-                else None
+        def is_valid_state(state_id: uuid.UUID, current_path: list[uuid.UUID]) -> bool:
+            if state_id in uncertainty_state_ids:
+                return True
+            issue = decision_state_to_issue.get(state_id)
+            if issue is None:
+                return False
+            path_str_set = set(str(x) for x in current_path)
+            path_to_options = optimal_option_lookup.get(str(issue.id), {})
+            optimal_option_id = next(
+                (option_id for key, option_id in path_to_options.items()
+                 if set(key).issubset(path_str_set)),
+                None,
             )
+            return str(state_id) == optimal_option_id
 
-            if issue.type == Type.DECISION.value:
-                path_to_options = optimal_option_lookup[str(issue.id)]
-                path_str_set = set(str(x) for x in current_path)
-
-                for key, optimal_option_id in path_to_options.items():
-                    if set(key).issubset(path_str_set):
-                        new_path = current_path + [uuid.UUID(optimal_option_id)]
-                        if next_issue_id is not None:
-                            stack.append((next_issue_id, new_path))
-                        else:
-                            paths.append(new_path)
-                        break
-
-            elif issue.type == Type.UNCERTAINTY.value:
-                for outcome in issue.uncertainty.outcomes:
-                    new_path = current_path + [outcome.id]
-                    if next_issue_id is not None:
-                        stack.append((next_issue_id, new_path))
-                    else:
-                        paths.append(new_path)
-
-        return paths
+        return [
+            path for path in paths
+            if all(is_valid_state(state_id, path[:i]) for i, state_id in enumerate(path))
+        ]
     

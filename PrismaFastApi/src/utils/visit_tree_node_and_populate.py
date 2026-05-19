@@ -62,7 +62,7 @@ def _prune_to_optimal_child(
     current_path: list[str],
     optimal_option_lookup: dict[str, dict[tuple[str, ...], str]],
 ) -> None:
-    if not tree_node.children:
+    if not tree_node.utilities:
         return
     path_str_set = set(current_path)
     path_to_options = optimal_option_lookup.get(str(tree_node.issue_id), {})
@@ -73,16 +73,17 @@ def _prune_to_optimal_child(
     )
 
     if optimal_option_id is not None:
+        # utilities are always available
         optimal_idx = next(
-            (i for i, c in enumerate(tree_node.children)
-             if str(c.parent_state_id) == optimal_option_id),
+            (i for i, c in enumerate(tree_node.utilities)
+             if str(c.option_id) == optimal_option_id),
             None,
         )
         if optimal_idx is not None:
-            tree_node.children = [tree_node.children[optimal_idx]]
+            if tree_node.children:
+                tree_node.children = [tree_node.children[optimal_idx]]
             if tree_node.utilities:
                 tree_node.utilities = [tree_node.utilities[optimal_idx]]
-
 
 def _get_branch_probability(
     tree_node: TreeNodeDto2,
@@ -157,12 +158,12 @@ def visit_tree_node_and_populate(
         tree_node.cumulative_probability = cumulative_probability
         return
 
-    if not tree_node.children:
-        return
 
     # Prune non-optimal children for decision nodes when solution is provided
     if optimal_option_lookup is not None and tree_node.type == Type.DECISION.value:
         _prune_to_optimal_child(tree_node, current_path, optimal_option_lookup)
 
+    if not tree_node.children:
+        return
     for child in tree_node.children:
         _visit_child(solver, tree_node, child, current_path, cumulative_probability, solution)
