@@ -36,10 +36,114 @@ def _populate_uncertainty_probabilities(
         for probability in node.probabilities:
             probability.probability_value = round(posterior[str(probability.outcome_id)], ndigits=PrecisionConstants.PROBABILITY_PRECISION.value)
 
+
+def _populate_root_node_if_needed(
+    solver: PyagrumSolver,
+    tree_node: TreeNodeDto2,
+    current_path: list[str],
+) -> None:
+    # From the utility dto we can find the outcome/option id
+    if tree_node.expected_value is None:  # for handling root
+        expected_utility = solver.get_expected_utility_given_path(
+            issue_id=tree_node.issue_id.__str__(),
+            state_ids=current_path,
+        )
+        if math.isnan(expected_utility):
+            tree_node.expected_value = 0
+        else:
+            tree_node.expected_value = expected_utility
+
+        if tree_node.type == Type.UNCERTAINTY.value:
+            _populate_uncertainty_probabilities(solver, tree_node, current_path)
+
+
+def _prune_to_optimal_child(
+    tree_node: TreeNodeDto2,
+    current_path: list[str],
+    optimal_option_lookup: dict[str, dict[tuple[str, ...], str]],
+) -> None:
+    if not tree_node.children:
+        return
+    path_str_set = set(current_path)
+    path_to_options = optimal_option_lookup.get(str(tree_node.issue_id), {})
+    optimal_option_id = next(
+        (option_id for key, option_id in path_to_options.items()
+         if set(key).issubset(path_str_set)),
+        None,
+    )
+
+    if optimal_option_id is not None:
+        optimal_idx = next(
+            (i for i, c in enumerate(tree_node.children)
+             if str(c.parent_state_id) == optimal_option_id),
+            None,
+        )
+        if optimal_idx is not None:
+            tree_node.children = [tree_node.children[optimal_idx]]
+            if tree_node.utilities:
+                tree_node.utilities = [tree_node.utilities[optimal_idx]]
+
+
+def _get_branch_probability(
+    tree_node: TreeNodeDto2,
+    state_id: str,
+) -> float:
+    if tree_node.type == Type.UNCERTAINTY.value and tree_node.probabilities:
+        matched = next(
+            (p for p in tree_node.probabilities if p.outcome_id.__str__() == state_id),
+            None,
+        )
+        if matched is not None:
+            return matched.probability_value
+    return 1.0
+
+
+def _visit_child(
+    solver: PyagrumSolver,
+    tree_node: TreeNodeDto2,
+    child: TreeNodeDto2,
+    current_path: list[str],
+    cumulative_probability: float,
+    solution: Optional[SolutionDto],
+) -> None:
+    state_id = child.parent_state_id
+    if state_id is None:
+        raise ValueError("State id is None for child node, cannot calculate expected utility")
+    next_path = current_path + [state_id.__str__()]
+
+    # handle cumulative probability
+    branch_probability = _get_branch_probability(tree_node, state_id.__str__())
+    child_cumulative_probability = cumulative_probability * branch_probability
+
+    if child.type == Type.END.value:
+        child.cumulative_probability = round(child_cumulative_probability, ndigits=PrecisionConstants.EXPECTED_UTILITY_PRECISION.value)
+        return
+
+    if child.type == Type.UNCERTAINTY.value:
+        _populate_uncertainty_probabilities(solver, child, next_path)
+
+    expected_utility = solver.get_expected_utility_given_path(
+        issue_id=child.issue_id.__str__(),
+        state_ids=next_path,
+    )
+    if math.isnan(expected_utility):
+        child.expected_value = 0
+    else:
+        child.expected_value = round(expected_utility, ndigits=PrecisionConstants.EXPECTED_UTILITY_PRECISION.value)
+
+    visit_tree_node_and_populate(
+        solver,
+        next_path,
+        child,
+        cumulative_probability=child_cumulative_probability,
+        solution=solution,
+    )
+
+
 def visit_tree_node_and_populate(
     solver: PyagrumSolver,
     current_path: list[str],
-    res: TreeNodeDto2,
+    tree_node: TreeNodeDto2,
     cumulative_probability: float = 1.0,
     solution: Optional[SolutionDto] = None,
 ) -> None:
@@ -47,86 +151,18 @@ def visit_tree_node_and_populate(
     if solution is not None:
         optimal_option_lookup = solution.get_lookup()
 
-    # From the utility dto we can find the outcome/option id
-    if res.expected_value is None:  # for handling root
-        expected_utility = solver.get_expected_utility_given_path(
-            issue_id=res.issue_id.__str__(),
-            state_ids=current_path,
-        )
-        if math.isnan(expected_utility):
-            res.expected_value = 0
-        else:
-            res.expected_value = expected_utility
+    _populate_root_node_if_needed(solver, tree_node, current_path)
 
-        if res.type == Type.UNCERTAINTY.value:
-            _populate_uncertainty_probabilities(solver, res, current_path)
-
-    if res.type == Type.END.value:
-        res.cumulative_probability = cumulative_probability
+    if tree_node.type == Type.END.value:
+        tree_node.cumulative_probability = cumulative_probability
         return
 
-    if not res.children:
+    if not tree_node.children:
         return
 
     # Prune non-optimal children for decision nodes when solution is provided
-    if optimal_option_lookup is not None and res.type == Type.DECISION.value:
-        path_str_set = set(current_path)
-        path_to_options = optimal_option_lookup.get(str(res.issue_id), {})
-        optimal_option_id = next(
-            (option_id for key, option_id in path_to_options.items()
-             if set(key).issubset(path_str_set)),
-            None,
-        )
-        
-        if optimal_option_id is not None:
-            optimal_idx = next(
-                (i for i, c in enumerate(res.children)
-                 if str(c.parent_state_id) == optimal_option_id),
-                None,
-            )
-            if optimal_idx is not None:
-                res.children = [res.children[optimal_idx]]
-                if res.utilities:
-                    res.utilities = [res.utilities[optimal_idx]]
+    if optimal_option_lookup is not None and tree_node.type == Type.DECISION.value:
+        _prune_to_optimal_child(tree_node, current_path, optimal_option_lookup)
 
-    for child in res.children:
-        child: TreeNodeDto2
-        state_id = child.parent_state_id
-        if state_id is None:
-            raise ValueError("State id is None for child node, cannot calculate expected utility")
-        next_path = current_path + [state_id.__str__()]
-
-        # handle cumulative probability
-        branch_probability = 1.0
-        if res.type == Type.UNCERTAINTY.value and res.probabilities:
-            matched = next(
-                (p for p in res.probabilities if p.outcome_id.__str__() == state_id.__str__()),
-                None,
-            )
-            if matched is not None:
-                branch_probability = matched.probability_value
-        child_cumulative_probability = cumulative_probability * branch_probability
-
-        if child.type == Type.END.value:
-            child.cumulative_probability = round(child_cumulative_probability, ndigits=PrecisionConstants.EXPECTED_UTILITY_PRECISION.value)
-            continue
-
-        if child.type == Type.UNCERTAINTY.value:
-            _populate_uncertainty_probabilities(solver, child, next_path)
-
-        expected_utility = solver.get_expected_utility_given_path(
-            issue_id=child.issue_id.__str__(),
-            state_ids=next_path,
-        )
-        if math.isnan(expected_utility):
-            child.expected_value = 0
-        else:
-            child.expected_value = round(expected_utility, ndigits=PrecisionConstants.EXPECTED_UTILITY_PRECISION.value)
-            
-        visit_tree_node_and_populate(
-            solver,
-            next_path,
-            child,
-            cumulative_probability=child_cumulative_probability,
-            solution=solution,
-        )
+    for child in tree_node.children:
+        _visit_child(solver, tree_node, child, current_path, cumulative_probability, solution)

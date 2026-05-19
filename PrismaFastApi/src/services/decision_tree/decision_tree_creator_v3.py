@@ -717,7 +717,6 @@ class DecisionTreeCreator_v3:
                 Example:
                 paths = [[option_A_id, outcome_A_id], [option_A_id, outcome_B_id]]
         """
-        expanded = False
 
         if not partial_order:
             partial_order = self.calculate_partial_order()
@@ -725,15 +724,7 @@ class DecisionTreeCreator_v3:
         decision_tree = DecisionTreeGraph_v3(root=root_node)
         if not paths:
             paths = []
-        # if not paths:TODO
-        #     paths = []
-        #     issue = self.get_node_from_uuid(root_node)
-        #     if issue.type == Type.UNCERTAINTY.value and issue.uncertainty is not None:
-        #         [paths.append([x.id]) for x in issue.uncertainty.outcomes]
-        #         expanded = True
-        #     elif issue.type == Type.DECISION.value and issue.decision is not None:
-        #         [paths.append([x.id]) for x in issue.decision.options]
-        #         expanded = True
+        
         prefix_to_treenode = {(): root_node}
 
         visited_states: set[tuple[tuple[uuid.UUID, ...], uuid.UUID]] = set()

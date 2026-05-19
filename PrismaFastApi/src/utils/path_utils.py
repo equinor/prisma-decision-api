@@ -6,7 +6,6 @@ from src.constants import Type
 
 def is_path_valid_for_optimal_options(
         path: list[uuid.UUID],
-        issue_by_id: dict[uuid.UUID, IssueOutgoingDto],
         solution: Optional[SolutionDto],
     ) -> bool:
     if not solution:
@@ -29,12 +28,11 @@ def filter_paths_by_solution(
         )
     )
 
-
 def expand_all_paths_by_one_depth(
-    solution: Optional[SolutionDto],
     partial_order: list[uuid.UUID],
     issues: list[IssueOutgoingDto],
     paths: list[list[uuid.UUID]],
+    solution: Optional[SolutionDto] = None,
 ) -> list[list[uuid.UUID]]:
     issue_by_id = {i.id: i for i in issues}
     if len(paths) == 0:
@@ -47,7 +45,7 @@ def expand_all_paths_by_one_depth(
             [
                 paths.append([x.id]) 
                 for x in issue.decision.options 
-                if is_path_valid_for_optimal_options([x.id], issue_by_id, solution)
+                if is_path_valid_for_optimal_options([x.id], solution)
             ]
     else:
         paths_to_add: list[list[uuid.UUID]] = []
@@ -64,23 +62,8 @@ def expand_all_paths_by_one_depth(
                 [
                     paths_to_add.append(path+[x.id]) 
                     for x in issue.decision.options 
-                    if is_path_valid_for_optimal_options(path+[x.id], issue_by_id, solution)
+                    if is_path_valid_for_optimal_options(path+[x.id], solution)
                 ]
         # override the paths to the expanded ones
         paths = paths_to_add
     return paths
-
-def expand_and_filter(
-    solution: SolutionDto,
-    partial_order: list[uuid.UUID],
-    issues: list[IssueOutgoingDto],
-    paths: list[list[uuid.UUID]],
-) -> list[list[uuid.UUID]]:
-    
-    paths = expand_all_paths_by_one_depth(
-        solution,
-        partial_order,
-        issues,
-        paths
-    )
-    return filter_paths_by_solution(solution, issues, paths)

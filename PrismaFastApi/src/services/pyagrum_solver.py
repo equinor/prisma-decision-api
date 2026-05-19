@@ -218,7 +218,7 @@ class PyagrumSolver:
     # method for adding evidence to the inference engine, takes a list of state_id, method internally finds the corresponding issue and state, then adds the evidence to the inference engine
     def set_evidence(self, ie: gum.ShaferShenoyLIMIDInference, state_ids: list[str]):
         ie.eraseAllEvidence() # type: ignore
-        evidence: dict[str, str] = {}
+        evidence: dict[int, str] = {}
         for state_id in state_ids:
             state = self._find_state(state_id)
             if isinstance(state, OptionOutgoingDto):
@@ -229,7 +229,7 @@ class PyagrumSolver:
                 issue = [issue for issue in self.issues if issue.uncertainty is not None and any(outcome.id == state.id for outcome in issue.uncertainty.outcomes)][0]
                 node_id = self.node_lookup[issue.id.__str__()]
                 evidence[node_id] = str(state.id)
-        ie.setEvidence(evidence)
+        ie.setEvidence(evidence) # type: ignore
         ie.makeInference()
         return ie
     
@@ -243,11 +243,12 @@ class PyagrumSolver:
         ie = self.get_inference()
         ie_with_evidence = self.set_evidence(ie, state_ids)
 
-        # For chance/uncertainty nodes, posterior returns a Potential
-        pot = ie_with_evidence.posterior(issue_id)  # issue_id is the node name
+        # For chance/uncertainty nodes, posterior returns probabilities in order of node labels
+        # issue_id is the node name 
+        posterior = ie_with_evidence.posterior(issue_id) # type: ignore
         labels = self._pyagrum_get_node_labels(issue_id)
-        probs = pot.toarray().tolist()
-        state_to_probability = {label: prob for label, prob in zip(labels, probs)}
+        probs: list[float] = posterior.toarray().tolist() # type: ignore
+        state_to_probability = {label: prob for label, prob in zip(labels, probs)} # type: ignore
         return state_to_probability
     
     def add_node(self, issue: IssueOutgoingDto):

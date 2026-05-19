@@ -1,10 +1,6 @@
 import uuid
 from src.utils.visit_tree_node_and_populate import visit_tree_node_and_populate
-from src.utils.path_utils import (
-    filter_paths_by_solution, 
-    expand_all_paths_by_one_depth,
-    expand_and_filter,
-)
+from src.utils.path_utils import expand_all_paths_by_one_depth
 from src.services.decision_tree.decision_tree_creator_v3 import DecisionTreeCreator_v3
 from concurrent.futures import ThreadPoolExecutor
 from src.services.pyagrum_solver import PyagrumSolver
@@ -126,21 +122,10 @@ class SolverService:
         solver = PyagrumSolver()
         solution = await solver.find_optimal_decisions(issues=issues, edges=edges)
 
-        # instead of pruning, construct expanded paths from the solution to make the decision tree.
-        # the issue is that the solution only cares about parents
-        # can get order of issues from partial order.
-        # then need to construct paths from solution
-
         decision_tree_creator = DecisionTreeCreator_v3.initialize(project_id, nodes = issues, edges = edges)
         DT_partial_order = decision_tree_creator.calculate_partial_order_issue_ids()
 
-        # TODO: reimplement full expansion given low node count when partial workflow is more developed
-        # if len([x for x in issues if x.type == Type.UNCERTAINTY.value]) <= 10:
-        #     # small enough of a number of uncertainty to expand full solution tree
-        #     paths = self.construct_paths_from_solution(solution, DT_partial_order, issues)
-        # else:
-            # filter paths to eliminate non optimal options
-        paths = expand_all_paths_by_one_depth(solution, DT_partial_order, issues, paths)
+        paths = expand_all_paths_by_one_depth(DT_partial_order, issues, paths, solution)
 
         decision_tree = decision_tree_creator.convert_to_decision_tree_partial(project_id=issues[0].project_id, paths=paths)
 
@@ -148,26 +133,6 @@ class SolverService:
 
         visit_tree_node_and_populate(solver, [], dt_dtos, solution=solution)
         return dt_dtos
-    
-    # def filter_paths_by_solution(
-    #     self,
-    #     solution: SolutionDto,
-    #     partial_order: list[uuid.UUID],
-    #     issues: list[IssueOutgoingDto],
-    #     paths: list[list[uuid.UUID]],
-    # ) -> list[list[uuid.UUID]]:
-    #     optimal_option_lookup = solution.get_lookup()
-    #     issue_by_id = {i.id: i for i in issues}
-
-    #     def is_path_valid(path: list[uuid.UUID]) -> bool:
-    #         path_str_set = set(str(x) for x in path)
-    #         decision_ids = filter(lambda id: issue_by_id[id].type == Type.DECISION.value, path)
-    #         return all(
-    #             any(set(key).issubset(path_str_set) for key in optimal_option_lookup[str(id)].keys())
-    #             for id in decision_ids
-    #         )
-
-    #     return list(filter(is_path_valid, paths))
     
     def construct_paths_from_solution(
         self,
