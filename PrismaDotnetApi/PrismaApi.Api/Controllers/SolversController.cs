@@ -32,11 +32,11 @@ public class SolversController : PrismaBaseController
         return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
     }
 
-    [HttpGet("solvers/project/{projectId:guid}/decision_tree/v3")]
-    public async Task<ActionResult<ApiResponseDto>> GetSolutionAsDecisionTreeV3Async([FromRoute] Guid projectId, CancellationToken ct = default)
+    [HttpPost("solvers/project/{projectId:guid}/partial_decision_tree/v3")]
+    public async Task<ActionResult<ApiResponseDto>> GetSolutionAsDecisionTreeV3Async([FromRoute] Guid projectId, [FromBody] List<List<Guid>> paths, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}/decision_tree/v3", user, ct);
+        var fastApiResponse = await _fastApiService.SendPartialInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}/partial_decision_tree/v3", paths, user, ct);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
             return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeLogString() : null);

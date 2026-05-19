@@ -36,3 +36,10 @@ class SolutionDto(BaseModel):
             parent_key = tuple(str(x.state.id) for x in option.parent_states)
             lookup.setdefault(decision_key, {})[parent_key] = str(option.state.id)
         return lookup
+    
+    def get_valid_subsets(self) -> list[list[uuid.UUID]]:
+        res: list[list[uuid.UUID]] = []
+        for option in self.get_all_optimal_decisions():
+            parents = [x.state.id for x in option.parent_states]
+            res.append(parents + [option.state.id])
+        return res

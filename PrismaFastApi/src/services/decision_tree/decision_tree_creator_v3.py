@@ -115,6 +115,12 @@ class DecisionTreeGraph_v3:
                     utilities = self.get_utility_dtos(treenode_id, node),
                     children=[],
                 )
+                if dto.utilities:
+                    dto.utilities.sort(key=lambda x: str(x.option_id if x.option_id is not None else x.outcome_id or ""))
+
+                if dto.probabilities:
+                    dto.probabilities.sort(key=lambda x: x.outcome_id)
+
                 dto_map[treenode_id] = dto
 
         for parent_id in self.nx.nodes:  # type: ignore
@@ -127,6 +133,8 @@ class DecisionTreeGraph_v3:
                 parent_dto.children = [
                     dto_map[child_id] for child_id in child_ids if child_id in dto_map
                 ]
+                parent_dto.children.sort(key=lambda x: x.parent_state_id or "")
+
         return dto_map
 
     def topological_sort(self, dto_map: Dict[uuid.UUID, TreeNodeDto2]) -> List[uuid.UUID]:
@@ -709,21 +717,46 @@ class DecisionTreeCreator_v3:
                 Example:
                 paths = [[option_A_id, outcome_A_id], [option_A_id, outcome_B_id]]
         """
+        expanded = False
 
         if not partial_order:
             partial_order = self.calculate_partial_order()
         root_node = partial_order[0]
         decision_tree = DecisionTreeGraph_v3(root=root_node)
-
-        if paths is None:
+        if not paths:
             paths = []
-        current_paths: list[list[uuid.UUID]] = []
+        # if not paths:TODO
+        #     paths = []
+        #     issue = self.get_node_from_uuid(root_node)
+        #     if issue.type == Type.UNCERTAINTY.value and issue.uncertainty is not None:
+        #         [paths.append([x.id]) for x in issue.uncertainty.outcomes]
+        #         expanded = True
+        #     elif issue.type == Type.DECISION.value and issue.decision is not None:
+        #         [paths.append([x.id]) for x in issue.decision.options]
+        #         expanded = True
         prefix_to_treenode = {(): root_node}
 
         visited_states: set[tuple[tuple[uuid.UUID, ...], uuid.UUID]] = set()
 
         for path in paths:
             for k, state_id in enumerate(path):
+                issue = self.get_node_from_uuid(partial_order[k])
+                # validate that paths are correct according to the partial order
+                if issue is not None and isinstance(issue, IssueOutgoingDto):
+                    valid_state = False
+                    if issue.type == Type.DECISION.value and issue.decision is not None:
+                        valid_state = any(
+                            option.id == state_id for option in issue.decision.options
+                        )
+                    elif issue.type == Type.UNCERTAINTY.value and issue.uncertainty is not None:
+                        valid_state = any(
+                            outcome.id == state_id for outcome in issue.uncertainty.outcomes
+                        )
+                    if not valid_state:
+                        raise ValueError(f"Invalid path: state_id {state_id} not found in issue {partial_order[k]}")
+                else:
+                    raise ValueError(f"Invalid path: issue {partial_order[k]} not found or not an IssueOutgoingDto")
+                
                 prefix = tuple(path[:k])
                 visit_key = (prefix, state_id)
                 if visit_key in visited_states:
@@ -742,6 +775,7 @@ class DecisionTreeCreator_v3:
 
                 edge = EdgeUUIDDto(tail=tail_id, name=str(state_id), head=head_id)
                 decision_tree.add_edge(edge)
+        del visited_states
         
         self.find_nodes_for_utilities(partial_order)
         decision_tree.transfer_node_treenode_lookup(self.node_treenode_lookup)
