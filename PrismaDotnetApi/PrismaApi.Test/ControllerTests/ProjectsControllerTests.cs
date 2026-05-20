@@ -115,8 +115,8 @@ public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>
                 {
                     Id = Guid.NewGuid(),
                     ProjectId = _fixture.TestArgs.TestProjectId,
-                    UserId = _fixture.PrismaUser.Id!,
-                    Name = _fixture.PrismaUser.Name!,
+                    UserId = _fixture.SecondaryUser.Id!,
+                    Name = _fixture.SecondaryUser.Name!,
                     Role = ProjectRoleType.Facilitator.ToString()
                 }).ToList()
             }
