@@ -125,7 +125,7 @@ class SolverService:
 
         decision_tree_creator = DecisionTreeCreator_v3.initialize(project_id, nodes = issues, edges = edges)
 
-        decision_tree = decision_tree_creator.convert_to_decision_tree_partial(project_id=issues[0].project_id, paths=paths)
+        decision_tree = decision_tree_creator.convert_to_decision_tree_partial(project_id=project_id, paths=paths)
 
         dt_dtos = decision_tree.to_issue_dtos(backwards_calc=False)
 
