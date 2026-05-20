@@ -90,6 +90,19 @@ public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>
     {
         using var scope = _fixture.UserScope();
 
+        var getResponse = await Client.TestClientGetAsync<ProjectOutgoingDto>($"projects/{_fixture.TestArgs.TestProjectId}");
+        
+        Assert.NotNull(getResponse.Value);
+
+        var existingUsers = getResponse.Value.Users.Select(u => new ProjectRoleIncomingDto
+        {
+            Id = u.Id,
+            ProjectId = u.ProjectId,
+            UserId = u.UserId,
+            Name = u.Name,
+            Role = u.Role
+        }).ToList();
+
         var updatedName = "Updated Project Name";
         var payload = new List<ProjectIncomingDto>
         {
@@ -98,17 +111,14 @@ public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>
                 Id = _fixture.TestArgs.TestProjectId,
                 Name = updatedName,
                 OpportunityStatement = "Updated statement",
-                Users = new List<ProjectRoleIncomingDto>
+                Users = existingUsers.Append(new ProjectRoleIncomingDto
                 {
-                    new()
-                    {
-                        Id = Guid.NewGuid(),
-                        ProjectId = _fixture.TestArgs.TestProjectId,
-                        UserId = _fixture.PrismaUser.Id!,
-                        Name = _fixture.PrismaUser.Name!,
-                        Role = ProjectRoleType.DecisionMaker.ToString()
-                    }
-                }
+                    Id = Guid.NewGuid(),
+                    ProjectId = _fixture.TestArgs.TestProjectId,
+                    UserId = _fixture.PrismaUser.Id!,
+                    Name = _fixture.PrismaUser.Name!,
+                    Role = ProjectRoleType.Facilitator.ToString()
+                }).ToList()
             }
         };
 
