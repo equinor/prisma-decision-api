@@ -56,4 +56,17 @@ async def build_decision_tree_from_dtos_optimal(
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ) -> Optional[TreeNodeDto2]:
     async with lock_manager.acquire_project_lock(project_id):
-        return structure_service.create_decision_tree_from_dtos_optimal(project_id, issues, edges)
+        return structure_service.create_decision_tree_from_dtos_optimal(
+            project_id, issues, edges
+        )
+        
+@router.post("/structure/{project_id}/partial_decision_tree/v3")
+async def build_partial_decision_tree_from_dtos_optimal(
+    project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto],
+    paths: list[list[uuid.UUID]],
+    structure_service: StructureService = Depends(get_structure_service),
+    lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
+) -> Optional[TreeNodeDto2]:
+    async with lock_manager.acquire_project_lock(project_id):
+        return await structure_service.create_partial_decision_tree_from_dtos_optimal(project_id, issues, edges, paths=paths)
+        

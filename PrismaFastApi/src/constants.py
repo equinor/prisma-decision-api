@@ -59,6 +59,10 @@ class DatabaseConstants(int, Enum):
 class DtoConstants(int, Enum):
     DECIMAL_PLACES = 14
 
+class PrecisionConstants(int, Enum):
+    PROBABILITY_PRECISION = 4
+    EXPECTED_UTILITY_PRECISION = 6
+
 
 class NodeStates(str, Enum):
     OPTION = "option"
