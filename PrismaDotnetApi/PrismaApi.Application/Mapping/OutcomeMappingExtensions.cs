@@ -14,8 +14,10 @@ public static class OutcomeMappingExtensions
             Id = entity.Id,
             Name = entity.Name,
             UncertaintyId = entity.UncertaintyId,
-            Utility = entity.Utility
+            Utility = entity.Utility,
+            CreatedAt = entity.CreatedAt
         };
+
     }
 
     public static List<OutcomeOutgoingDto> ToOutgoingDtos(this IEnumerable<Outcome> entities)
@@ -30,7 +32,8 @@ public static class OutcomeMappingExtensions
             Id = dto.Id,
             Name = dto.Name,
             UncertaintyId = dto.UncertaintyId,
-            Utility = dto.Utility
+            Utility = dto.Utility,
+            CreatedAt = dto.CreatedAt
         };
     }
 

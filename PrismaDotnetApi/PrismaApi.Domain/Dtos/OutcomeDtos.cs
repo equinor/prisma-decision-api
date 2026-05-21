@@ -13,6 +13,9 @@ public class OutcomeDto
     public Guid UncertaintyId { get; set; }
     [JsonPropertyName("utility")]
     public double Utility { get; set; }
+    [JsonPropertyName("created_at")]
+    public DateTimeOffset CreatedAt { get; set; }
+
 }
 
 public class OutcomeIncomingDto : OutcomeDto
@@ -21,4 +24,5 @@ public class OutcomeIncomingDto : OutcomeDto
 
 public class OutcomeOutgoingDto : OutcomeDto
 {
+
 }
