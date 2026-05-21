@@ -1,9 +1,8 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from src.project_lock_manager import ProjectQueueManager
 from src.services.solver_service import SolverService
 from src.dependencies import get_solver_service, get_project_lock_manager
-from src.services.decision_tree_pruning_service import DecisionTreePruningException
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
 
@@ -16,10 +15,7 @@ async def get_optimal_decisions_for_project_from_dtos(
     edges: list[EdgeOutgoingDto],
     solver_service: SolverService = Depends(get_solver_service),
 ):
-    try:
-        return await solver_service.find_optimal_decision_pyagrum_from_dtos(issues, edges)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return await solver_service.find_optimal_decision_pyagrum_from_dtos(issues, edges)
 
 
 @router.get("/solvers/project/{project_id}/decision_tree/v2")
@@ -30,15 +26,10 @@ async def get_optimal_decisions_for_project_as_tree_tmp(
     solver_service: SolverService = Depends(get_solver_service),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ):
-    try:
-        async with lock_manager.acquire_project_lock(project_id):
-            return await solver_service.get_decision_tree_for_optimal_decisions(
-                project_id, issues, edges
-            )
-    except DecisionTreePruningException as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    async with lock_manager.acquire_project_lock(project_id):
+        return await solver_service.get_decision_tree_for_optimal_decisions(
+            project_id, issues, edges
+        )
 
 
 @router.post("/solvers/project/{project_id}/decision_tree/v2")
@@ -49,12 +40,7 @@ async def get_optimal_decisions_for_project_as_tree_tmp_from_dtos(
     solver_service: SolverService = Depends(get_solver_service),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ):
-    try:
-        async with lock_manager.acquire_project_lock(project_id):
-            return await solver_service.get_decision_tree_for_optimal_decisions_from_dtos(
-                project_id, issues, edges
-            )
-    except DecisionTreePruningException as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    async with lock_manager.acquire_project_lock(project_id):
+        return await solver_service.get_decision_tree_for_optimal_decisions_from_dtos(
+            project_id, issues, edges
+        )

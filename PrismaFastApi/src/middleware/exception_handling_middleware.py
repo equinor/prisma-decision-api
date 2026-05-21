@@ -4,6 +4,7 @@ from src.logger import get_dot_api_logger
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.exceptions import RequestValidationError
 from src.config import config
+from src.services.decision_tree_pruning_service import DecisionTreePruningException
 
 logger = get_dot_api_logger()
 
@@ -22,6 +23,13 @@ class ExceptionFilterMiddleware(BaseHTTPMiddleware):
                 status_code=exc.status_code,
                 content={"message": exc.detail},  # Use `detail` from HTTPException
             )
+        except ValueError as exc:
+            # Log and return validation errors (e.g. Infliunce diagram validation)
+            logger.error(f"ValueError: {exc}")
+            return JSONResponse(status_code=400, content={"message": str(exc)})
+        except DecisionTreePruningException as exc:
+            logger.error(f"DecisionTreePruningException: {exc}")
+            return JSONResponse(status_code=400, content={"message": str(exc)})
         except FileNotFoundError as exc:
             # Log the FileNotFoundError with details
             logger.error(f"FileNotFoundError: {exc}")
