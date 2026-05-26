@@ -1,8 +1,10 @@
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
+using PrismaApi.Infrastructure.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,11 +17,13 @@ public class IssueService : IIssueService
 {
     private readonly IIssueRepository _issueRepository;
     private readonly IProjectRepository _projectRepository;
+    private readonly IDiscreteTableRuleEventHandler _discreteTableRuleEventHandler;
 
-    public IssueService(IIssueRepository issueRepository, IProjectRepository projectRepository)
+    public IssueService(IIssueRepository issueRepository, IProjectRepository projectRepository, IDiscreteTableRuleEventHandler discreteTableRuleEventHandler)
     {
         _issueRepository = issueRepository;
         _projectRepository = projectRepository;
+        _discreteTableRuleEventHandler = discreteTableRuleEventHandler;
     }
 
     public async Task<List<IssueOutgoingDto>> CreateAsync(List<IssueIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
@@ -31,6 +35,13 @@ public class IssueService : IIssueService
         EnsureNodeDefaults(dtos);
         var entities = dtos.ToEntities(userDto);
         await _issueRepository.AddRangeAsync(entities, ct);
+        foreach (var entity in entities)
+        {
+            if (entity.Type == IssueType.Uncertainty.ToString() && entity.Uncertainty?.Outcomes.Count > 0)
+            {
+                 _discreteTableRuleEventHandler.EnqueueIssuesForRebuild([entity.Id]);
+            }
+        }
         return entities.ToOutgoingDtos();
     }
 

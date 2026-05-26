@@ -13,6 +13,8 @@ public class OptionDto
     public Guid DecisionId { get; set; }
     [JsonPropertyName("utility")]
     public double Utility { get; set; }
+    [JsonPropertyName("created_at")]
+    public DateTimeOffset CreatedAt { get; set; }
 }
 
 public class OptionIncomingDto : OptionDto
@@ -20,5 +22,8 @@ public class OptionIncomingDto : OptionDto
 }
 
 public class OptionOutgoingDto : OptionDto
+
 {
+
+
 }

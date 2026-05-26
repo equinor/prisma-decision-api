@@ -57,6 +57,7 @@ class TreeNodeDto(BaseModel):
 class TreeNodeDto2(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     issue_id: uuid.UUID
+    parent_state_id: Optional[str] = None
     type: str = Type.UNASSIGNED.value
     expected_value: Optional[float] = None  # only for decision and uncertainty nodes
     endpoint_value: Optional[float] = None  # only for endpoint nodes
