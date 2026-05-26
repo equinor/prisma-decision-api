@@ -13,6 +13,7 @@ public static class UtilityMappingExtensions
         {
             Id = entity.Id,
             IssueId = entity.IssueId,
+            ProjectId = entity.ProjectId,
             DiscreteUtilities = entity.DiscreteUtilities.ToDtos()
         };
     }
@@ -27,7 +28,8 @@ public static class UtilityMappingExtensions
         return new Utility
         {
             Id = dto.Id,
-            IssueId = dto.IssueId
+            IssueId = dto.IssueId, 
+            ProjectId = dto.ProjectId,
         };
     }
 

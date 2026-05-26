@@ -11,6 +11,7 @@ public static class UncertaintyMappingExtensions
         {
             Id = entity.Id,
             IssueId = entity.IssueId,
+            ProjectId = entity.ProjectId,
             IsKey = entity.IsKey,
             Outcomes = entity.Outcomes.ToOutgoingDtos(),
             DiscreteProbabilities = entity.DiscreteProbabilities.ToDtos()
@@ -28,6 +29,7 @@ public static class UncertaintyMappingExtensions
         {
             Id = dto.Id,
             IssueId = dto.IssueId,
+            ProjectId = dto.ProjectId,
             IsKey = dto.IsKey,
             Outcomes = dto.Outcomes.ToEntities(),
             DiscreteProbabilities = dto.DiscreteProbabilities.Select(x => x.ToEntity()).ToList()
