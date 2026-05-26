@@ -8,8 +8,10 @@ public class Outcome : BaseEntity, IBaseEntity<Guid>
 {
     public Guid Id { get; set; }
     public Guid UncertaintyId { get; set; }
+    public Guid ProjectId { get; set; }
     public string Name { get; set; } = string.Empty;
     public double Utility { get; set; }
 
     public Uncertainty? Uncertainty { get; set; }
+    public Project? Project { get; set; }
 }
