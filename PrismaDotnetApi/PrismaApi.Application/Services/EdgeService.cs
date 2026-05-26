@@ -1,23 +1,23 @@
+using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using PrismaApi.Infrastructure.Caching;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
 public class EdgeService: IEdgeService
 {
     private readonly IEdgeRepository _edgeRepository;
+    private readonly IMemoryCache _cache;
 
-    public EdgeService(IEdgeRepository edgeRepository)
+    public EdgeService(IEdgeRepository edgeRepository, IMemoryCache cache)
     {
         _edgeRepository = edgeRepository;
+        _cache = cache;
     }
 
     public async Task<List<EdgeOutgoingDto>> CreateAsync(List<EdgeIncomingDto> dtos, CancellationToken ct = default)
@@ -51,9 +51,27 @@ public class EdgeService: IEdgeService
 
     public async Task<List<EdgeOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _edgeRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-        return entities.ToOutgoingDtos();
+        var egdes = new List<EdgeOutgoingDto>();
+        foreach (var role in user.ProjectRoles)
+        {
+            var cacheKey = CacheKeys.GetEdgesInProjectKey(role.ProjectId);
+            var cachedEdges = _cache.GetCacheItemAsEdges(role.ProjectId, user);
+            if (cachedEdges != null)
+            {
+                egdes.AddRange(cachedEdges);
+            }
+            else
+            {
+                var projectEdges = await _edgeRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(role.ProjectId), ct: ct);
+                var edgeDtos = projectEdges.ToOutgoingDtos();
+                egdes.AddRange(edgeDtos);
+                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(10), edgeDtos); // Cache for 10 minutes
+            }
+        }
+        return egdes;
     }
     private static Expression<Func<Edge, bool>> UserFilter(UserOutgoingDto user)
         => e => e.HeadNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id) && e.TailNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+    private static Expression<Func<Edge, bool>> ProjectFilter(Guid projectId)
+        => e => e.ProjectId == projectId;
 }

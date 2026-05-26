@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
+using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Infrastructure.Caching;
 
@@ -10,6 +11,76 @@ public static class MemoryCacheExtensions
     private static readonly MemoryCacheEntryOptions CacheEntryOptions =
         new MemoryCacheEntryOptions().SetSlidingExpiration(
             TimeSpan.FromMinutes(CacheConstants.DefaultMemoryCacheSlidingDurationInMinutes));
+
+    public static object? GetCacheItem(this IMemoryCache cache, string cacheKey)
+    {
+        if (cache.TryGetValue(cacheKey, out var value))
+        {
+            return value;
+        }
+
+        return null;
+    }
+
+    public static T? GetCacheItem<T>(this IMemoryCache cache, string cacheKey) where T : class
+    {
+        if (cache.TryGetValue(cacheKey, out var value) && value is T typedValue)
+        {
+            return typedValue;
+        }
+
+        return null;
+    }
+
+    public static InfluanceDiagramDto? GetCacheItemAsInfluenceDiagram(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
+    {
+        // check that the user has access to the project before returning cached diagram
+        if (user.ProjectRoles.All(pr => pr.ProjectId != projectId))
+        {
+            return null;
+        }
+        return cache.GetCacheItem<InfluanceDiagramDto>(CacheKeys.GetInfluenceDiagramKey(projectId));  
+    }
+
+    public static List<IssueOutgoingDto>? GetCacheItemAsIssues(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
+    {
+        // check that the user has access to the project before returning cached issues
+        if (user.ProjectRoles.All(pr => pr.ProjectId != projectId))
+        {
+            return null;
+        }
+        return cache.GetCacheItem<List<IssueOutgoingDto>>(CacheKeys.GetIssuesInProjectKey(projectId));
+    }
+
+     public static List<EdgeOutgoingDto>? GetCacheItemAsEdges(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
+    {
+        // check that the user has access to the project before returning cached edges
+        if (user.ProjectRoles.All(pr => pr.ProjectId != projectId))
+        {
+            return null;
+        }
+        return cache.GetCacheItem<List<EdgeOutgoingDto>>(CacheKeys.GetEdgesInProjectKey(projectId));
+    }
+
+    public static List<NodeOutgoingDto>? GetCacheItemAsNodes(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
+    {
+        // check that the user has access to the project before returning cached nodes
+        if (user.ProjectRoles.All(pr => pr.ProjectId != projectId))
+        {
+            return null;
+        }
+        return cache.GetCacheItem<List<NodeOutgoingDto>>(CacheKeys.GetNodesInProjectKey(projectId));
+    }
+
+    public static List<AssessmentOutgoingDto>? GetCacheItemAsAssessment(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
+    {
+        // check that the user has access to the project before returning cached assessment
+        if (user.ProjectRoles.All(pr => pr.ProjectId != projectId))
+        {
+            return null;
+        }
+        return cache.GetCacheItem<List<AssessmentOutgoingDto>>(CacheKeys.GetAssessmentKey(projectId));
+    }
 
     public static void AddCacheItem(this IMemoryCache cache, CacheItem key, TimeSpan? duration,
         object? value)

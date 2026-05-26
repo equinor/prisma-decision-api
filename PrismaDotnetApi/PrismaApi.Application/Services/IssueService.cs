@@ -1,13 +1,11 @@
+using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using PrismaApi.Infrastructure.Caching;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
@@ -15,11 +13,13 @@ public class IssueService : IIssueService
 {
     private readonly IIssueRepository _issueRepository;
     private readonly IProjectRepository _projectRepository;
+    private readonly IMemoryCache _cache;
 
-    public IssueService(IIssueRepository issueRepository, IProjectRepository projectRepository)
+    public IssueService(IIssueRepository issueRepository, IProjectRepository projectRepository, IMemoryCache cache)
     {
         _issueRepository = issueRepository;
         _projectRepository = projectRepository;
+        _cache = cache;
     }
 
     public async Task<List<IssueOutgoingDto>> CreateAsync(List<IssueIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
@@ -57,8 +57,25 @@ public class IssueService : IIssueService
 
     public async Task<List<IssueOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var issues = await _issueRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-        return issues.ToOutgoingDtos();
+        // refactor to get all projects that the user has access to, then combine them all after getting them from the cache or database
+        var issues = new List<IssueOutgoingDto>();
+        foreach (var role in user.ProjectRoles)
+        {
+            var cacheKey = CacheKeys.GetIssuesInProjectKey(role.ProjectId);
+            var cachedIssues = _cache.GetCacheItemAsIssues(role.ProjectId, user);
+            if (cachedIssues != null)
+            {
+                issues.AddRange(cachedIssues);
+            }
+            else
+            {
+                var projectIssues = await _issueRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(role.ProjectId), ct: ct);
+                var issueDtos = projectIssues.ToOutgoingDtos();
+                issues.AddRange(issueDtos);
+                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(10), issueDtos); // Cache for 10 minutes
+            }
+        }
+        return issues;
     }
 
     private static void EnsureNodeDefaults(IEnumerable<IssueIncomingDto> dtos)
@@ -95,4 +112,6 @@ public class IssueService : IIssueService
     }
     private static Expression<Func<Issue, bool>> UserFilter(UserOutgoingDto user)
         => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+    private static Expression<Func<Issue, bool>> ProjectFilter(Guid projectId)
+        => e => e.ProjectId == projectId;
 }

@@ -10,6 +10,8 @@ public class DecisionDto
     public Guid Id { get; set; } = Guid.NewGuid();
     [JsonPropertyName("issue_id")]
     public Guid IssueId { get; set; }
+    [JsonPropertyName("project_id")]
+    public Guid ProjectId { get; set; }
 }
 
 public class DecisionIncomingDto : DecisionDto

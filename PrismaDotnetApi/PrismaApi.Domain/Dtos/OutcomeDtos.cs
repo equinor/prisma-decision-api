@@ -11,6 +11,8 @@ public class OutcomeDto
     public string Name { get; set; } = string.Empty;
     [JsonPropertyName("uncertainty_id")]
     public Guid UncertaintyId { get; set; }
+    [JsonPropertyName("project_id")]
+    public Guid ProjectId { get; set; }
     [JsonPropertyName("utility")]
     public double Utility { get; set; }
     [JsonPropertyName("created_at")]

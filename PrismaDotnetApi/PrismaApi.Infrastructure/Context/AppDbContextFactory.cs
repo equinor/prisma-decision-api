@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 
 namespace PrismaApi.Infrastructure.Context;
@@ -9,6 +10,7 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
     public AppDbContext CreateDbContext(string[] args)
     {
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        environment = "Local";
 
         IConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         var apiPath = Path.Combine(
@@ -41,7 +43,7 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
                 x => x.MigrationsAssembly("SqlServerMigrations"));
         }
 
-        return new AppDbContext(optionsBuilder.Options);
+        return new AppDbContext(optionsBuilder.Options, new MemoryCache(new MemoryCacheOptions()));
     }
 
     private static string GetProvider(string[] args)
