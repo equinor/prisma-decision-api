@@ -42,6 +42,7 @@ class UtilityDTDto(BaseModel):
 class UtilityDTDto2(BaseModel):
     option_id: Optional[uuid.UUID] = None
     outcome_id: Optional[uuid.UUID] = None
+    name: str = ""
     utility_value: float
 
 
