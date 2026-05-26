@@ -52,6 +52,12 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
             if (WillIssueChangeTables(entity, incomingEntity))
                 issuesIdsTriggers.Add(entity.Id);
 
+            if (entity.Type != incomingEntity.Type && incomingEntity.Type == IssueType.Uncertainty.ToString() && incomingEntity.Uncertainty?.DiscreteProbabilities.Count == 0)
+            {
+                // handle case where issue is changing from non-uncertainty to uncertainty that has no previous probabilities
+                _ruleTrigger.EnqueueIssuesForRebuild([entity.Id]);
+            }
+
             await entity.RemoveOutOfScopeStrategyOptions(incomingEntity, DbContext, ct);
 
             entity.ProjectId = incomingEntity.ProjectId;

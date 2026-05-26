@@ -40,6 +40,7 @@ public class IssuesController : PrismaBaseEntityController
         try
         {
             var result = await _issueService.CreateAsync(dtos, user, ct);
+            await _tableRebuildingService.RebuildTablesAsync(ct);
             await CommitTransactionAsync(ct);
             return Ok(result);
         }
