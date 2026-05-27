@@ -43,9 +43,9 @@ public class NodeService: INodeService
     public async Task<List<NodeOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
         var nodes = new List<NodeOutgoingDto>();
+        var projectIdsToGetFromDb = new HashSet<Guid>();
         foreach (var role in user.ProjectRoles)
         {
-            var cacheKey = CacheKeys.GetNodesInProjectKey(role.ProjectId);
             var cachedNodes = _cache.GetCacheItemAsNodes(role.ProjectId, user);
             if (cachedNodes != null)
             {
@@ -53,10 +53,20 @@ public class NodeService: INodeService
             }
             else
             {
-                var projectNodes = await _nodeRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(role.ProjectId), ct: ct);
-                var nodeDtos = projectNodes.ToOutgoingDtos();
-                nodes.AddRange(nodeDtos);
-                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, nodeDtos); 
+                projectIdsToGetFromDb.Add(role.ProjectId);
+            }
+        }
+
+        if (projectIdsToGetFromDb.Count > 0)
+        {
+            var projectNodes = await _nodeRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(projectIdsToGetFromDb), ct: ct);
+            var nodeDtos = projectNodes.ToOutgoingDtos();
+            nodes.AddRange(nodeDtos);
+            foreach (var projectId in projectIdsToGetFromDb)
+            {
+                var cacheKey = CacheKeys.GetNodesInProjectKey(projectId);
+                var projectNodeDtos = nodeDtos.Where(n => n.ProjectId == projectId).ToList();
+                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, projectNodeDtos);
             }
         }
         return nodes;
@@ -65,6 +75,6 @@ public class NodeService: INodeService
     private static Expression<Func<Node, bool>> UserFilter(UserOutgoingDto user)
         => e => e.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 
-    private static Expression<Func<Node, bool>> ProjectFilter(Guid projectId)
-        => e => e.Issue!.ProjectId == projectId;
+    private static Expression<Func<Node, bool>> ProjectFilter(HashSet<Guid> projectIds)
+        => e => projectIds.Contains(e.Issue!.ProjectId);
 }

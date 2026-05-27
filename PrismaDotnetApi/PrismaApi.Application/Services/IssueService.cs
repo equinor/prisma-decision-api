@@ -59,6 +59,7 @@ public class IssueService : IIssueService
     {
         // refactor to get all projects that the user has access to, then combine them all after getting them from the cache or database
         var issues = new List<IssueOutgoingDto>();
+        var projectIdsToGetFromDb = new HashSet<Guid>();
         foreach (var role in user.ProjectRoles)
         {
             var cacheKey = CacheKeys.GetIssuesInProjectKey(role.ProjectId);
@@ -69,10 +70,20 @@ public class IssueService : IIssueService
             }
             else
             {
-                var projectIssues = await _issueRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(role.ProjectId), ct: ct);
-                var issueDtos = projectIssues.ToOutgoingDtos();
-                issues.AddRange(issueDtos);
-                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, issueDtos); 
+                projectIdsToGetFromDb.Add(role.ProjectId);
+            }
+        }
+
+        if (projectIdsToGetFromDb.Count > 0)
+        {
+            var projectIssues = await _issueRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(projectIdsToGetFromDb), ct: ct);
+            var issueDtos = projectIssues.ToOutgoingDtos();
+            issues.AddRange(issueDtos);
+            foreach (var projectId in projectIdsToGetFromDb)
+            {
+                var cacheKey = CacheKeys.GetIssuesInProjectKey(projectId);
+                var projectIssueDtos = issueDtos.Where(i => i.ProjectId == projectId).ToList();
+                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, projectIssueDtos);
             }
         }
         return issues;
@@ -112,6 +123,6 @@ public class IssueService : IIssueService
     }
     private static Expression<Func<Issue, bool>> UserFilter(UserOutgoingDto user)
         => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
-    private static Expression<Func<Issue, bool>> ProjectFilter(Guid projectId)
-        => e => e.ProjectId == projectId;
+    private static Expression<Func<Issue, bool>> ProjectFilter(HashSet<Guid> projectIds)
+        => e => projectIds.Contains(e.ProjectId);
 }

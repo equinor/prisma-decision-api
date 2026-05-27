@@ -51,27 +51,37 @@ public class EdgeService: IEdgeService
 
     public async Task<List<EdgeOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var egdes = new List<EdgeOutgoingDto>();
+        var edges = new List<EdgeOutgoingDto>();
+        var projectIdsToGetFromDb = new HashSet<Guid>();
         foreach (var role in user.ProjectRoles)
         {
-            var cacheKey = CacheKeys.GetEdgesInProjectKey(role.ProjectId);
             var cachedEdges = _cache.GetCacheItemAsEdges(role.ProjectId, user);
             if (cachedEdges != null)
             {
-                egdes.AddRange(cachedEdges);
+                edges.AddRange(cachedEdges);
             }
             else
             {
-                var projectEdges = await _edgeRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(role.ProjectId), ct: ct);
-                var edgeDtos = projectEdges.ToOutgoingDtos();
-                egdes.AddRange(edgeDtos);
-                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, edgeDtos);
+                projectIdsToGetFromDb.Add(role.ProjectId);
             }
         }
-        return egdes;
+
+        if (projectIdsToGetFromDb.Count > 0)
+        {
+            var projectEdges = await _edgeRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(projectIdsToGetFromDb), ct: ct);
+            var edgeDtos = projectEdges.ToOutgoingDtos();
+            edges.AddRange(edgeDtos);
+            foreach (var projectId in projectIdsToGetFromDb)
+            {
+                var cacheKey = CacheKeys.GetEdgesInProjectKey(projectId);
+                var projectEdgeDtos = edgeDtos.Where(e => e.ProjectId == projectId).ToList();
+                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, projectEdgeDtos);
+            }
+        }
+        return edges;
     }
     private static Expression<Func<Edge, bool>> UserFilter(UserOutgoingDto user)
         => e => e.HeadNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id) && e.TailNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
-    private static Expression<Func<Edge, bool>> ProjectFilter(Guid projectId)
-        => e => e.ProjectId == projectId;
+    private static Expression<Func<Edge, bool>> ProjectFilter(HashSet<Guid> projectIds)
+        => e => projectIds.Contains(e.ProjectId);
 }

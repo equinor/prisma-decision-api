@@ -65,9 +65,9 @@ namespace PrismaApi.Application.Services
         public async Task<List<AssessmentOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
         {
             var assessments = new List<AssessmentOutgoingDto>();
+            var projectIdsToGetFromDb = new HashSet<Guid>();
             foreach (var role in user.ProjectRoles)
             {
-                var cacheKey = CacheKeys.GetAssessmentKey(role.ProjectId);
                 var cachedAssessments = _cache.GetCacheItemAsAssessment(role.ProjectId, user);
                 if (cachedAssessments != null)
                 {
@@ -75,10 +75,20 @@ namespace PrismaApi.Application.Services
                 }
                 else
                 {
-                    var projectAssessments = await _assessmentRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(role.ProjectId), ct: ct);
-                    var assessmentDtos = projectAssessments.ToOutgoingDtos();
-                    assessments.AddRange(assessmentDtos);
-                    _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, assessmentDtos);
+                    projectIdsToGetFromDb.Add(role.ProjectId);
+                }
+            }
+
+            if (projectIdsToGetFromDb.Count > 0)
+            {
+                var projectAssessments = await _assessmentRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(projectIdsToGetFromDb), ct: ct);
+                var assessmentDtos = projectAssessments.ToOutgoingDtos();
+                assessments.AddRange(assessmentDtos);
+                foreach (var projectId in projectIdsToGetFromDb)
+                {
+                    var cacheKey = CacheKeys.GetAssessmentKey(projectId);
+                    var projectAssessmentDtos = assessmentDtos.Where(a => a.ProjectId == projectId).ToList();
+                    _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, projectAssessmentDtos);
                 }
             }
             return assessments;
@@ -94,7 +104,7 @@ namespace PrismaApi.Application.Services
             => e => e!.Project!.ProjectRoles.Any(p => p.UserId == user.Id.ToString() && p.Role == ProjectRoleType.Facilitator.ToString());
         private static Expression<Func<Assessment, bool>> UserFilter(UserOutgoingDto user)
             => e => e!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
-        private static Expression<Func<Assessment, bool>> ProjectFilter(Guid projectId)
-            => e => e.ProjectId == projectId;
+        private static Expression<Func<Assessment, bool>> ProjectFilter(HashSet<Guid> projectIds)
+            => e => projectIds.Contains(e.ProjectId);
     }
 }
