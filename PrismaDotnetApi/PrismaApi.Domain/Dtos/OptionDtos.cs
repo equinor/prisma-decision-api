@@ -12,7 +12,7 @@ public class OptionDto
     [JsonPropertyName("decision_id")]
     public Guid DecisionId { get; set; }
     [JsonPropertyName("project_id")]
-    public Guid ProjectId { get; set; }
+    public required Guid ProjectId { get; set; }
     [JsonPropertyName("utility")]
     public double Utility { get; set; }
     [JsonPropertyName("created_at")]

@@ -78,7 +78,7 @@ namespace PrismaApi.Application.Services
                     var projectAssessments = await _assessmentRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(role.ProjectId), ct: ct);
                     var assessmentDtos = projectAssessments.ToOutgoingDtos();
                     assessments.AddRange(assessmentDtos);
-                    _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(10), assessmentDtos); // Cache for 10 minutes
+                    _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, assessmentDtos);
                 }
             }
             return assessments;

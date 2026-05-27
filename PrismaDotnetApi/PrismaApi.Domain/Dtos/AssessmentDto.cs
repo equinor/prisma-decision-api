@@ -17,7 +17,7 @@ namespace PrismaApi.Domain.Dtos
         public bool IsCompleted { get; set; } = false;
 
         [JsonPropertyName("project_id")]
-        public Guid ProjectId { get; set; }
+        public required Guid ProjectId { get; set; }
 
     }
     public class AssessmentIncomingDto : AssessmentDto

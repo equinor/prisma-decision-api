@@ -34,8 +34,8 @@ public class InternalUserService : IUserProvider
         {
             throw new InvalidOperationException("No Id found in Claims");
         }
-
-        if (_memoryCache.TryGetValue(oid, out UserOutgoingDto? cachedUser) && cachedUser != null)
+        var cacheKey = CacheKeys.GetUserKey(oid);
+        if (_memoryCache.TryGetValue(cacheKey, out UserOutgoingDto? cachedUser) && cachedUser != null)
         {
             return cachedUser;
         }
@@ -50,7 +50,7 @@ public class InternalUserService : IUserProvider
         };
         var user = (await _userRepository.GetOrAddByIdAsync(userDto)).ToOutgoingDto();
 
-        _memoryCache.AddCacheItem(new CacheItem { CacheKey = oid }, TimeSpan.FromMinutes(30), user);
+        _memoryCache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultLongQueryCacheInTimeSpan, user);
 
         return user;
     }

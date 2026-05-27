@@ -11,7 +11,7 @@ public class UtilityDto
     [JsonPropertyName("issue_id")]
     public Guid IssueId { get; set; }
     [JsonPropertyName("project_id")]
-    public Guid ProjectId { get; set; }
+    public required Guid ProjectId { get; set; }
 }
 
 public abstract class UtilityWithDiscreteUtilitiesDto : UtilityDto

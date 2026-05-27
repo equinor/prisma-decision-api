@@ -72,7 +72,7 @@ public class IssueService : IIssueService
                 var projectIssues = await _issueRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(role.ProjectId), ct: ct);
                 var issueDtos = projectIssues.ToOutgoingDtos();
                 issues.AddRange(issueDtos);
-                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(10), issueDtos); // Cache for 10 minutes
+                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, issueDtos); 
             }
         }
         return issues;

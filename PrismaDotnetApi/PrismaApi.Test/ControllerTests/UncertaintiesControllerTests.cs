@@ -69,6 +69,7 @@ public class UncertaintiesControllerTests : IClassFixture<PrismaApiFixture>
             {
                 Id = uncertaintyId,
                 IssueId = uncertaintyId,
+                ProjectId = _fixture.TestArgs.TestProjectId,
                 IsKey = false
             }
         };

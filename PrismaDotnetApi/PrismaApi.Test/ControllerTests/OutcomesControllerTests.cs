@@ -30,6 +30,7 @@ public class OutcomesControllerTests : IClassFixture<PrismaApiFixture>
             {
                 Id = outcomeId,
                 UncertaintyId = _fixture.TestArgs.UncertaintyIssueId,
+                ProjectId = _fixture.TestArgs.TestProjectId,
                 Name = "Outcome A",
                 Utility = 5.5
             }
@@ -94,6 +95,7 @@ public class OutcomesControllerTests : IClassFixture<PrismaApiFixture>
             {
                 Id = outcomeId,
                 UncertaintyId = uncertaintyId,
+                ProjectId = _fixture.TestArgs.TestProjectId,
                 Name = updatedName,
                 Utility = 7.3
             }

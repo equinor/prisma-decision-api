@@ -123,7 +123,7 @@ public class ProjectService : IProjectService
             edges = edgeEntities.ToOutgoingDtos()
         };
 
-        _cache.AddCacheItem(new CacheItem { CacheKey = CacheKeys.GetInfluenceDiagramKey(projectId) }, TimeSpan.FromMinutes(10), diagram); // Cache for 10 minutes
+        _cache.AddCacheItem(new CacheItem { CacheKey = CacheKeys.GetInfluenceDiagramKey(projectId) }, CacheConstants.DefaultMediumQueryCacheInTimeSpan, diagram);
         return diagram; 
     }
 

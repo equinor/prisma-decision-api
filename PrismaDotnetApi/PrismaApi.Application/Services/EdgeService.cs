@@ -65,7 +65,7 @@ public class EdgeService: IEdgeService
                 var projectEdges = await _edgeRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(role.ProjectId), ct: ct);
                 var edgeDtos = projectEdges.ToOutgoingDtos();
                 egdes.AddRange(edgeDtos);
-                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(10), edgeDtos); // Cache for 10 minutes
+                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, edgeDtos);
             }
         }
         return egdes;

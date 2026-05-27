@@ -1,21 +1,22 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Domain.Interfaces;
-using PrismaApi.Infrastructure.Caching;
 using PrismaApi.Infrastructure.DiscreteTables;
 
 namespace PrismaApi.Infrastructure.Context;
 
-public class AppDbContext : DbContext
+public partial class AppDbContext : DbContext
 {
     private readonly IMemoryCache _cache;
-    public AppDbContext(DbContextOptions<AppDbContext> options, IMemoryCache cache) : base(options)
+    public readonly AppDbContextOptions AppOptions;
+
+    public AppDbContext(DbContextOptions<AppDbContext> options, IMemoryCache cache, AppDbContextOptions appOptions) : base(options)
     {
         _cache = cache;
+        AppOptions = appOptions;
     }
 
     public DiscreteTableSessionInfo DiscreteTableSessionInfo { get; } = new();
@@ -481,125 +482,11 @@ public class AppDbContext : DbContext
         await OnOutcomeDeletedCleanupAsync(cancellationToken);
         await OnOptionDeletedCleanupAsync(cancellationToken);
         // invalidate before savechanges because save changes clears out the change tracker
-        InvalidateCache();
+        await InvalidateCacheAsync();
         var res = await base.SaveChangesAsync(cancellationToken);
         return res;
     }
 
-    private void InvalidateAssessmentsCache()
-    {
-        var assessmentEntries = ChangeTracker.Entries<Assessment>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
-        var assessmentIds = assessmentEntries.Select(e => e.Entity.Id).ToList();
-
-        var decisionQualityAssessmentEntries = ChangeTracker.Entries<DecisionQualityAssessment>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
-
-        HashSet<Guid> affectedProjectIds = assessmentEntries
-            .Select(e => e.Entity.ProjectId)
-            .ToHashSet();
-        affectedProjectIds.UnionWith(decisionQualityAssessmentEntries.Select(e => e.Entity.ProjectId));
-        foreach (var projectId in affectedProjectIds)
-        {
-            _cache.InvalidateCacheEntry(new CacheItem{ CacheKey = CacheKeys.GetAssessmentKey(projectId) });
-        }
-    }
-
-    public void InvalidateCache()
-    {
-        InvalidateAssessmentsCache();
-        var projectRolesEntries = ChangeTracker.Entries<ProjectRole>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
-            
-        var edgeEntries = ChangeTracker.Entries<Edge>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
-            
-        var issueEntries = ChangeTracker.Entries<Issue>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
-
-        var nodeEntries = ChangeTracker.Entries<Node>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
-            
-        var uncertaintyEntries = ChangeTracker.Entries<Uncertainty>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
-            
-        var decisionEntries = ChangeTracker.Entries<Decision>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
-            
-        var optionEntries = ChangeTracker.Entries<Option>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
-            
-        var outcomeEntries = ChangeTracker.Entries<Outcome>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
-            
-        var discreteProbEntries = ChangeTracker.Entries<DiscreteProbability>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
-
-        var discreteUtilityEntries = ChangeTracker.Entries<DiscreteUtility>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
-        
-        HashSet<Guid> affectedProjectIds = [];
-        foreach (var entry in projectRolesEntries)
-        {
-            // if the user role is being modified or deleted, 
-            // we need to invalidate the cache for that user and the project
-            _cache.Remove(entry.Entity.UserId.ToString());
-            affectedProjectIds.Add(entry.Entity.ProjectId);
-        }
-
-        foreach (var entry in edgeEntries)
-        {
-            affectedProjectIds.Add(entry.Entity.ProjectId);
-        }
-
-        foreach (var entry in issueEntries)
-        {
-            affectedProjectIds.Add(entry.Entity.ProjectId);
-        }
-
-        foreach (var entry in nodeEntries)
-        {
-            affectedProjectIds.Add(entry.Entity.ProjectId);
-        }
-
-        foreach (var entry in uncertaintyEntries)
-        {
-            affectedProjectIds.Add(entry.Entity.ProjectId);
-        }
-
-        foreach (var entry in decisionEntries)
-        {
-            affectedProjectIds.Add(entry.Entity.ProjectId);
-        }
-
-        foreach (var entry in optionEntries)
-        {
-            affectedProjectIds.Add(entry.Entity.ProjectId);
-        }
-
-        foreach (var entry in outcomeEntries)
-        {
-            affectedProjectIds.Add(entry.Entity.ProjectId);
-        }
-
-        foreach (var entry in discreteProbEntries)
-        {
-            affectedProjectIds.Add(entry.Entity.ProjectId);
-        }
-
-        foreach (var entry in discreteUtilityEntries)
-        {
-            affectedProjectIds.Add(entry.Entity.ProjectId);
-        }
-
-        foreach (var projectId in affectedProjectIds)
-        {
-            _cache.InvalidateCacheEntry(new CacheItem{ CacheKey = CacheKeys.GetInfluenceDiagramKey(projectId) });
-            _cache.InvalidateCacheEntry(new CacheItem{ CacheKey = CacheKeys.GetIssuesInProjectKey(projectId) });
-            _cache.InvalidateCacheEntry(new CacheItem{ CacheKey = CacheKeys.GetEdgesInProjectKey(projectId) });
-            _cache.InvalidateCacheEntry(new CacheItem{ CacheKey = CacheKeys.GetNodesInProjectKey(projectId) });
-        }
-    }
 
     public async Task<int> SaveChangesWhileDuplicatingAsync(CancellationToken cancellationToken = default)
     {

@@ -57,6 +57,8 @@ public class Program
                 .AddInMemoryTokenCaches();
         }
 
+        builder.Services.AddSingleton(new AppDbContextOptions { IsPublicInstance = isPublicInstance });
+
         builder.Services.AddMemoryCache();
 
         var appInsightsConnectionString = Environment.GetEnvironmentVariable("APPLICATION_INSIGHTS_CONNECTIONSTRING") ?? builder.Configuration.GetSection("ApplicationInsights:ConnectionString").Value;

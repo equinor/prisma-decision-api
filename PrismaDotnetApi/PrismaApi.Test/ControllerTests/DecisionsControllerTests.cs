@@ -69,6 +69,7 @@ public class DecisionsControllerTests : IClassFixture<PrismaApiFixture>
             {
                 Id = decisionId,
                 IssueId = decisionId,
+                ProjectId = _fixture.TestArgs.TestProjectId,
                 Type = DecisionHierarchy.Tactical.ToString()
             }
         };

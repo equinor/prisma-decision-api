@@ -11,7 +11,7 @@ public class DecisionDto
     [JsonPropertyName("issue_id")]
     public Guid IssueId { get; set; }
     [JsonPropertyName("project_id")]
-    public Guid ProjectId { get; set; }
+    public required Guid ProjectId { get; set; }
 }
 
 public class DecisionIncomingDto : DecisionDto

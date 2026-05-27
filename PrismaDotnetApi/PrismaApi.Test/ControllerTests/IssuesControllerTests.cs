@@ -141,6 +141,7 @@ public class IssuesControllerTests : IClassFixture<PrismaApiFixture>
             {
                 Id = issueId,
                 IssueId = issueId,
+                ProjectId = projectId,
                 Type = DecisionHierarchy.Focus.ToString()
             }
         };

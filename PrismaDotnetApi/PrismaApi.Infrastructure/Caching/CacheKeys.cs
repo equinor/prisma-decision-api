@@ -7,4 +7,5 @@ public static class CacheKeys
     public static string GetEdgesInProjectKey(Guid projectId) => $"Edges_Project_{projectId}";
     public static string GetNodesInProjectKey(Guid projectId) => $"Nodes_Project_{projectId}";
     public static string GetAssessmentKey(Guid projectId) => $"Assessment_Project_{projectId}";
+    public static string GetUserKey(string key) => $"user_{key.ToLower()}"; // id internal, name in public
 }

@@ -56,7 +56,7 @@ public class NodeService: INodeService
                 var projectNodes = await _nodeRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(role.ProjectId), ct: ct);
                 var nodeDtos = projectNodes.ToOutgoingDtos();
                 nodes.AddRange(nodeDtos);
-                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(10), nodeDtos); // Cache for 10 minutes
+                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, nodeDtos); 
             }
         }
         return nodes;

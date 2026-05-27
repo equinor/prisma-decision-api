@@ -189,14 +189,14 @@ public class TestModelBuilder
         db.Utilities.Add(new Utility { Id = utilityIssueId, IssueId = utilityIssueId });
 
         db.Options.AddRange(
-            new Option { Id = args.OptionId, DecisionId = primaryDecision1Id, Name = "Primary Option", Utility = 1.1 },
-            new Option { Id = args.OptionDeleteId, DecisionId = primaryDecision1Id, Name = "Delete Option", Utility = 2.2 },
-            new Option { Id = args.OptionBulkDeleteId, DecisionId = primaryDecision1Id, Name = "Bulk Delete Option", Utility = 2.3 });
+            new Option { Id = args.OptionId, DecisionId = primaryDecision1Id, ProjectId = primaryProject.Id, Name = "Primary Option", Utility = 1.1 },
+            new Option { Id = args.OptionDeleteId, DecisionId = primaryDecision1Id, ProjectId = primaryProject.Id, Name = "Delete Option", Utility = 2.2 },
+            new Option { Id = args.OptionBulkDeleteId, DecisionId = primaryDecision1Id, ProjectId = primaryProject.Id, Name = "Bulk Delete Option", Utility = 2.3 });
 
         db.Outcomes.AddRange(
-            new Outcome { Id = args.OutcomeId, UncertaintyId = primaryUncertainty1Id, Name = "Primary Outcome", Utility = 3.3 },
-            new Outcome { Id = args.OutcomeDeleteId, UncertaintyId = primaryUncertainty1Id, Name = "Delete Outcome", Utility = 4.4 },
-            new Outcome { Id = args.OutcomeBulkDeleteId, UncertaintyId = primaryUncertainty1Id, Name = "Bulk Delete Outcome", Utility = 4.5 });
+            new Outcome { Id = args.OutcomeId, UncertaintyId = primaryUncertainty1Id, ProjectId = primaryProject.Id, Name = "Primary Outcome", Utility = 3.3 },
+            new Outcome { Id = args.OutcomeDeleteId, UncertaintyId = primaryUncertainty1Id, ProjectId = primaryProject.Id, Name = "Delete Outcome", Utility = 4.4 },
+            new Outcome { Id = args.OutcomeBulkDeleteId, UncertaintyId = primaryUncertainty1Id, ProjectId = primaryProject.Id, Name = "Bulk Delete Outcome", Utility = 4.5 });
 
         db.Objectives.AddRange(
             new Objective

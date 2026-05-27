@@ -1,6 +1,8 @@
+using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Infrastructure.Caching;
 
 namespace PrismaApi.Application.Services;
 
@@ -13,6 +15,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
     private readonly IStrategyService _strategyService;
     private readonly IDiscreteProbabilityService _discreteProbabilityService;
     private readonly IDiscreteUtilityService _discreteUtilityService;
+    private readonly IMemoryCache _cache;
 
     public ProjectDuplicationService(
         IProjectDuplicationRepository duplicationRepo,
@@ -21,7 +24,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         IEdgeService edgeService,
         IStrategyService strategyService,
         IDiscreteProbabilityService discreteProbabilityService,
-        IDiscreteUtilityService discreteUtilityService)
+        IDiscreteUtilityService discreteUtilityService,
+        IMemoryCache cache)
     {
         _duplicationRepo = duplicationRepo;
         _projectService = projectService;
@@ -30,6 +34,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         _strategyService = strategyService;
         _discreteProbabilityService = discreteProbabilityService;
         _discreteUtilityService = discreteUtilityService;
+        _cache = cache;
     }
 
     public async Task<ProjectOutgoingDto> DuplicateAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
@@ -66,9 +71,9 @@ public class ProjectDuplicationService : IProjectDuplicationService
             var uncertaintyResult = CreateUncertainty(
                 issue.Uncertainty?.Id, issue.Uncertainty?.IsKey ?? true,
                 issue.Uncertainty?.Outcomes, issue.Uncertainty?.DiscreteProbabilities,
-                mappedIssueId, mappings);
+                mappedIssueId, mappings, newProjectId);
             var utilityResult = CreateUtility(
-                issue.Utility?.Id, issue.Utility?.DiscreteUtilities, mappedIssueId, mappings);
+                issue.Utility?.Id, issue.Utility?.DiscreteUtilities, mappedIssueId, mappings, newProjectId);
 
             if (uncertaintyResult.DiscreteProbabilities.Count > 0)
                 discreteProbabilityDtos.AddRange(uncertaintyResult.DiscreteProbabilities);
@@ -86,7 +91,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
                 Type = issue.Type,
                 Boundary = issue.Boundary,
                 Node = CreateNode(issue.Node?.Id, issue.Node?.Name, issue.Node?.NodeStyle?.XPosition, issue.Node?.NodeStyle?.YPosition, issue.Name, newProjectId, mappedIssueId, mappings),
-                Decision = CreateDecision(issue.Decision?.Id, issue.Decision?.Type, issue.Decision?.Options, mappedIssueId, mappings),
+                Decision = CreateDecision(issue.Decision?.Id, issue.Decision?.Type, issue.Decision?.Options, mappedIssueId, mappings, newProjectId),
                 Uncertainty = uncertaintyResult.Uncertainty,
                 Utility = utilityResult.Utility
             });
@@ -109,6 +114,9 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (edgeDtos.Count > 0)
             await _edgeService.CreateAsync(edgeDtos);
 
+        _cache.InvalidateCacheEntry(new CacheItem{ CacheKey = user.Id }); // if internal
+        _cache.InvalidateCacheEntry(new CacheItem{ CacheKey = user.Name }); // if public 
+        
         return createdProject;
     }
 
@@ -146,10 +154,10 @@ public class ProjectDuplicationService : IProjectDuplicationService
             var uncertaintyResult = CreateUncertainty(
                 issue.Uncertainty?.Id, issue.Uncertainty?.IsKey ?? true,
                 issue.Uncertainty?.Outcomes, issue.Uncertainty?.DiscreteProbabilities,
-                mappedIssueId, mappings);
+                mappedIssueId, mappings, newProjectId);
             var utilityResult = CreateUtility(
                 issue.Utility?.Id, issue.Utility?.DiscreteUtilities,
-                mappedIssueId, mappings);
+                mappedIssueId, mappings, newProjectId);
 
             if (uncertaintyResult.DiscreteProbabilities.Count > 0)
                 discreteProbabilityDtos.AddRange(uncertaintyResult.DiscreteProbabilities);
@@ -167,7 +175,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
                 Type = issue.Type,
                 Boundary = issue.Boundary,
                 Node = CreateNode(issue.Node?.Id, issue.Node?.Name, issue.Node?.NodeStyle?.XPosition, issue.Node?.NodeStyle?.YPosition, issue.Name, newProjectId, mappedIssueId, mappings),
-                Decision = CreateDecision(issue.Decision?.Id, issue.Decision?.Type, issue.Decision?.Options, mappedIssueId, mappings),
+                Decision = CreateDecision(issue.Decision?.Id, issue.Decision?.Type, issue.Decision?.Options, mappedIssueId, mappings, newProjectId),
                 Uncertainty = uncertaintyResult.Uncertainty,
                 Utility = utilityResult.Utility
             });
@@ -262,7 +270,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         string? decisionType,
         IEnumerable<OptionDto>? options,
         Guid mappedIssueId,
-        IdMappings mappings)
+        IdMappings mappings,
+        Guid newProjectId)
     {
         if (decisionId is null)
             return null;
@@ -272,12 +281,14 @@ public class ProjectDuplicationService : IProjectDuplicationService
         {
             Id = mappedDecisionId,
             IssueId = mappedIssueId,
+            ProjectId = newProjectId,
             Type = decisionType ?? "Focus",
             Options = (options ?? [])
                 .Select(option => new OptionIncomingDto
                 {
                     Id = GetMappedOrThrow(mappings.Option, option.Id, "option"),
                     DecisionId = mappedDecisionId,
+                    ProjectId = newProjectId,
                     Name = option.Name,
                     Utility = option.Utility
                 })
@@ -321,7 +332,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         IEnumerable<OutcomeDto>? outcomes,
         IEnumerable<DiscreteProbabilityDto>? discreteProbabilities,
         Guid mappedIssueId,
-        IdMappings mappings)
+        IdMappings mappings,
+        Guid newProjectId)
     {
         if (uncertaintyId is null)
             return (null, []);
@@ -333,6 +345,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
                 Id = GetMappedOrThrow(mappings.Outcome, outcome.Id, "outcome"),
                 Name = outcome.Name,
                 UncertaintyId = mappedUncertaintyId,
+                ProjectId = newProjectId,
                 Utility = outcome.Utility
             })
             .ToList();
@@ -346,6 +359,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
                     Id = Guid.NewGuid(),
                     UncertaintyId = mappedUncertaintyId,
                     OutcomeId = mappings.Outcome.GetValueOrDefault(dp.OutcomeId, dp.OutcomeId),
+                    ProjectId = newProjectId,
                     Probability = dp.Probability,
                     ParentOutcomeIds = parentOutcomeIds,
                     ParentOptionIds = parentOptionIds
@@ -357,6 +371,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         {
             Id = mappedUncertaintyId,
             IssueId = mappedIssueId,
+            ProjectId = newProjectId,
             IsKey = isKey,
             Outcomes = mappedOutcomes,
             DiscreteProbabilities = []
@@ -369,7 +384,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         Guid? utilityId,
         IEnumerable<DiscreteUtilityDto>? discreteUtilities,
         Guid mappedIssueId,
-        IdMappings mappings)
+        IdMappings mappings,
+        Guid newProjectId)
     {
         if (utilityId is null)
             return (null, []);
@@ -378,7 +394,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         var utilityDto = new UtilityIncomingDto
         {
             Id = mappedUtilityId,
-            IssueId = mappedIssueId
+            IssueId = mappedIssueId,
+            ProjectId = newProjectId
         };
 
         var mappedDiscreteUtilities = (discreteUtilities ?? [])
@@ -392,7 +409,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
                     UtilityValue = du.UtilityValue,
                     ParentOptionIds = parentOptionIds,
                     ParentOutcomeIds = parentOutcomeIds,
-                    ValueMetricId = du.ValueMetricId
+                    ValueMetricId = du.ValueMetricId,
+                    ProjectId = newProjectId
                 };
             })
             .ToList();
@@ -419,6 +437,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
             {
                 Id = GetMappedOrThrow(mappings.Option, option.Id, "option"),
                 DecisionId = GetMappedOrThrow(mappings.Decision, option.DecisionId, "decision"),
+                ProjectId = newProjectId,
                 Name = option.Name,
                 Utility = option.Utility
             }).ToList()

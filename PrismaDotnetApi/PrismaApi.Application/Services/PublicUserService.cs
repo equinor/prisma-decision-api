@@ -29,7 +29,8 @@ public class PublicUserService : IUserProvider
             throw new InvalidOperationException("Username is required");
         }
 
-        var cacheKey = $"public_user_{userName.ToLower()}";
+        
+        var cacheKey = CacheKeys.GetUserKey(userName);
         if (_memoryCache.TryGetValue(cacheKey, out UserOutgoingDto? cachedUser) && cachedUser != null)
         {
             return cachedUser;
