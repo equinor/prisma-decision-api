@@ -15,6 +15,7 @@ public class DecisionQualityAssessment : AuditableEntity, IBaseEntity<Guid>
 
     public int DoableAlternatives { get; set; }
     public Guid AssessmentId { get; set; }
+    public Guid ProjectId { get; set; }
     public Assessment? Assessment { get; set; }
-
+    public Project? Project { get; set; }
 }

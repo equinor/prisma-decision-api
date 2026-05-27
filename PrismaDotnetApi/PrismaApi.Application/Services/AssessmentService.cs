@@ -81,8 +81,7 @@ namespace PrismaApi.Application.Services
                     _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(10), assessmentDtos); // Cache for 10 minutes
                 }
             }
-            var entities = await _assessmentRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-            return entities.ToOutgoingDtos();
+            return assessments;
         }
 
         public async Task UpdateRangeAsync(List<AssessmentIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
@@ -469,8 +470,7 @@ public class AppDbContext : DbContext
 
     public override int SaveChanges()
     {
-        UpdateTimestamps();
-        return base.SaveChanges();
+        throw new InvalidOperationException("Use SaveChangesAsync instead.");
     }
 
     public async override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -480,26 +480,34 @@ public class AppDbContext : DbContext
         await OnNodeDeletedCleanupAsync(cancellationToken);
         await OnOutcomeDeletedCleanupAsync(cancellationToken);
         await OnOptionDeletedCleanupAsync(cancellationToken);
+        // invalidate before savechanges because save changes clears out the change tracker
         InvalidateCache();
-        return await base.SaveChangesAsync(cancellationToken);
+        var res = await base.SaveChangesAsync(cancellationToken);
+        return res;
     }
 
-    public void InvalidateAssessmentsCache()
+    private void InvalidateAssessmentsCache()
     {
         var assessmentEntries = ChangeTracker.Entries<Assessment>()
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
+        var assessmentIds = assessmentEntries.Select(e => e.Entity.Id).ToList();
+
+        var decisionQualityAssessmentEntries = ChangeTracker.Entries<DecisionQualityAssessment>()
             .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
 
         HashSet<Guid> affectedProjectIds = assessmentEntries
             .Select(e => e.Entity.ProjectId)
             .ToHashSet();
+        affectedProjectIds.UnionWith(decisionQualityAssessmentEntries.Select(e => e.Entity.ProjectId));
         foreach (var projectId in affectedProjectIds)
         {
-            _cache.Remove(CacheKeys.GetAssessmentKey(projectId));
+            _cache.InvalidateCacheEntry(new CacheItem{ CacheKey = CacheKeys.GetAssessmentKey(projectId) });
         }
     }
 
     public void InvalidateCache()
     {
+        InvalidateAssessmentsCache();
         var projectRolesEntries = ChangeTracker.Entries<ProjectRole>()
             .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted);
             
@@ -586,15 +594,17 @@ public class AppDbContext : DbContext
 
         foreach (var projectId in affectedProjectIds)
         {
-            _cache.Remove(CacheKeys.GetInfluenceDiagramKey(projectId));
-            _cache.Remove(CacheKeys.GetIssuesInProjectKey(projectId));
-            _cache.Remove(CacheKeys.GetEdgesInProjectKey(projectId));
-            _cache.Remove(CacheKeys.GetNodesInProjectKey(projectId));
+            _cache.InvalidateCacheEntry(new CacheItem{ CacheKey = CacheKeys.GetInfluenceDiagramKey(projectId) });
+            _cache.InvalidateCacheEntry(new CacheItem{ CacheKey = CacheKeys.GetIssuesInProjectKey(projectId) });
+            _cache.InvalidateCacheEntry(new CacheItem{ CacheKey = CacheKeys.GetEdgesInProjectKey(projectId) });
+            _cache.InvalidateCacheEntry(new CacheItem{ CacheKey = CacheKeys.GetNodesInProjectKey(projectId) });
         }
     }
 
     public async Task<int> SaveChangesWhileDuplicatingAsync(CancellationToken cancellationToken = default)
     {
+        // no need to invalidate cache here since the duplicated entities will have new ids 
+        // and won't affect existing cache entries
         return await base.SaveChangesAsync(cancellationToken);
     }
 

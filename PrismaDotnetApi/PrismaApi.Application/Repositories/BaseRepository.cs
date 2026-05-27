@@ -75,6 +75,7 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
     public virtual async Task<TEntity> AddAsync(TEntity entity, CancellationToken ct = default)
     {
         Set.Add(entity);
+        DbContext.Entry(entity).State = EntityState.Added;
         await DbContext.SaveChangesAsync(ct);
         return entity;
     }
@@ -83,6 +84,10 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
     {
         var list = entities.ToList();
         Set.AddRange(list);
+        foreach (var entity in list)
+        {
+            DbContext.Entry(entity).State = EntityState.Added;
+        }
         await DbContext.SaveChangesAsync(ct);
         return list;
     }
@@ -90,6 +95,10 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
     public virtual async Task UpdateRangeAsync(IEnumerable<TEntity> entities, CancellationToken ct = default)
     {
         Set.UpdateRange(entities);
+        foreach (var entity in entities)
+        {
+            DbContext.Entry(entity).State = EntityState.Modified;
+        }
         await DbContext.SaveChangesAsync(ct);
     }
 
@@ -106,6 +115,10 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
         }
 
         Set.RemoveRange(entities);
+        foreach (var entity in entities)
+        {
+            DbContext.Entry(entity).State = EntityState.Deleted;
+        }
         await DbContext.SaveChangesAsync(ct);
     }
 }

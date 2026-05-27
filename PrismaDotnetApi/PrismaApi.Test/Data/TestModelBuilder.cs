@@ -279,6 +279,7 @@ public class TestModelBuilder
                 Id = args.DiscreteUtilityId,
                 UtilityId = utilityIssueId,
                 ValueMetricId = DomainConstants.DefaultValueMetricId,
+                ProjectId = primaryProject.Id,
                 UtilityValue = 3.14
             },
             new DiscreteUtility
@@ -286,6 +287,7 @@ public class TestModelBuilder
                 Id = args.DiscreteUtilityDeleteId,
                 UtilityId = utilityIssueId,
                 ValueMetricId = DomainConstants.DefaultValueMetricId,
+                ProjectId = primaryProject.Id,
                 UtilityValue = 2.71
             },
             new DiscreteUtility
@@ -293,6 +295,7 @@ public class TestModelBuilder
                 Id = args.DiscreteUtilityBulkDeleteId,
                 UtilityId = utilityIssueId,
                 ValueMetricId = DomainConstants.DefaultValueMetricId,
+                ProjectId = primaryProject.Id,
                 UtilityValue = 2.72
             });
 

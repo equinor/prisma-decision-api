@@ -193,6 +193,9 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Property<int>("InformationReliability")
                         .HasColumnType("int");
 
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("ReasoningCorrectness")
                         .HasColumnType("int");
 
@@ -211,6 +214,8 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasIndex("AssessmentId");
 
                     b.HasIndex("CreatedById");
+
+                    b.HasIndex("ProjectId");
 
                     b.HasIndex("UpdatedById");
 
@@ -986,6 +991,12 @@ namespace PrismaApi.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("PrismaApi.Domain.Entities.User", "UpdatedBy")
                         .WithMany()
                         .HasForeignKey("UpdatedById")
@@ -995,6 +1006,8 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Navigation("Assessment");
 
                     b.Navigation("CreatedBy");
+
+                    b.Navigation("Project");
 
                     b.Navigation("UpdatedBy");
                 });
