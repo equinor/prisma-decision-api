@@ -429,7 +429,7 @@ class DecisionTreeGraph_v3:
             for outcome in outcomes:
                 discrete_utility_value = self.get_discrete_utility_value(treenode_id, outcome)
                 utility_dto = UtilityDTDto2(
-                    outcome_id=outcome.id, utility_value=outcome.utility + discrete_utility_value
+                    outcome_id=outcome.id, name=outcome.name, utility_value=outcome.utility + discrete_utility_value
                 )
                 utility_dtos.append(utility_dto)
 
@@ -438,7 +438,7 @@ class DecisionTreeGraph_v3:
             for option in options:
                 discrete_utility_value = self.get_discrete_utility_value(treenode_id, option)
                 utility_dto = UtilityDTDto2(
-                    option_id=option.id, utility_value=option.utility + discrete_utility_value
+                    option_id=option.id, name=option.name, utility_value=option.utility + discrete_utility_value
                 )
                 utility_dtos.append(utility_dto)
 

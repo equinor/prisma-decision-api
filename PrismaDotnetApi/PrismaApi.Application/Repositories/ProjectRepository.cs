@@ -47,6 +47,10 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
             bool isUserFacillitator = entity.ProjectRoles
                 .Any(r => string.Equals(r.Role, ProjectRoleType.Facilitator.ToString(), StringComparison.OrdinalIgnoreCase) && r.UserId == userDto.Id);
 
+            if (!isUserFacillitator)
+            {
+                throw new UnauthorizedAccessException("Only facilitators can update project information.");
+            }
 
             entity.Name = incomingEntity.Name;
             entity.OpportunityStatement = incomingEntity.OpportunityStatement;
@@ -56,7 +60,7 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
             entity.EndDate = incomingEntity.EndDate;
             entity.UpdatedById = incomingEntity.UpdatedById;
 
-            if (isUserFacillitator && incomingEntity.ProjectRoles.Count != 0)
+            if (incomingEntity.ProjectRoles.Count != 0)
             {
                 entity.ProjectRoles.Update(incomingEntity.ProjectRoles, DbContext);
             }

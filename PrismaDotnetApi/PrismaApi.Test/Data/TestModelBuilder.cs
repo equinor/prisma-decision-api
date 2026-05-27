@@ -93,7 +93,7 @@ public class TestModelBuilder
                 Id = Guid.NewGuid(),
                 ProjectId = primaryProject.Id,
                 UserId = primaryUser.Id,
-                Role = ProjectRoleType.DecisionMaker.ToString(),
+                Role = ProjectRoleType.Facilitator.ToString(),
                 CreatedById = primaryUser.Id,
                 UpdatedById = primaryUser.Id
             },
