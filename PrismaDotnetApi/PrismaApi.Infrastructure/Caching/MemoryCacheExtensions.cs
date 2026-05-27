@@ -165,4 +165,19 @@ public static class MemoryCacheExtensions
             _ = cachedKeys.Remove(key);
         }
     }
+
+    public static double GetApproximateCacheSizeInMB(this IMemoryCache cache)
+    {
+        long totalBytes = 0;
+        foreach (var key in cachedKeys)
+        {
+            var value = cache.GetCacheItem(key.CacheKey);
+            if (value is not null)
+            {
+                var json = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(value);
+                totalBytes += json.Length;
+            }
+        }
+        return Math.Round(totalBytes / (1024.0 * 1024.0), 4);
+    }
 }

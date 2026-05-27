@@ -59,7 +59,10 @@ public class Program
 
         builder.Services.AddSingleton(new AppDbContextOptions { IsPublicInstance = isPublicInstance });
 
-        builder.Services.AddMemoryCache();
+        builder.Services.AddMemoryCache(options =>
+        {
+            options.TrackStatistics = true;
+        });
 
         var appInsightsConnectionString = Environment.GetEnvironmentVariable("APPLICATION_INSIGHTS_CONNECTIONSTRING") ?? builder.Configuration.GetSection("ApplicationInsights:ConnectionString").Value;
         if (!string.IsNullOrEmpty(appInsightsConnectionString) && builder.Environment.EnvironmentName != "Local")
