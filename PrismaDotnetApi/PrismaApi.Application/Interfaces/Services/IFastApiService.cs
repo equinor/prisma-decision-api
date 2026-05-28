@@ -1,4 +1,3 @@
-using PrismaApi.Api.Controllers;
 using PrismaApi.Domain.Dtos;
 using System.Net;
 

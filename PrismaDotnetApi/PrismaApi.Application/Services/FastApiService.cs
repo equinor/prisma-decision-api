@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using PrismaApi.Api.Controllers;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
 using System.Text;
