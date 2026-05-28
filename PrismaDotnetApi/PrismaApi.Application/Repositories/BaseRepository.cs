@@ -62,7 +62,6 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
 
     public virtual async Task<List<TEntity>> GetAllAsync(bool withTracking = true, IQueryable<TEntity>? customQuery = null, Expression<Func<TEntity, bool>>? filterPredicate = null, CancellationToken ct = default)
     {
-        await Task.Delay(500); 
         IQueryable<TEntity> query = customQuery ?? Query();
         query = query.OptionalWhere(filterPredicate);
 

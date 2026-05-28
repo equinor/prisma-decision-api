@@ -469,6 +469,10 @@ public partial class AppDbContext : DbContext
         });
     }
 
+    private IEnumerable<EntityEntry<T>> GetChangedEntries<T>() where T : class =>
+        ChangeTracker.Entries<T>()
+            .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted);
+
     public override int SaveChanges()
     {
         throw new InvalidOperationException("Use SaveChangesAsync instead.");
