@@ -73,7 +73,6 @@ public class IssueService : IIssueService
         var projectIdsToGetFromDb = new HashSet<Guid>();
         foreach (var role in user.ProjectRoles)
         {
-            var cacheKey = CacheKeys.GetIssuesInProjectKey(role.ProjectId);
             var cachedIssues = _cache.GetCacheItemAsIssues(role.ProjectId, user);
             if (cachedIssues != null)
             {
