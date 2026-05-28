@@ -168,17 +168,17 @@ public class TestModelBuilder
             BuildNodeStyle(uncertaintyBulkDeleteIssueId, 1350, 0),
             BuildNodeStyle(utilityIssueId, 1500, 0));
         db.Decisions.AddRange(
-            new Decision { Id = primaryDecision1Id, IssueId = primaryDecision1Id, Type = IssueType.Decision.ToString() },
-            new Decision { Id = primaryDecision2Id, IssueId = primaryDecision2Id, Type = IssueType.Decision.ToString() },
-            new Decision { Id = issueDeleteId, IssueId = issueDeleteId, Type = IssueType.Decision.ToString() },
-            new Decision { Id = decisionDeleteIssueId, IssueId = decisionDeleteIssueId, Type = IssueType.Decision.ToString() },
-            new Decision { Id = decisionBulkDeleteIssueId, IssueId = decisionBulkDeleteIssueId, Type = IssueType.Decision.ToString() });
+            new Decision { Id = primaryDecision1Id, IssueId = primaryDecision1Id, ProjectId = primaryProject.Id, Type = IssueType.Decision.ToString() },
+            new Decision { Id = primaryDecision2Id, IssueId = primaryDecision2Id, ProjectId = primaryProject.Id, Type = IssueType.Decision.ToString() },
+            new Decision { Id = issueDeleteId, IssueId = issueDeleteId, ProjectId = primaryProject.Id, Type = IssueType.Decision.ToString() },
+            new Decision { Id = decisionDeleteIssueId, IssueId = decisionDeleteIssueId, ProjectId = primaryProject.Id, Type = IssueType.Decision.ToString() },
+            new Decision { Id = decisionBulkDeleteIssueId, IssueId = decisionBulkDeleteIssueId, ProjectId = primaryProject.Id, Type = IssueType.Decision.ToString() });
         db.Uncertainties.AddRange(
-            new Uncertainty { Id = primaryUncertainty1Id, IssueId = primaryUncertainty1Id, IsKey = true },
-            new Uncertainty { Id = primaryUncertainty2Id, IssueId = primaryUncertainty2Id, IsKey = true },
-            new Uncertainty { Id = issueBulkDeleteId, IssueId = issueBulkDeleteId, IsKey = true },
-            new Uncertainty { Id = uncertaintyDeleteIssueId, IssueId = uncertaintyDeleteIssueId, IsKey = true },
-            new Uncertainty { Id = uncertaintyBulkDeleteIssueId, IssueId = uncertaintyBulkDeleteIssueId, IsKey = true });
+            new Uncertainty { Id = primaryUncertainty1Id, IssueId = primaryUncertainty1Id, ProjectId = primaryProject.Id, IsKey = true },
+            new Uncertainty { Id = primaryUncertainty2Id, IssueId = primaryUncertainty2Id, ProjectId = primaryProject.Id, IsKey = true },
+            new Uncertainty { Id = issueBulkDeleteId, IssueId = issueBulkDeleteId, ProjectId = primaryProject.Id, IsKey = true },
+            new Uncertainty { Id = uncertaintyDeleteIssueId, IssueId = uncertaintyDeleteIssueId, ProjectId = primaryProject.Id, IsKey = true },
+            new Uncertainty { Id = uncertaintyBulkDeleteIssueId, IssueId = uncertaintyBulkDeleteIssueId, ProjectId = primaryProject.Id, IsKey = true });
         db.Edges.AddRange(
             new Edge { Id = args.EdgeId, ProjectId = primaryProject.Id, TailId = primaryDecision1Id, HeadId = primaryUncertainty1Id },
             new Edge { Id = Guid.NewGuid(), ProjectId = primaryProject.Id, TailId = primaryUncertainty1Id, HeadId = primaryDecision2Id },
@@ -186,7 +186,7 @@ public class TestModelBuilder
             new Edge { Id = args.EdgeDeleteId, ProjectId = primaryProject.Id, TailId = primaryUncertainty1Id, HeadId = primaryDecision2Id },
             new Edge { Id = args.EdgeBulkDeleteId, ProjectId = primaryProject.Id, TailId = primaryDecision2Id, HeadId = primaryUncertainty2Id });
 
-        db.Utilities.Add(new Utility { Id = utilityIssueId, IssueId = utilityIssueId });
+        db.Utilities.Add(new Utility { Id = utilityIssueId, IssueId = utilityIssueId, ProjectId = primaryProject.Id });
 
         db.Options.AddRange(
             new Option { Id = args.OptionId, DecisionId = primaryDecision1Id, ProjectId = primaryProject.Id, Name = "Primary Option", Utility = 1.1 },
@@ -335,13 +335,13 @@ public class TestModelBuilder
             BuildNodeStyle(secondaryDecision3Id, 600, 120),
             BuildNodeStyle(secondaryUncertainty3Id, 750, 120));
         db.Decisions.AddRange(
-            new Decision { Id = secondaryDecision1Id, IssueId = secondaryDecision1Id, Type = IssueType.Decision.ToString() },
-            new Decision { Id = secondaryDecision2Id, IssueId = secondaryDecision2Id, Type = IssueType.Decision.ToString() },
-            new Decision { Id = secondaryDecision3Id, IssueId = secondaryDecision3Id, Type = IssueType.Decision.ToString() });
+            new Decision { Id = secondaryDecision1Id, IssueId = secondaryDecision1Id, ProjectId = secondaryProject.Id, Type = IssueType.Decision.ToString() },
+            new Decision { Id = secondaryDecision2Id, IssueId = secondaryDecision2Id, ProjectId = secondaryProject.Id, Type = IssueType.Decision.ToString() },
+            new Decision { Id = secondaryDecision3Id, IssueId = secondaryDecision3Id, ProjectId = secondaryProject.Id, Type = IssueType.Decision.ToString() });
         db.Uncertainties.AddRange(
-            new Uncertainty { Id = secondaryUncertainty1Id, IssueId = secondaryUncertainty1Id, IsKey = true },
-            new Uncertainty { Id = secondaryUncertainty2Id, IssueId = secondaryUncertainty2Id, IsKey = true },
-            new Uncertainty { Id = secondaryUncertainty3Id, IssueId = secondaryUncertainty3Id, IsKey = true });
+            new Uncertainty { Id = secondaryUncertainty1Id, IssueId = secondaryUncertainty1Id, ProjectId = secondaryProject.Id, IsKey = true },
+            new Uncertainty { Id = secondaryUncertainty2Id, IssueId = secondaryUncertainty2Id, ProjectId = secondaryProject.Id, IsKey = true },
+            new Uncertainty { Id = secondaryUncertainty3Id, IssueId = secondaryUncertainty3Id, ProjectId = secondaryProject.Id, IsKey = true });
         db.Edges.AddRange(
             new Edge { Id = Guid.NewGuid(), ProjectId = secondaryProject.Id, TailId = secondaryDecision1Id, HeadId = secondaryUncertainty1Id },
             new Edge { Id = Guid.NewGuid(), ProjectId = secondaryProject.Id, TailId = secondaryUncertainty1Id, HeadId = secondaryDecision2Id },
