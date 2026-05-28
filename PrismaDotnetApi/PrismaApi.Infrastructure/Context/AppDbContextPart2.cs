@@ -81,7 +81,7 @@ public partial class AppDbContext : DbContext
         }
     }
 
-    public async Task InvalidateCacheAsync()
+    private async Task InvalidateCacheAsync()
     {
         InvalidateAssessmentsCache();
         InvalidateBoardNodesCache();
