@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using PrismaApi.Api.Controllers;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
 using System.Text;
@@ -69,6 +70,19 @@ public class FastApiService : IFastApiService
             issues = influanceDiagram.issues,
             edges = influanceDiagram.edges,
             paths
+        };
+        var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+        return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
+    }
+
+    public async Task<ApiResponseDto> SendInfluenceDiagramWithEvidenceToFastApiAsync(Guid projectId, string endpoint, List<EvidenceRequestDto> data, UserOutgoingDto user, CancellationToken ct = default)
+    {
+        var influanceDiagram = await _projectService.GetInfluanceDiagramAsync(projectId, user, ct);
+        var payload = new
+        {
+            issues = influanceDiagram.issues,
+            edges = influanceDiagram.edges,
+            evidence = data,
         };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
         return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
