@@ -80,9 +80,10 @@ def _prune_to_optimal_child(
             None,
         )
         if optimal_idx is not None:
-            if tree_node.children:
+            # length missmatch can occur when some options are not present due to pruning in earlier nodes, so we check index before pruning
+            if tree_node.children and optimal_idx < len(tree_node.children):
                 tree_node.children = [tree_node.children[optimal_idx]]
-            if tree_node.utilities:
+            if tree_node.utilities and optimal_idx < len(tree_node.utilities):
                 tree_node.utilities = [tree_node.utilities[optimal_idx]]
 
 def _get_branch_probability(
