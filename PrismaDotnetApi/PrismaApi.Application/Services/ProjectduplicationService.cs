@@ -121,14 +121,14 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (assessmentDtos.Count > 0)
             await _assessmentService.CreateAsync(assessmentDtos, user);
 
-        var decisionQualityAssessmentDtos = CreateDecisionQualityAssessments(fullProject.Assessments.SelectMany(a => a.DecisionQualityAssessments), assessmentIdMap);
+        var decisionQualityAssessmentDtos = CreateDecisionQualityAssessments(fullProject.Assessments.SelectMany(a => a.DecisionQualityAssessments ?? []), assessmentIdMap);
         if (decisionQualityAssessmentDtos.Count > 0)
             await _decisionQualityAssessmentService.CreateAsync(decisionQualityAssessmentDtos, user, ct);
 
         foreach (var boardNode in fullProject.BoardNodes)
             mappings.Node[boardNode.Id] = Guid.NewGuid();
 
-        var boardNodes = CreateBoardNodes(fullProject.BoardNodes, n => n.Type, newProjectId, mappings);
+        var boardNodes = CreateBoardNodes(fullProject.BoardNodes, newProjectId, mappings);
         if (boardNodes.Count > 0)
             await _boardNodeService.CreateAsync(boardNodes, user, ct);
 
@@ -224,7 +224,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         foreach (var boardNode in dto.BoardNodes)
             mappings.Node[boardNode.Id] = Guid.NewGuid();
 
-        var boardNodes = CreateBoardNodes(dto.BoardNodes, n => n.Type, newProjectId, mappings);
+        var boardNodes = CreateBoardNodes(dto.BoardNodes, newProjectId, mappings);
         if (boardNodes.Count > 0)
             await _boardNodeService.CreateAsync(boardNodes, user, ct);
 
@@ -499,14 +499,13 @@ public class ProjectDuplicationService : IProjectDuplicationService
 
     private static List<BoardNodeIncomingDto> CreateBoardNodes<TBoardNode>(
         IEnumerable<TBoardNode> boardNodes,
-        Func<TBoardNode, string> getType,
         Guid newProjectId,
         IdMappings mappings) where TBoardNode : BoardNodeDto
     {
         return boardNodes.Select(node => new BoardNodeIncomingDto
         {
             Id = GetMappedOrThrow(mappings.Node, node.Id, "node"),
-            Type = getType(node),
+            Type = node.Type,
             ProjectId = newProjectId,
             Height = node.Height,
             Width = node.Width,

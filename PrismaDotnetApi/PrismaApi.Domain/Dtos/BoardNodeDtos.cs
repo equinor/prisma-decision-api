@@ -24,17 +24,15 @@ public class BoardNodeDto
     public string Data { get; set; } = string.Empty;
     [JsonPropertyName("color")]
     public string Color { get; set; } = string.Empty;
-}
-
-public class BoardNodeIncomingDto : BoardNodeDto
-{
     [JsonPropertyName("type")]
     [EnumDataType(typeof(BoardNodeTypes), ErrorMessage = "Invalid Type")]
     public required string Type { get; set; }
 }
 
+public class BoardNodeIncomingDto : BoardNodeDto
+{
+}
+
 public class BoardNodeOutgoingDto : BoardNodeDto
 {
-    [JsonPropertyName("type")]
-    public required string Type { get; set; }
 }
