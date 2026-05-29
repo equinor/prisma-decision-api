@@ -26,6 +26,8 @@ public class ProjectDuplicationRepository : IProjectDuplicationRepository
             .Include(p => p.Objectives)
             .Include(p => p.ProjectRoles).ThenInclude(pr => pr.User)
             .Include(p => p.Strategies).ThenInclude(s => s.StrategyOptions).ThenInclude(so => so.Option)
+            .Include(p => p.BoardNodes)
+            .Include(p => p.Assessments).ThenInclude(a => a.DecisionQualityAssessments)
             .Include(p => p.Edges)
             .Include(p => p.Issues).ThenInclude(i => i.Node).ThenInclude(n => n!.NodeStyle)
             .Include(p => p.Issues).ThenInclude(i => i.Decision).ThenInclude(d => d!.Options)
@@ -38,7 +40,6 @@ public class ProjectDuplicationRepository : IProjectDuplicationRepository
                 .ThenInclude(u => u!.DiscreteUtilities).ThenInclude(du => du.ParentOutcomes)
             .Include(p => p.Issues).ThenInclude(i => i.Utility)
                 .ThenInclude(u => u!.DiscreteUtilities).ThenInclude(du => du.ParentOptions)
-            .Include(p => p.Assessments).ThenInclude(a => a.DecisionQualityAssessments)
             .AsSplitQuery()
             .FirstOrDefaultAsync(ct);
 
