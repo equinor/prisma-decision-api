@@ -500,7 +500,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
     private static List<BoardNodeIncomingDto> CreateBoardNodes<TBoardNode>(
         IEnumerable<TBoardNode> boardNodes,
         Guid newProjectId,
-        IdMappings mappings) where TBoardNode : BoardNodeDto
+        IdMappings mappings) where TBoardNode : BoardNodeDto, ITypedBoardNode
     {
         return boardNodes.Select(node => new BoardNodeIncomingDto
         {
