@@ -38,6 +38,7 @@ public class ProjectDuplicationRepository : IProjectDuplicationRepository
                 .ThenInclude(u => u!.DiscreteUtilities).ThenInclude(du => du.ParentOutcomes)
             .Include(p => p.Issues).ThenInclude(i => i.Utility)
                 .ThenInclude(u => u!.DiscreteUtilities).ThenInclude(du => du.ParentOptions)
+            .Include(p => p.Assessments).ThenInclude(a => a.DecisionQualityAssessments)
             .AsSplitQuery()
             .FirstOrDefaultAsync(ct);
 

@@ -18,6 +18,8 @@ namespace PrismaApi.Domain.Dtos
 
         [JsonPropertyName("project_id")]
         public Guid ProjectId { get; set; }
+        [JsonPropertyName("decision_quality_assessments")]
+        public List<DecisionQualityAssessmentOutgoingDto>? DecisionQualityAssessments { get; set; } = new();
 
     }
     public class AssessmentIncomingDto : AssessmentDto
