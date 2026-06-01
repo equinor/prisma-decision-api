@@ -487,8 +487,8 @@ public partial class AppDbContext : DbContext
         await OnOptionDeletedCleanupAsync(cancellationToken);
         // invalidate before savechanges because save changes clears out the change tracker
         await InvalidateCacheAsync();
-        var res = await base.SaveChangesAsync(cancellationToken);
-        return res;
+        return await base.SaveChangesAsync(cancellationToken);
+        
     }
 
 
