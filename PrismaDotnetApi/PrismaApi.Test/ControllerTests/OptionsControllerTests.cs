@@ -30,6 +30,7 @@ public class OptionsControllerTests : IClassFixture<PrismaApiFixture>
             {
                 Id = optionId,
                 DecisionId = _fixture.TestArgs.DecisionIssueId,
+                ProjectId = _fixture.TestArgs.TestProjectId,
                 Name = "Option A",
                 Utility = 1.5
             }
@@ -94,6 +95,7 @@ public class OptionsControllerTests : IClassFixture<PrismaApiFixture>
             {
                 Id = optionId,
                 DecisionId = decisionId,
+                ProjectId = _fixture.TestArgs.TestProjectId,
                 Name = updatedName,
                 Utility = 4.2
             }

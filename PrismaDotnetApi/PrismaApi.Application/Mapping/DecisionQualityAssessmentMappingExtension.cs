@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 
@@ -20,6 +18,7 @@ namespace PrismaApi.Application.Mapping
                 Comment = entity.Comment,
                 DoableAlternatives = entity.DoableAlternatives,
                 AssessmentId = entity.AssessmentId,
+                ProjectId = entity.ProjectId,
                 CreatedById = entity.CreatedById,
                 CreatedAt = entity.CreatedAt.UtcDateTime,
                 UpdatedAt = entity.UpdatedAt.UtcDateTime
@@ -44,6 +43,7 @@ namespace PrismaApi.Application.Mapping
                 CommitmentToAction = dto.CommitmentToAction,
                 Comment = dto.Comment,
                 DoableAlternatives = dto.DoableAlternatives,
+                ProjectId = dto.ProjectId,
                 CreatedById = userDto.Id,
                 UpdatedById = userDto.Id
             };

@@ -13,6 +13,7 @@ public static class DecisionMappingExtensions
         {
             Id = entity.Id,
             IssueId = entity.IssueId,
+            ProjectId = entity.ProjectId,
             Type = entity.Type,
             Options = entity.Options.ToOutgoingDtos()
         };
@@ -29,6 +30,7 @@ public static class DecisionMappingExtensions
         {
             Id = dto.Id,
             IssueId = dto.IssueId,
+            ProjectId = dto.ProjectId,
             Type = dto.Type,
             Options = dto.Options.ToEntities()
         };

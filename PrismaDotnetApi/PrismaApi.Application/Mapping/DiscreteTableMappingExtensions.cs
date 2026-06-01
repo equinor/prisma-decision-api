@@ -12,6 +12,7 @@ public static class DiscreteTableMappingExtensions
             Id = entity.Id,
             OutcomeId = entity.OutcomeId,
             UncertaintyId = entity.UncertaintyId,
+            ProjectId = entity.ProjectId,
             Probability = entity.Probability,
             ParentOptionIds = entity.ParentOptions.Select(x => x.ParentOptionId).ToList(),
             ParentOutcomeIds = entity.ParentOutcomes.Select(x => x.ParentOutcomeId).ToList(),
@@ -27,6 +28,7 @@ public static class DiscreteTableMappingExtensions
             Id = dto.Id,
             OutcomeId = dto.OutcomeId,
             UncertaintyId = dto.UncertaintyId,
+            ProjectId = dto.ProjectId,
             Probability = dto.Probability,
             ParentOptions = dto.ParentOptionIds
                 .Select(x => new DiscreteProbabilityParentOption
@@ -50,6 +52,7 @@ public static class DiscreteTableMappingExtensions
             Id = dto.Id,
             OutcomeId = dto.OutcomeId,
             UncertaintyId = dto.UncertaintyId,
+            ProjectId = dto.ProjectId,
             Probability = dto.Probability
         };
     }
@@ -93,6 +96,7 @@ public static class DiscreteTableMappingExtensions
         {
             Id = entity.Id,
             UtilityId = entity.UtilityId,
+            ProjectId = entity.ProjectId,
             ValueMetricId = entity.ValueMetricId,
             UtilityValue = entity.UtilityValue,
             ParentOptionIds = entity.ParentOptions.Select(x => x.ParentOptionId).ToList(),
@@ -107,6 +111,7 @@ public static class DiscreteTableMappingExtensions
             Id = dto.Id,
             UtilityId = dto.UtilityId,
             ValueMetricId = dto.ValueMetricId,
+            ProjectId = dto.ProjectId,
             UtilityValue = dto.UtilityValue
         };
     }
@@ -118,6 +123,7 @@ public static class DiscreteTableMappingExtensions
             Id = dto.Id,
             UtilityId = dto.UtilityId,
             ValueMetricId = dto.ValueMetricId,
+            ProjectId = dto.ProjectId,
             UtilityValue = dto.UtilityValue,
             ParentOptions = dto.ParentOptionIds
                 .Select(x => new DiscreteUtilityParentOption

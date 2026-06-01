@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Domain.Interfaces;
@@ -7,10 +8,15 @@ using PrismaApi.Infrastructure.DiscreteTables;
 
 namespace PrismaApi.Infrastructure.Context;
 
-public class AppDbContext : DbContext
+public partial class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    private readonly IMemoryCache _cache;
+    public readonly AppDbContextOptions AppOptions;
+
+    public AppDbContext(DbContextOptions<AppDbContext> options, IMemoryCache cache, AppDbContextOptions appOptions) : base(options)
     {
+        _cache = cache;
+        AppOptions = appOptions;
     }
 
     public DiscreteTableSessionInfo DiscreteTableSessionInfo { get; } = new();
@@ -463,10 +469,13 @@ public class AppDbContext : DbContext
         });
     }
 
+    private IEnumerable<EntityEntry<T>> GetChangedEntries<T>() where T : class =>
+        ChangeTracker.Entries<T>()
+            .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted);
+
     public override int SaveChanges()
     {
-        UpdateTimestamps();
-        return base.SaveChanges();
+        throw new InvalidOperationException("Use SaveChangesAsync instead.");
     }
 
     public async override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -476,30 +485,21 @@ public class AppDbContext : DbContext
         await OnNodeDeletedCleanupAsync(cancellationToken);
         await OnOutcomeDeletedCleanupAsync(cancellationToken);
         await OnOptionDeletedCleanupAsync(cancellationToken);
+        // invalidate before savechanges because save changes clears out the change tracker
+        await InvalidateCacheAsync();
         return await base.SaveChangesAsync(cancellationToken);
+        
     }
+
 
     public async Task<int> SaveChangesWhileDuplicatingAsync(CancellationToken cancellationToken = default)
     {
+        // Alternitive design can be found at https://learn.microsoft.com/en-us/ef/core/logging-events-diagnostics/events
+
+        // no need to invalidate cache here since the duplicated entities will have new ids 
+        // and won't affect existing cache entries
         return await base.SaveChangesAsync(cancellationToken);
     }
-
-    //private static void UpdateTimestamps(object sender, EntityEntryEventArgs e)
-    //{
-    //    // https://learn.microsoft.com/en-us/ef/core/logging-events-diagnostics/events
-    //    if (e.Entry.Entity is BaseEntity entityWithTimestamps)
-    //    {
-    //        switch (e.Entry.State)
-    //        {
-    //            case EntityState.Modified:
-    //                entityWithTimestamps.UpdatedAt = DateTime.UtcNow;
-    //                break;
-    //            case EntityState.Added:
-    //                entityWithTimestamps.CreatedAt = DateTime.UtcNow;
-    //                break;
-    //        }
-    //    }
-    //}
 
     private void UpdateTimestamps()
     {

@@ -56,14 +56,14 @@ public class FastApiService : IFastApiService
 
     public async Task<ApiResponseDto> SendInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var influanceDiagram = await _projectService.GetInfluanceDiagramAsync(projectId, user, ct);
+        var influanceDiagram = await _projectService.GetInfluenceDiagramAsync(projectId, user, ct);
         var content = new StringContent(JsonSerializer.Serialize(influanceDiagram), Encoding.UTF8, "application/json");
         return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
     }
 
     public async Task<ApiResponseDto> SendPartialInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, List<List<Guid>> paths, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var influanceDiagram = await _projectService.GetInfluanceDiagramAsync(projectId, user, ct);
+        var influanceDiagram = await _projectService.GetInfluenceDiagramAsync(projectId, user, ct);
         var payload = new
         {
             issues = influanceDiagram.issues,

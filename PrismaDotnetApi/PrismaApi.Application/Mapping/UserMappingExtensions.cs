@@ -13,6 +13,13 @@ public static class UserMappingExtensions
         {
             Id = entity.Id,
             Name = entity.Name,
+            ProjectRoles = entity.ProjectRoles.Select(pr => new ProjectRoleOutgoingDto
+            {
+                Id = pr.Id,
+                UserId = pr.UserId,
+                ProjectId = pr.ProjectId,
+                Role = pr.Role
+            }).ToList()
         };
     }
 

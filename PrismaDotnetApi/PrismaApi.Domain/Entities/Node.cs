@@ -7,9 +7,9 @@ namespace PrismaApi.Domain.Entities;
 
 public class Node : BaseEntity, IBaseEntity<Guid>
 {
-    public Guid Id { get; set; }
-    public Guid ProjectId { get; set; }
-    public Guid IssueId { get; set; }
+    public required Guid Id { get; set; }
+    public required Guid ProjectId { get; set; }
+    public required Guid IssueId { get; set; }
     public string Name { get; set; } = string.Empty;
 
     public Project? Project { get; set; }

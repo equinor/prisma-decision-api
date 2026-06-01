@@ -1,8 +1,10 @@
+using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
+using PrismaApi.Infrastructure.Caching;
 using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Services;
@@ -10,10 +12,12 @@ namespace PrismaApi.Application.Services;
 public class BoardNodeService: IBoardNodeService
 {
     private readonly IBoardNodeRepository _boardNodeRepository;
+    private readonly IMemoryCache _cache;
 
-    public BoardNodeService(IBoardNodeRepository boardNodeRepository)
+    public BoardNodeService(IBoardNodeRepository boardNodeRepository, IMemoryCache cache)
     {
         _boardNodeRepository = boardNodeRepository;
+        _cache = cache;
     }
 
     public async Task<List<BoardNodeOutgoingDto>> CreateAsync(List<BoardNodeIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
@@ -45,10 +49,39 @@ public class BoardNodeService: IBoardNodeService
 
     public async Task<List<BoardNodeOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _boardNodeRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-        return entities.ToOutgoingDtos();
+        var boardNodes = new List<BoardNodeOutgoingDto>();
+        var projectIdsToGetFromDb = new HashSet<Guid>();
+        foreach (var role in user.ProjectRoles)
+        {
+            var cachedBoardNodes = _cache.GetCacheItemAsBoardNodes(role.ProjectId, user);
+            if (cachedBoardNodes != null)
+            {
+                boardNodes.AddRange(cachedBoardNodes);
+            }
+            else
+            {
+                projectIdsToGetFromDb.Add(role.ProjectId);
+            }
+        }
+
+        if (projectIdsToGetFromDb.Count > 0)
+        {
+            var projectBoardNodes = await _boardNodeRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(projectIdsToGetFromDb), ct: ct);
+            var boardNodeDtos = projectBoardNodes.ToOutgoingDtos();
+            boardNodes.AddRange(boardNodeDtos);
+            foreach (var projectId in projectIdsToGetFromDb)
+            {
+                var cacheKey = CacheKeys.GetBoardNodesInProjectKey(projectId);
+                var projectBoardNodeDtos = boardNodeDtos.Where(n => n.ProjectId == projectId).ToList();
+                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, projectBoardNodeDtos);
+            }
+        }
+        return boardNodes;
     }
 
     private static Expression<Func<BoardNode, bool>> UserFilter(UserOutgoingDto user)
         => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+
+    private static Expression<Func<BoardNode, bool>> ProjectFilter(HashSet<Guid> projectIds)
+        => e => projectIds.Contains(e.ProjectId);
 }

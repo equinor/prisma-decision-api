@@ -110,6 +110,7 @@ public class TableRebuildingService : ITableRebuildingService
                     ),
                     OutcomeId = outcome.Id,
                     UncertaintyId = uncertainty.Id,
+                    ProjectId = issue.ProjectId,
                     Probability = 0
                 };
                 DbContext.Entry(newEntry).State = EntityState.Added;
@@ -137,6 +138,7 @@ public class TableRebuildingService : ITableRebuildingService
                     Id = probabilityId,
                     OutcomeId = outcome.Id,
                     UncertaintyId = uncertainty.Id,
+                    ProjectId = issue.ProjectId,
                     Probability = 0,
                 };
                 DbContext.DiscreteProbabilities.Add(newEntity);
@@ -201,6 +203,7 @@ public class TableRebuildingService : ITableRebuildingService
                     Id = utilityId,
                     ValueMetricId = DomainConstants.DefaultValueMetricId,
                     UtilityId = utility.Id,
+                    ProjectId = issue.ProjectId,
                     UtilityValue = 0,
                 }, ct);
 

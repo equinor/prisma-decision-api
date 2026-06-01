@@ -27,6 +27,8 @@ namespace PrismaApi.Domain.Dtos
         public int DoableAlternatives { get; set; }
         [JsonPropertyName("assessment_id")]
         public Guid AssessmentId { get; set; }
+        [JsonPropertyName("project_id")]
+        public Guid ProjectId { get; set; }
 
         [JsonPropertyName("created_at")]
         public DateTime CreatedAt { get; set; }

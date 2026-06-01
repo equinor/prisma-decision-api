@@ -4,8 +4,8 @@ namespace PrismaApi.Domain.Entities;
 
 public class BoardNode : AuditableEntity, IBaseEntity<Guid>
 {
-    public Guid Id { get; set; }
-    public Guid ProjectId { get; set; }
+    public required Guid Id { get; set; }
+    public required Guid ProjectId { get; set; }
     public string Type { get; set; } = string.Empty;
     public double Height { get; set; }
     public double Width { get; set; }

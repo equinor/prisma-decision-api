@@ -15,6 +15,7 @@ public static class OptionMappingExtensions
             Id = entity.Id,
             Name = entity.Name,
             DecisionId = entity.DecisionId,
+            ProjectId = entity.ProjectId,
             Utility = entity.Utility,
             CreatedAt = entity.CreatedAt
 
@@ -33,6 +34,7 @@ public static class OptionMappingExtensions
             Id = dto.Id,
             Name = dto.Name,
             DecisionId = dto.DecisionId,
+            ProjectId = dto.ProjectId,
             Utility = dto.Utility,
             CreatedAt = dto.CreatedAt
         };
