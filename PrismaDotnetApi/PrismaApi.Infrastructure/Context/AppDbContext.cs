@@ -185,6 +185,11 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
 
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Decisions
+
             entity.HasMany(e => e.Options)
                 .WithOne(e => e.Decision)
                 .HasForeignKey(e => e.DecisionId)
@@ -195,17 +200,32 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Decisions -> Options
         });
 
         modelBuilder.Entity<Outcome>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Uncertainties -> Outcomes
         });
 
         modelBuilder.Entity<Uncertainty>(entity =>
         {
             entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Uncertainties
 
             entity.HasMany(e => e.Outcomes)
                 .WithOne(e => e.Uncertainty)
@@ -216,6 +236,11 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<Utility>(entity =>
         {
             entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Utilities
         });
 
         modelBuilder.Entity<DiscreteProbability>(entity =>
@@ -224,6 +249,11 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => e.OutcomeId);
             entity.HasIndex(e => e.UncertaintyId);
             entity.Property(e => e.Probability).HasPrecision(DomainConstants.FloatPrecision);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Uncertainties -> Outcomes -> DiscreteProbabilities
 
             entity.HasOne(e => e.Outcome)
                 .WithMany()
@@ -282,6 +312,11 @@ public partial class AppDbContext : DbContext
             entity.HasIndex(e => e.ValueMetricId);
             entity.HasIndex(e => e.UtilityId);
             entity.Property(e => e.UtilityValue).HasPrecision(DomainConstants.FloatPrecision);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Utilities -> DiscreteUtilities
 
             entity.HasOne(e => e.ValueMetric)
                 .WithMany()
@@ -441,6 +476,12 @@ public partial class AppDbContext : DbContext
             entity.ToTable("DecisionQualityAssessments");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Comment).HasMaxLength(DomainConstants.MaxLongStringLength);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Assessments -> DecisionQualityAssessments
+
             entity.HasOne(e => e.CreatedBy)
             .WithMany()
             .HasForeignKey(e => e.CreatedById)
