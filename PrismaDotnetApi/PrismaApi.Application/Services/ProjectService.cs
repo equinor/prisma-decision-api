@@ -106,7 +106,7 @@ public class ProjectService : IProjectService
         return projects.ToPopulatedDtos();
     }
 
-    public async Task<InfluanceDiagramDto> GetInfluanceDiagramAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
+    public async Task<InfluenceDiagramDto> GetInfluenceDiagramAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
     {
         var cachedDiagram = _cache.GetCacheItemAsInfluenceDiagram(projectId, user);
         if (cachedDiagram != null)
@@ -116,7 +116,7 @@ public class ProjectService : IProjectService
         
         var issueEntities = await _issueRepository.GetIssuesInInfluenceDiagram(projectId, IssuesUserFilter(user), ct);
         var edgeEntities = await _edgeRepository.GetEdgesInInfluenceDiagram(projectId, EdgesUserFilter(user), ct);
-        var diagram = new InfluanceDiagramDto
+        var diagram = new InfluenceDiagramDto
         {
             projectId = projectId,
             issues = issueEntities.ToOutgoingDtos(),

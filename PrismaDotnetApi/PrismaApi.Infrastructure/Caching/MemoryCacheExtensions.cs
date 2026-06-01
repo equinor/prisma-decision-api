@@ -32,20 +32,20 @@ public static class MemoryCacheExtensions
         return null;
     }
 
-    public static InfluanceDiagramDto? GetCacheItemAsInfluenceDiagram(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
+    public static InfluenceDiagramDto? GetCacheItemAsInfluenceDiagram(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached diagram
-        if (user.ProjectRoles.All(pr => pr.ProjectId != projectId))
+        if (!user.HasAccessToProject(projectId))
         {
             return null;
         }
-        return cache.GetCacheItem<InfluanceDiagramDto>(CacheKeys.GetInfluenceDiagramKey(projectId));  
+        return cache.GetCacheItem<InfluenceDiagramDto>(CacheKeys.GetInfluenceDiagramKey(projectId));  
     }
 
     public static List<IssueOutgoingDto>? GetCacheItemAsIssues(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached issues
-        if (user.ProjectRoles.All(pr => pr.ProjectId != projectId))
+        if (!user.HasAccessToProject(projectId))
         {
             return null;
         }
@@ -55,7 +55,7 @@ public static class MemoryCacheExtensions
      public static List<EdgeOutgoingDto>? GetCacheItemAsEdges(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached edges
-        if (user.ProjectRoles.All(pr => pr.ProjectId != projectId))
+        if (!user.HasAccessToProject(projectId))
         {
             return null;
         }
@@ -65,7 +65,7 @@ public static class MemoryCacheExtensions
     public static List<NodeOutgoingDto>? GetCacheItemAsNodes(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached nodes
-        if (user.ProjectRoles.All(pr => pr.ProjectId != projectId))
+        if (!user.HasAccessToProject(projectId))
         {
             return null;
         }
@@ -75,7 +75,7 @@ public static class MemoryCacheExtensions
     public static List<BoardNodeOutgoingDto>? GetCacheItemAsBoardNodes(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached board nodes
-        if (user.ProjectRoles.All(pr => pr.ProjectId != projectId))
+        if (!user.HasAccessToProject(projectId))
         {
             return null;
         }
@@ -85,7 +85,7 @@ public static class MemoryCacheExtensions
     public static List<AssessmentOutgoingDto>? GetCacheItemAsAssessment(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached assessment
-        if (user.ProjectRoles.All(pr => pr.ProjectId != projectId))
+        if (!user.HasAccessToProject(projectId))
         {
             return null;
         }
@@ -190,4 +190,7 @@ public static class MemoryCacheExtensions
         }
         return Math.Round(totalBytes / (1024.0 * 1024.0), 4);
     }
+
+    private static bool HasAccessToProject(this UserOutgoingDto user, Guid projectId)
+        => user.ProjectRoles.Any(pr => pr.ProjectId == projectId);
 }

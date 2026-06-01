@@ -61,7 +61,7 @@ public class Program
 
         builder.Services.AddMemoryCache(options =>
         {
-            options.TrackStatistics = true;
+            options.TrackStatistics = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Local");
         });
 
         var appInsightsConnectionString = Environment.GetEnvironmentVariable("APPLICATION_INSIGHTS_CONNECTIONSTRING") ?? builder.Configuration.GetSection("ApplicationInsights:ConnectionString").Value;
