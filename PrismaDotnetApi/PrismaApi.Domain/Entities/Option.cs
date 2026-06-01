@@ -7,8 +7,8 @@ namespace PrismaApi.Domain.Entities;
 
 public class Option : BaseEntity, IBaseEntity<Guid>
 {
-    public Guid Id { get; set; }
-    public Guid DecisionId { get; set; }
+    public required Guid Id { get; set; }
+    public required Guid DecisionId { get; set; }
     public required Guid ProjectId { get; set; }
     public string Name { get; set; } = string.Empty;
     public double Utility { get; set; }

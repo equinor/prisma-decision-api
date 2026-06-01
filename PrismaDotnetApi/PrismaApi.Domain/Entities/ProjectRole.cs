@@ -6,8 +6,8 @@ namespace PrismaApi.Domain.Entities;
 
 public class ProjectRole : AuditableEntity, IBaseEntity<Guid>
 {
-    public Guid Id { get; set; }
-    public Guid ProjectId { get; set; }
+    public required Guid Id { get; set; }
+    public required Guid ProjectId { get; set; }
     public required string UserId { get; set; }
     public string Role { get; set; } = string.Empty;
 
