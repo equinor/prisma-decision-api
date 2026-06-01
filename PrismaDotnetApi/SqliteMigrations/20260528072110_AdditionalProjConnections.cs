@@ -115,35 +115,35 @@ namespace PrismaApi.Infrastructure.Migrations
 
             migrationBuilder.AddForeignKey(name: "FK_Decisions_Projects_ProjectId",
                 table: "Decisions", column: "ProjectId", principalTable: "Projects",
-                principalColumn: "Id", onDelete: ReferentialAction.Cascade);
+                principalColumn: "Id", onDelete: ReferentialAction.NoAction); // Cascade path already exists via Projects -> Issues -> Decisions
 
             migrationBuilder.AddForeignKey(name: "FK_DiscreteProbabilities_Projects_ProjectId",
                 table: "DiscreteProbabilities", column: "ProjectId", principalTable: "Projects",
-                principalColumn: "Id", onDelete: ReferentialAction.Cascade);
+                principalColumn: "Id", onDelete: ReferentialAction.NoAction); // Cascade path already exists via Projects -> Issues -> Uncertainties -> Outcomes -> DiscreteProbabilities
 
             migrationBuilder.AddForeignKey(name: "FK_DiscreteUtilities_Projects_ProjectId",
                 table: "DiscreteUtilities", column: "ProjectId", principalTable: "Projects",
-                principalColumn: "Id", onDelete: ReferentialAction.Cascade);
+                principalColumn: "Id", onDelete: ReferentialAction.NoAction); // Cascade path already exists via Projects -> Issues -> Utilities -> DiscreteUtilities
 
             migrationBuilder.AddForeignKey(name: "FK_Options_Projects_ProjectId",
                 table: "Options", column: "ProjectId", principalTable: "Projects",
-                principalColumn: "Id", onDelete: ReferentialAction.Cascade);
+                principalColumn: "Id", onDelete: ReferentialAction.NoAction); // Cascade path already exists via Projects -> Issues -> Decisions -> Options
 
             migrationBuilder.AddForeignKey(name: "FK_Outcomes_Projects_ProjectId",
                 table: "Outcomes", column: "ProjectId", principalTable: "Projects",
-                principalColumn: "Id", onDelete: ReferentialAction.Cascade);
+                principalColumn: "Id", onDelete: ReferentialAction.NoAction); // Cascade path already exists via Projects -> Issues -> Uncertainties -> Outcomes
 
             migrationBuilder.AddForeignKey(name: "FK_Uncertainties_Projects_ProjectId",
                 table: "Uncertainties", column: "ProjectId", principalTable: "Projects",
-                principalColumn: "Id", onDelete: ReferentialAction.Cascade);
+                principalColumn: "Id", onDelete: ReferentialAction.NoAction); // Cascade path already exists via Projects -> Issues -> Uncertainties
 
             migrationBuilder.AddForeignKey(name: "FK_Utilities_Projects_ProjectId",
                 table: "Utilities", column: "ProjectId", principalTable: "Projects",
-                principalColumn: "Id", onDelete: ReferentialAction.Cascade);
+                principalColumn: "Id", onDelete: ReferentialAction.NoAction); // Cascade path already exists via Projects -> Issues -> Utilities
             
             migrationBuilder.AddForeignKey( name: "FK_DecisionQualityAssessments_Projects_ProjectId", 
                 table: "DecisionQualityAssessments", column: "ProjectId", principalTable: "Projects", 
-                principalColumn: "Id", onDelete: ReferentialAction.Cascade);
+                principalColumn: "Id", onDelete: ReferentialAction.NoAction); // Cascade path already exists via Projects -> Assessments -> DecisionQualityAssessments
         }
 
         /// <inheritdoc />
