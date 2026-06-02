@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure.Caching;
 
@@ -228,9 +229,6 @@ public class ProjectDuplicationService : IProjectDuplicationService
         var decisionQualityAssessmentDtos = CreateDecisionQualityAssessments(dto.Assessments.SelectMany(a => a.DecisionQualityAssessments ?? []), assessmentIdMap);
         if (decisionQualityAssessmentDtos.Count > 0)
             await _decisionQualityAssessmentService.CreateAsync(decisionQualityAssessmentDtos, user, ct);
-
-        foreach (var boardNode in dto.BoardNodes)
-            mappings.Node[boardNode.Id] = Guid.NewGuid();
 
         var boardNodes = CreateBoardNodes(dto.BoardNodes, newProjectId, mappings);
         if (boardNodes.Count > 0)
@@ -521,19 +519,26 @@ public class ProjectDuplicationService : IProjectDuplicationService
         Guid newProjectId,
         IdMappings mappings) where TBoardNode : BoardNodeDto, ITypedBoardNode
     {
-        return boardNodes.Select(node => new BoardNodeIncomingDto
+        return boardNodes.Select(boardNode => new BoardNodeIncomingDto
         {
-            Id = GetMappedOrThrow(mappings.Node, node.Id, "node"),
-            Type = node.Type,
+            Id = Guid.NewGuid(),
+            Type = boardNode.Type,
             ProjectId = newProjectId,
-            Height = node.Height,
-            Width = node.Width,
-            XPosition = node.XPosition,
-            YPosition = node.YPosition,
-            Rotation = node.Rotation,
-            Data = node.Data,
-            Color = node.Color
+            Height = boardNode.Height,
+            Width = boardNode.Width,
+            XPosition = boardNode.XPosition,
+            YPosition = boardNode.YPosition,
+            Rotation = boardNode.Rotation,
+            Data = RemapBoardNodeData(boardNode.Type, boardNode.Data, mappings),
+            Color = boardNode.Color
         }).ToList();
+    }
+
+    private static string RemapBoardNodeData(string type, string data, IdMappings mappings)
+    {
+        if (type == nameof(BoardNodeTypes.Issue) && Guid.TryParse(data, out var issueId) && mappings.Issue.TryGetValue(issueId, out var mappedIssueId))
+            return mappedIssueId.ToString();
+        return data;
     }
 
     private static List<EdgeIncomingDto> CreateEdges(IEnumerable<EdgeDto> edges, Guid newProjectId, IdMappings mappings)
