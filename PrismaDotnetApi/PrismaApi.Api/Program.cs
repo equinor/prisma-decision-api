@@ -57,7 +57,12 @@ public class Program
                 .AddInMemoryTokenCaches();
         }
 
-        builder.Services.AddMemoryCache();
+        builder.Services.AddSingleton(new AppDbContextOptions { IsPublicInstance = isPublicInstance });
+
+        builder.Services.AddMemoryCache(options =>
+        {
+            options.TrackStatistics = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Local");
+        });
 
         var appInsightsConnectionString = Environment.GetEnvironmentVariable("APPLICATION_INSIGHTS_CONNECTIONSTRING") ?? builder.Configuration.GetSection("ApplicationInsights:ConnectionString").Value;
         if (!string.IsNullOrEmpty(appInsightsConnectionString) && builder.Environment.EnvironmentName != "Local")

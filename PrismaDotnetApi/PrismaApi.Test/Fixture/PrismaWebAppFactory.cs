@@ -42,6 +42,11 @@ public class PrismaWebAppFactory : WebApplicationFactory<Program>
     private void EnsureDatabase()
     {
         var services = new ServiceCollection();
+        services.AddSingleton(new AppDbContextOptions { IsPublicInstance = false });
+        services.AddMemoryCache(options =>
+        {
+            options.TrackStatistics = true;
+        });
         services.AddDbContext<AppDbContext>(options =>
         {
             options.UseSqlite(_connection);

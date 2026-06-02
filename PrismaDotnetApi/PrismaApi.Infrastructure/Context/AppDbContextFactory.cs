@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 
 namespace PrismaApi.Infrastructure.Context;
@@ -41,7 +42,7 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
                 x => x.MigrationsAssembly("SqlServerMigrations"));
         }
 
-        return new AppDbContext(optionsBuilder.Options);
+        return new AppDbContext(optionsBuilder.Options, new MemoryCache(new MemoryCacheOptions()), new AppDbContextOptions());
     }
 
     private static string GetProvider(string[] args)

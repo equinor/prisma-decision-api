@@ -31,6 +31,7 @@ public class DiscreteUtilitiesControllerTests : IClassFixture<PrismaApiFixture>
             {
                 Id = discreteUtilityId,
                 UtilityId = utilityId,
+                ProjectId = _fixture.TestArgs.TestProjectId,
                 ValueMetricId = DomainConstants.DefaultValueMetricId,
                 UtilityValue = 3.14
             }
@@ -94,6 +95,7 @@ public class DiscreteUtilitiesControllerTests : IClassFixture<PrismaApiFixture>
             {
                 Id = discreteUtilityId,
                 UtilityId = utilityId,
+                ProjectId = _fixture.TestArgs.TestProjectId,
                 ValueMetricId = DomainConstants.DefaultValueMetricId,
                 UtilityValue = 4.5
             }

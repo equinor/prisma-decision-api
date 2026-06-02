@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Domain.Interfaces;
@@ -7,10 +8,15 @@ using PrismaApi.Infrastructure.DiscreteTables;
 
 namespace PrismaApi.Infrastructure.Context;
 
-public class AppDbContext : DbContext
+public partial class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    private readonly IMemoryCache _cache;
+    public readonly AppDbContextOptions AppOptions;
+
+    public AppDbContext(DbContextOptions<AppDbContext> options, IMemoryCache cache, AppDbContextOptions appOptions) : base(options)
     {
+        _cache = cache;
+        AppOptions = appOptions;
     }
 
     public DiscreteTableSessionInfo DiscreteTableSessionInfo { get; } = new();
@@ -179,6 +185,11 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
 
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Decisions
+
             entity.HasMany(e => e.Options)
                 .WithOne(e => e.Decision)
                 .HasForeignKey(e => e.DecisionId)
@@ -189,17 +200,32 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Decisions -> Options
         });
 
         modelBuilder.Entity<Outcome>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Uncertainties -> Outcomes
         });
 
         modelBuilder.Entity<Uncertainty>(entity =>
         {
             entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Uncertainties
 
             entity.HasMany(e => e.Outcomes)
                 .WithOne(e => e.Uncertainty)
@@ -210,6 +236,11 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Utility>(entity =>
         {
             entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Utilities
         });
 
         modelBuilder.Entity<DiscreteProbability>(entity =>
@@ -218,6 +249,11 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.OutcomeId);
             entity.HasIndex(e => e.UncertaintyId);
             entity.Property(e => e.Probability).HasPrecision(DomainConstants.FloatPrecision);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Uncertainties -> Outcomes -> DiscreteProbabilities
 
             entity.HasOne(e => e.Outcome)
                 .WithMany()
@@ -276,6 +312,11 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.ValueMetricId);
             entity.HasIndex(e => e.UtilityId);
             entity.Property(e => e.UtilityValue).HasPrecision(DomainConstants.FloatPrecision);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Utilities -> DiscreteUtilities
 
             entity.HasOne(e => e.ValueMetric)
                 .WithMany()
@@ -435,6 +476,12 @@ public class AppDbContext : DbContext
             entity.ToTable("DecisionQualityAssessments");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Comment).HasMaxLength(DomainConstants.MaxLongStringLength);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Assessments -> DecisionQualityAssessments
+
             entity.HasOne(e => e.CreatedBy)
             .WithMany()
             .HasForeignKey(e => e.CreatedById)
@@ -463,10 +510,13 @@ public class AppDbContext : DbContext
         });
     }
 
+    private IEnumerable<EntityEntry<T>> GetChangedEntries<T>() where T : class =>
+        ChangeTracker.Entries<T>()
+            .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted);
+
     public override int SaveChanges()
     {
-        UpdateTimestamps();
-        return base.SaveChanges();
+        throw new InvalidOperationException("Use SaveChangesAsync instead.");
     }
 
     public async override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -476,30 +526,21 @@ public class AppDbContext : DbContext
         await OnNodeDeletedCleanupAsync(cancellationToken);
         await OnOutcomeDeletedCleanupAsync(cancellationToken);
         await OnOptionDeletedCleanupAsync(cancellationToken);
+        // invalidate before savechanges because save changes clears out the change tracker
+        await InvalidateCacheAsync();
         return await base.SaveChangesAsync(cancellationToken);
+        
     }
+
 
     public async Task<int> SaveChangesWhileDuplicatingAsync(CancellationToken cancellationToken = default)
     {
+        // Alternitive design can be found at https://learn.microsoft.com/en-us/ef/core/logging-events-diagnostics/events
+
+        // no need to invalidate cache here since the duplicated entities will have new ids 
+        // and won't affect existing cache entries
         return await base.SaveChangesAsync(cancellationToken);
     }
-
-    //private static void UpdateTimestamps(object sender, EntityEntryEventArgs e)
-    //{
-    //    // https://learn.microsoft.com/en-us/ef/core/logging-events-diagnostics/events
-    //    if (e.Entry.Entity is BaseEntity entityWithTimestamps)
-    //    {
-    //        switch (e.Entry.State)
-    //        {
-    //            case EntityState.Modified:
-    //                entityWithTimestamps.UpdatedAt = DateTime.UtcNow;
-    //                break;
-    //            case EntityState.Added:
-    //                entityWithTimestamps.CreatedAt = DateTime.UtcNow;
-    //                break;
-    //        }
-    //    }
-    //}
 
     private void UpdateTimestamps()
     {

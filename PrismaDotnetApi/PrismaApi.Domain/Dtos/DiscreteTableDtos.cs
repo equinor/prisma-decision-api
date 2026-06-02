@@ -12,6 +12,8 @@ public class DiscreteProbabilityDto
     public Guid OutcomeId { get; set; }
     [JsonPropertyName("uncertainty_id")]
     public Guid UncertaintyId { get; set; }
+    [JsonPropertyName("project_id")]
+    public required Guid ProjectId { get; set; }
     [JsonPropertyName("probability")]
     public double? Probability { get; set; }
     [JsonPropertyName("parent_outcome_ids")]
@@ -54,6 +56,8 @@ public class DiscreteUtilityDto
     [JsonPropertyName("parent_option_ids")]
     public List<Guid> ParentOptionIds { get; set; } = new();
     //public List<DiscreteUtilityParentOptionDto> ParentOptions { get; set; } = new();
+    [JsonPropertyName("project_id")]
+    public required Guid ProjectId { get; set; }
 }
 
 public class DiscreteUtilityParentOutcomeDto

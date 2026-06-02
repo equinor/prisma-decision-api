@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PrismaApi.Infrastructure.Context;
 
@@ -10,9 +11,11 @@ using PrismaApi.Infrastructure.Context;
 namespace PrismaApi.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260528072110_AdditionalProjConnections")]
+    partial class AdditionalProjConnections
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.13");
@@ -964,7 +967,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Issue");
@@ -989,7 +992,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("PrismaApi.Domain.Entities.User", "UpdatedBy")
@@ -1018,7 +1021,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("PrismaApi.Domain.Entities.Uncertainty", "Uncertainty")
@@ -1077,7 +1080,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("PrismaApi.Domain.Entities.Utility", "Utility")
@@ -1259,7 +1262,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Decision");
@@ -1272,7 +1275,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("PrismaApi.Domain.Entities.Uncertainty", "Uncertainty")
@@ -1397,7 +1400,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Issue");
@@ -1416,7 +1419,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Issue");

@@ -5,7 +5,7 @@ namespace PrismaApi.Domain.Entities;
 
 public class DecisionQualityAssessment : AuditableEntity, IBaseEntity<Guid>
 {
-    public Guid Id { get; set; }
+    public required Guid Id { get; set; }
     public int AppropriateFrame { get; set; }
     public int TradeOffAnalysis { get; set; }
     public int ReasoningCorrectness { get; set; }
@@ -14,7 +14,8 @@ public class DecisionQualityAssessment : AuditableEntity, IBaseEntity<Guid>
     public string Comment { get; set; } = string.Empty;
 
     public int DoableAlternatives { get; set; }
-    public Guid AssessmentId { get; set; }
+    public required Guid AssessmentId { get; set; }
+    public required Guid ProjectId { get; set; }
     public Assessment? Assessment { get; set; }
-
+    public Project? Project { get; set; }
 }
