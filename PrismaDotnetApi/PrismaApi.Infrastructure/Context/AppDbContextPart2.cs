@@ -64,7 +64,7 @@ public partial class AppDbContext : DbContext
             }
             else
             {
-                affectedUserCacheKeys.Add(entry.Entity.UserId);
+                affectedUserCacheKeys.Add(CacheKeys.GetUserKey(entry.Entity.UserId));
             }
             affectedProjectIds.Add(entry.Entity.ProjectId);
         }
