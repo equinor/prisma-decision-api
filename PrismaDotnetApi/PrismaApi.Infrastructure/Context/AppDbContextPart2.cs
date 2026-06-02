@@ -51,7 +51,7 @@ public partial class AppDbContext : DbContext
             ..GetChangedEntries<DiscreteUtility>().Select(e => e.Entity.ProjectId),
         ];
 
-        HashSet<string> affectedUserCacheKeys =
+        HashSet<string> affectedUserIds =
             [.. GetChangedEntries<User>().Select(e => e.Entity.Id)];
 
         foreach (var entry in projectRolesEntries)
@@ -60,17 +60,17 @@ public partial class AppDbContext : DbContext
             {
                 var userName = entry.Entity.User?.Name
                     ?? await Users.Where(u => u.Id == entry.Entity.UserId).Select(u => u.Name).FirstAsync();
-                affectedUserCacheKeys.Add(CacheKeys.GetUserKey(userName));
+                affectedUserIds.Add(userName);
             }
             else
             {
-                affectedUserCacheKeys.Add(entry.Entity.UserId);
+                affectedUserIds.Add(entry.Entity.UserId);
             }
             affectedProjectIds.Add(entry.Entity.ProjectId);
         }
 
-        foreach (var userId in affectedUserCacheKeys)
-            _cache.InvalidateCacheEntry(new CacheItem { CacheKey = userId });
+        foreach (var userId in affectedUserIds)
+            _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetUserKey(userId) });
 
         foreach (var projectId in affectedProjectIds)
         {
