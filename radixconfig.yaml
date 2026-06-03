@@ -5,6 +5,8 @@ metadata:
 spec:
   environments:
     - name: prod
+      build:
+        from: prod|prod-deploy*
     - name: test
       build:
         from: v0*
