@@ -89,22 +89,11 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Property<double>("Height")
                         .HasColumnType("float");
 
-                    b.Property<int>("Opacity")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(100);
-
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<double>("Rotation")
                         .HasColumnType("float");
-
-                    b.Property<string>("StrokeStyle")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<float?>("StrokeWidth")
-                        .HasColumnType("real");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -168,7 +157,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("Decisions");
+                    b.ToTable("Decisions", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DecisionQualityAssessment", b =>
@@ -266,7 +255,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UncertaintyId");
 
-                    b.ToTable("DiscreteProbabilities");
+                    b.ToTable("DiscreteProbabilities", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteProbabilityParentOption", b =>
@@ -281,7 +270,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ParentOptionId");
 
-                    b.ToTable("DiscreteProbabilityParentOptions");
+                    b.ToTable("DiscreteProbabilityParentOptions", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteProbabilityParentOutcome", b =>
@@ -296,7 +285,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ParentOutcomeId");
 
-                    b.ToTable("DiscreteProbabilityParentOutcomes");
+                    b.ToTable("DiscreteProbabilityParentOutcomes", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteUtility", b =>
@@ -332,7 +321,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ValueMetricId");
 
-                    b.ToTable("DiscreteUtilities");
+                    b.ToTable("DiscreteUtilities", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteUtilityParentOption", b =>
@@ -347,7 +336,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ParentOptionId");
 
-                    b.ToTable("DiscreteUtilityParentOptions");
+                    b.ToTable("DiscreteUtilityParentOptions", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.DiscreteUtilityParentOutcome", b =>
@@ -362,7 +351,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ParentOutcomeId");
 
-                    b.ToTable("DiscreteUtilityParentOutcomes");
+                    b.ToTable("DiscreteUtilityParentOutcomes", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Edge", b =>
@@ -394,7 +383,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("TailId");
 
-                    b.ToTable("Edges");
+                    b.ToTable("Edges", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Issue", b =>
@@ -451,7 +440,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.ToTable("Issues");
+                    b.ToTable("Issues", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Node", b =>
@@ -484,7 +473,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("Nodes");
+                    b.ToTable("Nodes", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.NodeStyle", b =>
@@ -513,7 +502,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasIndex("NodeId")
                         .IsUnique();
 
-                    b.ToTable("NodeStyles");
+                    b.ToTable("NodeStyles", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Objective", b =>
@@ -562,7 +551,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.ToTable("Objectives");
+                    b.ToTable("Objectives", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Option", b =>
@@ -597,7 +586,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("Options");
+                    b.ToTable("Options", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Outcome", b =>
@@ -632,7 +621,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UncertaintyId");
 
-                    b.ToTable("Outcomes");
+                    b.ToTable("Outcomes", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Project", b =>
@@ -684,7 +673,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.ToTable("Projects");
+                    b.ToTable("Projects", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.ProjectRole", b =>
@@ -729,7 +718,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ProjectRoles");
+                    b.ToTable("ProjectRoles", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Strategy", b =>
@@ -786,7 +775,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("UpdatedById");
 
-                    b.ToTable("Strategies");
+                    b.ToTable("Strategies", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.StrategyOption", b =>
@@ -801,7 +790,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("OptionId");
 
-                    b.ToTable("StrategyOptions");
+                    b.ToTable("StrategyOptions", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Uncertainty", b =>
@@ -832,7 +821,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("Uncertainties");
+                    b.ToTable("Uncertainties", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.User", b =>
@@ -853,7 +842,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Utility", b =>
@@ -881,7 +870,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("Utilities");
+                    b.ToTable("Utilities", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.ValueMetric", b =>
@@ -903,7 +892,7 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ValueMetrics");
+                    b.ToTable("ValueMetrics", (string)null);
 
                     b.HasData(
                         new
@@ -980,7 +969,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Issue");
@@ -1005,7 +994,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("PrismaApi.Domain.Entities.User", "UpdatedBy")
@@ -1034,7 +1023,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("PrismaApi.Domain.Entities.Uncertainty", "Uncertainty")
@@ -1093,7 +1082,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("PrismaApi.Domain.Entities.Utility", "Utility")
@@ -1275,7 +1264,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Decision");
@@ -1288,7 +1277,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("PrismaApi.Domain.Entities.Uncertainty", "Uncertainty")
@@ -1413,7 +1402,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Issue");
@@ -1432,7 +1421,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Issue");
