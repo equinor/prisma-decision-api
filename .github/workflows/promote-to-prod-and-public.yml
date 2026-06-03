@@ -1,0 +1,103 @@
+name: Promote test to prod and public
+
+on:
+    push:
+        tags:
+            - "v*"
+
+permissions: {}
+
+jobs:
+    resolve-tag:
+        runs-on: ubuntu-latest
+        permissions: {}
+        outputs:
+            tag: ${{ steps.resolve.outputs.tag }}
+        steps:
+            - name: Resolve tag to promote
+              id: resolve
+              run: |
+                  TAG="${GITHUB_REF#refs/tags/}"
+                  if [ -z "$TAG" ] || [ "$TAG" = "$GITHUB_REF" ]; then
+                    echo "::error::No tag found in GITHUB_REF"
+                    exit 1
+                  fi
+                  echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+                  echo "Promoting tag: $TAG"
+
+    migrate-prod:
+        needs: resolve-tag
+        permissions:
+            id-token: write
+            contents: read
+        uses: ./.github/workflows/run-migration.yml
+        with:
+            env-name: prod
+        secrets:
+            AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+            AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+            AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+            AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+            AZURE_SQL_SERVER_NAME: ${{ secrets.AZURE_SQL_SERVER_NAME }}
+
+    migrate-public:
+        needs: [resolve-tag, migrate-prod]
+        permissions:
+            id-token: write
+            contents: read
+        uses: ./.github/workflows/run-migration.yml
+        with:
+            env-name: public
+        secrets:
+            AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+            AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+            AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+            AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+            AZURE_SQL_SERVER_NAME: ${{ secrets.AZURE_SQL_SERVER_NAME }}
+
+    deploy-prod:
+        needs: [resolve-tag, migrate-prod]
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        environment: prod
+        steps:
+            - name: Checkout
+              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+              with:
+                  persist-credentials: false
+                  fetch-depth: 0
+                  fetch-tags: true
+
+            - name: Create prod-deploy tag
+              env:
+                  TAG: ${{ needs.resolve-tag.outputs.tag }}
+              run: |
+                  PROD_TAG="prod-deploy-${TAG}"
+                  git tag "$PROD_TAG" "${TAG}"
+                  git push origin "$PROD_TAG"
+                  echo "Created and pushed tag: $PROD_TAG"
+
+    deploy-public:
+        needs: [resolve-tag, migrate-public, deploy-prod]
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        environment: public
+        steps:
+            - name: Checkout
+              uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+              with:
+                  persist-credentials: false
+                  fetch-depth: 0
+                  fetch-tags: true
+
+            - name: Create public-deploy tag
+              env:
+                  TAG: ${{ needs.resolve-tag.outputs.tag }}
+              run: |
+                  PUBLIC_TAG="public-deploy-${TAG}"
+                  git tag "$PUBLIC_TAG" "${TAG}"
+                  git push origin "$PUBLIC_TAG"
+                  echo "Created and pushed tag: $PUBLIC_TAG"
+                  echo "Created and pushed tag: $PUBLIC_TAG"
