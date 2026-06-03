@@ -24,6 +24,11 @@ public class BoardNodeDto
     public string Data { get; set; } = string.Empty;
     [JsonPropertyName("color")]
     public string Color { get; set; } = string.Empty;
+    [JsonPropertyName("stroke_width")]
+    public float? StrokeWidth { get; set; } = null;
+    // opacity: between 0 and 100
+    [JsonPropertyName("opacity")]
+    public int Opacity { get; set; } = 100;
 }
 
 public class BoardNodeIncomingDto : BoardNodeDto
@@ -31,10 +36,15 @@ public class BoardNodeIncomingDto : BoardNodeDto
     [JsonPropertyName("type")]
     [EnumDataType(typeof(BoardNodeTypes), ErrorMessage = "Invalid Type")]
     public required string Type { get; set; }
+    [JsonPropertyName("stroke_style")]
+    [EnumDataType(typeof(BoardNodeStrokeStyles), ErrorMessage = "Invalid StrokeStyle")]
+    public string? StrokeStyle { get; set; } = null;
 }
 
 public class BoardNodeOutgoingDto : BoardNodeDto
 {
     [JsonPropertyName("type")]
     public required string Type { get; set; }
+    [JsonPropertyName("stroke_style")]
+    public string? StrokeStyle { get; set; } = null;
 }

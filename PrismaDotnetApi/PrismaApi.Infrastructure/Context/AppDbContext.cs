@@ -497,6 +497,8 @@ public partial class AppDbContext : DbContext
             entity.ToTable("BoardNode");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Color).HasMaxLength(DomainConstants.MaxShortStringLength);
+            entity.Property(e => e.Opacity)
+            .HasDefaultValue(100);
             entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.HasOne(e => e.CreatedBy)
             .WithMany()

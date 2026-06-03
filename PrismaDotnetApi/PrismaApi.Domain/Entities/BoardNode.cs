@@ -14,5 +14,9 @@ public class BoardNode : AuditableEntity, IBaseEntity<Guid>
     public double Rotation { get; set; }
     public string Data { get; set; } = string.Empty;
     public string Color { get; set; } = string.Empty;
+    public float? StrokeWidth { get; set; } = null;
+    public string? StrokeStyle { get; set; } = null;
+    // opacity: between 0 and 100
+    public int Opacity { get; set; } = 100;
     public Project? Project { get; set; }
 }

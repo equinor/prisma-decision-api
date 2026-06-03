@@ -9,8 +9,8 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)
     {
-        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-
+        // var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        var environment = "Local";
         IConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         var apiPath = Path.Combine(
                 Directory.GetParent(Directory.GetCurrentDirectory())!.FullName,
