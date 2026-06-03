@@ -33,7 +33,8 @@ jobs:
       - name: Install Azure CLI
         run: |
           curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-      - name: OIDC Login to Azure Public Cloud with AzPowershell (enableAzPSSession
+      - name:
+          OIDC Login to Azure Public Cloud with AzPowershell (enableAzPSSession
           true)
         uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
         with:
@@ -52,13 +53,14 @@ jobs:
           RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
           SQL_SERVER_NAME: ${{ secrets.AZURE_SQL_SERVER_NAME }}
           SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          RUNNER_IP: ${{ steps.get_ip.outputs.ip }}
         run: |
           az sql server firewall-rule create \
             --resource-group "${RESOURCE_GROUP}" \
             --server "${SQL_SERVER_NAME}" \
             --name AllowGitHubActionsIP \
-            --start-ip-address ${{ steps.get_ip.outputs.ip }} \
-            --end-ip-address ${{ steps.get_ip.outputs.ip }} \
+            --start-ip-address "${RUNNER_IP}" \
+            --end-ip-address "${RUNNER_IP}" \
             --subscription "${SUBSCRIPTION_ID}"
 
       - name: Set up .NET
@@ -74,7 +76,7 @@ jobs:
         env:
           ASPNETCORE_ENVIRONMENT: ${{ inputs.env-name }}
         run: |
-          dotnet ef database update --project ./SqlServerMigrations/SqlServerMigrations.csproj --startup-project ./PrismaApi.Api/PrismaApi.Api.cspro -- --provider=sqlserver
+          dotnet ef database update --project ./SqlServerMigrations/SqlServerMigrations.csproj --startup-project ./PrismaApi.Api/PrismaApi.Api.csproj -- --provider=sqlserver
 
       - name: Remove Firewall Rule
         env:

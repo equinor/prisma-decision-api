@@ -4,6 +4,11 @@ using PrismaApi.Domain.Constants;
 
 namespace PrismaApi.Domain.Dtos;
 
+public interface ITypedBoardNode
+{
+    string Type { get; }
+}
+
 public class BoardNodeDto
 {
     [JsonPropertyName("id")]
@@ -31,7 +36,7 @@ public class BoardNodeDto
     public int Opacity { get; set; } = 100;
 }
 
-public class BoardNodeIncomingDto : BoardNodeDto
+public class BoardNodeIncomingDto : BoardNodeDto, ITypedBoardNode
 {
     [JsonPropertyName("type")]
     [EnumDataType(typeof(BoardNodeTypes), ErrorMessage = "Invalid Type")]
@@ -41,7 +46,7 @@ public class BoardNodeIncomingDto : BoardNodeDto
     public string StrokeStyle { get; set; } = BoardNodeStrokeStyles.Solid.ToString();
 }
 
-public class BoardNodeOutgoingDto : BoardNodeDto
+public class BoardNodeOutgoingDto : BoardNodeDto, ITypedBoardNode
 {
     [JsonPropertyName("type")]
     public required string Type { get; set; }

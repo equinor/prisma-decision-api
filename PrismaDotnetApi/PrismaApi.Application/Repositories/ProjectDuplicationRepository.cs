@@ -26,6 +26,8 @@ public class ProjectDuplicationRepository : IProjectDuplicationRepository
             .Include(p => p.Objectives)
             .Include(p => p.ProjectRoles).ThenInclude(pr => pr.User)
             .Include(p => p.Strategies).ThenInclude(s => s.StrategyOptions).ThenInclude(so => so.Option)
+            .Include(p => p.BoardNodes)
+            .Include(p => p.Assessments).ThenInclude(a => a.DecisionQualityAssessments)
             .Include(p => p.Edges)
             .Include(p => p.Issues).ThenInclude(i => i.Node).ThenInclude(n => n!.NodeStyle)
             .Include(p => p.Issues).ThenInclude(i => i.Decision).ThenInclude(d => d!.Options)

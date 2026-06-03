@@ -18,6 +18,8 @@ namespace PrismaApi.Domain.Dtos
 
         [JsonPropertyName("project_id")]
         public required Guid ProjectId { get; set; }
+        [JsonPropertyName("decision_quality_assessments")]
+        public List<DecisionQualityAssessmentOutgoingDto>? DecisionQualityAssessments { get; set; } = new();
 
     }
     public class AssessmentIncomingDto : AssessmentDto
@@ -29,7 +31,5 @@ namespace PrismaApi.Domain.Dtos
         [JsonPropertyName("created_at")]
         public DateTime CreatedAt { get; set; }
 
-        [JsonPropertyName("decision_quality_assessments")]
-        public List<DecisionQualityAssessmentOutgoingDto> DecisionQualityAssessments { get; set; } = new();
     }
 }
