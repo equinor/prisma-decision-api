@@ -84,11 +84,27 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Property<double>("Height")
                         .HasColumnType("REAL");
 
+                    b.Property<int>("Opacity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(100);
+
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("TEXT");
 
                     b.Property<double>("Rotation")
                         .HasColumnType("REAL");
+
+                    b.Property<string>("StrokeStyle")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("Solid");
+
+                    b.Property<float>("StrokeWidth")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("REAL")
+                        .HasDefaultValue(8f);
 
                     b.Property<string>("Type")
                         .IsRequired()

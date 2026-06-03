@@ -19,6 +19,9 @@ public static class BoardNodeMappingExtensions
             Rotation = entity.Rotation,
             Data = entity.Data,
             Color = entity.Color,
+            StrokeWidth = entity.StrokeWidth,
+            StrokeStyle = entity.StrokeStyle,
+            Opacity = entity.Opacity,
         };
     }
 
@@ -41,6 +44,9 @@ public static class BoardNodeMappingExtensions
             Rotation = dto.Rotation,
             Data = dto.Data,
             Color = dto.Color,
+            StrokeWidth = dto.StrokeWidth,
+            StrokeStyle = dto.StrokeStyle,
+            Opacity = dto.Opacity,
             CreatedById = userDto.Id,
             UpdatedById = userDto.Id,
         };

@@ -85,3 +85,10 @@ public enum BoardNodeTypes
     Circle,
     Issue
 }
+
+public enum BoardNodeStrokeStyles
+{
+    Solid,
+    Dashed,
+    Dotted,
+}
