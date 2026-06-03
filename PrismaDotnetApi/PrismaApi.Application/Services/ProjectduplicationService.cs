@@ -123,8 +123,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (edgeDtos.Count > 0)
             await _edgeService.CreateAsync(edgeDtos);
 
-        _cache.InvalidateCacheEntry(new CacheItem { CacheKey = user.Id }); // if internal
-        _cache.InvalidateCacheEntry(new CacheItem { CacheKey = user.Name }); // if public
+        _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetUserKey(user.Id) }); // if internal
+        _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetUserKey(user.Name) }); // if public
 
         var (assessmentDtos, assessmentIdMap) = CreateAssessments(fullProject.Assessments, newProjectId);
         if (assessmentDtos.Count > 0)
