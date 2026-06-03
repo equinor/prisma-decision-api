@@ -498,7 +498,11 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Color).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.Property(e => e.Opacity)
-            .HasDefaultValue(100);
+                .HasDefaultValue(100);
+            entity.Property(e => e.StrokeStyle)
+                .HasDefaultValue(BoardNodeStrokeStyles.Solid.ToString());
+            entity.Property(e => e.StrokeWidth)
+                .HasDefaultValue(8);
             entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.HasOne(e => e.CreatedBy)
             .WithMany()

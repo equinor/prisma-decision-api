@@ -25,7 +25,7 @@ public class BoardNodeDto
     [JsonPropertyName("color")]
     public string Color { get; set; } = string.Empty;
     [JsonPropertyName("stroke_width")]
-    public float? StrokeWidth { get; set; } = null;
+    public float StrokeWidth { get; set; } = 8;
     // opacity: between 0 and 100
     [JsonPropertyName("opacity")]
     public int Opacity { get; set; } = 100;
@@ -38,7 +38,7 @@ public class BoardNodeIncomingDto : BoardNodeDto
     public required string Type { get; set; }
     [JsonPropertyName("stroke_style")]
     [EnumDataType(typeof(BoardNodeStrokeStyles), ErrorMessage = "Invalid StrokeStyle")]
-    public string? StrokeStyle { get; set; } = null;
+    public string StrokeStyle { get; set; } = BoardNodeStrokeStyles.Solid.ToString();
 }
 
 public class BoardNodeOutgoingDto : BoardNodeDto
@@ -46,5 +46,5 @@ public class BoardNodeOutgoingDto : BoardNodeDto
     [JsonPropertyName("type")]
     public required string Type { get; set; }
     [JsonPropertyName("stroke_style")]
-    public string? StrokeStyle { get; set; } = null;
+    public required string StrokeStyle { get; set; }
 }
