@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Interfaces;
 
@@ -20,4 +21,29 @@ public class BoardNode : AuditableEntity, IBaseEntity<Guid>
     // opacity: between 0 and 100
     public int Opacity { get; set; } = 100;
     public Project? Project { get; set; }
+    public static void OnModelConfiguring(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<BoardNode>(entity =>
+        {
+            entity.ToTable("BoardNode");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Color).HasMaxLength(DomainConstants.MaxShortStringLength);
+            entity.Property(e => e.Opacity)
+                .HasDefaultValue(100);
+            entity.Property(e => e.StrokeStyle)
+                .HasDefaultValue(BoardNodeStrokeStyles.Solid.ToString());
+            entity.Property(e => e.StrokeWidth)
+                .HasDefaultValue(8);
+            entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
+            entity.HasOne(e => e.CreatedBy)
+            .WithMany()
+            .HasForeignKey(e => e.CreatedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.UpdatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
 }

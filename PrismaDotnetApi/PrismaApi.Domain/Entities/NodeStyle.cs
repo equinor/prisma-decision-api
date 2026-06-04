@@ -1,6 +1,5 @@
+using Microsoft.EntityFrameworkCore;
 using PrismaApi.Domain.Interfaces;
-using System;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PrismaApi.Domain.Entities;
 
@@ -12,4 +11,11 @@ public class NodeStyle : BaseEntity, IBaseEntity<Guid>
     public double YPosition { get; set; }
 
     public Node? Node { get; set; }
+    public static void OnModelConfiguring(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<NodeStyle>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+        });
+    }
 }
