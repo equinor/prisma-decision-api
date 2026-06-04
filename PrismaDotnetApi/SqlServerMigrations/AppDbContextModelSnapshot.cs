@@ -111,6 +111,11 @@ namespace PrismaApi.Infrastructure.Migrations
                         .HasColumnType("real")
                         .HasDefaultValue(8f);
 
+                    b.Property<int>("TextSize")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(24);
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(1000)

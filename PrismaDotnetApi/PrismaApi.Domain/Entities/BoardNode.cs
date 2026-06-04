@@ -19,5 +19,6 @@ public class BoardNode : AuditableEntity, IBaseEntity<Guid>
     public string StrokeStyle { get; set; } = BoardNodeStrokeStyles.Solid.ToString();
     // opacity: between 0 and 100
     public int Opacity { get; set; } = 100;
+    public int TextSize { get; set; } = 24;
     public Project? Project { get; set; }
 }

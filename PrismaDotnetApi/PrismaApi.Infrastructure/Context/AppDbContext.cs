@@ -503,6 +503,8 @@ public partial class AppDbContext : DbContext
                 .HasDefaultValue(BoardNodeStrokeStyles.Solid.ToString());
             entity.Property(e => e.StrokeWidth)
                 .HasDefaultValue(8);
+            entity.Property(e => e.TextSize)
+                .HasDefaultValue(24);
             entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.HasOne(e => e.CreatedBy)
             .WithMany()
