@@ -9,7 +9,7 @@ using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Services;
 
-public class NodeService: INodeService
+public class NodeService : INodeService
 {
     private readonly INodeRepository _nodeRepository;
     private readonly IMemoryCache _cache;
@@ -44,16 +44,23 @@ public class NodeService: INodeService
     {
         var nodes = new List<NodeOutgoingDto>();
         var projectIdsToGetFromDb = new HashSet<Guid>();
-        foreach (var role in user.ProjectRoles)
+
+        var projectIds = user.ProjectRoles.Select(r => r.ProjectId).ToHashSet();
+        foreach (var publicId in _cache.GetPublicProjectIds())
         {
-            var cachedNodes = _cache.GetCacheItemAsNodes(role.ProjectId, user);
+            projectIds.Add(publicId);
+        }
+
+        foreach (var projectId in projectIds)
+        {
+            var cachedNodes = _cache.GetCacheItemAsNodes(projectId, user);
             if (cachedNodes != null)
             {
                 nodes.AddRange(cachedNodes);
             }
             else
             {
-                projectIdsToGetFromDb.Add(role.ProjectId);
+                projectIdsToGetFromDb.Add(projectId);
             }
         }
 

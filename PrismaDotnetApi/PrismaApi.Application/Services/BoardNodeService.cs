@@ -9,7 +9,7 @@ using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Services;
 
-public class BoardNodeService: IBoardNodeService
+public class BoardNodeService : IBoardNodeService
 {
     private readonly IBoardNodeRepository _boardNodeRepository;
     private readonly IMemoryCache _cache;
@@ -51,16 +51,23 @@ public class BoardNodeService: IBoardNodeService
     {
         var boardNodes = new List<BoardNodeOutgoingDto>();
         var projectIdsToGetFromDb = new HashSet<Guid>();
-        foreach (var role in user.ProjectRoles)
+
+        var projectIds = user.ProjectRoles.Select(r => r.ProjectId).ToHashSet();
+        foreach (var publicId in _cache.GetPublicProjectIds())
         {
-            var cachedBoardNodes = _cache.GetCacheItemAsBoardNodes(role.ProjectId, user);
+            projectIds.Add(publicId);
+        }
+
+        foreach (var projectId in projectIds)
+        {
+            var cachedBoardNodes = _cache.GetCacheItemAsBoardNodes(projectId, user);
             if (cachedBoardNodes != null)
             {
                 boardNodes.AddRange(cachedBoardNodes);
             }
             else
             {
-                projectIdsToGetFromDb.Add(role.ProjectId);
+                projectIdsToGetFromDb.Add(projectId);
             }
         }
 

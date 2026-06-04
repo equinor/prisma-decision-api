@@ -9,7 +9,7 @@ using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Services;
 
-public class EdgeService: IEdgeService
+public class EdgeService : IEdgeService
 {
     private readonly IEdgeRepository _edgeRepository;
     private readonly IMemoryCache _cache;
@@ -53,16 +53,23 @@ public class EdgeService: IEdgeService
     {
         var edges = new List<EdgeOutgoingDto>();
         var projectIdsToGetFromDb = new HashSet<Guid>();
-        foreach (var role in user.ProjectRoles)
+
+        var projectIds = user.ProjectRoles.Select(r => r.ProjectId).ToHashSet();
+        foreach (var publicId in _cache.GetPublicProjectIds())
         {
-            var cachedEdges = _cache.GetCacheItemAsEdges(role.ProjectId, user);
+            projectIds.Add(publicId);
+        }
+
+        foreach (var projectId in projectIds)
+        {
+            var cachedEdges = _cache.GetCacheItemAsEdges(projectId, user);
             if (cachedEdges != null)
             {
                 edges.AddRange(cachedEdges);
             }
             else
             {
-                projectIdsToGetFromDb.Add(role.ProjectId);
+                projectIdsToGetFromDb.Add(projectId);
             }
         }
 

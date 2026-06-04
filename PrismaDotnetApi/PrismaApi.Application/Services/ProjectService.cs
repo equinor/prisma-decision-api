@@ -85,18 +85,23 @@ public class ProjectService : IProjectService
     public async Task<List<ProjectOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
         var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-        return projects.ToOutgoingDtos();
+        var dtos = projects.ToOutgoingDtos();
+        RegisterPublicProjectsInCache(dtos);
+        return dtos;
     }
 
     public async Task<List<ProjectOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
         var projects = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-        return projects.ToOutgoingDtos();
+        var dtos = projects.ToOutgoingDtos();
+        RegisterPublicProjectsInCache(dtos);
+        return dtos;
     }
 
     public async Task<List<PopulatedProjectDto>> GetPopulatedAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
         var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
+
         return projects.ToPopulatedDtos();
     }
 
@@ -113,7 +118,7 @@ public class ProjectService : IProjectService
         {
             return cachedDiagram;
         }
-        
+
         var issueEntities = await _issueRepository.GetIssuesInInfluenceDiagram(projectId, IssuesUserFilter(user), ct);
         var edgeEntities = await _edgeRepository.GetEdgesInInfluenceDiagram(projectId, EdgesUserFilter(user), ct);
         var diagram = new InfluenceDiagramDto
@@ -124,15 +129,37 @@ public class ProjectService : IProjectService
         };
 
         _cache.AddCacheItem(new CacheItem { CacheKey = CacheKeys.GetInfluenceDiagramKey(projectId) }, CacheConstants.DefaultMediumQueryCacheInTimeSpan, diagram);
-        return diagram; 
+        return diagram;
     }
 
     private static Expression<Func<Project, bool>> UserFilter(UserOutgoingDto user)
-        => e => e.ProjectRoles.Any(p => p.UserId == user.Id);
+        => e => e.Public || e.ProjectRoles.Any(p => p.UserId == user.Id);
 
     private static Expression<Func<Issue, bool>> IssuesUserFilter(UserOutgoingDto user)
-        => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+        => e => e.Project!.Public || e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 
     private static Expression<Func<Edge, bool>> EdgesUserFilter(UserOutgoingDto user)
-        => e => e.HeadNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id) && e.TailNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+        => e => (e.HeadNode!.Issue!.Project!.Public || e.HeadNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id)) && (e.TailNode!.Issue!.Project!.Public || e.TailNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id));
+
+    private void RegisterPublicProjectsInCache(List<ProjectOutgoingDto> projects)
+    {
+        var publicProjectIds = projects.Where(p => p.Public).Select(p => p.Id);
+        if (publicProjectIds.Any())
+        {
+            var existing = _cache.GetCacheItem<HashSet<Guid>>(CacheKeys.PublicProjectIdsKey) ?? new HashSet<Guid>();
+            var added = false;
+            foreach (var id in publicProjectIds)
+            {
+                if (!existing.Contains(id))
+                {
+                    existing.Add(id);
+                    added = true;
+                }
+            }
+            if (added)
+                _cache.AddCacheItem(new CacheItem { CacheKey = CacheKeys.PublicProjectIdsKey }, null, existing);
+            var publicIds = _cache.GetPublicProjectIds();
+
+        }
+    }
 }

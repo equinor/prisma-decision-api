@@ -39,7 +39,7 @@ public class IssueService : IIssueService
         {
             if (entity.Type == IssueType.Uncertainty.ToString() && entity.Uncertainty?.Outcomes.Count > 0)
             {
-                 _discreteTableRuleEventHandler.EnqueueIssuesForRebuild([entity.Id]);
+                _discreteTableRuleEventHandler.EnqueueIssuesForRebuild([entity.Id]);
             }
         }
         return entities.ToOutgoingDtos();
@@ -71,16 +71,23 @@ public class IssueService : IIssueService
         // refactor to get all projects that the user has access to, then combine them all after getting them from the cache or database
         var issues = new List<IssueOutgoingDto>();
         var projectIdsToGetFromDb = new HashSet<Guid>();
-        foreach (var role in user.ProjectRoles)
+
+        var projectIds = user.ProjectRoles.Select(r => r.ProjectId).ToHashSet();
+        foreach (var publicId in _cache.GetPublicProjectIds())
         {
-            var cachedIssues = _cache.GetCacheItemAsIssues(role.ProjectId, user);
+            projectIds.Add(publicId);
+        }
+
+        foreach (var projectId in projectIds)
+        {
+            var cachedIssues = _cache.GetCacheItemAsIssues(projectId, user);
             if (cachedIssues != null)
             {
                 issues.AddRange(cachedIssues);
             }
             else
             {
-                projectIdsToGetFromDb.Add(role.ProjectId);
+                projectIdsToGetFromDb.Add(projectId);
             }
         }
 

@@ -66,16 +66,23 @@ namespace PrismaApi.Application.Services
         {
             var assessments = new List<AssessmentOutgoingDto>();
             var projectIdsToGetFromDb = new HashSet<Guid>();
-            foreach (var role in user.ProjectRoles)
+
+            var projectIds = user.ProjectRoles.Select(r => r.ProjectId).ToHashSet();
+            foreach (var publicId in _cache.GetPublicProjectIds())
             {
-                var cachedAssessments = _cache.GetCacheItemAsAssessment(role.ProjectId, user);
+                projectIds.Add(publicId);
+            }
+
+            foreach (var projectId in projectIds)
+            {
+                var cachedAssessments = _cache.GetCacheItemAsAssessment(projectId, user);
                 if (cachedAssessments != null)
                 {
                     assessments.AddRange(cachedAssessments);
                 }
                 else
                 {
-                    projectIdsToGetFromDb.Add(role.ProjectId);
+                    projectIdsToGetFromDb.Add(projectId);
                 }
             }
 

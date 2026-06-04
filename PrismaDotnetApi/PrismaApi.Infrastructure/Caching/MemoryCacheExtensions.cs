@@ -35,27 +35,30 @@ public static class MemoryCacheExtensions
     public static InfluenceDiagramDto? GetCacheItemAsInfluenceDiagram(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached diagram
-        if (!user.HasAccessToProject(projectId))
+
+        if (!cache.HasAccessToProject(user, projectId))
         {
             return null;
         }
-        return cache.GetCacheItem<InfluenceDiagramDto>(CacheKeys.GetInfluenceDiagramKey(projectId));  
+        return cache.GetCacheItem<InfluenceDiagramDto>(CacheKeys.GetInfluenceDiagramKey(projectId));
     }
 
     public static List<IssueOutgoingDto>? GetCacheItemAsIssues(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached issues
-        if (!user.HasAccessToProject(projectId))
+
+        if (!cache.HasAccessToProject(user, projectId))
         {
             return null;
         }
         return cache.GetCacheItem<List<IssueOutgoingDto>>(CacheKeys.GetIssuesInProjectKey(projectId));
     }
 
-     public static List<EdgeOutgoingDto>? GetCacheItemAsEdges(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
+    public static List<EdgeOutgoingDto>? GetCacheItemAsEdges(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached edges
-        if (!user.HasAccessToProject(projectId))
+
+        if (!cache.HasAccessToProject(user, projectId))
         {
             return null;
         }
@@ -65,7 +68,8 @@ public static class MemoryCacheExtensions
     public static List<NodeOutgoingDto>? GetCacheItemAsNodes(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached nodes
-        if (!user.HasAccessToProject(projectId))
+
+        if (!cache.HasAccessToProject(user, projectId))
         {
             return null;
         }
@@ -75,7 +79,7 @@ public static class MemoryCacheExtensions
     public static List<BoardNodeOutgoingDto>? GetCacheItemAsBoardNodes(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached board nodes
-        if (!user.HasAccessToProject(projectId))
+        if (!cache.HasAccessToProject(user, projectId))
         {
             return null;
         }
@@ -85,11 +89,19 @@ public static class MemoryCacheExtensions
     public static List<AssessmentOutgoingDto>? GetCacheItemAsAssessment(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached assessment
-        if (!user.HasAccessToProject(projectId))
+        if (!cache.HasAccessToProject(user, projectId))
         {
             return null;
         }
         return cache.GetCacheItem<List<AssessmentOutgoingDto>>(CacheKeys.GetAssessmentKey(projectId));
+    }
+
+
+
+    public static HashSet<Guid> GetPublicProjectIds(this IMemoryCache cache)
+    {
+        // check that the user has access to the public projects before returning cached public project ids
+        return cache.GetCacheItem<HashSet<Guid>>(CacheKeys.PublicProjectIdsKey) ?? new HashSet<Guid>();
     }
 
     public static void AddCacheItem(this IMemoryCache cache, CacheItem key, TimeSpan? duration,
@@ -191,6 +203,12 @@ public static class MemoryCacheExtensions
         return Math.Round(totalBytes / (1024.0 * 1024.0), 4);
     }
 
-    private static bool HasAccessToProject(this UserOutgoingDto user, Guid projectId)
-        => user.ProjectRoles.Any(pr => pr.ProjectId == projectId);
+    private static bool HasAccessToProject(this IMemoryCache cache, UserOutgoingDto user, Guid projectId)
+    {
+        if (user.ProjectRoles.Any(pr => pr.ProjectId == projectId))
+            return true;
+
+        var publicIds = cache.GetCacheItem<HashSet<Guid>>(CacheKeys.PublicProjectIdsKey);
+        return publicIds?.Contains(projectId) == true;
+    }
 }
