@@ -74,6 +74,9 @@ public static class EntitiesExtensions
             entity.Rotation = incomingEntity.Rotation;
             entity.XPosition = incomingEntity.XPosition;
             entity.YPosition = incomingEntity.YPosition;
+            entity.StrokeStyle = incomingEntity.StrokeStyle;
+            entity.StrokeWidth = incomingEntity.StrokeWidth;
+            entity.Opacity = incomingEntity.Opacity;
             entity.UpdatedById = incomingEntity.UpdatedById;
         }
     }
