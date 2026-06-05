@@ -67,11 +67,7 @@ namespace PrismaApi.Application.Services
             var assessments = new List<AssessmentOutgoingDto>();
             var projectIdsToGetFromDb = new HashSet<Guid>();
 
-            var projectIds = user.ProjectRoles.Select(r => r.ProjectId).ToHashSet();
-            foreach (var publicId in _cache.GetPublicProjectIds())
-            {
-                projectIds.Add(publicId);
-            }
+            var projectIds = _cache.GetAccessibleProjectIds(user);
 
             foreach (var projectId in projectIds)
             {

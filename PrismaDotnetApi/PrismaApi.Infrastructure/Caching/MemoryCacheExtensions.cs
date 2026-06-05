@@ -104,6 +104,30 @@ public static class MemoryCacheExtensions
         return cache.GetCacheItem<HashSet<Guid>>(CacheKeys.PublicProjectIdsKey) ?? new HashSet<Guid>();
     }
 
+    public static HashSet<Guid> GetAccessibleProjectIds(this IMemoryCache cache, UserOutgoingDto user)
+    {
+        var projectIds = user.ProjectRoles.Select(r => r.ProjectId).ToHashSet();
+        projectIds.UnionWith(cache.GetPublicProjectIds());
+        return projectIds;
+    }
+
+    public static void UpdatePublicProjectIds(this IMemoryCache cache, HashSet<Guid> idsToRemove, HashSet<Guid> idsToAdd)
+    {
+        cacheLock.Wait();
+        try
+        {
+            var publicProjectIds = new HashSet<Guid>(cache.GetPublicProjectIds());
+            publicProjectIds.ExceptWith(idsToRemove);
+            publicProjectIds.UnionWith(idsToAdd);
+            cache.Set(CacheKeys.PublicProjectIdsKey, publicProjectIds, CacheEntryOptions);
+        }
+        finally
+        {
+            _ = cacheLock.Release();
+        }
+    }
+
+
     public static void AddCacheItem(this IMemoryCache cache, CacheItem key, TimeSpan? duration,
         object? value)
     {
@@ -116,6 +140,7 @@ public static class MemoryCacheExtensions
         cacheLock.Wait();
         try
         {
+
             if (duration.HasValue)
             {
                 _ = cache.Set(key.CacheKey, value, duration.Value);

@@ -143,23 +143,14 @@ public class ProjectService : IProjectService
 
     private void RegisterPublicProjectsInCache(List<ProjectOutgoingDto> projects)
     {
-        var publicProjectIds = projects.Where(p => p.Public).Select(p => p.Id);
-        if (publicProjectIds.Any())
-        {
-            var existing = _cache.GetCacheItem<HashSet<Guid>>(CacheKeys.PublicProjectIdsKey) ?? new HashSet<Guid>();
-            var added = false;
-            foreach (var id in publicProjectIds)
-            {
-                if (!existing.Contains(id))
-                {
-                    existing.Add(id);
-                    added = true;
-                }
-            }
-            if (added)
-                _cache.AddCacheItem(new CacheItem { CacheKey = CacheKeys.PublicProjectIdsKey }, null, existing);
-            var publicIds = _cache.GetPublicProjectIds();
+        var publicProjectIds = projects.Where(p => p.Public).Select(p => p.Id).ToList();
+        if (publicProjectIds.Count == 0) return;
 
-        }
+        var existing = new HashSet<Guid>(_cache.GetPublicProjectIds());
+        var previousCount = existing.Count;
+        existing.UnionWith(publicProjectIds);
+
+        if (existing.Count > previousCount)
+            _cache.AddCacheItem(new CacheItem { CacheKey = CacheKeys.PublicProjectIdsKey }, null, existing);
     }
 }

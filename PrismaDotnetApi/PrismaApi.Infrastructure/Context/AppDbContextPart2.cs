@@ -91,29 +91,21 @@ public partial class AppDbContext : DbContext
         if (changedProjects.Count == 0)
             return;
 
-        var publicIds = _cache.GetPublicProjectIds();
-        var changed = false;
+        var idsToRemove = new HashSet<Guid>();
+        var idsToAdd = new HashSet<Guid>();
 
         foreach (var entry in changedProjects)
         {
             var projectId = entry.Entity.Id;
 
             if (entry.State == EntityState.Deleted || !entry.Entity.Public)
-            {
-                if (publicIds.Remove(projectId))
-                    changed = true;
-            }
+                idsToRemove.Add(projectId);
             else if (entry.Entity.Public)
-            {
-                if (publicIds.Add(projectId))
-                    changed = true;
-            }
+                idsToAdd.Add(projectId);
         }
 
-        if (changed)
-        {
-            _cache.Set(CacheKeys.PublicProjectIdsKey, publicIds);
-        }
+        if (idsToRemove.Count > 0 || idsToAdd.Count > 0)
+            _cache.UpdatePublicProjectIds(idsToRemove, idsToAdd);
     }
 
     private async Task InvalidateCacheAsync()
