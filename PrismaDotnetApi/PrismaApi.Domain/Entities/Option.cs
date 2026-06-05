@@ -1,7 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PrismaApi.Domain.Entities;
 
@@ -16,4 +15,17 @@ public class Option : BaseEntity, IBaseEntity<Guid>
     public Decision? Decision { get; set; }
     public Project? Project { get; set; }
     public ICollection<StrategyOption> StrategyOptions { get; set; } = new List<StrategyOption>();
+    public static void OnModelConfiguring(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Option>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
+
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Decisions -> Options
+        });
+    }
 }
