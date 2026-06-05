@@ -8,7 +8,10 @@ public static class DomainConstants
     public const int MaxLongStringLength = 6000;
     public const int FloatPrecision = 53;
     public const int DecimalPlaces = 14;
-
+    public const float DefaultStrokeWidth = 8;
+    public const int MaxOpacity = 100;
+    public const int MinOpacity = 0;
+    public const int DefaultTextSize = 24;
     public static readonly Guid DefaultValueMetricId =
         Guid.Parse("288e0811-7ab6-5d24-b80c-9fa925b848a6");
     public static readonly string DefaultValueMetricName = "value";

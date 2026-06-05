@@ -16,11 +16,10 @@ public class BoardNode : AuditableEntity, IBaseEntity<Guid>
     public double Rotation { get; set; }
     public string Data { get; set; } = string.Empty;
     public string Color { get; set; } = string.Empty;
-    public float StrokeWidth { get; set; } = 8;
+    public float StrokeWidth { get; set; } = DomainConstants.DefaultStrokeWidth;
     public string StrokeStyle { get; set; } = BoardNodeStrokeStyles.Solid.ToString();
-    // opacity: between 0 and 100
-    public int Opacity { get; set; } = 100;
-    public int TextSize { get; set; } = 24;
+    public int Opacity { get; set; } = DomainConstants.MaxOpacity;
+    public int TextSize { get; set; } = DomainConstants.DefaultTextSize;
     public Project? Project { get; set; }
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
@@ -30,13 +29,13 @@ public class BoardNode : AuditableEntity, IBaseEntity<Guid>
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Color).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.Property(e => e.Opacity)
-                .HasDefaultValue(100);
+                .HasDefaultValue(DomainConstants.MaxOpacity);
             entity.Property(e => e.StrokeStyle)
                 .HasDefaultValue(BoardNodeStrokeStyles.Solid.ToString());
             entity.Property(e => e.StrokeWidth)
-                .HasDefaultValue(8);
+                .HasDefaultValue(DomainConstants.DefaultStrokeWidth);
             entity.Property(e => e.TextSize)
-                .HasDefaultValue(24);
+                .HasDefaultValue(DomainConstants.DefaultTextSize);
             entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
             entity.HasOne(e => e.CreatedBy)
             .WithMany()

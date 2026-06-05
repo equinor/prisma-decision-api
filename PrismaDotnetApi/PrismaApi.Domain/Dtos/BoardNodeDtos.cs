@@ -30,7 +30,7 @@ public class BoardNodeDto
     [JsonPropertyName("color")]
     public string Color { get; set; } = string.Empty;
     [JsonPropertyName("stroke_width")]
-    public float StrokeWidth { get; set; } = 8;
+    public float StrokeWidth { get; set; } = DomainConstants.DefaultStrokeWidth;
     
 }
 
@@ -43,11 +43,11 @@ public class BoardNodeIncomingDto : BoardNodeDto, ITypedBoardNode
     [EnumDataType(typeof(BoardNodeStrokeStyles), ErrorMessage = "Invalid StrokeStyle")]
     public string StrokeStyle { get; set; } = BoardNodeStrokeStyles.Solid.ToString();
     [JsonPropertyName("opacity")]
-    [Range(0, 100, ErrorMessage = "Opacity must be between 0 and 100")]
-    public int Opacity { get; set; } = 100;
+    [Range(DomainConstants.MinOpacity, DomainConstants.MaxOpacity, ErrorMessage = $"Opacity must be between 0 and 100")]
+    public int Opacity { get; set; } = DomainConstants.MaxOpacity;
     [JsonPropertyName("text_size")]
     [Range(1, int.MaxValue, ErrorMessage = "TextSize must be a positive integer")]
-    public int TextSize { get; set; } = 24;
+    public int TextSize { get; set; } = DomainConstants.DefaultTextSize;
 }
 
 public class BoardNodeOutgoingDto : BoardNodeDto, ITypedBoardNode
@@ -57,7 +57,7 @@ public class BoardNodeOutgoingDto : BoardNodeDto, ITypedBoardNode
     [JsonPropertyName("stroke_style")]
     public required string StrokeStyle { get; set; }
     [JsonPropertyName("opacity")]
-    public int Opacity { get; set; } = 100;
+    public int Opacity { get; set; } = DomainConstants.MaxOpacity;
     [JsonPropertyName("text_size")]
-    public int TextSize { get; set; } = 24;
+    public int TextSize { get; set; } = DomainConstants.DefaultTextSize;
 }
