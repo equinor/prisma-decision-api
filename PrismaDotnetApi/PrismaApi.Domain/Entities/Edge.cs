@@ -1,6 +1,5 @@
+using Microsoft.EntityFrameworkCore;
 using PrismaApi.Domain.Interfaces;
-using System;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PrismaApi.Domain.Entities;
 
@@ -14,4 +13,11 @@ public class Edge : BaseEntity, IBaseEntity<Guid>
     public Project? Project { get; set; }
     public Node? TailNode { get; set; }
     public Node? HeadNode { get; set; }
+    public static void OnModelConfiguring(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Edge>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+        });
+    }
 }
