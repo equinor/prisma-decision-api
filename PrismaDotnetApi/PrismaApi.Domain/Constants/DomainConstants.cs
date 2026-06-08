@@ -12,6 +12,9 @@ public static class DomainConstants
     public const int MaxOpacity = 100;
     public const int MinOpacity = 0;
     public const int DefaultTextSize = 24;
+    public static readonly string DeletedUserId = 
+        "d008bfdf-fe89-48f3-80a8-777bba4d9bbf";
+    public static readonly string DeletedUserName = "Deleted User";
     public static readonly Guid DefaultValueMetricId =
         Guid.Parse("288e0811-7ab6-5d24-b80c-9fa925b848a6");
     public static readonly string DefaultValueMetricName = "value";

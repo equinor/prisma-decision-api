@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Graph.IdentityGovernance.EntitlementManagement.Assignments.AdditionalAccessWithAccessPackageIdWithIncompatibleAccessPackageId;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Mapping;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
@@ -78,5 +80,78 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
         await DbContext.SaveChangesAsync(ct);
 
         return user;
+    }
+
+    public override async Task DeleteByIdsAsync(IEnumerable<string> ids, Expression<Func<User, bool>>? filterPredicate = null, CancellationToken ct = default)
+    {
+        var entries = await DbContext.Users
+            .Where(u => ids.Contains(u.Id))
+            .ToListAsync(cancellationToken: ct);
+
+        if (entries.Count == 0)
+            return;
+
+        // update all auditable entities to point to deleted user entry
+        var connection = DbContext.Database.GetDbConnection();
+        using var cmd = connection.CreateCommand();
+        var idParams = ids.Select((id, i) =>
+        {
+            var param = cmd.CreateParameter();
+            param.ParameterName = $"@id{i}";
+            param.Value = id;
+            return param;
+        }).ToArray();
+        var inClause = string.Join(",", idParams.Select(p => p.ParameterName));
+
+        var auditableEntityTypes = DbContext.Model.GetEntityTypes()
+            .Where(t => typeof(AuditableEntity).IsAssignableFrom(t.ClrType) && !t.ClrType.IsAbstract);
+
+        foreach (var entityType in auditableEntityTypes)
+        {
+            var tableName = entityType.GetTableName();
+            try
+            {
+                
+                await DbContext.Database.ExecuteSqlRawAsync($"""
+                    UPDATE [{tableName}]
+                    SET CreatedById = '{DomainConstants.DeletedUserId}'
+                    WHERE CreatedById IN ({inClause});
+                    UPDATE [{tableName}]
+                    SET UpdatedById = '{DomainConstants.DeletedUserId}'
+                    WHERE UpdatedById IN ({inClause});
+                    """, [.. idParams.Concat(idParams).Cast<object>()], ct);
+            }
+            catch (Exception e)
+            {
+                
+                throw e;
+            }
+        }
+        // var auditableEntitiesToUpdate = DbContext.
+
+        // foreach (var auditableEntity in auditableEntitiesToUpdate)
+        // {
+        //     if (ids.Contains(auditableEntity.UpdatedById))
+        //     {
+        //         auditableEntity.UpdatedById = DomainConstants.DeletedUserId;
+        //     }
+
+        //     if (ids.Contains(auditableEntity.CreatedById))
+        //     {
+        //         auditableEntity.CreatedById = DomainConstants.DeletedUserId;
+        //     }
+        // }
+
+        // delete project roles
+        var projectRoles = await DbContext.ProjectRoles
+            .Where(e => ids.Contains(e.UserId))
+            .ToListAsync(cancellationToken: ct);
+
+        DbContext.ProjectRoles.RemoveRange(projectRoles);
+        foreach (var entry in entries)
+        {
+            DbContext.Users.Remove(entry);
+        }
+        await DbContext.SaveChangesAsync(ct);
     }
 }
