@@ -61,4 +61,17 @@ public class UsersController : PrismaBaseEntityController
     {
         return StatusCode(StatusCodes.Status501NotImplemented);
     }
+
+    [HttpDelete("users/{userId}")]
+    // <summary>
+    // Deletes a user. Users can only delete themselves, and the user will be anonymized in the database, but the record will not be deleted for audit purposes.
+    // </summary>
+    // <exception cref="InvalidOperationException">Thrown when a user attempts to delete a different user.</exception>
+    public async Task<IActionResult> DeleteUser([FromRoute] string userId, CancellationToken ct = default)
+    {
+        var user = HttpContext.GetLoadedUser();
+
+        await _userService.DeleteUserAsync(userId, user, ct);
+        return NoContent();
+    }
 }

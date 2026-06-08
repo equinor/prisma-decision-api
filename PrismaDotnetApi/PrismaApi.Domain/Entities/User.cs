@@ -16,5 +16,12 @@ public class User : BaseEntity, IBaseEntity<string>
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
         });
+        modelBuilder.Entity<User>().HasData(new User
+        {
+            Id = DomainConstants.DeletedUserId,
+            Name = DomainConstants.DeletedUserName,
+            CreatedAt = new DateTimeOffset(new DateTime(2020, 1, 1, 1, 1, 1, 1, DateTimeKind.Utc).AddTicks(1), TimeSpan.Zero),
+            UpdatedAt = new DateTimeOffset(new DateTime(2020, 1, 1, 1, 1, 1, 1, DateTimeKind.Utc).AddTicks(2), TimeSpan.Zero)
+        });
     }
 }

@@ -9,4 +9,5 @@ public interface IUserService
     Task<List<UserOutgoingDto>> SearchUsersAsync(string query);
     Task<UserOutgoingDto> GetOrCreateUserFromContextAsync(HttpContext context);
     Task<List<UserOutgoingDto>> GetByIdsAsync(IEnumerable<string> ids);
+    Task DeleteUserAsync(string userId, UserOutgoingDto user, CancellationToken ct = default);
 }
