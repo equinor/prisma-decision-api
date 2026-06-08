@@ -146,13 +146,14 @@ public partial class AppDbContext : DbContext
 
         foreach (var (projectId, roles) in affectedByProject)
         {
+            var facilitatorRole = ProjectRoleType.Facilitator.ToString();
+            bool IsFacilitator(string role) => string.Equals(role, facilitatorRole, StringComparison.OrdinalIgnoreCase);
+
             var facilitatorsBeingRemoved = roles.Count(role =>
                 role.State == EntityState.Deleted
-                    ? string.Equals(role.Entity.Role, ProjectRoleType.Facilitator.ToString(), StringComparison.OrdinalIgnoreCase)
-                    : string.Equals(
-                        role.OriginalValues.GetValue<string>(nameof(ProjectRole.Role)),
-                        ProjectRoleType.Facilitator.ToString(),
-                        StringComparison.OrdinalIgnoreCase));
+                    ? IsFacilitator(role.Entity.Role)
+                    : IsFacilitator(role.OriginalValues.GetValue<string>(nameof(ProjectRole.Role)))
+                    && !IsFacilitator(role.CurrentValues.GetValue<string>(nameof(ProjectRole.Role))));
 
             if (facilitatorsBeingRemoved == 0)
                 continue;
