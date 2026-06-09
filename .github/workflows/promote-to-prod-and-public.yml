@@ -57,7 +57,7 @@ jobs:
             contents: read
         uses: ./.github/workflows/run-migration.yml
         with:
-            env-name: prod
+            env-name: Production
         secrets:
             AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
             AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
@@ -73,7 +73,7 @@ jobs:
             contents: read
         uses: ./.github/workflows/run-migration.yml
         with:
-            env-name: public
+            env-name: Public
         secrets:
             AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
             AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
