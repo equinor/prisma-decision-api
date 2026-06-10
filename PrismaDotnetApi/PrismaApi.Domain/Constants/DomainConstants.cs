@@ -95,3 +95,8 @@ public enum BoardNodeStrokeStyles
     Dashed,
     Dotted,
 }
+
+public static class ExceptionMessages
+{
+    public const string MinimumFacilitatorRequirement = "Projects must have at least one Facilitator.";
+};

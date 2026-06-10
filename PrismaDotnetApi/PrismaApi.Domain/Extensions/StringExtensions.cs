@@ -2,7 +2,7 @@
 using System.Text;
 using System.Security.Cryptography;
 
-namespace Scampi.Domain.Extensions;
+namespace PrismaApi.Domain.Extensions;
 
 public static partial class StringExtensions
 {
