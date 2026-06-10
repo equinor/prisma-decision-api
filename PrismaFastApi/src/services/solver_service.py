@@ -40,6 +40,13 @@ class SolverService:
         solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
 
         return solution
+    
+    async def export_diagram_from_dtos(
+        self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]
+    ) -> str:
+        solver = PyagrumSolver()
+        await solver.find_optimal_decisions(issues=issues, edges=edges)
+        return solver.export_diagram_to_xml()
 
     async def get_decision_tree_for_optimal_decisions_old(
         self, project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]

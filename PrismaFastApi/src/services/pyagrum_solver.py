@@ -1,3 +1,4 @@
+import os
 import uuid
 import pyagrum as gum  # type: ignore
 from itertools import product
@@ -130,6 +131,23 @@ class PyagrumSolver:
 
     def _pyagrum_get_node_labels(self, node_identifier: str | int) -> tuple[str]:
         return self.diagram.variable(node_identifier).labels()  # type: ignore
+    
+    def export_diagram_to_xml(self) -> str:
+        file_name: str = fr"{uuid.uuid4()}.BIFXML"
+        self.diagram.saveBIFXML(file_name)
+        with open(file_name) as f:
+            xml_string: str = f.read()
+        try:
+            os.remove(file_name)
+        except FileNotFoundError:
+            pass
+        
+        ids_to_name: dict[str, str] = {}
+
+        for issue in self.issues:
+            if issue.type
+
+        return ""
 
     def get_optimal_decisions(self, ie: gum.ShaferShenoyLIMIDInference, decision_issue_id: str):
         pyagrum_result: list[dict[str, int]] = self._pyagrum_optimal_decision_argmax(

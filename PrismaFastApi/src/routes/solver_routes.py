@@ -19,6 +19,13 @@ async def get_optimal_decisions_for_project_from_dtos(
 ) -> SolutionDto:
     return await solver_service.find_optimal_decision_pyagrum_from_dtos(issues, edges)
 
+@router.post("/solvers/project/{project_id}/export")
+async def export_diagram_as_string(
+    issues: list[IssueOutgoingDto],
+    edges: list[EdgeOutgoingDto],
+    solver_service: SolverService = Depends(get_solver_service),
+) -> str:
+    return await solver_service.export_diagram_from_dtos(issues, edges)
 
 @router.get("/solvers/project/{project_id}/decision_tree/v2")
 async def get_optimal_decisions_for_project_as_tree_tmp(

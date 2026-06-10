@@ -45,6 +45,19 @@ public class SolversController : PrismaBaseController
         return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
     }
 
+    [HttpGet("solvers/project/{projectId:guid}/export")]
+    public async Task<ActionResult<ApiResponseDto>> GetDiagramAsync([FromRoute] Guid projectId, CancellationToken ct = default)
+    {
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}/export", user, ct);
+        if (fastApiResponse.StatusCode == HttpStatusCode.OK)
+        {
+            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeLogString() : null);
+        }
+
+        return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
+    }
+
     [HttpGet("solvers/project/{projectId:guid}")]
     public async Task<ActionResult<ApiResponseDto>> GetSolutionAsync([FromRoute] Guid projectId, CancellationToken ct = default)
     {
