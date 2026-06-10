@@ -61,12 +61,15 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
             entity.EndDate = incomingEntity.EndDate;
             entity.UpdatedById = incomingEntity.UpdatedById;
             
-            if (incomingEntity.ProjectRoles.Count != 0)
+            if (incomingEntity.ProjectRoles.Count == 0)
             {
-                if (!incomingEntity.ProjectRoles.Any(x => x.Role.IsFacilitator())) 
-                    throw new InvalidOperationException(ExceptionMessages.MinimumFacilitatorRequirement);
-                entity.ProjectRoles.Update(incomingEntity.ProjectRoles, DbContext);
+                throw new InvalidOperationException("At least one project role is required.");
             }
+            if (!incomingEntity.ProjectRoles.Any(x => x.Role.IsFacilitator()))
+            {
+                throw new InvalidOperationException(ExceptionMessages.MinimumFacilitatorRequirement);
+            }
+            entity.ProjectRoles.Update(incomingEntity.ProjectRoles, DbContext);
             entity.Objectives.Update(incomingEntity.Objectives, DbContext);
             entity.Strategies.Update(incomingEntity.Strategies, DbContext);
             entity.BoardNodes.Update(incomingEntity.BoardNodes, DbContext);
