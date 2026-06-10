@@ -145,9 +145,15 @@ class PyagrumSolver:
         ids_to_name: dict[str, str] = {}
 
         for issue in self.issues:
-            if issue.type
+            if issue.type == Type.DECISION.value and issue.decision:
+                for option in issue.decision.options: ids_to_name[option.id.__str__()] = option.name
+            elif issue.type == Type.UNCERTAINTY.value and issue.uncertainty:
+                for outcome in issue.uncertainty.outcomes: ids_to_name[outcome.id.__str__()] = outcome.name
 
-        return ""
+        for id, name in ids_to_name.items():
+            xml_string = xml_string.replace(id, name)
+
+        return xml_string
 
     def get_optimal_decisions(self, ie: gum.ShaferShenoyLIMIDInference, decision_issue_id: str):
         pyagrum_result: list[dict[str, int]] = self._pyagrum_optimal_decision_argmax(
