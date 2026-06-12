@@ -18,7 +18,7 @@ public class StrategyOption
             entity.HasOne(e => e.Option)
                 .WithMany(e => e.StrategyOptions)
                 .HasForeignKey(e => e.OptionId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
         });
     }
 }
