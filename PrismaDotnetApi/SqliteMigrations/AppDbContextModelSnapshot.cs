@@ -1393,7 +1393,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Option", "Option")
                         .WithMany("StrategyOptions")
                         .HasForeignKey("OptionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("PrismaApi.Domain.Entities.Strategy", "Strategy")
