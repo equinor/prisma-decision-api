@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace PrismaApi.Application.Services;
 
-public class StrategyService: IStrategyService
+public class StrategyService : IStrategyService
 {
     private readonly IStrategyRepository _strategyRepository;
 
@@ -48,6 +48,12 @@ public class StrategyService: IStrategyService
         var strategies = await _strategyRepository.GetByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
         return strategies.ToOutgoingDtos();
     }
+    public async Task<List<StrategyOutgoingDto>> GetByProjectAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
+    {
+
+        var strategies = await _strategyRepository.GetAllAsync(filterPredicate: ProjectAndUserFilter(projectId, user), ct: ct);
+        return strategies.ToOutgoingDtos();
+    }
 
     public async Task<List<StrategyOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
@@ -57,4 +63,8 @@ public class StrategyService: IStrategyService
 
     private static Expression<Func<Strategy, bool>> UserFilter(UserOutgoingDto user)
         => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+
+    private static Expression<Func<Strategy, bool>> ProjectAndUserFilter(Guid projectId, UserOutgoingDto user)
+        => e => e.ProjectId == projectId && e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+
 }
