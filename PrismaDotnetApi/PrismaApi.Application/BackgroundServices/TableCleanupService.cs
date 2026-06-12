@@ -38,7 +38,8 @@ public class TableCleanupService : BackgroundService
     /// </summary>
     private async Task CleanupLoopAsync(CancellationToken ct = default)
     {
-        while (true)
+        using PeriodicTimer timer = new(_delay);
+        while (await timer.WaitForNextTickAsync(ct))
         {
             try
             {
@@ -56,8 +57,6 @@ public class TableCleanupService : BackgroundService
             {
                 _logger.LogError(ex, "An error occurred in CleanupLoopAsync.");
             }
-            await Task.Delay(_delay, ct);
-            ct.ThrowIfCancellationRequested();
         }
     }
 }
