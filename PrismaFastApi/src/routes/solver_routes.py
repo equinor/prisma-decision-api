@@ -26,7 +26,7 @@ async def get_optimal_decisions_for_project_with_evidence(
     evidence: list[EvidenceIncommingDto] = [],
     solver_service: SolverService = Depends(get_solver_service),
 ) -> list[EvidenceOutgoingDto]:
-    evidence_lists = [e.state_ids for e in evidence]
+    evidence_state_ids = [e.state_ids for e in evidence]
     results: list[SolutionDto] = await solver_service.find_optimal_decision_pyagrum_from_with_evidence(issues, edges, evidence_lists)
     # decision_solutions[0].mean is the expected utility for the first optimal decision, i.e. the root node which represents the expected utility for the model
     return [
