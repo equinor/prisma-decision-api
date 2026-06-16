@@ -79,8 +79,8 @@ public class FastApiService : IFastApiService
         var influenceDiagram = await _projectService.GetInfluenceDiagramAsync(projectId, user, ct);
         var payload = new
         {
-            issues = influanceDiagram.issues,
-            edges = influanceDiagram.edges,
+            issues = influenceDiagram.issues,
+            edges = influenceDiagram.edges,
             evidence = data,
         };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
