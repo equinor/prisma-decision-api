@@ -4,7 +4,7 @@ using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
-using Scampi.Domain.Extensions;
+using PrismaApi.Domain.Extensions;
 
 namespace PrismaApi.Application.Services;
 
@@ -282,12 +282,28 @@ public class TableRebuildingService : ITableRebuildingService
     {
         var discreteProbabilities = await FindExcessDiscreteProbabilities(uncertaintyId, ct);
         RemoveDiscreteProbabilities(discreteProbabilities);
+        await DbContext.SaveChangesAsync(ct);
+    }
+
+    public async Task RemoveExcessDiscreteProbabilities(CancellationToken ct = default)
+    {
+        var discreteProbabilities = await FindExcessDiscreteProbabilities(ct);
+        RemoveDiscreteProbabilities(discreteProbabilities);
+        await DbContext.SaveChangesAsync(ct);
     }
 
     public async Task RemoveExcessDiscreteUtilities(Guid utilityId, CancellationToken ct = default)
     {
         var discreteUtilities = await FindExcessDiscreteUtility(utilityId, ct);
         RemoveDiscreteUtilities(discreteUtilities);
+        await DbContext.SaveChangesAsync(ct);
+    }
+
+    public async Task RemoveExcessDiscreteUtilities(CancellationToken ct = default)
+    {
+        var discreteUtilities = await FindExcessDiscreteUtility(ct);
+        RemoveDiscreteUtilities(discreteUtilities);
+        await DbContext.SaveChangesAsync(ct);
     }
 
     private async Task<IEnumerable<DiscreteProbability>> FindExcessDiscreteProbabilities(Guid uncertaintyId, CancellationToken ct = default)
@@ -307,10 +323,42 @@ public class TableRebuildingService : ITableRebuildingService
             .SelectMany(group => group.Skip(1));
     }
 
+    private async Task<IEnumerable<DiscreteProbability>> FindExcessDiscreteProbabilities(CancellationToken ct = default)
+    {
+        var discreteProbabilities = await DbContext.DiscreteProbabilities
+            .Include(p => p.ParentOutcomes)
+            .Include(p => p.ParentOptions)
+            .ToListAsync(ct);
+
+        return discreteProbabilities
+            .GroupBy(p => (
+                p.OutcomeId,
+                ParentOutcomes: string.Join(",", p.ParentOutcomes.Select(o => o.ParentOutcomeId).OrderBy(id => id)),
+                ParentOptions: string.Join(",", p.ParentOptions.Select(o => o.ParentOptionId).OrderBy(id => id))
+            ))
+            .SelectMany(group => group.Skip(1));
+    }
+
     private async Task<IEnumerable<DiscreteUtility>> FindExcessDiscreteUtility(Guid utilityId, CancellationToken ct = default)
     {
         var discreteUtilities = await DbContext.DiscreteUtilities
             .Where(p => p.UtilityId == utilityId)
+            .Include(p => p.ParentOutcomes)
+            .Include(p => p.ParentOptions)
+            .ToListAsync(ct);
+
+        return discreteUtilities
+            .GroupBy(p => (
+                p.ValueMetricId,
+                ParentOutcomes: string.Join(",", p.ParentOutcomes.Select(o => o.ParentOutcomeId).OrderBy(id => id)),
+                ParentOptions: string.Join(",", p.ParentOptions.Select(o => o.ParentOptionId).OrderBy(id => id))
+            ))
+            .SelectMany(group => group.Skip(1));
+    }
+
+    private async Task<IEnumerable<DiscreteUtility>> FindExcessDiscreteUtility(CancellationToken ct = default)
+    {
+        var discreteUtilities = await DbContext.DiscreteUtilities
             .Include(p => p.ParentOutcomes)
             .Include(p => p.ParentOptions)
             .ToListAsync(ct);

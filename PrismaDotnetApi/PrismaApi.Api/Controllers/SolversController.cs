@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
-using Scampi.Domain.Extensions;
+using PrismaApi.Domain.Extensions;
 using System.Net;
 using PrismaApi.Api.Extensions;
 
@@ -63,6 +63,19 @@ public class SolversController : PrismaBaseController
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
         var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}", user, ct);
+        if (fastApiResponse.StatusCode == HttpStatusCode.OK)
+        {
+            return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeLogString() : null);
+        }
+
+        return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
+    }
+
+    [HttpPost("solvers/project/{projectId:guid}/with_evidence")]
+    public async Task<ActionResult<ApiResponseDto>> GetSolutionWithEvidenceAsync([FromRoute] Guid projectId, [FromBody] List<EvidenceRequestDto> evidence, CancellationToken ct = default)
+    {
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramWithEvidenceToFastApiAsync(projectId, $"/solvers/project/{projectId}/with_evidence", evidence, user, ct);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
             return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeLogString() : null);
