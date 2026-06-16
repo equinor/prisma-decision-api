@@ -76,7 +76,7 @@ public class FastApiService : IFastApiService
 
     public async Task<ApiResponseDto> SendInfluenceDiagramWithEvidenceToFastApiAsync(Guid projectId, string endpoint, List<EvidenceRequestDto> data, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var influanceDiagram = await _projectService.GetInfluenceDiagramAsync(projectId, user, ct);
+        var influenceDiagram = await _projectService.GetInfluenceDiagramAsync(projectId, user, ct);
         var payload = new
         {
             issues = influanceDiagram.issues,
