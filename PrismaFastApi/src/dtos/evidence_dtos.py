@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 import uuid
 
-class EvidenceIncommingDto(BaseModel):
+class EvidenceIncomingDto(BaseModel):
     evidence_id: uuid.UUID
     state_ids: list[uuid.UUID]
 
