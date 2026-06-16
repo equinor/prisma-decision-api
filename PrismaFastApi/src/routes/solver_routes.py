@@ -6,7 +6,7 @@ from src.dependencies import get_solver_service, get_project_lock_manager
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.dtos.model_solution_dtos import SolutionDto
-from src.dtos.evidence_dtos import EvidenceIncommingDto, EvidenceOutgoingDto
+from src.dtos.evidence_dtos import EvidenceIncomingDto, EvidenceOutgoingDto
 
 router = APIRouter(tags=["solvers"])
 
@@ -23,19 +23,19 @@ async def get_optimal_decisions_for_project_from_dtos(
 async def get_optimal_decisions_for_project_with_evidence(
     issues: list[IssueOutgoingDto],
     edges: list[EdgeOutgoingDto],
-    evidence: list[EvidenceIncommingDto] = [],
+    evidence: list[EvidenceIncomingDto] = [],
     solver_service: SolverService = Depends(get_solver_service),
 ) -> list[EvidenceOutgoingDto]:
     evidence_state_ids = [e.state_ids for e in evidence]
-    results: list[SolutionDto] = await solver_service.find_optimal_decision_pyagrum_from_with_evidence(issues, edges, evidence_lists)
+    results: list[SolutionDto] = await solver_service.find_optimal_decision_pyagrum_from_with_evidence(issues, edges, evidence_state_ids)
     # decision_solutions[0].mean is the expected utility for the first optimal decision, i.e. the root node which represents the expected utility for the model
     return [
         EvidenceOutgoingDto(
-            evidence_id=evidence.evidence_id,
-            state_ids=evidence.state_ids,
+            evidence_id=evi.evidence_id,
+            state_ids=evi.state_ids,
             expected_utility=results[n].decision_solutions[0].mean if results[n].decision_solutions else None,
         )
-        for n, evidence in enumerate(evidence)
+        for n, evi in enumerate(evidence)
     ]
 
 

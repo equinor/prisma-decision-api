@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 import uuid
 
 class EvidenceIncomingDto(BaseModel):
@@ -8,4 +9,4 @@ class EvidenceIncomingDto(BaseModel):
 class EvidenceOutgoingDto(BaseModel):
     evidence_id: uuid.UUID
     state_ids: list[uuid.UUID]
-    expected_utility: float = 0
+    expected_utility: Optional[float] = None
