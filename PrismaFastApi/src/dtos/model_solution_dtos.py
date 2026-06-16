@@ -43,3 +43,4 @@ class SolutionDto(BaseModel):
             parents = [x.state.id for x in option.parent_states]
             res.append(parents + [option.state.id])
         return res
+    

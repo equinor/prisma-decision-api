@@ -215,6 +215,15 @@ class PyagrumSolver:
         solution =  self.get_solution(self.get_inference(), [str(x) for x in self.get_partial_order() if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
         return solution
     
+    async def get_solutions_given_evidence(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []) -> list[SolutionDto]:
+        ie = await self.build_inference_engine(issues, edges)
+        solutions: list[SolutionDto] = []
+        for evidence_item in evidence:
+            ie_with_evidence = self.set_evidence(ie, [str(x) for x in evidence_item])
+            solution = self.get_solution(ie_with_evidence, [str(x) for x in self.get_partial_order() if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
+            solutions.append(solution)
+        return solutions
+    
     # method for adding evidence to the inference engine, takes a list of state_id, method internally finds the corresponding issue and state, then adds the evidence to the inference engine
     def set_evidence(self, ie: gum.ShaferShenoyLIMIDInference, state_ids: list[str]):
         ie.eraseAllEvidence() # type: ignore
