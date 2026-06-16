@@ -220,7 +220,6 @@ class PyagrumSolver:
         solutions: list[SolutionDto] = []
         for evidence_item in evidence:
             ie_with_evidence = self.set_evidence(ie, [str(x) for x in evidence_item])
-            # self.get_optimal_decisions(ie_with_evidence, [str(x) for x in self.get_partial_order() if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
             solution = self.get_solution(ie_with_evidence, [str(x) for x in self.get_partial_order() if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
             solutions.append(solution)
         return solutions
