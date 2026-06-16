@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
+using PrismaApi.Infrastructure.Caching;
 
 namespace PrismaApi.Application.Services
 {
@@ -16,10 +18,12 @@ namespace PrismaApi.Application.Services
     {
         private readonly IAssessmentRepository _assessmentRepository;
         private readonly IProjectRoleRepository _projectRoleRepository;
-        public AssessmentService(IAssessmentRepository assessmentRepository, IProjectRoleRepository projectRoleRepository)
+        private readonly IMemoryCache _cache;
+        public AssessmentService(IAssessmentRepository assessmentRepository, IProjectRoleRepository projectRoleRepository, IMemoryCache cache)
         {
             _assessmentRepository = assessmentRepository;
             _projectRoleRepository = projectRoleRepository;
+            _cache = cache;
         }
         public async Task<List<AssessmentOutgoingDto>?> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
         {
@@ -60,8 +64,37 @@ namespace PrismaApi.Application.Services
 
         public async Task<List<AssessmentOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
         {
-            var entities = await _assessmentRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-            return entities.ToOutgoingDtos();
+            var assessments = new List<AssessmentOutgoingDto>();
+            var projectIdsToGetFromDb = new HashSet<Guid>();
+
+            var projectIds = _cache.GetAccessibleProjectIds(user);
+
+            foreach (var projectId in projectIds)
+            {
+                var cachedAssessments = _cache.GetCacheItemAsAssessment(projectId, user);
+                if (cachedAssessments != null)
+                {
+                    assessments.AddRange(cachedAssessments);
+                }
+                else
+                {
+                    projectIdsToGetFromDb.Add(projectId);
+                }
+            }
+
+            if (projectIdsToGetFromDb.Count > 0)
+            {
+                var projectAssessments = await _assessmentRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(projectIdsToGetFromDb), ct: ct);
+                var assessmentDtos = projectAssessments.ToOutgoingDtos();
+                assessments.AddRange(assessmentDtos);
+                foreach (var projectId in projectIdsToGetFromDb)
+                {
+                    var cacheKey = CacheKeys.GetAssessmentKey(projectId);
+                    var projectAssessmentDtos = assessmentDtos.Where(a => a.ProjectId == projectId).ToList();
+                    _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, projectAssessmentDtos);
+                }
+            }
+            return assessments;
         }
 
         public async Task UpdateRangeAsync(List<AssessmentIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
@@ -71,8 +104,10 @@ namespace PrismaApi.Application.Services
             await _assessmentRepository.UpdateAsync(entities, filterPredicate: FacillitatorFilter(userDto), ct: ct);
         }
         private static Expression<Func<Assessment, bool>> FacillitatorFilter(UserOutgoingDto user)
-        => e => e!.Project!.ProjectRoles.Any(p => p.UserId == user.Id.ToString() && p.Role == ProjectRoleType.Facilitator.ToString());
+            => e => e!.Project!.ProjectRoles.Any(p => p.UserId == user.Id.ToString() && p.Role == ProjectRoleType.Facilitator.ToString());
         private static Expression<Func<Assessment, bool>> UserFilter(UserOutgoingDto user)
-        => e => e!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+            => e => e!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+        private static Expression<Func<Assessment, bool>> ProjectFilter(HashSet<Guid> projectIds)
+            => e => projectIds.Contains(e.ProjectId);
     }
 }

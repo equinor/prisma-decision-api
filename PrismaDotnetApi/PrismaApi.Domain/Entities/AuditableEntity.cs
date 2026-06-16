@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace PrismaApi.Domain.Entities;
 
 public abstract class AuditableEntity : BaseEntity

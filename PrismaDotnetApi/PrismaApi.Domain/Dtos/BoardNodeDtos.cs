@@ -4,6 +4,11 @@ using PrismaApi.Domain.Constants;
 
 namespace PrismaApi.Domain.Dtos;
 
+public interface ITypedBoardNode
+{
+    string Type { get; }
+}
+
 public class BoardNodeDto
 {
     [JsonPropertyName("id")]
@@ -24,17 +29,35 @@ public class BoardNodeDto
     public string Data { get; set; } = string.Empty;
     [JsonPropertyName("color")]
     public string Color { get; set; } = string.Empty;
+    [JsonPropertyName("stroke_width")]
+    public float StrokeWidth { get; set; } = DomainConstants.DefaultStrokeWidth;
+    
 }
 
-public class BoardNodeIncomingDto : BoardNodeDto
+public class BoardNodeIncomingDto : BoardNodeDto, ITypedBoardNode
 {
     [JsonPropertyName("type")]
     [EnumDataType(typeof(BoardNodeTypes), ErrorMessage = "Invalid Type")]
     public required string Type { get; set; }
+    [JsonPropertyName("stroke_style")]
+    [EnumDataType(typeof(BoardNodeStrokeStyles), ErrorMessage = "Invalid StrokeStyle")]
+    public string StrokeStyle { get; set; } = BoardNodeStrokeStyles.Solid.ToString();
+    [JsonPropertyName("opacity")]
+    [Range(DomainConstants.MinOpacity, DomainConstants.MaxOpacity, ErrorMessage = $"Opacity must be between 0 and 100")]
+    public int Opacity { get; set; } = DomainConstants.MaxOpacity;
+    [JsonPropertyName("text_size")]
+    [Range(1, int.MaxValue, ErrorMessage = "TextSize must be a positive integer")]
+    public int TextSize { get; set; } = DomainConstants.DefaultTextSize;
 }
 
-public class BoardNodeOutgoingDto : BoardNodeDto
+public class BoardNodeOutgoingDto : BoardNodeDto, ITypedBoardNode
 {
     [JsonPropertyName("type")]
     public required string Type { get; set; }
+    [JsonPropertyName("stroke_style")]
+    public required string StrokeStyle { get; set; }
+    [JsonPropertyName("opacity")]
+    public int Opacity { get; set; } = DomainConstants.MaxOpacity;
+    [JsonPropertyName("text_size")]
+    public int TextSize { get; set; } = DomainConstants.DefaultTextSize;
 }

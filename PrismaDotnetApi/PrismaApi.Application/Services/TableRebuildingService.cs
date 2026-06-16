@@ -4,6 +4,7 @@ using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
+using PrismaApi.Domain.Extensions;
 
 namespace PrismaApi.Application.Services;
 
@@ -13,6 +14,17 @@ public class TableRebuildingService : ITableRebuildingService
     public TableRebuildingService(AppDbContext dbContext)
     {
         DbContext = dbContext;
+    }
+
+    private static Guid GetDeterministicId(Guid issueId, Guid stateId, List<Guid> parentOutcomeIds, List<Guid> parentOptionIds)
+    {
+        // Temporary fix as original code was tested in sqlie and switching to sql server seems to have caused some issue
+        return Guid.NewGuid();
+        var combined = $"{issueId}|" +
+                       $"StateId:{stateId}|" +
+                       $"Outcomes:{string.Join(",", parentOutcomeIds.OrderBy(id => id))}|" +
+                       $"Options:{string.Join(",", parentOptionIds.OrderBy(id => id))}";
+        return combined.GenerateDeterministicGuid();
     }
 
     public async Task RebuildTablesAsync(CancellationToken ct = default)
@@ -92,13 +104,18 @@ public class TableRebuildingService : ITableRebuildingService
             {
                 var newEntry = new DiscreteProbability
                 {
-                    Id = Guid.NewGuid(),
+                    Id = GetDeterministicId(
+                        issue.Id, 
+                        outcome.Id,
+                        [.. parentOutcomesList.SelectMany(x => x)], 
+                        [.. parentOptionsList.SelectMany(x => x)]
+                    ),
                     OutcomeId = outcome.Id,
                     UncertaintyId = uncertainty.Id,
+                    ProjectId = issue.ProjectId,
                     Probability = 0
                 };
-                //Entry(newEntry).State = EntityState.Added;
-                //uncertainty.DiscreteProbabilities.Add(newEntry);
+                DbContext.Entry(newEntry).State = EntityState.Added;
                 await DbContext.DiscreteProbabilities.AddAsync(newEntry, ct);
             }
             return;
@@ -113,16 +130,17 @@ public class TableRebuildingService : ITableRebuildingService
         {
             foreach (var combination in parentCombinations)
             {
-                var parentOutcomeIds = combination.Where(id => allOutcomes.Contains(id)).OrderBy(id => id).ToList();
-                var parentOptionIds = combination.Where(id => allOptions.Contains(id)).OrderBy(id => id).ToList();
+                var parentOutcomeIds = combination.Where(allOutcomes.Contains).OrderBy(id => id).ToList();
+                var parentOptionIds = combination.Where(allOptions.Contains).OrderBy(id => id).ToList();
 
-                var probabilityId = Guid.NewGuid();
+                var probabilityId = GetDeterministicId(issue.Id, outcome.Id, parentOutcomeIds, parentOptionIds);
 
                 var newEntity = new DiscreteProbability
                 {
                     Id = probabilityId,
                     OutcomeId = outcome.Id,
                     UncertaintyId = uncertainty.Id,
+                    ProjectId = issue.ProjectId,
                     Probability = 0,
                 };
                 DbContext.DiscreteProbabilities.Add(newEntity);
@@ -168,7 +186,7 @@ public class TableRebuildingService : ITableRebuildingService
             return;
         }
 
-        var parentCombinations = BuildCombinations(parentOutcomesList.Concat(parentOptionsList).ToList());
+        var parentCombinations = BuildCombinations([.. parentOutcomesList, .. parentOptionsList]);
         var allOutcomes = new HashSet<Guid>(parentOutcomesList.SelectMany(list => list));
         var allOptions = new HashSet<Guid>(parentOptionsList.SelectMany(list => list));
 
@@ -177,9 +195,9 @@ public class TableRebuildingService : ITableRebuildingService
 
         foreach (var combination in parentCombinations)
         {
-            var parentOutcomeIds = combination.Where(id => allOutcomes.Contains(id)).OrderBy(id => id).ToList();
-            var parentOptionIds = combination.Where(id => allOptions.Contains(id)).OrderBy(id => id).ToList();
-            var utilityId = Guid.NewGuid();
+            var parentOutcomeIds = combination.Where(allOutcomes.Contains).OrderBy(id => id).ToList();
+            var parentOptionIds = combination.Where(allOptions.Contains).OrderBy(id => id).ToList();
+            var utilityId = GetDeterministicId(issue.Id, DomainConstants.DefaultValueMetricId, parentOutcomeIds, parentOptionIds);
 
             await DbContext.DiscreteUtilities
                 .AddAsync(new DiscreteUtility
@@ -187,6 +205,7 @@ public class TableRebuildingService : ITableRebuildingService
                     Id = utilityId,
                     ValueMetricId = DomainConstants.DefaultValueMetricId,
                     UtilityId = utility.Id,
+                    ProjectId = issue.ProjectId,
                     UtilityValue = 0,
                 }, ct);
 
@@ -263,12 +282,28 @@ public class TableRebuildingService : ITableRebuildingService
     {
         var discreteProbabilities = await FindExcessDiscreteProbabilities(uncertaintyId, ct);
         RemoveDiscreteProbabilities(discreteProbabilities);
+        await DbContext.SaveChangesAsync(ct);
+    }
+
+    public async Task RemoveExcessDiscreteProbabilities(CancellationToken ct = default)
+    {
+        var discreteProbabilities = await FindExcessDiscreteProbabilities(ct);
+        RemoveDiscreteProbabilities(discreteProbabilities);
+        await DbContext.SaveChangesAsync(ct);
     }
 
     public async Task RemoveExcessDiscreteUtilities(Guid utilityId, CancellationToken ct = default)
     {
         var discreteUtilities = await FindExcessDiscreteUtility(utilityId, ct);
         RemoveDiscreteUtilities(discreteUtilities);
+        await DbContext.SaveChangesAsync(ct);
+    }
+
+    public async Task RemoveExcessDiscreteUtilities(CancellationToken ct = default)
+    {
+        var discreteUtilities = await FindExcessDiscreteUtility(ct);
+        RemoveDiscreteUtilities(discreteUtilities);
+        await DbContext.SaveChangesAsync(ct);
     }
 
     private async Task<IEnumerable<DiscreteProbability>> FindExcessDiscreteProbabilities(Guid uncertaintyId, CancellationToken ct = default)
@@ -288,10 +323,42 @@ public class TableRebuildingService : ITableRebuildingService
             .SelectMany(group => group.Skip(1));
     }
 
+    private async Task<IEnumerable<DiscreteProbability>> FindExcessDiscreteProbabilities(CancellationToken ct = default)
+    {
+        var discreteProbabilities = await DbContext.DiscreteProbabilities
+            .Include(p => p.ParentOutcomes)
+            .Include(p => p.ParentOptions)
+            .ToListAsync(ct);
+
+        return discreteProbabilities
+            .GroupBy(p => (
+                p.OutcomeId,
+                ParentOutcomes: string.Join(",", p.ParentOutcomes.Select(o => o.ParentOutcomeId).OrderBy(id => id)),
+                ParentOptions: string.Join(",", p.ParentOptions.Select(o => o.ParentOptionId).OrderBy(id => id))
+            ))
+            .SelectMany(group => group.Skip(1));
+    }
+
     private async Task<IEnumerable<DiscreteUtility>> FindExcessDiscreteUtility(Guid utilityId, CancellationToken ct = default)
     {
         var discreteUtilities = await DbContext.DiscreteUtilities
             .Where(p => p.UtilityId == utilityId)
+            .Include(p => p.ParentOutcomes)
+            .Include(p => p.ParentOptions)
+            .ToListAsync(ct);
+
+        return discreteUtilities
+            .GroupBy(p => (
+                p.ValueMetricId,
+                ParentOutcomes: string.Join(",", p.ParentOutcomes.Select(o => o.ParentOutcomeId).OrderBy(id => id)),
+                ParentOptions: string.Join(",", p.ParentOptions.Select(o => o.ParentOptionId).OrderBy(id => id))
+            ))
+            .SelectMany(group => group.Skip(1));
+    }
+
+    private async Task<IEnumerable<DiscreteUtility>> FindExcessDiscreteUtility(CancellationToken ct = default)
+    {
+        var discreteUtilities = await DbContext.DiscreteUtilities
             .Include(p => p.ParentOutcomes)
             .Include(p => p.ParentOptions)
             .ToListAsync(ct);
@@ -337,7 +404,7 @@ public class TableRebuildingService : ITableRebuildingService
 
     private static List<List<Guid>> BuildCombinations(List<List<Guid>> groups)
     {
-        var results = new List<List<Guid>> { new List<Guid>() };
+        var results = new List<List<Guid>> { new() };
         foreach (var group in groups)
         {
             var next = new List<List<Guid>>();

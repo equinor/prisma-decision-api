@@ -1,9 +1,11 @@
+using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
+using PrismaApi.Infrastructure.Caching;
 using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Services;
@@ -15,18 +17,22 @@ public class ProjectService : IProjectService
     private readonly IIssueRepository _issueRepository;
     private readonly IEdgeRepository _edgeRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IMemoryCache _cache;
 
     public ProjectService(
         IProjectRepository projectRepository,
         IProjectRoleRepository projectRoleRepository,
         IIssueRepository issueRepository,
         IEdgeRepository edgeRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IMemoryCache cache)
     {
         _projectRepository = projectRepository;
         _projectRoleRepository = projectRoleRepository;
         _issueRepository = issueRepository;
         _edgeRepository = edgeRepository;
+        _userRepository = userRepository;
+        _cache = cache;
         _userRepository = userRepository;
     }
 
@@ -79,18 +85,23 @@ public class ProjectService : IProjectService
     public async Task<List<ProjectOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
         var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-        return projects.ToOutgoingDtos();
+        var dtos = projects.ToOutgoingDtos();
+        RegisterPublicProjectsInCache(dtos);
+        return dtos;
     }
 
     public async Task<List<ProjectOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
         var projects = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-        return projects.ToOutgoingDtos();
+        var dtos = projects.ToOutgoingDtos();
+        RegisterPublicProjectsInCache(dtos);
+        return dtos;
     }
 
     public async Task<List<PopulatedProjectDto>> GetPopulatedAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
         var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
+
         return projects.ToPopulatedDtos();
     }
 
@@ -100,27 +111,46 @@ public class ProjectService : IProjectService
         return projects.ToPopulatedDtos();
     }
 
-    public async Task<InfluanceDiagramDto> GetInfluanceDiagramAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
+    public async Task<InfluenceDiagramDto> GetInfluenceDiagramAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var project = await _projectRepository.GetByIdsAsync([projectId], withTracking: false, filterPredicate: UserFilter(user), ct: ct);
+        var cachedDiagram = _cache.GetCacheItemAsInfluenceDiagram(projectId, user);
+        if (cachedDiagram != null)
+        {
+            return cachedDiagram;
+        }
 
-        if (project == null)
-            throw new ArgumentNullException(nameof(project));
-
-        return new InfluanceDiagramDto
+        var issueEntities = await _issueRepository.GetIssuesInInfluenceDiagram(projectId, IssuesUserFilter(user), ct);
+        var edgeEntities = await _edgeRepository.GetEdgesInInfluenceDiagram(projectId, EdgesUserFilter(user), ct);
+        var diagram = new InfluenceDiagramDto
         {
             projectId = projectId,
-            issues = (await _issueRepository.GetIssuesInInfluenceDiagram(projectId, IssuesUserFilter(user), ct)).ToOutgoingDtos(),
-            edges = (await _edgeRepository.GetEdgesInInfluenceDiagram(projectId, EdgesUserFilter(user), ct)).ToOutgoingDtos()
+            issues = issueEntities.ToOutgoingDtos(),
+            edges = edgeEntities.ToOutgoingDtos()
         };
+
+        _cache.AddCacheItem(new CacheItem { CacheKey = CacheKeys.GetInfluenceDiagramKey(projectId) }, CacheConstants.DefaultMediumQueryCacheInTimeSpan, diagram);
+        return diagram;
     }
 
     private static Expression<Func<Project, bool>> UserFilter(UserOutgoingDto user)
-        => e => e.ProjectRoles.Any(p => p.UserId == user.Id);
+        => e => e.Public || e.ProjectRoles.Any(p => p.UserId == user.Id);
 
     private static Expression<Func<Issue, bool>> IssuesUserFilter(UserOutgoingDto user)
-        => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+        => e => e.Project!.Public || e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 
     private static Expression<Func<Edge, bool>> EdgesUserFilter(UserOutgoingDto user)
-        => e => e.HeadNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id) && e.TailNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+        => e => (e.HeadNode!.Issue!.Project!.Public || e.HeadNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id)) && (e.TailNode!.Issue!.Project!.Public || e.TailNode!.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id));
+
+    private void RegisterPublicProjectsInCache(List<ProjectOutgoingDto> projects)
+    {
+        var publicProjectIds = projects.Where(p => p.Public).Select(p => p.Id).ToList();
+        if (publicProjectIds.Count == 0) return;
+
+        var existing = new HashSet<Guid>(_cache.GetPublicProjectIds());
+        var previousCount = existing.Count;
+        existing.UnionWith(publicProjectIds);
+
+        if (existing.Count > previousCount)
+            _cache.AddCacheItem(new CacheItem { CacheKey = CacheKeys.PublicProjectIdsKey }, null, existing);
+    }
 }

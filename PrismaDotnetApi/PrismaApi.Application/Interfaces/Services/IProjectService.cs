@@ -11,5 +11,5 @@ public interface IProjectService
     Task<List<ProjectOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default);
     Task<List<PopulatedProjectDto>> GetPopulatedAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default);
     Task<List<PopulatedProjectDto>> GetAllPopulatedAsync(UserOutgoingDto user, CancellationToken ct = default);
-    Task<InfluanceDiagramDto> GetInfluanceDiagramAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default);
+    Task<InfluenceDiagramDto> GetInfluenceDiagramAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default);
 }

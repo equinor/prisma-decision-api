@@ -1,6 +1,9 @@
+using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Infrastructure.Caching;
 
 namespace PrismaApi.Application.Services;
 
@@ -13,6 +16,9 @@ public class ProjectDuplicationService : IProjectDuplicationService
     private readonly IStrategyService _strategyService;
     private readonly IDiscreteProbabilityService _discreteProbabilityService;
     private readonly IDiscreteUtilityService _discreteUtilityService;
+    private readonly IAssessmentService _assessmentService;
+    private readonly IDecisionQualityAssessmentService _decisionQualityAssessmentService;
+    private readonly IBoardNodeService _boardNodeService; private readonly IMemoryCache _cache;
 
     public ProjectDuplicationService(
         IProjectDuplicationRepository duplicationRepo,
@@ -21,7 +27,11 @@ public class ProjectDuplicationService : IProjectDuplicationService
         IEdgeService edgeService,
         IStrategyService strategyService,
         IDiscreteProbabilityService discreteProbabilityService,
-        IDiscreteUtilityService discreteUtilityService)
+        IDiscreteUtilityService discreteUtilityService,
+        IMemoryCache cache,
+        IAssessmentService assessmentService,
+        IDecisionQualityAssessmentService decisionQualityAssessmentService,
+        IBoardNodeService boardNodeService)
     {
         _duplicationRepo = duplicationRepo;
         _projectService = projectService;
@@ -30,6 +40,10 @@ public class ProjectDuplicationService : IProjectDuplicationService
         _strategyService = strategyService;
         _discreteProbabilityService = discreteProbabilityService;
         _discreteUtilityService = discreteUtilityService;
+        _assessmentService = assessmentService;
+        _decisionQualityAssessmentService = decisionQualityAssessmentService;
+        _boardNodeService = boardNodeService;
+        _cache = cache;
     }
 
     public async Task<ProjectOutgoingDto> DuplicateAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
@@ -66,9 +80,9 @@ public class ProjectDuplicationService : IProjectDuplicationService
             var uncertaintyResult = CreateUncertainty(
                 issue.Uncertainty?.Id, issue.Uncertainty?.IsKey ?? true,
                 issue.Uncertainty?.Outcomes, issue.Uncertainty?.DiscreteProbabilities,
-                mappedIssueId, mappings);
+                mappedIssueId, mappings, newProjectId);
             var utilityResult = CreateUtility(
-                issue.Utility?.Id, issue.Utility?.DiscreteUtilities, mappedIssueId, mappings);
+                issue.Utility?.Id, issue.Utility?.DiscreteUtilities, mappedIssueId, mappings, newProjectId);
 
             if (uncertaintyResult.DiscreteProbabilities.Count > 0)
                 discreteProbabilityDtos.AddRange(uncertaintyResult.DiscreteProbabilities);
@@ -86,7 +100,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
                 Type = issue.Type,
                 Boundary = issue.Boundary,
                 Node = CreateNode(issue.Node?.Id, issue.Node?.Name, issue.Node?.NodeStyle?.XPosition, issue.Node?.NodeStyle?.YPosition, issue.Name, newProjectId, mappedIssueId, mappings),
-                Decision = CreateDecision(issue.Decision?.Id, issue.Decision?.Type, issue.Decision?.Options, mappedIssueId, mappings),
+                Decision = CreateDecision(issue.Decision?.Id, issue.Decision?.Type, issue.Decision?.Options, mappedIssueId, mappings, newProjectId),
                 Uncertainty = uncertaintyResult.Uncertainty,
                 Utility = utilityResult.Utility
             });
@@ -108,6 +122,24 @@ public class ProjectDuplicationService : IProjectDuplicationService
         var edgeDtos = CreateEdges(fullProject.Edges, newProjectId, mappings);
         if (edgeDtos.Count > 0)
             await _edgeService.CreateAsync(edgeDtos);
+
+        _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetUserKey(user.Id) }); // if internal
+        _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetUserKey(user.Name) }); // if public
+
+        var (assessmentDtos, assessmentIdMap) = CreateAssessments(fullProject.Assessments, newProjectId);
+        if (assessmentDtos.Count > 0)
+            await _assessmentService.CreateAsync(assessmentDtos, user);
+
+        var decisionQualityAssessmentDtos = CreateDecisionQualityAssessments(fullProject.Assessments.SelectMany(a => a.DecisionQualityAssessments ?? []), assessmentIdMap);
+        if (decisionQualityAssessmentDtos.Count > 0)
+            await _decisionQualityAssessmentService.CreateAsync(decisionQualityAssessmentDtos, user, ct);
+
+        foreach (var boardNode in fullProject.BoardNodes)
+            mappings.Node[boardNode.Id] = Guid.NewGuid();
+
+        var boardNodes = CreateBoardNodes(fullProject.BoardNodes, newProjectId, mappings);
+        if (boardNodes.Count > 0)
+            await _boardNodeService.CreateAsync(boardNodes, user, ct);
 
         return createdProject;
     }
@@ -146,10 +178,10 @@ public class ProjectDuplicationService : IProjectDuplicationService
             var uncertaintyResult = CreateUncertainty(
                 issue.Uncertainty?.Id, issue.Uncertainty?.IsKey ?? true,
                 issue.Uncertainty?.Outcomes, issue.Uncertainty?.DiscreteProbabilities,
-                mappedIssueId, mappings);
+                mappedIssueId, mappings, newProjectId);
             var utilityResult = CreateUtility(
                 issue.Utility?.Id, issue.Utility?.DiscreteUtilities,
-                mappedIssueId, mappings);
+                mappedIssueId, mappings, newProjectId);
 
             if (uncertaintyResult.DiscreteProbabilities.Count > 0)
                 discreteProbabilityDtos.AddRange(uncertaintyResult.DiscreteProbabilities);
@@ -167,7 +199,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
                 Type = issue.Type,
                 Boundary = issue.Boundary,
                 Node = CreateNode(issue.Node?.Id, issue.Node?.Name, issue.Node?.NodeStyle?.XPosition, issue.Node?.NodeStyle?.YPosition, issue.Name, newProjectId, mappedIssueId, mappings),
-                Decision = CreateDecision(issue.Decision?.Id, issue.Decision?.Type, issue.Decision?.Options, mappedIssueId, mappings),
+                Decision = CreateDecision(issue.Decision?.Id, issue.Decision?.Type, issue.Decision?.Options, mappedIssueId, mappings, newProjectId),
                 Uncertainty = uncertaintyResult.Uncertainty,
                 Utility = utilityResult.Utility
             });
@@ -183,16 +215,27 @@ public class ProjectDuplicationService : IProjectDuplicationService
             await _discreteUtilityService.CreateAsync(discreteUtilityDtos);
 
         var strategyDtos = CreateStrategies(dto.Projects.Strategies, s => s.Options, newProjectId, mappings);
+
         if (strategyDtos.Count > 0)
             await _strategyService.CreateAsync(strategyDtos, user);
 
         var edgeDtos = CreateEdges(dto.Edges, newProjectId, mappings);
         if (edgeDtos.Count > 0)
             await _edgeService.CreateAsync(edgeDtos);
+        var (assessmentDtos, assessmentIdMap) = CreateAssessments(dto.Assessments, newProjectId);
+        if (assessmentDtos.Count > 0)
+            await _assessmentService.CreateAsync(assessmentDtos, user);
+
+        var decisionQualityAssessmentDtos = CreateDecisionQualityAssessments(dto.Assessments.SelectMany(a => a.DecisionQualityAssessments ?? []), assessmentIdMap);
+        if (decisionQualityAssessmentDtos.Count > 0)
+            await _decisionQualityAssessmentService.CreateAsync(decisionQualityAssessmentDtos, user, ct);
+
+        var boardNodes = CreateBoardNodes(dto.BoardNodes, newProjectId, mappings);
+        if (boardNodes.Count > 0)
+            await _boardNodeService.CreateAsync(boardNodes, user, ct);
 
         return createdProjects[0];
     }
-
     private static ProjectCreateDto CreateProjectDto(FullProjectForDuplicationDto fullProject, Guid newProjectId)
     {
         return new ProjectCreateDto
@@ -262,7 +305,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         string? decisionType,
         IEnumerable<OptionDto>? options,
         Guid mappedIssueId,
-        IdMappings mappings)
+        IdMappings mappings,
+        Guid newProjectId)
     {
         if (decisionId is null)
             return null;
@@ -272,12 +316,14 @@ public class ProjectDuplicationService : IProjectDuplicationService
         {
             Id = mappedDecisionId,
             IssueId = mappedIssueId,
+            ProjectId = newProjectId,
             Type = decisionType ?? "Focus",
             Options = (options ?? [])
                 .Select(option => new OptionIncomingDto
                 {
                     Id = GetMappedOrThrow(mappings.Option, option.Id, "option"),
                     DecisionId = mappedDecisionId,
+                    ProjectId = newProjectId,
                     Name = option.Name,
                     Utility = option.Utility
                 })
@@ -321,7 +367,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         IEnumerable<OutcomeDto>? outcomes,
         IEnumerable<DiscreteProbabilityDto>? discreteProbabilities,
         Guid mappedIssueId,
-        IdMappings mappings)
+        IdMappings mappings,
+        Guid newProjectId)
     {
         if (uncertaintyId is null)
             return (null, []);
@@ -333,6 +380,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
                 Id = GetMappedOrThrow(mappings.Outcome, outcome.Id, "outcome"),
                 Name = outcome.Name,
                 UncertaintyId = mappedUncertaintyId,
+                ProjectId = newProjectId,
                 Utility = outcome.Utility
             })
             .ToList();
@@ -346,6 +394,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
                     Id = Guid.NewGuid(),
                     UncertaintyId = mappedUncertaintyId,
                     OutcomeId = mappings.Outcome.GetValueOrDefault(dp.OutcomeId, dp.OutcomeId),
+                    ProjectId = newProjectId,
                     Probability = dp.Probability,
                     ParentOutcomeIds = parentOutcomeIds,
                     ParentOptionIds = parentOptionIds
@@ -357,6 +406,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         {
             Id = mappedUncertaintyId,
             IssueId = mappedIssueId,
+            ProjectId = newProjectId,
             IsKey = isKey,
             Outcomes = mappedOutcomes,
             DiscreteProbabilities = []
@@ -369,7 +419,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         Guid? utilityId,
         IEnumerable<DiscreteUtilityDto>? discreteUtilities,
         Guid mappedIssueId,
-        IdMappings mappings)
+        IdMappings mappings,
+        Guid newProjectId)
     {
         if (utilityId is null)
             return (null, []);
@@ -378,7 +429,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         var utilityDto = new UtilityIncomingDto
         {
             Id = mappedUtilityId,
-            IssueId = mappedIssueId
+            IssueId = mappedIssueId,
+            ProjectId = newProjectId
         };
 
         var mappedDiscreteUtilities = (discreteUtilities ?? [])
@@ -392,7 +444,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
                     UtilityValue = du.UtilityValue,
                     ParentOptionIds = parentOptionIds,
                     ParentOutcomeIds = parentOutcomeIds,
-                    ValueMetricId = du.ValueMetricId
+                    ValueMetricId = du.ValueMetricId,
+                    ProjectId = newProjectId
                 };
             })
             .ToList();
@@ -419,10 +472,73 @@ public class ProjectDuplicationService : IProjectDuplicationService
             {
                 Id = GetMappedOrThrow(mappings.Option, option.Id, "option"),
                 DecisionId = GetMappedOrThrow(mappings.Decision, option.DecisionId, "decision"),
+                ProjectId = newProjectId,
                 Name = option.Name,
                 Utility = option.Utility
             }).ToList()
         }).ToList();
+    }
+    private static (List<AssessmentIncomingDto> Dtos, Dictionary<Guid, Guid> IdMap) CreateAssessments<TAssessment>(
+        IEnumerable<TAssessment> assessments,
+        Guid newProjectId) where TAssessment : AssessmentDto
+    {
+        var idMap = new Dictionary<Guid, Guid>();
+        var dtos = assessments.Select(assessment =>
+        {
+            var newId = Guid.NewGuid();
+            idMap[assessment.Id] = newId;
+            return new AssessmentIncomingDto
+            {
+                Id = newId,
+                ProjectId = newProjectId,
+                Name = assessment.Name,
+            };
+        }).ToList();
+        return (dtos, idMap);
+    }
+    private static List<DecisionQualityAssessmentIncomingDto> CreateDecisionQualityAssessments<TDecisionQualityAssessment>(
+        IEnumerable<TDecisionQualityAssessment> decisionQualityAssessments,
+        Dictionary<Guid, Guid> assessmentIdMap) where TDecisionQualityAssessment : DecisionQualityAssessmentDto
+    {
+        return decisionQualityAssessments.Select(decisionQualityAssessment => new DecisionQualityAssessmentIncomingDto
+        {
+            Id = Guid.NewGuid(),
+            AssessmentId = assessmentIdMap.GetValueOrDefault(decisionQualityAssessment.AssessmentId, decisionQualityAssessment.AssessmentId),
+            AppropriateFrame = decisionQualityAssessment.AppropriateFrame,
+            TradeOffAnalysis = decisionQualityAssessment.TradeOffAnalysis,
+            ReasoningCorrectness = decisionQualityAssessment.ReasoningCorrectness,
+            InformationReliability = decisionQualityAssessment.InformationReliability,
+            CommitmentToAction = decisionQualityAssessment.CommitmentToAction,
+            Comment = decisionQualityAssessment.Comment,
+            DoableAlternatives = decisionQualityAssessment.DoableAlternatives
+        }).ToList();
+    }
+
+    private static List<BoardNodeIncomingDto> CreateBoardNodes<TBoardNode>(
+        IEnumerable<TBoardNode> boardNodes,
+        Guid newProjectId,
+        IdMappings mappings) where TBoardNode : BoardNodeDto, ITypedBoardNode
+    {
+        return boardNodes.Select(boardNode => new BoardNodeIncomingDto
+        {
+            Id = Guid.NewGuid(),
+            Type = boardNode.Type,
+            ProjectId = newProjectId,
+            Height = boardNode.Height,
+            Width = boardNode.Width,
+            XPosition = boardNode.XPosition,
+            YPosition = boardNode.YPosition,
+            Rotation = boardNode.Rotation,
+            Data = RemapBoardNodeData(boardNode.Type, boardNode.Data, mappings),
+            Color = boardNode.Color
+        }).ToList();
+    }
+
+    private static string RemapBoardNodeData(string type, string data, IdMappings mappings)
+    {
+        if (type == nameof(BoardNodeTypes.Issue) && Guid.TryParse(data, out var issueId) && mappings.Issue.TryGetValue(issueId, out var mappedIssueId))
+            return mappedIssueId.ToString();
+        return data;
     }
 
     private static List<EdgeIncomingDto> CreateEdges(IEnumerable<EdgeDto> edges, Guid newProjectId, IdMappings mappings)

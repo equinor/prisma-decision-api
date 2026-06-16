@@ -6,7 +6,7 @@ using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure.Caching;
-using Scampi.Domain.Extensions;
+using PrismaApi.Domain.Extensions;
 
 namespace PrismaApi.Application.Services;
 
@@ -29,7 +29,8 @@ public class PublicUserService : IUserProvider
             throw new InvalidOperationException("Username is required");
         }
 
-        var cacheKey = $"public_user_{userName.ToLower()}";
+        
+        var cacheKey = CacheKeys.GetUserKey(userName);
         if (_memoryCache.TryGetValue(cacheKey, out UserOutgoingDto? cachedUser) && cachedUser != null)
         {
             return cachedUser;

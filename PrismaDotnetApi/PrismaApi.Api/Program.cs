@@ -5,6 +5,7 @@ using Microsoft.Identity.Web;
 using PrismaApi.Api.Configuration.Extensions;
 using PrismaApi.Api.Configuration.JsonResponseOptions;
 using PrismaApi.Api.SecurityPolicy;
+using PrismaApi.Application.BackgroundServices;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Repositories;
@@ -57,7 +58,12 @@ public class Program
                 .AddInMemoryTokenCaches();
         }
 
-        builder.Services.AddMemoryCache();
+        builder.Services.AddSingleton(new AppDbContextOptions { IsPublicInstance = isPublicInstance });
+
+        builder.Services.AddMemoryCache(options =>
+        {
+            options.TrackStatistics = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Local");
+        });
 
         var appInsightsConnectionString = Environment.GetEnvironmentVariable("APPLICATION_INSIGHTS_CONNECTIONSTRING") ?? builder.Configuration.GetSection("ApplicationInsights:ConnectionString").Value;
         if (!string.IsNullOrEmpty(appInsightsConnectionString) && builder.Environment.EnvironmentName != "Local")
@@ -132,6 +138,7 @@ public class Program
         builder.Services.AddScoped<IObjectiveService, ObjectiveService>();
         builder.Services.AddScoped<IProjectRoleService, ProjectRoleService>();
         builder.Services.AddScoped<IBoardNodeService, BoardNodeService>();
+        builder.Services.AddHostedService<TableCleanupService>();
 
         if (isPublicInstance)
         {

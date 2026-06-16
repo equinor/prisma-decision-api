@@ -14,4 +14,8 @@ public class ProjectImportDto
 
     [JsonPropertyName("edges")]
     public List<EdgeIncomingDto> Edges { get; set; } = new();
+    [JsonPropertyName("assessments")]
+    public List<AssessmentIncomingDto> Assessments { get; set; } = new();
+    [JsonPropertyName("boardNodes")]
+    public List<BoardNodeIncomingDto> BoardNodes { get; set; } = new();
 }

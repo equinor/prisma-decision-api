@@ -20,5 +20,6 @@ public class UserIncomingDto : UserDto
 
 public class UserOutgoingDto : UserDto
 {
-
+    [JsonPropertyName("project_roles")]
+    public List<ProjectRoleOutgoingDto> ProjectRoles { get; set; } = new();
 }
