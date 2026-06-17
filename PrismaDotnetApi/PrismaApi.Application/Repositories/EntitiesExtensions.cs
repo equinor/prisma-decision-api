@@ -303,4 +303,43 @@ public static class EntitiesExtensions
             await context.SaveChangesAsync(ct);
         }
     }
+
+    public static void Update(this ICollection<RestrictionTable> entities, ICollection<RestrictionTable> incomingEntities, AppDbContext context)
+    {
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<RestrictionTable, Guid>(incomingEntities, entities, context);
+        RepositoryUtilities.AddMissingFromCollectionMutate<RestrictionTable, Guid>(incomingEntities, entities, context);
+
+        foreach (var entity in entities)
+        {
+            var incomingEntity = incomingEntities.FirstOrDefault(x => x.Id == entity.Id);
+            if (incomingEntity == null) continue;
+
+            entity.Name = incomingEntity.Name;
+            entity.EdgeId = incomingEntity.EdgeId;
+            entity.ProjectId = incomingEntity.ProjectId;
+            entity.UpdatedById = incomingEntity.UpdatedById;
+        }
+    }
+
+    public static void Update(this ICollection<RestrictionEntry> entities, ICollection<RestrictionEntry> incomingEntities, AppDbContext context)
+    {
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<RestrictionEntry, Guid>(incomingEntities, entities, context);
+        RepositoryUtilities.AddMissingFromCollectionMutate<RestrictionEntry, Guid>(incomingEntities, entities, context);
+
+        foreach (var entity in entities)
+        {
+            var incomingEntity = incomingEntities.FirstOrDefault(x => x.Id == entity.Id);
+            if (incomingEntity == null) continue;
+
+            entity.Name = incomingEntity.Name;
+            entity.RestrictionValue = incomingEntity.RestrictionValue;
+            entity.ParentOptionId = incomingEntity.ParentOptionId;
+            entity.ParentOutcomeId = incomingEntity.ParentOutcomeId;
+            entity.ChildOptionId = incomingEntity.ChildOptionId;
+            entity.ChildOutcomeId = incomingEntity.ChildOutcomeId;
+            entity.RestrictionTableId = incomingEntity.RestrictionTableId;
+            entity.ProjectId = incomingEntity.ProjectId;
+            entity.UpdatedById = incomingEntity.UpdatedById;
+        }
+    }
 }

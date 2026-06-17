@@ -36,6 +36,11 @@ public class RestrictionEntry : AuditableEntity, IBaseEntity<Guid>
                 .HasForeignKey(e => e.CreatedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // delete project deletes the edges and the restriction tables and thus this as well
+
             entity.HasOne(e => e.UpdatedBy)
                 .WithMany()
                 .HasForeignKey(e => e.UpdatedById)

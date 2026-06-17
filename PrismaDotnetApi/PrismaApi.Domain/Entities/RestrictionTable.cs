@@ -29,7 +29,7 @@ public class RestrictionTable : AuditableEntity, IBaseEntity<Guid>
             entity.HasOne(e => e.Project)
                 .WithMany()
                 .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction); // delete project deletes the edges and thus this as well
             
             entity.HasOne(e => e.Edge)
                 .WithOne()
