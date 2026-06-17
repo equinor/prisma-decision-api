@@ -22,6 +22,56 @@ dotnet build
 dotnet run
 ```
 
+## Docker Compose
+
+Run both APIs together with Docker Compose from the repository root.
+
+### Prerequisites
+
+- Docker Desktop (or Docker Engine + Compose)
+- `AZURE_AD_CLIENT_SECRET` set in your shell
+
+```bash
+export AZURE_AD_CLIENT_SECRET="your-secret"
+```
+
+### Start Services
+
+```bash
+docker compose up --build
+```
+
+### Stop Services
+
+```bash
+docker compose down
+```
+
+
+### Rebuild from scratch (clear cache)
+
+```bash
+
+docker compose build --no-cache
+docker compose up
+```
+
+
+### Reset SQLite Data
+
+The API stores SQLite at `/data/Prisma.db` in the `api-data` named volume.
+
+Remove containers and volume (full DB reset):
+
+```bash
+docker compose down -v
+```
+
+### Notes
+
+- The `api` service runs as root in Docker Compose for local development to avoid SQLite write-permission issues on the named volume.
+- Normal `docker compose down` keeps your SQLite data. Use `-v` only when you want to reset it.
+
 ## Database Migrations
 
 Migrations use Entity Framework Core with separate projects for SQLite and SQL Server ([docs](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/projects?tabs=dotnet-core-cli)).
