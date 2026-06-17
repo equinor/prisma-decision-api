@@ -373,6 +373,15 @@ class PyagrumSolver:
     def add_virtual_utility_node(self, issue: IssueOutgoingDto):
         if issue.type == Type.UTILITY.value:
             return
+        
+        if issue.type == Type.DECISION and issue.decision is not None:
+            if all([option.utility == 0 for option in issue.decision.options]):
+                return
+            
+        if issue.type == Type.UNCERTAINTY and issue.uncertainty is not None:
+            if all([outcome.utility == 0 for outcome in issue.uncertainty.outcomes]):
+                return
+            
         node_id = self.diagram.addUtilityNode(  # type: ignore
             gum.LabelizedVariable(
                 f"{issue.id.__str__()} utility",
@@ -382,15 +391,11 @@ class PyagrumSolver:
         )
         self.diagram.addArc(self.diagram.idFromName(issue.id.__str__()), node_id)  # type: ignore
 
-        if issue.type == Type.DECISION:
-            assert issue.decision is not None
-
+        if issue.type == Type.DECISION and issue.decision is not None:
             for n, x in enumerate(self._sort_state_dtos(issue.decision.options)):
                 self.diagram.utility(node_id)[{issue.id.__str__(): n}] = x.utility  # type: ignore
 
-        if issue.type == Type.UNCERTAINTY:
-            assert issue.uncertainty is not None
-
+        if issue.type == Type.UNCERTAINTY and issue.uncertainty is not None:
             for n, x in enumerate(self._sort_state_dtos(issue.uncertainty.outcomes)):
                 self.diagram.utility(node_id)[{issue.id.__str__(): n}] = x.utility  # type: ignore
 
