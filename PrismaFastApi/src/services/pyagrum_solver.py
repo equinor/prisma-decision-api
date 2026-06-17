@@ -145,6 +145,7 @@ class PyagrumSolver:
         ids_to_name: dict[str, str] = {}
 
         for issue in self.issues:
+            ids_to_name[issue.id.__str__()] = issue.name
             if issue.type == Type.DECISION.value and issue.decision:
                 for option in issue.decision.options: ids_to_name[option.id.__str__()] = option.name
             elif issue.type == Type.UNCERTAINTY.value and issue.uncertainty:
