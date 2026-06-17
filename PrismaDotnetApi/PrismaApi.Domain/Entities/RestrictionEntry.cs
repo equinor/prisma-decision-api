@@ -65,6 +65,18 @@ public class RestrictionEntry : AuditableEntity, IBaseEntity<Guid>
                 .WithMany()
                 .HasForeignKey(e => e.ChildOutcomeId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint(
+                    "CK_RestrictionEntry_Parent",
+                    "([ParentOptionId] IS NULL AND [ParentOutcomeId] IS NOT NULL) OR ([ParentOptionId] IS NOT NULL AND [ParentOutcomeId] IS NULL)"
+                );
+                t.HasCheckConstraint(
+                    "CK_RestrictionEntry_Child",
+                    "([ChildOptionId] IS NULL AND [ChildOutcomeId] IS NOT NULL) OR ([ChildOptionId] IS NOT NULL AND [ChildOutcomeId] IS NULL)"
+                );
+            });
         });
     }
 }
