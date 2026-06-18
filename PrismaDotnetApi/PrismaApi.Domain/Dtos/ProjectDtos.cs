@@ -51,6 +51,10 @@ public class ProjectOutgoingDto : ProjectDto
 
 public class PopulatedProjectDto : ProjectDto
 {
+    [JsonPropertyName("strategies")]
+    public List<StrategyOutgoingDto> Strategies { get; set; } = new();
+    [JsonPropertyName("objectives")]
+    public List<ObjectiveOutgoingDto> Objectives { get; set; } = new();
 
     [JsonPropertyName("board_nodes")]
     public List<BoardNodeOutgoingDto> BoardNodes { get; set; } = new();

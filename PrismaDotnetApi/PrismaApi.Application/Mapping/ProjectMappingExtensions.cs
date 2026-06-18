@@ -28,6 +28,8 @@ public static class ProjectMappingExtensions
         {
             Id = entity.Id,
             Name = entity.Name,
+            Objectives = entity.Objectives.ToOutgoingDtos(),
+            Strategies = entity.Strategies.ToOutgoingDtos(),
             ParentProjectId = entity.ParentProjectId,
             ParentProjectName = entity.ParentProjectName ?? "",
             OpportunityStatement = entity.OpportunityStatement,
@@ -35,6 +37,7 @@ public static class ProjectMappingExtensions
             EndDate = entity.EndDate,
             Users = entity.ProjectRoles.ToOutgoingDtos(),
             BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
+
         };
     }
 
