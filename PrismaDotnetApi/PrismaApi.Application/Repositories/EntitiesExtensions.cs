@@ -318,6 +318,7 @@ public static class EntitiesExtensions
             entity.EdgeId = incomingEntity.EdgeId;
             entity.ProjectId = incomingEntity.ProjectId;
             entity.UpdatedById = incomingEntity.UpdatedById;
+            entity.RestrictionEntries.Update(incomingEntity.RestrictionEntries, context);
         }
     }
 

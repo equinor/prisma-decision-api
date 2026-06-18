@@ -11,10 +11,13 @@ public class RestrictionTableDto
     public Guid EdgeId { get; set; }
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;  
+    
 }
 
 public class RestrictionTableIncomingDto : RestrictionTableDto
 {
+    [JsonPropertyName("restriction_entries")]
+    public List<RestrictionEntryIncomingDto> RestrictionEntries { get; set; } = [];
 }
 
 public class RestrictionTableOutgoingDto : RestrictionTableDto
@@ -23,4 +26,6 @@ public class RestrictionTableOutgoingDto : RestrictionTableDto
     public DateTimeOffset CreatedAt { get; set; }
     [JsonPropertyName("updated_at")]
     public DateTimeOffset UpdatedAt { get; set; }
+    [JsonPropertyName("restriction_entries")]
+    public List<RestrictionEntryOutgoingDto> RestrictionEntries { get; set; } = [];
 }

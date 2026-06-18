@@ -13,6 +13,7 @@ public static class RestrictionTableMappingExtensions
             ProjectId = entity.ProjectId,
             EdgeId = entity.EdgeId,
             Name = entity.Name,
+            RestrictionEntries = entity.RestrictionEntries.ToOutgoingDtos(),
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt
         };
@@ -29,6 +30,7 @@ public static class RestrictionTableMappingExtensions
             ProjectId = dto.ProjectId,
             EdgeId = dto.EdgeId,
             Name = dto.Name,
+            RestrictionEntries = dto.RestrictionEntries.ToEntities(userDto),
             CreatedById = userDto.Id,
             UpdatedById = userDto.Id
         };

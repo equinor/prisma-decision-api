@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
@@ -26,5 +27,11 @@ public class RestrictionTableRepository : BaseRepository<RestrictionTable, Guid>
         entities.Update(incomingList, DbContext);
 
         await DbContext.SaveChangesAsync(ct);
+    }
+
+    protected override IQueryable<RestrictionTable> Query()
+    {
+        return DbContext.RestrictionTables
+            .Include(e => e.RestrictionEntries);
     }
 }

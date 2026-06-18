@@ -11,6 +11,8 @@ public class RestrictionTable : AuditableEntity, IBaseEntity<Guid>
     public string Name { get; set; } = string.Empty;
     public Project? Project { get; set; } = default;
     public Edge? Edge { get; set; } = default;
+    public List<RestrictionEntry> RestrictionEntries { get; set; } = [];
+
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<RestrictionTable>(entity =>
