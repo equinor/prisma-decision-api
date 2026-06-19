@@ -8,8 +8,6 @@ public class RestrictionEntryDto
     public Guid Id { get; set; } = Guid.NewGuid();
     [JsonPropertyName("project_id")]
     public Guid ProjectId { get; set; }
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
     [JsonPropertyName("restriction_value")]
     public double RestrictionValue { get; set; }
     [JsonPropertyName("parent_state_id")]

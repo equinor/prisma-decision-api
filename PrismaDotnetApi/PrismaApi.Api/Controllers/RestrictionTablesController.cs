@@ -11,13 +11,16 @@ namespace PrismaApi.Api.Controllers;
 public class RestrictionTablesController : PrismaBaseEntityController
 {
     private readonly IRestrictionTableService _restrictionTableService;
+    private readonly ITableRebuildingService _tableRebuildingService;
 
     public RestrictionTablesController(
         IRestrictionTableService restrictionTableService,
+        ITableRebuildingService tableRebuildingService,
         AppDbContext dbContext)
         : base(dbContext)
     {
         _restrictionTableService = restrictionTableService;
+        _tableRebuildingService = tableRebuildingService;
     }
 
     [HttpPost("restriction_tables")]
@@ -29,6 +32,7 @@ public class RestrictionTablesController : PrismaBaseEntityController
         try
         {
             var result = await _restrictionTableService.CreateAsync(dtos, user, ct);
+            await _tableRebuildingService.RebuildTablesAsync(ct);
             await CommitTransactionAsync(ct);
             return Ok(result);
         }
@@ -64,6 +68,7 @@ public class RestrictionTablesController : PrismaBaseEntityController
         try
         {
             var result = await _restrictionTableService.UpdateAsync(dtos, user, ct);
+            await _tableRebuildingService.RebuildTablesAsync(ct);
             await CommitTransactionAsync(ct);
             return Ok(result);
         }

@@ -17,7 +17,6 @@ public static class RestrictionEntryMappingExtensions
             Id = entity.Id,
             ProjectId = entity.ProjectId,
             RestrictionTableId = entity.RestrictionTableId,
-            Name = entity.Name,
             RestrictionValue = entity.RestrictionValue,
             ParentStateId = parentStateId,
             IsParentUncertainty = isParentUncertainty,
@@ -44,14 +43,11 @@ public static class RestrictionEntryMappingExtensions
             Id = dto.Id,
             ProjectId = dto.ProjectId,
             RestrictionTableId = dto.RestrictionTableId,
-            Name = dto.Name,
             RestrictionValue = dto.RestrictionValue,
             ParentOptionId = parentOptionId,
             ParentOutcomeId = parentOutcomeId,
             ChildOptionId = childOptionId,
             ChildOutcomeId = childOutcomeId,
-            CreatedById = userDto.Id,
-            UpdatedById = userDto.Id
         };
     }
     public static List<RestrictionEntry> ToEntities(this IEnumerable<RestrictionEntryIncomingDto> dtos, UserOutgoingDto userDto)

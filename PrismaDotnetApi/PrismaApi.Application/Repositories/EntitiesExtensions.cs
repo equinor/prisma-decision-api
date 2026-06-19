@@ -332,7 +332,6 @@ public static class EntitiesExtensions
             var incomingEntity = incomingEntities.FirstOrDefault(x => x.Id == entity.Id);
             if (incomingEntity == null) continue;
 
-            entity.Name = incomingEntity.Name;
             entity.RestrictionValue = incomingEntity.RestrictionValue;
             entity.ParentOptionId = incomingEntity.ParentOptionId;
             entity.ParentOutcomeId = incomingEntity.ParentOutcomeId;
@@ -340,7 +339,6 @@ public static class EntitiesExtensions
             entity.ChildOutcomeId = incomingEntity.ChildOutcomeId;
             entity.RestrictionTableId = incomingEntity.RestrictionTableId;
             entity.ProjectId = incomingEntity.ProjectId;
-            entity.UpdatedById = incomingEntity.UpdatedById;
         }
     }
 }
