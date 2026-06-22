@@ -39,18 +39,21 @@ class DecisionTreeGraph_v3:
     def __init__(self, root: uuid.UUID, **kwargs: Dict[str, Any]) -> None:
         self.nx: nx.DiGraph = nx.DiGraph(**kwargs)  # type: ignore
         self.root: uuid.UUID = root
-        self.nx.add_node(self.root)  # type: ignore
+        # jvf self.nx.add_node(self.root)  # type: ignore
         self.edge_names: Dict[Tuple[uuid.UUID, uuid.UUID], str] = {}
         self.utility_lookup: Dict[tuple[str, ...], List[float]] = {}
         self.discrete_probability_lookup = defaultdict(set)
         self.node_treenode_lookup: NodeTreeNodeLookup
         self.final_expected_value: float = 0
         self.treenode_oldid_to_newid_map: Dict[uuid.UUID, uuid.UUID] = {}
-        self.treenodeid_to_parentid_map: Dict[uuid.UUID, uuid.UUID] = {}
+        self.treenodeid_to_parentid_map : Dict[uuid.UUID, Optional[uuid.UUID]] = {}
+        self.treenodeid_to_parentid_map[self.root] = None
 
     def add_edge(self, edge: EdgeUUIDDto) -> None:
-        self.nx.add_edge(edge.tail, edge.head, name=edge.name)  # type: ignore
         self.treenodeid_to_parentid_map[edge.head] = edge.tail
+        self.edge_names[(edge.tail, edge.head)] = edge.name
+        # jvf self.nx.add_edge(edge.tail, edge.head, name=edge.name)  # type: ignore
+        # jvf self.treenodeid_to_parentid_map[edge.head] = edge.tail
 
     def transfer_node_treenode_lookup(self, lookup: NodeTreeNodeLookup) -> None:
         self.node_treenode_lookup = lookup
@@ -101,8 +104,9 @@ class DecisionTreeGraph_v3:
 
     def get_dto_map(self):
         dto_map: Dict[uuid.UUID, TreeNodeDto2] = {}
-        for treenode_id in self.nx.nodes:  # type: ignore
-            treenode_id = cast(uuid.UUID, treenode_id)
+        #jvf for treenode_id in self.nx.nodes:  # type: ignore
+            #jvf treenode_id = cast(uuid.UUID, treenode_id)
+        for treenode_id in self.treenodeid_to_parentid_map.keys():
             if node := self.node_treenode_lookup.get_dto_for_treenode_id(treenode_id):
                 type = Type.END.value if isinstance(node, EndPointNodeDto) else node.type
                 parent_state_id: Optional[str] = self.edge_names.get((self.get_parent(treenode_id), treenode_id))
@@ -123,12 +127,14 @@ class DecisionTreeGraph_v3:
 
                 dto_map[treenode_id] = dto
 
-        for parent_id in self.nx.nodes:  # type: ignore
-            parent_id = cast(uuid.UUID, parent_id)
+        for parent_id in self.treenodeid_to_parentid_map.keys():
+        # jvf for parent_id in self.nx.nodes:  # type: ignore
+        # jvf    parent_id = cast(uuid.UUID, parent_id)
             parent_dto = dto_map.get(parent_id)
             if parent_dto is not None:
                 # Get child node ids (outgoing edges from parent)
-                child_ids: List[uuid.UUID] = list(self.nx.successors(parent_id))  # type: ignore
+                child_ids: List[uuid.UUID] = list(self.get_successors(parent_id)) # type: ignore
+                #jvf child_ids: List[uuid.UUID] = list(self.nx.successors(parent_id))  # type: ignore
                 # Set children as list of DTOs
                 parent_dto.children = [
                     dto_map[child_id] for child_id in child_ids if child_id in dto_map
@@ -136,6 +142,9 @@ class DecisionTreeGraph_v3:
                 parent_dto.children.sort(key=lambda x: x.parent_state_id or "")
 
         return dto_map
+
+    def get_successors(self, parent_id: uuid.UUID):
+        return [k for k, v in self.treenodeid_to_parentid_map.items() if v == parent_id]
 
     def topological_sort(self, dto_map: Dict[uuid.UUID, TreeNodeDto2]) -> List[uuid.UUID]:
         visited: Set[uuid.UUID] = set()
@@ -165,7 +174,7 @@ class DecisionTreeGraph_v3:
         self.populate_utility_lookup() # create lookup for discrete utilities
         if backwards_calc:
             self.populate_discrete_probabilities_lookup() # create lookup for discrete probabilities
-        self.edge_names = nx.get_edge_attributes(self.nx, "name") # type: ignore
+        # jvf self.edge_names = nx.get_edge_attributes(self.nx, "name") # type: ignore
         dto_map = self.get_dto_map()
         self.calculate_endpoint_nodes(self.root, dto_map)
         if backwards_calc:
