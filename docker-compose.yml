@@ -11,16 +11,26 @@ services:
   api:
     build:
       context: .
-      dockerfile: api.dockerfile
+      dockerfile: api.Dockerfile
+    # Running as root for local development (SQLite needs write access to volume)
+    user: "0:0"
     ports:
       - "7075:7075"
     depends_on:
       - fastapi
-    # environment:
-    #   FASTAPI_BASE_URL: http://fastapi:8000
+    environment:
+      ASPNETCORE_ENVIRONMENT: Local
+      FASTAPI_BASE_URL: http://fastapi:8000
+      ConnectionStrings__SqliteConnection: "Data Source=/data/Prisma.db"
+      AzureAd__ClientSecret: "${AZURE_AD_CLIENT_SECRET}"
+    volumes:
+      - api-data:/data
     networks:
       - appnet
 
 networks:
   appnet:
     driver: bridge
+
+volumes:
+  api-data:

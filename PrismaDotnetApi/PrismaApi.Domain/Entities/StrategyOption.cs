@@ -1,6 +1,4 @@
-using PrismaApi.Domain.Interfaces;
-using System;
-using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace PrismaApi.Domain.Entities;
 
@@ -11,4 +9,16 @@ public class StrategyOption
 
     public Strategy? Strategy { get; set; }
     public Option? Option { get; set; }
+    public static void OnModelConfiguring(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<StrategyOption>(entity =>
+        {
+            entity.HasKey(e => new { e.StrategyId, e.OptionId });
+
+            entity.HasOne(e => e.Option)
+                .WithMany(e => e.StrategyOptions)
+                .HasForeignKey(e => e.OptionId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+    }
 }

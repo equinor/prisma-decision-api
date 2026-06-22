@@ -5,6 +5,7 @@ using Microsoft.Identity.Web;
 using PrismaApi.Api.Configuration.Extensions;
 using PrismaApi.Api.Configuration.JsonResponseOptions;
 using PrismaApi.Api.SecurityPolicy;
+using PrismaApi.Application.BackgroundServices;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Repositories;
@@ -137,6 +138,7 @@ public class Program
         builder.Services.AddScoped<IObjectiveService, ObjectiveService>();
         builder.Services.AddScoped<IProjectRoleService, ProjectRoleService>();
         builder.Services.AddScoped<IBoardNodeService, BoardNodeService>();
+        builder.Services.AddHostedService<TableCleanupService>();
 
         if (isPublicInstance)
         {

@@ -40,6 +40,13 @@ class SolverService:
         solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
 
         return solution
+    
+    async def find_optimal_decision_pyagrum_from_with_evidence(
+        self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []
+    ) -> list[SolutionDto]:
+        
+        solver = PyagrumSolver()
+        return await solver.get_solutions_given_evidence(issues=issues, edges=edges, evidence=evidence)
 
     async def get_decision_tree_for_optimal_decisions_old(
         self, project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]

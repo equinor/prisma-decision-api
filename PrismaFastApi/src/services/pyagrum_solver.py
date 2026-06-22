@@ -215,6 +215,15 @@ class PyagrumSolver:
         solution =  self.get_solution(self.get_inference(), [str(x) for x in self.get_partial_order() if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
         return solution
     
+    async def get_solutions_given_evidence(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []) -> list[SolutionDto]:
+        ie = await self.build_inference_engine(issues, edges)
+        solutions: list[SolutionDto] = []
+        for evidence_item in evidence:
+            ie_with_evidence = self.set_evidence(ie, [str(x) for x in evidence_item])
+            solution = self.get_solution(ie_with_evidence, [str(x) for x in self.get_partial_order() if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
+            solutions.append(solution)
+        return solutions
+    
     # method for adding evidence to the inference engine, takes a list of state_id, method internally finds the corresponding issue and state, then adds the evidence to the inference engine
     def set_evidence(self, ie: gum.ShaferShenoyLIMIDInference, state_ids: list[str]):
         ie.eraseAllEvidence() # type: ignore
@@ -364,6 +373,15 @@ class PyagrumSolver:
     def add_virtual_utility_node(self, issue: IssueOutgoingDto):
         if issue.type == Type.UTILITY.value:
             return
+        
+        if issue.type == Type.DECISION and issue.decision is not None:
+            if all([option.utility == 0 for option in issue.decision.options]):
+                return
+            
+        if issue.type == Type.UNCERTAINTY and issue.uncertainty is not None:
+            if all([outcome.utility == 0 for outcome in issue.uncertainty.outcomes]):
+                return
+            
         node_id = self.diagram.addUtilityNode(  # type: ignore
             gum.LabelizedVariable(
                 f"{issue.id.__str__()} utility",
@@ -373,15 +391,11 @@ class PyagrumSolver:
         )
         self.diagram.addArc(self.diagram.idFromName(issue.id.__str__()), node_id)  # type: ignore
 
-        if issue.type == Type.DECISION:
-            assert issue.decision is not None
-
+        if issue.type == Type.DECISION and issue.decision is not None:
             for n, x in enumerate(self._sort_state_dtos(issue.decision.options)):
                 self.diagram.utility(node_id)[{issue.id.__str__(): n}] = x.utility  # type: ignore
 
-        if issue.type == Type.UNCERTAINTY:
-            assert issue.uncertainty is not None
-
+        if issue.type == Type.UNCERTAINTY and issue.uncertainty is not None:
             for n, x in enumerate(self._sort_state_dtos(issue.uncertainty.outcomes)):
                 self.diagram.utility(node_id)[{issue.id.__str__(): n}] = x.utility  # type: ignore
 

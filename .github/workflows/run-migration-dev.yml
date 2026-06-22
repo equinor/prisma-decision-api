@@ -37,7 +37,7 @@ jobs:
       contents: read
     uses: ./.github/workflows/run-migration.yml
     with:
-      env-name: dev
+      env-name: Development
     secrets:
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}

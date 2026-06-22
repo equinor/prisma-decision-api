@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
+using PrismaApi.Domain.Extensions;
 using PrismaApi.Domain.Interfaces;
 using PrismaApi.Infrastructure.DiscreteTables;
 
@@ -52,468 +53,31 @@ public partial class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Project>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
-            entity.Property(e => e.ParentProjectName).HasMaxLength(DomainConstants.MaxShortStringLength);
-            entity.Property(e => e.OpportunityStatement).HasMaxLength(DomainConstants.MaxLongStringLength);
-
-            entity.HasOne(e => e.CreatedBy)
-                .WithMany()
-                .HasForeignKey(e => e.CreatedById)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            entity.HasOne(e => e.UpdatedBy)
-                .WithMany()
-                .HasForeignKey(e => e.UpdatedById)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            entity.HasMany(e => e.ProjectRoles)
-                .WithOne(e => e.Project)
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasMany(e => e.Objectives)
-                .WithOne(e => e.Project)
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasMany(e => e.Strategies)
-                .WithOne(e => e.Project)
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasMany(e => e.Issues)
-                .WithOne(e => e.Project)
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasMany(e => e.Nodes)
-                .WithOne(e => e.Project)
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.NoAction); // will be cascade deleted through Issues
-
-            entity.HasMany(e => e.BoardNodes)
-                .WithOne(e => e.Project)
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasMany(e => e.Edges)
-                .WithOne(e => e.Project)
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.NoAction); // will be cascade deleted through Issues -> Nodes
-            entity.HasMany(e => e.Assessments)
-                .WithOne(e => e.Project)
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-
-        modelBuilder.Entity<Issue>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
-            entity.Property(e => e.Description).HasMaxLength(DomainConstants.MaxLongStringLength);
-            entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
-            entity.Property(e => e.Boundary).HasMaxLength(DomainConstants.MaxShortStringLength);
-
-            entity.HasOne(e => e.CreatedBy)
-                .WithMany()
-                .HasForeignKey(e => e.CreatedById)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(e => e.UpdatedBy)
-                .WithMany()
-                .HasForeignKey(e => e.UpdatedById)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            entity.HasOne(e => e.Node)
-                .WithOne(e => e.Issue)
-                .HasForeignKey<Node>(e => e.IssueId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(e => e.Decision)
-                .WithOne(e => e.Issue)
-                .HasForeignKey<Decision>(e => e.IssueId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(e => e.Uncertainty)
-                .WithOne(e => e.Issue)
-                .HasForeignKey<Uncertainty>(e => e.IssueId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(e => e.Utility)
-                .WithOne(e => e.Issue)
-                .HasForeignKey<Utility>(e => e.IssueId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<Node>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
-
-            entity.HasOne(e => e.NodeStyle)
-                .WithOne(e => e.Node)
-                .HasForeignKey<NodeStyle>(e => e.NodeId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasMany(e => e.HeadEdges)
-                .WithOne(e => e.HeadNode)
-                .HasForeignKey(e => e.HeadId)
-                .OnDelete(DeleteBehavior.NoAction); // deleted in cleanup
-
-            entity.HasMany(e => e.TailEdges)
-                .WithOne(e => e.TailNode)
-                .HasForeignKey(e => e.TailId)
-                .OnDelete(DeleteBehavior.NoAction); // deleted in cleanup
-        });
-
-        modelBuilder.Entity<NodeStyle>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-        });
-
-        modelBuilder.Entity<Edge>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-        });
-
-        modelBuilder.Entity<Decision>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
-
-            entity.HasOne(e => e.Project)
-                .WithMany()
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Decisions
-
-            entity.HasMany(e => e.Options)
-                .WithOne(e => e.Decision)
-                .HasForeignKey(e => e.DecisionId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<Option>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
-
-            entity.HasOne(e => e.Project)
-                .WithMany()
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Decisions -> Options
-        });
-
-        modelBuilder.Entity<Outcome>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
-
-            entity.HasOne(e => e.Project)
-                .WithMany()
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Uncertainties -> Outcomes
-        });
-
-        modelBuilder.Entity<Uncertainty>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-
-            entity.HasOne(e => e.Project)
-                .WithMany()
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Uncertainties
-
-            entity.HasMany(e => e.Outcomes)
-                .WithOne(e => e.Uncertainty)
-                .HasForeignKey(e => e.UncertaintyId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<Utility>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-
-            entity.HasOne(e => e.Project)
-                .WithMany()
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Utilities
-        });
-
-        modelBuilder.Entity<DiscreteProbability>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.OutcomeId);
-            entity.HasIndex(e => e.UncertaintyId);
-            entity.Property(e => e.Probability).HasPrecision(DomainConstants.FloatPrecision);
-
-            entity.HasOne(e => e.Project)
-                .WithMany()
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Uncertainties -> Outcomes -> DiscreteProbabilities
-
-            entity.HasOne(e => e.Outcome)
-                .WithMany()
-                .HasForeignKey(e => e.OutcomeId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(e => e.Uncertainty)
-                .WithMany(e => e.DiscreteProbabilities)
-                .HasForeignKey(e => e.UncertaintyId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            entity.HasMany(e => e.ParentOutcomes)
-                .WithOne(e => e.DiscreteProbability)
-                .HasForeignKey(e => e.DiscreteProbabilityId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasMany(e => e.ParentOptions)
-                .WithOne(e => e.DiscreteProbability)
-                .HasForeignKey(e => e.DiscreteProbabilityId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<DiscreteProbabilityParentOutcome>(entity =>
-        {
-            entity.HasKey(e => new { e.DiscreteProbabilityId, e.ParentOutcomeId });
-
-            entity.HasOne(e => e.DiscreteProbability)
-                .WithMany(d => d.ParentOutcomes)
-                .HasForeignKey(e => e.DiscreteProbabilityId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(e => e.ParentOutcome)
-                .WithMany()
-                .HasForeignKey(e => e.ParentOutcomeId)
-                .OnDelete(DeleteBehavior.NoAction);
-        });
-
-        modelBuilder.Entity<DiscreteProbabilityParentOption>(entity =>
-        {
-            entity.HasKey(e => new { e.DiscreteProbabilityId, e.ParentOptionId });
-
-            entity.HasOne(e => e.DiscreteProbability)
-                .WithMany(d => d.ParentOptions)
-                .HasForeignKey(e => e.DiscreteProbabilityId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(e => e.ParentOption)
-                .WithMany()
-                .HasForeignKey(e => e.ParentOptionId)
-                .OnDelete(DeleteBehavior.NoAction);
-        });
-
-        modelBuilder.Entity<DiscreteUtility>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.ValueMetricId);
-            entity.HasIndex(e => e.UtilityId);
-            entity.Property(e => e.UtilityValue).HasPrecision(DomainConstants.FloatPrecision);
-
-            entity.HasOne(e => e.Project)
-                .WithMany()
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Issues -> Utilities -> DiscreteUtilities
-
-            entity.HasOne(e => e.ValueMetric)
-                .WithMany()
-                .HasForeignKey(e => e.ValueMetricId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(e => e.Utility)
-                .WithMany(e => e.DiscreteUtilities)
-                .HasForeignKey(e => e.UtilityId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasMany(e => e.ParentOutcomes)
-                .WithOne(e => e.DiscreteUtility)
-                .HasForeignKey(e => e.DiscreteUtilityId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasMany(e => e.ParentOptions)
-                .WithOne(e => e.DiscreteUtility)
-                .HasForeignKey(e => e.DiscreteUtilityId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<DiscreteUtilityParentOutcome>(entity =>
-        {
-            entity.HasKey(e => new { e.DiscreteUtilityId, e.ParentOutcomeId });
-
-            entity.HasOne(e => e.DiscreteUtility)
-                .WithMany(d => d.ParentOutcomes)
-                .HasForeignKey(e => e.DiscreteUtilityId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(e => e.ParentOutcome)
-                .WithMany()
-                .HasForeignKey(e => e.ParentOutcomeId)
-                .OnDelete(DeleteBehavior.NoAction);
-        });
-
-        modelBuilder.Entity<DiscreteUtilityParentOption>(entity =>
-        {
-            entity.HasKey(e => new { e.DiscreteUtilityId, e.ParentOptionId });
-
-            entity.HasOne(e => e.DiscreteUtility)
-                .WithMany(d => d.ParentOptions)
-                .HasForeignKey(e => e.DiscreteUtilityId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(e => e.ParentOption)
-                .WithMany()
-                .HasForeignKey(e => e.ParentOptionId)
-                .OnDelete(DeleteBehavior.NoAction);
-        });
-
-        modelBuilder.Entity<ValueMetric>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
-        });
-
-        modelBuilder.Entity<Strategy>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasOne(e => e.CreatedBy)
-                .WithMany()
-                .HasForeignKey(e => e.CreatedById)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(e => e.UpdatedBy)
-                .WithMany()
-                .HasForeignKey(e => e.UpdatedById)
-                .OnDelete(DeleteBehavior.Restrict);
-            entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
-            entity.Property(e => e.Description).HasMaxLength(DomainConstants.MaxLongStringLength);
-            entity.Property(e => e.Rationale).HasMaxLength(DomainConstants.MaxLongStringLength);
-
-            entity.HasMany(e => e.StrategyOptions)
-                .WithOne(e => e.Strategy)
-                .HasForeignKey(e => e.StrategyId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<StrategyOption>(entity =>
-        {
-            entity.HasKey(e => new { e.StrategyId, e.OptionId });
-
-            entity.HasOne(e => e.Option)
-                .WithMany(e => e.StrategyOptions)
-                .HasForeignKey(e => e.OptionId)
-                .OnDelete(DeleteBehavior.NoAction);
-        });
-
-        modelBuilder.Entity<Objective>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasOne(e => e.CreatedBy)
-                .WithMany()
-                .HasForeignKey(e => e.CreatedById)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(e => e.UpdatedBy)
-                .WithMany()
-                .HasForeignKey(e => e.UpdatedById)
-                .OnDelete(DeleteBehavior.Restrict);
-            entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
-            entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
-            entity.Property(e => e.Description).HasMaxLength(DomainConstants.MaxLongStringLength);
-        });
-
-        modelBuilder.Entity<ProjectRole>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasOne(e => e.CreatedBy)
-                .WithMany()
-                .HasForeignKey(e => e.CreatedById)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(e => e.UpdatedBy)
-                .WithMany()
-                .HasForeignKey(e => e.UpdatedById)
-                .OnDelete(DeleteBehavior.Restrict);
-            entity.Property(e => e.Role).HasMaxLength(DomainConstants.MaxShortStringLength);
-        });
-
-        modelBuilder.Entity<User>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
-        });
-
-        modelBuilder.Entity<ValueMetric>().HasData(new ValueMetric
-        {
-            Id = DomainConstants.DefaultValueMetricId,
-            Name = DomainConstants.DefaultValueMetricName,
-            CreatedAt = new DateTimeOffset(new DateTime(2020, 1, 1, 1, 1, 1, 1, DateTimeKind.Utc).AddTicks(1), TimeSpan.Zero),
-            UpdatedAt = new DateTimeOffset(new DateTime(2020, 1, 1, 1, 1, 1, 1, DateTimeKind.Utc).AddTicks(2), TimeSpan.Zero)
-        });
-        modelBuilder.Entity<Assessment>(entity =>
-        {
-            entity.ToTable("Assessments");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Name).HasMaxLength(DomainConstants.MaxShortStringLength);
-            entity.HasOne(e => e.CreatedBy)
-            .WithMany()
-            .HasForeignKey(e => e.CreatedById)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(e => e.UpdatedBy)
-                .WithMany()
-                .HasForeignKey(e => e.UpdatedById)
-                .OnDelete(DeleteBehavior.Restrict);
-            entity.HasMany(e => e.DecisionQualityAssessments)
-                .WithOne(e => e.Assessment)
-                .HasForeignKey(e => e.AssessmentId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-        modelBuilder.Entity<DecisionQualityAssessment>(entity =>
-        {
-            entity.ToTable("DecisionQualityAssessments");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Comment).HasMaxLength(DomainConstants.MaxLongStringLength);
-
-            entity.HasOne(e => e.Project)
-                .WithMany()
-                .HasForeignKey(e => e.ProjectId)
-                .OnDelete(DeleteBehavior.NoAction); // Cascade path already exists via Projects -> Assessments -> DecisionQualityAssessments
-
-            entity.HasOne(e => e.CreatedBy)
-            .WithMany()
-            .HasForeignKey(e => e.CreatedById)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(e => e.UpdatedBy)
-                .WithMany()
-                .HasForeignKey(e => e.UpdatedById)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
-        modelBuilder.Entity<BoardNode>(entity =>
-        {
-            entity.ToTable("BoardNode");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Color).HasMaxLength(DomainConstants.MaxShortStringLength);
-            entity.Property(e => e.Opacity)
-                .HasDefaultValue(100);
-            entity.Property(e => e.StrokeStyle)
-                .HasDefaultValue(BoardNodeStrokeStyles.Solid.ToString());
-            entity.Property(e => e.StrokeWidth)
-                .HasDefaultValue(8);
-            entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
-            entity.HasOne(e => e.CreatedBy)
-            .WithMany()
-            .HasForeignKey(e => e.CreatedById)
-            .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(e => e.UpdatedBy)
-                .WithMany()
-                .HasForeignKey(e => e.UpdatedById)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
+        Project.OnModelConfiguring(modelBuilder);
+        Issue.OnModelConfiguring(modelBuilder);
+        Node.OnModelConfiguring(modelBuilder);
+        NodeStyle.OnModelConfiguring(modelBuilder);
+        Edge.OnModelConfiguring(modelBuilder);
+        Decision.OnModelConfiguring(modelBuilder);
+        Option.OnModelConfiguring(modelBuilder);
+        Outcome.OnModelConfiguring(modelBuilder);
+        Uncertainty.OnModelConfiguring(modelBuilder);
+        Utility.OnModelConfiguring(modelBuilder);
+        DiscreteProbability.OnModelConfiguring(modelBuilder);
+        DiscreteProbabilityParentOutcome.OnModelConfiguring(modelBuilder);
+        DiscreteProbabilityParentOption.OnModelConfiguring(modelBuilder);
+        DiscreteUtility.OnModelConfiguring(modelBuilder);
+        DiscreteUtilityParentOutcome.OnModelConfiguring(modelBuilder);
+        DiscreteUtilityParentOption.OnModelConfiguring(modelBuilder);
+        ValueMetric.OnModelConfiguring(modelBuilder);
+        Strategy.OnModelConfiguring(modelBuilder);
+        StrategyOption.OnModelConfiguring(modelBuilder);
+        Objective.OnModelConfiguring(modelBuilder);
+        ProjectRole.OnModelConfiguring(modelBuilder);
+        User.OnModelConfiguring(modelBuilder);
+        Assessment.OnModelConfiguring(modelBuilder);
+        DecisionQualityAssessment.OnModelConfiguring(modelBuilder);
+        BoardNode.OnModelConfiguring(modelBuilder);
     }
 
     private IEnumerable<EntityEntry<T>> GetChangedEntries<T>() where T : class =>
@@ -583,13 +147,13 @@ public partial class AppDbContext : DbContext
 
         foreach (var (projectId, roles) in affectedByProject)
         {
+            var facilitatorRole = ProjectRoleType.Facilitator.ToString();
+
             var facilitatorsBeingRemoved = roles.Count(role =>
                 role.State == EntityState.Deleted
-                    ? string.Equals(role.Entity.Role, ProjectRoleType.Facilitator.ToString(), StringComparison.OrdinalIgnoreCase)
-                    : string.Equals(
-                        role.OriginalValues.GetValue<string>(nameof(ProjectRole.Role)),
-                        ProjectRoleType.Facilitator.ToString(),
-                        StringComparison.OrdinalIgnoreCase));
+                    ? role.Entity.Role.IsFacilitator()
+                    : role.OriginalValues.GetValue<string>(nameof(ProjectRole.Role)).IsFacilitator()
+                    && !role.CurrentValues.GetValue<string>(nameof(ProjectRole.Role)).IsFacilitator());
 
             if (facilitatorsBeingRemoved == 0)
                 continue;
@@ -597,11 +161,11 @@ public partial class AppDbContext : DbContext
             var currentFacilitatorCount = await ProjectRoles
                 .AsNoTracking()
                 .CountAsync(r => r.ProjectId == projectId &&
-                                 r.Role.ToUpper() == ProjectRoleType.Facilitator.ToString().ToUpper(),
-                             cancellationToken);
+                    r.Role.IsFacilitator(), 
+                    cancellationToken);
 
             if (currentFacilitatorCount - facilitatorsBeingRemoved <= 0)
-                throw new InvalidOperationException("Projects must have at least one Facilitator.");
+                throw new InvalidOperationException(ExceptionMessages.MinimumFacilitatorRequirement);
         }
     }
 
