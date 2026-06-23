@@ -47,6 +47,7 @@ public class TableRebuildingService : ITableRebuildingService
         {
             await RebuildRestrictionTablesFromIds(restrictionTableIds, ct);
         }
+        await DbContext.SaveChangesAsync(ct);
     }
 
     private async Task RebuildRestrictionTablesFromIds(HashSet<Guid> restrictionTableIds, CancellationToken ct)
@@ -99,7 +100,6 @@ public class TableRebuildingService : ITableRebuildingService
             !IsIssueConfiguredInInfluenceDiagram(childIssue))
         {
             DbContext.RestrictionTables.Remove(restrictionTable);
-            await DbContext.SaveChangesAsync(ct);
             return;
         }
         // check that the parent child combination are correct, 
@@ -187,7 +187,6 @@ public class TableRebuildingService : ITableRebuildingService
                 await DbContext.RestrictionEntries.AddAsync(newEntry, ct);
             }
         }
-        await DbContext.SaveChangesAsync(ct);
     }
 
     public async Task RebuildIssuesFromIssueIds(ICollection<Guid> issueIds, CancellationToken ct = default)
