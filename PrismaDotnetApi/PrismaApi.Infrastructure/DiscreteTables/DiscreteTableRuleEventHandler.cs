@@ -14,31 +14,57 @@ public sealed class DiscreteTableRuleEventHandler : IDiscreteTableRuleEventHandl
 
     public DiscreteTableRuleEventHandler(AppDbContext db) => _db = db;
 
-    public Task OnDecisionOptionsAddedAsync(ICollection<Guid> decisionIds, CancellationToken cancellationToken = default)
-        => EnqueueHeadIssuesByParentOptionAsync(decisionIds, cancellationToken);
+    public async Task OnDecisionOptionsAddedAsync(ICollection<Guid> decisionIds, CancellationToken cancellationToken = default)
+    {
+        await EnqueueHeadIssuesByParentOptionAsync(decisionIds, cancellationToken);
+        await EnqueueRestrictionTablesByDecisionAsync(decisionIds, cancellationToken);
+    }
 
-    public Task OnUncertaintyOutcomesAddedAsync(ICollection<Guid> uncertaintyIds, CancellationToken cancellationToken = default)
-        => EnqueueHeadIssuesByParentOutcomeAsync(uncertaintyIds, cancellationToken);
+    public async Task OnUncertaintyOutcomesAddedAsync(ICollection<Guid> uncertaintyIds, CancellationToken cancellationToken = default)
+    {
+        await EnqueueHeadIssuesByParentOutcomeAsync(uncertaintyIds, cancellationToken);
+        await EnqueueRestrictionTablesByUncertaintyAsync(uncertaintyIds, cancellationToken);
+    }
 
-    public Task ParentIssuesChangedAsync(ICollection<Guid> parentIssueIds, CancellationToken cancellationToken = default)
-        => EnqueueHeadIssuesByIssueAsync(parentIssueIds, cancellationToken);
+    public async Task ParentIssuesChangedAsync(ICollection<Guid> parentIssueIds, CancellationToken cancellationToken = default)
+    {
+        await EnqueueHeadIssuesByIssueAsync(parentIssueIds, cancellationToken);
+        await EnqueueRestrictionTablesByIssueAsync(parentIssueIds, cancellationToken);
+    }
 
     public void EnqueueIssuesForRebuild(ICollection<Guid> issueIds)
         => EnqueueIssues(issueIds);
 
-    public Task OnEdgesRemovedAsync(ICollection<Guid> edgeIds, CancellationToken cancellationToken = default)
-        => EnqueueHeadIssuesEdgeAsync(edgeIds, cancellationToken);
+    public void EnqueueRestrictionTablesForRebuild(ICollection<Guid> restrictionTableIds)
+        => EnqueueRestrictionTables(restrictionTableIds);
 
-    public Task OnEdgesCreatedAsync(ICollection<Guid> edgeIds, CancellationToken cancellationToken = default)
-        => EnqueueHeadIssuesEdgeAsync(edgeIds, cancellationToken);
+    public async Task OnEdgesRemovedAsync(ICollection<Guid> edgeIds, CancellationToken cancellationToken = default)
+    {
+        await EnqueueHeadIssuesEdgeAsync(edgeIds, cancellationToken);
+        await EnqueueRestrictionTablesByEdgeAsync(edgeIds, cancellationToken);
+    }
 
-    public Task OnNodeConnectionsChangedAsync(ICollection<Guid> nodeIds, CancellationToken cancellationToken = default)
-        => EnqueueIssuesFromNodeIds(nodeIds, cancellationToken);
+    public async Task OnEdgesCreatedAsync(ICollection<Guid> edgeIds, CancellationToken cancellationToken = default)
+    {
+        await EnqueueHeadIssuesEdgeAsync(edgeIds, cancellationToken);
+    }
+
+    public async Task OnNodeConnectionsChangedAsync(ICollection<Guid> nodeIds, CancellationToken cancellationToken = default)
+    {
+        await EnqueueIssuesFromNodeIds(nodeIds, cancellationToken);
+        await EnqueueRestrictionTablesByNodeAsync(nodeIds, cancellationToken);
+    }
 
     private void EnqueueIssues(ICollection<Guid> issueIds)
     {
         _db.DiscreteTableSessionInfo.EnqueueIssues(issueIds);
     }
+
+    private void EnqueueRestrictionTables(ICollection<Guid> restrictionTableIds)
+    {
+        _db.DiscreteTableSessionInfo.EnqueueRestrictionTables(restrictionTableIds);
+    }
+
     private async Task EnqueueHeadIssuesByParentOptionAsync(ICollection<Guid> decisionIds, CancellationToken cancellationToken = default)
     {
         if (_db.IsDiscreteTableEventDisabled)
@@ -129,6 +155,89 @@ public sealed class DiscreteTableRuleEventHandler : IDiscreteTableRuleEventHandl
             .ToListAsync();
 
         _db.DiscreteTableSessionInfo.EnqueueIssues(issueIds);
+    }
+
+    private async Task EnqueueRestrictionTablesByDecisionAsync(ICollection<Guid> decisionIds, CancellationToken cancellationToken = default)
+    {
+        if (_db.IsDiscreteTableEventDisabled)
+            return;
+
+        var restrictionTableIds = await _db.RestrictionTables
+            .AsNoTracking()
+            .Where(rt =>
+                decisionIds.Contains(rt.Edge!.TailNode!.Issue!.Decision!.Id) ||
+                decisionIds.Contains(rt.Edge!.HeadNode!.Issue!.Decision!.Id))
+            .Select(rt => rt.Id)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        _db.DiscreteTableSessionInfo.EnqueueRestrictionTables(restrictionTableIds);
+    }
+
+    private async Task EnqueueRestrictionTablesByUncertaintyAsync(ICollection<Guid> uncertaintyIds, CancellationToken cancellationToken = default)
+    {
+        if (_db.IsDiscreteTableEventDisabled)
+            return;
+
+        var restrictionTableIds = await _db.RestrictionTables
+            .AsNoTracking()
+            .Where(rt =>
+                uncertaintyIds.Contains(rt.Edge!.TailNode!.Issue!.Uncertainty!.Id) ||
+                uncertaintyIds.Contains(rt.Edge!.HeadNode!.Issue!.Uncertainty!.Id))
+            .Select(rt => rt.Id)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        _db.DiscreteTableSessionInfo.EnqueueRestrictionTables(restrictionTableIds);
+    }
+
+    private async Task EnqueueRestrictionTablesByEdgeAsync(ICollection<Guid> edgeIds, CancellationToken cancellationToken = default)
+    {
+        if (_db.IsDiscreteTableEventDisabled)
+            return;
+
+        var restrictionTableIds = await _db.RestrictionTables
+            .AsNoTracking()
+            .Where(rt => edgeIds.Contains(rt.EdgeId))
+            .Select(rt => rt.Id)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        _db.DiscreteTableSessionInfo.EnqueueRestrictionTables(restrictionTableIds);
+    }
+
+    private async Task EnqueueRestrictionTablesByIssueAsync(ICollection<Guid> issueIds, CancellationToken cancellationToken = default)
+    {
+        if (_db.IsDiscreteTableEventDisabled)
+            return;
+
+        var restrictionTableIds = await _db.RestrictionTables
+            .AsNoTracking()
+            .Where(rt =>
+                issueIds.Contains(rt.Edge!.HeadNode!.IssueId) ||
+                issueIds.Contains(rt.Edge!.TailNode!.IssueId))
+            .Select(rt => rt.Id)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        _db.DiscreteTableSessionInfo.EnqueueRestrictionTables(restrictionTableIds);
+    }
+
+    private async Task EnqueueRestrictionTablesByNodeAsync(ICollection<Guid> nodeIds, CancellationToken cancellationToken = default)
+    {
+        if (_db.IsDiscreteTableEventDisabled)
+            return;
+
+        var restrictionTableIds = await _db.RestrictionTables
+            .AsNoTracking()
+            .Where(rt =>
+                nodeIds.Contains(rt.Edge!.HeadId) ||
+                nodeIds.Contains(rt.Edge!.TailId))
+            .Select(rt => rt.Id)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        _db.DiscreteTableSessionInfo.EnqueueRestrictionTables(restrictionTableIds);
     }
 
 }

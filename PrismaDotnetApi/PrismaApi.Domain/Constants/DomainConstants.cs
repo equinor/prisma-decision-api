@@ -15,6 +15,13 @@ public static class DomainConstants
     public static readonly Guid DefaultValueMetricId =
         Guid.Parse("288e0811-7ab6-5d24-b80c-9fa925b848a6");
     public static readonly string DefaultValueMetricName = "value";
+    public const double DefaultRestrictionValue = 1.0;
+}
+
+public static class SqlCustomConstraintNames
+{
+    public const string RestrictionParentConstraintName = "CK_RestrictionEntry_Parent";
+    public const string RestrictionChildConstraintName = "CK_RestrictionEntry_Child";
 }
 
 public static class AppConstants
