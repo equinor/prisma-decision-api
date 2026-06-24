@@ -1,4 +1,5 @@
 import uuid
+import math
 from fastapi import APIRouter, Depends
 from src.project_lock_manager import ProjectQueueManager
 from src.services.solver_service import SolverService
@@ -33,7 +34,10 @@ async def get_optimal_decisions_for_project_with_evidence(
         EvidenceOutgoingDto(
             evidence_id=evi.evidence_id,
             state_ids=evi.state_ids,
-            expected_utility=results[n].decision_solutions[0].mean if results[n].decision_solutions else None,
+            expected_utility=results[n].decision_solutions[0].mean 
+            if results[n].decision_solutions 
+                and not math.isnan(results[n].decision_solutions[0].mean) 
+            else None,
         )
         for n, evi in enumerate(evidence)
     ]
