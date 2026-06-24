@@ -27,14 +27,166 @@ public class TableRebuildingService : ITableRebuildingService
         return combined.GenerateDeterministicGuid();
     }
 
+    private static Guid GetDeterministicIdRestrictionEntry(Guid restrictionTableId, Guid parentId, Guid childId)
+    {
+        var combined = $"{restrictionTableId}|" +
+                       $"ParentId:{parentId}|" +
+                       $"ChildId:{childId}";
+        return combined.GenerateDeterministicGuid();
+    }
+
     public async Task RebuildTablesAsync(CancellationToken ct = default)
     {
         var issueIds = DbContext.DiscreteTableSessionInfo.AffectedIssueIds;
-        if (issueIds.Count == 0 || DbContext.IsDiscreteTableEventDisabled)
+        if (issueIds.Count != 0 && !DbContext.IsDiscreteTableEventDisabled)
         {
+            await RebuildIssuesFromIssueIds(issueIds, ct);
+        }
+        var restrictionTableIds = DbContext.DiscreteTableSessionInfo.AffectedRestrictionTables;
+        if (restrictionTableIds.Count != 0 && !DbContext.IsDiscreteTableEventDisabled)
+        {
+            await RebuildRestrictionTablesFromIds(restrictionTableIds, ct);
+        }
+        await DbContext.SaveChangesAsync(ct);
+    }
+
+    private async Task RebuildRestrictionTablesFromIds(HashSet<Guid> restrictionTableIds, CancellationToken ct)
+    {
+        // the data we need is the edges connected to the issues that are parents of the restriction tables, so we can determine the new combinations of parent outcomes and options that should be in the restriction table, then we can delete the existing entries and add the new ones
+        // we can get the outcomes and options connected without joining from the restriction table, the issue information is still needed to determine the parent issues and their types, but we can get that with a separate query and then do the rest of the processing in memory
+        var restrictionTables = await DbContext.RestrictionTables
+            .AsSplitQuery()
+            .Where(rt => restrictionTableIds.Contains(rt.Id))
+            .Include(rt => rt.RestrictionEntries)
+            .Include(rt => rt.Edge)
+                .ThenInclude(edge => edge!.HeadNode)
+                    .ThenInclude(node => node!.Issue)
+                        .ThenInclude(issue => issue!.Uncertainty)
+                            .ThenInclude(uncertainty => uncertainty!.Outcomes)
+            .Include(rt => rt.Edge)
+                .ThenInclude(edge => edge!.HeadNode)
+                    .ThenInclude(node => node!.Issue)
+                        .ThenInclude(issue => issue!.Decision)
+                            .ThenInclude(decision => decision!.Options)
+            .Include(rt => rt.Edge)
+                .ThenInclude(edge => edge!.TailNode)
+                    .ThenInclude(node => node!.Issue)
+                        .ThenInclude(issue => issue!.Uncertainty)
+                            .ThenInclude(uncertainty => uncertainty!.Outcomes)
+            .Include(rt => rt.Edge)                
+                .ThenInclude(edge => edge!.TailNode)
+                    .ThenInclude(node => node!.Issue)
+                        .ThenInclude(issue => issue!.Decision)
+                            .ThenInclude(decision => decision!.Options)
+            .ToListAsync(ct);
+
+        foreach (var restrictionTable in restrictionTables)
+        {
+            await RebuildRestrictionTable(restrictionTable, ct);
+        }
+    }
+
+    private async Task RebuildRestrictionTable(RestrictionTable restrictionTable, CancellationToken ct)
+    {
+        var parentIssue = restrictionTable.Edge!.TailNode!.Issue!;
+        var childIssue = restrictionTable.Edge!.HeadNode!.Issue!;
+        var isParentUncertainty = IsIssueType(parentIssue.Type, IssueType.Uncertainty) && parentIssue.Uncertainty != null;
+        var isChildUncertainty = IsIssueType(childIssue.Type, IssueType.Uncertainty) && childIssue.Uncertainty != null;
+        // check if parent and child are in scope of the influence diagram, if not the restriction table should be deleted, 
+        // if yes then we need to check if the combinations of parent outcomes and options have changed and update the restriction table entries accordingly
+        if (!IsBoundaryInScope(parentIssue.Boundary) || 
+            !IsBoundaryInScope(childIssue.Boundary) || 
+            !IsIssueConfiguredInInfluenceDiagram(parentIssue) || 
+            !IsIssueConfiguredInInfluenceDiagram(childIssue))
+        {
+            DbContext.RestrictionTables.Remove(restrictionTable);
             return;
         }
-        await RebuildIssuesFromIssueIds(issueIds, ct);
+        // check that the parent child combination are correct, 
+        // this is simpler than the other tables since a restriction entry can only have one child and one parent, 
+        // so we just need to check that the parent issue has at least one of the relevant types and that the child issue has at least one of the relevant types, 
+        // if not then the restriction table should be deleted, 
+        // if yes then we need to check if the combinations of parent outcomes and options have changed and update the restriction table entries accordingly
+
+        var restrictionEntries = restrictionTable.RestrictionEntries.ToList();
+
+        List<(Guid? ParentId, Guid? ChildId)> existingCombinations = restrictionEntries
+            .Select(entry => (
+                ParentId: entry.ParentOutcomeId ?? entry.ParentOptionId,
+                ChildId: entry.ChildOutcomeId ?? entry.ChildOptionId))
+            .ToList();
+
+        var parentIds = isParentUncertainty
+            ? parentIssue.Uncertainty!.Outcomes.Select(o => (Guid?)o.Id)
+            : parentIssue.Decision!.Options.Select(o => (Guid?)o.Id);
+
+        var childIds = isChildUncertainty
+            ? childIssue.Uncertainty!.Outcomes.Select(o => (Guid?)o.Id)
+            : childIssue.Decision!.Options.Select(o => (Guid?)o.Id);
+
+        List<(Guid? ParentId, Guid? ChildId)> validCombinations = (from parentId in parentIds
+            from childId in childIds
+            select (ParentId: parentId, ChildId: childId)).ToList();
+
+        // check that the current combinations in the restriction table are still valid, if not then remove them, then add any new valid combinations that are not currently in the restriction table
+
+        if (existingCombinations.All(ec => validCombinations.Contains(ec)) && existingCombinations.Count == validCombinations.Count)
+        {
+            // the combinations are the same, no need to update the restriction table entries
+            return;
+        }
+        else if (existingCombinations.All(ec => validCombinations.Contains(ec)))
+        {
+            // the existing combinations are a subset of the valid combinations, we just need to add the new combinations
+            var combinationsToAdd = validCombinations.Except(existingCombinations).ToList();
+            foreach (var combination in combinationsToAdd)
+            {
+                var id = combination.ParentId != null && combination.ChildId != null
+                    ? GetDeterministicIdRestrictionEntry(restrictionTable.Id, combination.ParentId.Value, combination.ChildId.Value)
+                    : Guid.NewGuid();
+                var newEntry = new RestrictionEntry
+                {
+                    Id = id,
+                    RestrictionTableId = restrictionTable.Id,
+                    ProjectId = restrictionTable.ProjectId,
+                    ParentOutcomeId = isParentUncertainty ? combination.ParentId : null,
+                    ParentOptionId = isParentUncertainty ? null : combination.ParentId,
+                    ChildOutcomeId = isChildUncertainty ? combination.ChildId : null,
+                    ChildOptionId = isChildUncertainty ? null : combination.ChildId,
+                };
+                await DbContext.RestrictionEntries.AddAsync(newEntry, ct);
+            }
+        }
+        else
+        {
+            // some of the existing combinations are no longer valid, we need to remove the invalid combinations and add any new valid combinations
+            var combinationsToRemove = existingCombinations.Except(validCombinations).ToList();
+            var entriesToRemove = restrictionEntries.Where(entry =>
+                combinationsToRemove.Contains((
+                    ParentId: entry.ParentOutcomeId ?? entry.ParentOptionId,
+                    ChildId: entry.ChildOutcomeId ?? entry.ChildOptionId))
+            ).ToList();
+            DbContext.RestrictionEntries.RemoveRange(entriesToRemove);
+
+            var combinationsToAdd = validCombinations.Except(existingCombinations).ToList();
+            foreach (var combination in combinationsToAdd)
+            {
+                var id = combination.ParentId != null && combination.ChildId != null
+                    ? GetDeterministicIdRestrictionEntry(restrictionTable.Id, combination.ParentId.Value, combination.ChildId.Value)
+                    : Guid.NewGuid();
+                var newEntry = new RestrictionEntry
+                {
+                    Id = id,
+                    RestrictionTableId = restrictionTable.Id,
+                    ProjectId = restrictionTable.ProjectId,
+                    ParentOutcomeId = isParentUncertainty ? combination.ParentId : null,
+                    ParentOptionId = isParentUncertainty ? null : combination.ParentId,
+                    ChildOutcomeId = isChildUncertainty ? combination.ChildId : null,
+                    ChildOptionId = isChildUncertainty ? null : combination.ChildId,
+                };
+                await DbContext.RestrictionEntries.AddAsync(newEntry, ct);
+            }
+        }
     }
 
     public async Task RebuildIssuesFromIssueIds(ICollection<Guid> issueIds, CancellationToken ct = default)
@@ -438,6 +590,19 @@ public class TableRebuildingService : ITableRebuildingService
     private static bool IsDecisionFocus(string? value)
     {
         return Normalize(value) == Normalize(DecisionHierarchy.Focus.ToString());
+    }
+
+    private static bool IsIssueConfiguredInInfluenceDiagram(Issue issue)
+    {
+        if (IsIssueType(issue.Type, IssueType.Uncertainty) && issue.Uncertainty != null)
+        {
+            return issue.Uncertainty.IsKey;
+        }
+        else if (IsIssueType(issue.Type, IssueType.Decision) && issue.Decision != null)
+        {
+            return IsDecisionFocus(issue.Decision.Type);
+        }
+        return false;
     }
 
     private static string Normalize(string? value) => (value ?? string.Empty).Trim().ToLowerInvariant();
