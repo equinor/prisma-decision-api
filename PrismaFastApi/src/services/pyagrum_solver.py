@@ -16,6 +16,8 @@ from src.dtos.model_solution_dtos import (
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator
 from typing import TypeVar, Optional
 
+from src.utils.utility_node_merger import UtilityDataFrameConstructor
+
 T = TypeVar("T", OptionOutgoingDto, OutcomeOutgoingDto)
 
 # run for each optimal solution
@@ -42,6 +44,9 @@ class PyagrumSolver:
         self.add_nodes(issues)
         self.add_edges(edges)
         self.fill_cpts(issues)
+        self.construct_common_utility_table(issues)
+        # switch to master utility node
+        return
         self.add_virtual_utilities(issues)
         self.fill_utilities(issues)
 
@@ -284,6 +289,8 @@ class PyagrumSolver:
             self.add_to_lookup(issue, node_id)
 
         if issue.type == Type.UTILITY:
+            # switch to master utility node
+            return
             assert issue.utility is not None
             node_id = self.diagram.addUtilityNode(  # type: ignore
                 gum.LabelizedVariable(
@@ -297,8 +304,11 @@ class PyagrumSolver:
     def add_edge(self, edge: EdgeOutgoingDto):
         tail_id = self.node_lookup[edge.tail_node.issue_id.__str__()]
         head_id = self.node_lookup[edge.head_node.issue_id.__str__()]
-
-        self.diagram.addArc(tail_id, head_id)  # type: ignore
+        try:
+            self.diagram.addArc(tail_id, head_id)  # type: ignore
+        except:
+            # means connected to a utility node, but we are switching to a master utility node, so we will connect all utility nodes to the master utility node later
+            return
 
     def fill_cpts(self, issues: list[IssueOutgoingDto]):
         [self.fill_cpt(x) for x in issues]
@@ -346,6 +356,36 @@ class PyagrumSolver:
             return probabilities
         else:
             return probabilities
+        
+    def construct_common_utility_table(self, issues: list[IssueOutgoingDto]):
+        utility_issues = [issue for issue in issues if issue.type == Type.UTILITY.value and issue.utility is not None]
+        utility_dataframe_constructor = UtilityDataFrameConstructor(issues)
+        utility_tables = [utility_dataframe_constructor.construct_utility(issue.utility) for issue in utility_issues]
+        # add utility tables for all decision and uncertainty issues that have utilities
+        utility_dtos = utility_dataframe_constructor.convert_virtual_utilities_to_utility_dtos()
+        utility_tables += [utility_dataframe_constructor.construct_utility(utility_dto) for utility_dto in utility_dtos]
+        combined_utility_table = utility_dataframe_constructor.combine_and_sum(utility_tables)
+        # use the utility table to fill in the utility nodes in the influence diagram
+
+        # make master utility node
+        # connect all current nodes to the master utility node
+        # fill in the utility table for the master utility node
+        self.diagram.addUtilityNode(  # type: ignore
+            gum.LabelizedVariable(
+                "master_utility",
+                "master_utility",
+                1,
+            )
+        )
+        master_utility_node_id = self.node_lookup["master_utility"] = self.diagram.idFromName("master_utility")  # type: ignore
+        for issue in utility_issues:
+            issue_node_id = self.node_lookup[issue.id.__str__()]
+            self.diagram.addArc(issue_node_id, master_utility_node_id)  # type: ignore
+        # fill in the utility table for the master utility node
+        master_utility_cpt = self.diagram.utility(master_utility_node_id)  # type: ignore
+        for index, row in combined_utility_table.iterrows():
+            assign = {str(issue_id): row[str(issue_id)] for issue_id in combined_utility_table.columns if str(issue_id) != "value"}
+            master_utility_cpt[assign] = row["value"]
 
     def fill_utility_table(self, issue: IssueOutgoingDto):
         if issue.type in [Type.DECISION.value, Type.UNCERTAINTY.value]:
