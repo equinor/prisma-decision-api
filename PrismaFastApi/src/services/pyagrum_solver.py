@@ -302,9 +302,9 @@ class PyagrumSolver:
             self.add_to_lookup(issue, node_id)
 
     def add_edge(self, edge: EdgeOutgoingDto):
-        tail_id = self.node_lookup[edge.tail_node.issue_id.__str__()]
-        head_id = self.node_lookup[edge.head_node.issue_id.__str__()]
         try:
+            tail_id = self.node_lookup[edge.tail_node.issue_id.__str__()]
+            head_id = self.node_lookup[edge.head_node.issue_id.__str__()]
             self.diagram.addArc(tail_id, head_id)  # type: ignore
         except:
             # means connected to a utility node, but we are switching to a master utility node, so we will connect all utility nodes to the master utility node later
