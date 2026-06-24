@@ -39,7 +39,6 @@ class DecisionTreeGraph_v3:
     def __init__(self, root: uuid.UUID, **kwargs: Dict[str, Any]) -> None:
         self.nx: nx.DiGraph = nx.DiGraph(**kwargs)  # type: ignore
         self.root: uuid.UUID = root
-        # jvf self.nx.add_node(self.root)  # type: ignore
         self.edge_names: Dict[Tuple[uuid.UUID, uuid.UUID], str] = {}
         self.utility_lookup: Dict[tuple[str, ...], List[float]] = {}
         self.discrete_probability_lookup = defaultdict(set)
@@ -52,8 +51,6 @@ class DecisionTreeGraph_v3:
     def add_edge(self, edge: EdgeUUIDDto) -> None:
         self.treenodeid_to_parentid_map[edge.head] = edge.tail
         self.edge_names[(edge.tail, edge.head)] = edge.name
-        # jvf self.nx.add_edge(edge.tail, edge.head, name=edge.name)  # type: ignore
-        # jvf self.treenodeid_to_parentid_map[edge.head] = edge.tail
 
     def transfer_node_treenode_lookup(self, lookup: NodeTreeNodeLookup) -> None:
         self.node_treenode_lookup = lookup
@@ -104,8 +101,6 @@ class DecisionTreeGraph_v3:
 
     def get_dto_map(self):
         dto_map: Dict[uuid.UUID, TreeNodeDto2] = {}
-        #jvf for treenode_id in self.nx.nodes:  # type: ignore
-            #jvf treenode_id = cast(uuid.UUID, treenode_id)
         for treenode_id in self.treenodeid_to_parentid_map.keys():
             if node := self.node_treenode_lookup.get_dto_for_treenode_id(treenode_id):
                 type = Type.END.value if isinstance(node, EndPointNodeDto) else node.type
@@ -128,13 +123,10 @@ class DecisionTreeGraph_v3:
                 dto_map[treenode_id] = dto
 
         for parent_id in self.treenodeid_to_parentid_map.keys():
-        # jvf for parent_id in self.nx.nodes:  # type: ignore
-        # jvf    parent_id = cast(uuid.UUID, parent_id)
             parent_dto = dto_map.get(parent_id)
             if parent_dto is not None:
                 # Get child node ids (outgoing edges from parent)
                 child_ids: List[uuid.UUID] = list(self.get_successors(parent_id)) # type: ignore
-                #jvf child_ids: List[uuid.UUID] = list(self.nx.successors(parent_id))  # type: ignore
                 # Set children as list of DTOs
                 parent_dto.children = [
                     dto_map[child_id] for child_id in child_ids if child_id in dto_map
@@ -174,7 +166,6 @@ class DecisionTreeGraph_v3:
         self.populate_utility_lookup() # create lookup for discrete utilities
         if backwards_calc:
             self.populate_discrete_probabilities_lookup() # create lookup for discrete probabilities
-        # jvf self.edge_names = nx.get_edge_attributes(self.nx, "name") # type: ignore
         dto_map = self.get_dto_map()
         self.calculate_endpoint_nodes(self.root, dto_map)
         if backwards_calc:
