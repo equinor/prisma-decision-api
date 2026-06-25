@@ -241,9 +241,9 @@ public class ProjectDuplicationService : IProjectDuplicationService
         return new ProjectCreateDto
         {
             Id = newProjectId,
-            Name = fullProject.Name,
+            Name = $"copy of {fullProject.Name}",
             ParentProjectId = fullProject.Id,
-            ParentProjectName = fullProject.Id.ToString(),
+            ParentProjectName = fullProject.Name,
             OpportunityStatement = fullProject.OpportunityStatement,
             Public = fullProject.Public,
             EndDate = fullProject.EndDate,
