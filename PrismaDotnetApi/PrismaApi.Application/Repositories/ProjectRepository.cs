@@ -60,7 +60,7 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
             entity.ParentProjectName = incomingEntity.ParentProjectName;
             entity.EndDate = incomingEntity.EndDate;
             entity.UpdatedById = incomingEntity.UpdatedById;
-            
+
             if (incomingEntity.ProjectRoles.Count == 0)
             {
                 throw new InvalidOperationException("At least one project role is required.");
@@ -70,8 +70,6 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
                 throw new InvalidOperationException(ExceptionMessages.MinimumFacilitatorRequirement);
             }
             entity.ProjectRoles.Update(incomingEntity.ProjectRoles, DbContext);
-            entity.Objectives.Update(incomingEntity.Objectives, DbContext);
-            entity.Strategies.Update(incomingEntity.Strategies, DbContext);
             entity.BoardNodes.Update(incomingEntity.BoardNodes, DbContext);
         }
 
