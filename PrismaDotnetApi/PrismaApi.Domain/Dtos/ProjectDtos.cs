@@ -24,8 +24,6 @@ public class ProjectDto
 
 public class ProjectCreateDto : ProjectDto
 {
-    [JsonPropertyName("objectives")]
-    public List<ObjectiveViaProjectDto> Objectives { get; set; } = new();
     [JsonPropertyName("board_nodes")]
     public List<BoardNodeIncomingDto> BoardNodes { get; set; } = new();
     [JsonPropertyName("users")]
@@ -34,36 +32,33 @@ public class ProjectCreateDto : ProjectDto
 
 public class ProjectIncomingDto : ProjectDto
 {
-    [JsonPropertyName("objectives")]
-    public List<ObjectiveViaProjectDto> Objectives { get; set; } = new();
     [JsonPropertyName("board_nodes")]
     public List<BoardNodeIncomingDto> BoardNodes { get; set; } = new();
-    [JsonPropertyName("strategies")]
-    public List<StrategyIncomingDto> Strategies { get; set; } = new();
+
     [JsonPropertyName("users")]
     public List<ProjectRoleIncomingDto> Users { get; set; } = new();
 }
 
 public class ProjectOutgoingDto : ProjectDto
 {
-    [JsonPropertyName("objectives")]
-    public List<ObjectiveOutgoingDto> Objectives { get; set; } = new();
+
     [JsonPropertyName("board_nodes")]
     public List<BoardNodeOutgoingDto> BoardNodes { get; set; } = new();
-    [JsonPropertyName("strategies")]
-    public List<StrategyOutgoingDto> Strategies { get; set; } = new();
+
     [JsonPropertyName("users")]
     public List<ProjectRoleOutgoingDto> Users { get; set; } = new();
 }
 
 public class PopulatedProjectDto : ProjectDto
 {
-    [JsonPropertyName("objectives")]
-    public List<ObjectiveOutgoingDto> Objectives { get; set; } = new();
-    [JsonPropertyName("board_nodes")]
-    public List<BoardNodeOutgoingDto> BoardNodes { get; set; } = new();
     [JsonPropertyName("strategies")]
     public List<StrategyOutgoingDto> Strategies { get; set; } = new();
+    [JsonPropertyName("objectives")]
+    public List<ObjectiveOutgoingDto> Objectives { get; set; } = new();
+
+    [JsonPropertyName("board_nodes")]
+    public List<BoardNodeOutgoingDto> BoardNodes { get; set; } = new();
+
     [JsonPropertyName("users")]
     public List<ProjectRoleOutgoingDto> Users { get; set; } = new();
 }

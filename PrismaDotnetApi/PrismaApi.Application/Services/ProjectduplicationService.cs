@@ -17,6 +17,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
     private readonly IDiscreteProbabilityService _discreteProbabilityService;
     private readonly IDiscreteUtilityService _discreteUtilityService;
     private readonly IAssessmentService _assessmentService;
+    private readonly IObjectiveService _objectiveService;
     private readonly IDecisionQualityAssessmentService _decisionQualityAssessmentService;
     private readonly IBoardNodeService _boardNodeService; private readonly IMemoryCache _cache;
 
@@ -31,7 +32,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         IMemoryCache cache,
         IAssessmentService assessmentService,
         IDecisionQualityAssessmentService decisionQualityAssessmentService,
-        IBoardNodeService boardNodeService)
+        IBoardNodeService boardNodeService,
+        IObjectiveService objectiveService)
     {
         _duplicationRepo = duplicationRepo;
         _projectService = projectService;
@@ -43,6 +45,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         _assessmentService = assessmentService;
         _decisionQualityAssessmentService = decisionQualityAssessmentService;
         _boardNodeService = boardNodeService;
+        _objectiveService = objectiveService;
         _cache = cache;
     }
 
@@ -115,7 +118,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (discreteUtilityDtos.Count > 0)
             await _discreteUtilityService.CreateAsync(discreteUtilityDtos);
 
-        var strategyDtos = CreateStrategies(fullProject.Strategies, s => s.Options, newProjectId, mappings);
+        var strategyDtos = CreateStrategies(fullProject.strategies, s => s.Options, newProjectId, mappings);
         if (strategyDtos.Count > 0)
             await _strategyService.CreateAsync(strategyDtos, user);
 
@@ -130,7 +133,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (assessmentDtos.Count > 0)
             await _assessmentService.CreateAsync(assessmentDtos, user);
 
-        var decisionQualityAssessmentDtos = CreateDecisionQualityAssessments(fullProject.Assessments.SelectMany(a => a.DecisionQualityAssessments ?? []), assessmentIdMap);
+        var decisionQualityAssessmentDtos = CreateDecisionQualityAssessments(fullProject.Assessments.SelectMany(a => a.DecisionQualityAssessments ?? []), assessmentIdMap, newProjectId);
         if (decisionQualityAssessmentDtos.Count > 0)
             await _decisionQualityAssessmentService.CreateAsync(decisionQualityAssessmentDtos, user, ct);
 
@@ -214,8 +217,10 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (discreteUtilityDtos.Count > 0)
             await _discreteUtilityService.CreateAsync(discreteUtilityDtos);
 
-        var strategyDtos = CreateStrategies(dto.Projects.Strategies, s => s.Options, newProjectId, mappings);
-
+        var objectiveDtos = CreateObjectives(dto.Objectives, newProjectId);
+        if (objectiveDtos.Count > 0)
+            await _objectiveService.CreateAsync(objectiveDtos, user);
+        var strategyDtos = CreateStrategies(dto.Strategies, s => s.Options, newProjectId, mappings);
         if (strategyDtos.Count > 0)
             await _strategyService.CreateAsync(strategyDtos, user);
 
@@ -226,7 +231,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (assessmentDtos.Count > 0)
             await _assessmentService.CreateAsync(assessmentDtos, user);
 
-        var decisionQualityAssessmentDtos = CreateDecisionQualityAssessments(dto.Assessments.SelectMany(a => a.DecisionQualityAssessments ?? []), assessmentIdMap);
+        var decisionQualityAssessmentDtos = CreateDecisionQualityAssessments(dto.Assessments.SelectMany(a => a.DecisionQualityAssessments ?? []), assessmentIdMap, newProjectId);
         if (decisionQualityAssessmentDtos.Count > 0)
             await _decisionQualityAssessmentService.CreateAsync(decisionQualityAssessmentDtos, user, ct);
 
@@ -247,15 +252,6 @@ public class ProjectDuplicationService : IProjectDuplicationService
             OpportunityStatement = fullProject.OpportunityStatement,
             Public = fullProject.Public,
             EndDate = fullProject.EndDate,
-            Objectives = fullProject.Objectives
-                .Select(o => new ObjectiveViaProjectDto
-                {
-                    Id = Guid.NewGuid(),
-                    Name = o.Name,
-                    Description = o.Description,
-                    Type = o.Type
-                })
-                .ToList(),
             Users = fullProject.Users
                 .Select(u => new ProjectRoleCreateDto
                 {
@@ -279,15 +275,6 @@ public class ProjectDuplicationService : IProjectDuplicationService
             OpportunityStatement = project.OpportunityStatement,
             Public = project.Public,
             EndDate = project.EndDate,
-            Objectives = project.Objectives
-                .Select(o => new ObjectiveViaProjectDto
-                {
-                    Id = Guid.NewGuid(),
-                    Name = o.Name,
-                    Description = o.Description,
-                    Type = o.Type
-                })
-                .ToList(),
             Users = project.Users
                 .Select(u => new ProjectRoleCreateDto
                 {
@@ -453,6 +440,29 @@ public class ProjectDuplicationService : IProjectDuplicationService
         return (utilityDto, mappedDiscreteUtilities);
     }
 
+    private static List<ObjectiveIncomingDto> CreateObjectives(IEnumerable<ObjectiveOutgoingDto> objectives, Guid newProjectId)
+    {
+        return objectives.Select(o => new ObjectiveIncomingDto
+        {
+            Id = Guid.NewGuid(),
+            Name = o.Name,
+            Description = o.Description,
+            Type = o.Type,
+            ProjectId = newProjectId
+        }).ToList();
+    }
+
+    private static List<ObjectiveIncomingDto> CreateObjectives(IEnumerable<ObjectiveIncomingDto> objectives, Guid newProjectId)
+    {
+        return objectives.Select(o => new ObjectiveIncomingDto
+        {
+            Id = Guid.NewGuid(),
+            Name = o.Name,
+            Description = o.Description,
+            Type = o.Type,
+            ProjectId = newProjectId
+        }).ToList();
+    }
     private static List<StrategyIncomingDto> CreateStrategies<TStrategy>(
         IEnumerable<TStrategy> strategies,
         Func<TStrategy, IEnumerable<OptionDto>> getOptions,
@@ -498,12 +508,14 @@ public class ProjectDuplicationService : IProjectDuplicationService
     }
     private static List<DecisionQualityAssessmentIncomingDto> CreateDecisionQualityAssessments<TDecisionQualityAssessment>(
         IEnumerable<TDecisionQualityAssessment> decisionQualityAssessments,
-        Dictionary<Guid, Guid> assessmentIdMap) where TDecisionQualityAssessment : DecisionQualityAssessmentDto
+        Dictionary<Guid, Guid> assessmentIdMap,
+        Guid newProjectId) where TDecisionQualityAssessment : DecisionQualityAssessmentDto
     {
         return decisionQualityAssessments.Select(decisionQualityAssessment => new DecisionQualityAssessmentIncomingDto
         {
             Id = Guid.NewGuid(),
             AssessmentId = assessmentIdMap.GetValueOrDefault(decisionQualityAssessment.AssessmentId, decisionQualityAssessment.AssessmentId),
+            ProjectId = newProjectId,
             AppropriateFrame = decisionQualityAssessment.AppropriateFrame,
             TradeOffAnalysis = decisionQualityAssessment.TradeOffAnalysis,
             ReasoningCorrectness = decisionQualityAssessment.ReasoningCorrectness,

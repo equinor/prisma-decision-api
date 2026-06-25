@@ -48,6 +48,8 @@ public partial class AppDbContext : DbContext
     public DbSet<Assessment> Assessments => Set<Assessment>();
     public DbSet<DecisionQualityAssessment> DecisionQualityAssessments => Set<DecisionQualityAssessment>();
     public DbSet<BoardNode> BoardNodes => Set<BoardNode>();
+    public DbSet<RestrictionTable> RestrictionTables => Set<RestrictionTable>();
+    public DbSet<RestrictionEntry> RestrictionEntries => Set<RestrictionEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -78,6 +80,8 @@ public partial class AppDbContext : DbContext
         Assessment.OnModelConfiguring(modelBuilder);
         DecisionQualityAssessment.OnModelConfiguring(modelBuilder);
         BoardNode.OnModelConfiguring(modelBuilder);
+        RestrictionTable.OnModelConfiguring(modelBuilder);
+        RestrictionEntry.OnModelConfiguring(modelBuilder);
     }
 
     private IEnumerable<EntityEntry<T>> GetChangedEntries<T>() where T : class =>
