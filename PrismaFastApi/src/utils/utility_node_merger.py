@@ -29,41 +29,40 @@ class UtilityDataFrameConstructor:
                 and issue.uncertainty is not None 
                 and not all(outcome.utility == 0 for outcome in issue.uncertainty.outcomes)
             ):
-                for outcome in issue.uncertainty.outcomes:
-                    utility_dto = UtilityOutgoingDto(
-                        id=uuid.uuid4(),
-                        issue_id=issue.id,
-                        discrete_utilities=[
-                            DiscreteUtilityOutgoingDto(
-                                
-                                id=uuid.uuid4(),
-                                utility_id=uuid.uuid4(),
-                                value_metric_id=uuid.uuid4(),
-                                utility_value=outcome.utility,
-                                parent_outcome_ids=[outcome.id],
-                            )
-                        ]
-                    )
-                    utility_dtos.append(utility_dto)
+                utility_id = uuid.uuid4()
+                utility_dto = UtilityOutgoingDto(
+                    id=utility_id,
+                    issue_id=issue.id,
+                    discrete_utilities=[
+                        DiscreteUtilityOutgoingDto(
+                            id=uuid.uuid4(),
+                            utility_id=utility_id,
+                            value_metric_id=uuid.uuid4(),
+                            utility_value=outcome.utility,
+                            parent_outcome_ids=[outcome.id],
+                        ) for outcome in issue.uncertainty.outcomes
+                    ]
+                )
+                utility_dtos.append(utility_dto)
             if (issue.type == "Decision" 
                 and issue.decision is not None 
                 and not all(option.utility == 0 for option in issue.decision.options)
             ):
-                for option in issue.decision.options:
-                    utility_dto = UtilityOutgoingDto(
-                        id=uuid.uuid4(),
-                        issue_id=issue.id,
-                        discrete_utilities=[
-                            DiscreteUtilityOutgoingDto(
-                                id=uuid.uuid4(),
-                                utility_id=uuid.uuid4(),
-                                value_metric_id=uuid.uuid4(),
-                                utility_value=option.utility,
-                                parent_option_ids=[option.id],
-                            )
-                        ]
-                    )
-                    utility_dtos.append(utility_dto)
+                utility_id = uuid.uuid4()
+                utility_dto = UtilityOutgoingDto(
+                    id=utility_id,
+                    issue_id=issue.id,
+                    discrete_utilities=[
+                        DiscreteUtilityOutgoingDto(
+                            id=uuid.uuid4(),
+                            utility_id=utility_id,
+                            value_metric_id=uuid.uuid4(),
+                            utility_value=option.utility,
+                            parent_option_ids=[option.id],
+                        ) for option in issue.decision.options
+                    ]
+                )
+                utility_dtos.append(utility_dto)
         return utility_dtos
     def construct_utility(self, utility: UtilityOutgoingDto) -> pd.DataFrame:
         rows = []
