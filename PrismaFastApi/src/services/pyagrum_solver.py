@@ -46,10 +46,6 @@ class PyagrumSolver:
         self.add_edges(edges)
         self.fill_cpts(issues)
         self.construct_common_utility_table(issues)
-        # switch to master utility node
-        return
-        self.add_virtual_utilities(issues)
-        self.fill_utilities(issues)
 
     def _sort_state_dtos(self, dtos: list[T]) -> list[T]:
         return sorted(dtos, key=lambda x: x.id.__str__())
@@ -289,27 +285,12 @@ class PyagrumSolver:
             )
             self.add_to_lookup(issue, node_id)
 
-        if issue.type == Type.UTILITY:
-            # switch to master utility node
-            return
-            assert issue.utility is not None
-            node_id = self.diagram.addUtilityNode(  # type: ignore
-                gum.LabelizedVariable(
-                    f"{issue.id.__str__()}",
-                    f"{issue.id.__str__()}",
-                    1,
-                )
-            )
-            self.add_to_lookup(issue, node_id)
-
     def add_edge(self, edge: EdgeOutgoingDto):
-        try:
-            tail_id = self.node_lookup[edge.tail_node.issue_id.__str__()]
-            head_id = self.node_lookup[edge.head_node.issue_id.__str__()]
-            self.diagram.addArc(tail_id, head_id)  # type: ignore
-        except:
-            # means connected to a utility node, but we are switching to a master utility node, so we will connect all utility nodes to the master utility node later
+        tail_id = self.node_lookup.get(edge.tail_node.issue_id.__str__(), None)
+        head_id = self.node_lookup.get(edge.head_node.issue_id.__str__(), None)
+        if tail_id is None or head_id is None:
             return
+        self.diagram.addArc(tail_id, head_id)  # type: ignore
 
     def fill_cpts(self, issues: list[IssueOutgoingDto]):
         [self.fill_cpt(x) for x in issues]
