@@ -1,7 +1,7 @@
 import uuid
 import pyagrum as gum  # type: ignore
 from itertools import product
-from src.constants import Type
+from src.constants import Type, ComputationalNames
 from src.utils.discrete_probability_array_manager import DiscreteProbabilityArrayManager
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
@@ -32,6 +32,7 @@ class PyagrumSolver:
         self.edges: list[EdgeOutgoingDto] = []
         self.ie: Optional[gum.ShaferShenoyLIMIDInference] = None
         self.partial_order: Optional[list[uuid.UUID]] = None
+        self.combined_utility_node_name = "master_utility"
 
     def _reset_diagram(self):
         self.diagram = gum.InfluenceDiagram()
@@ -355,12 +356,12 @@ class PyagrumSolver:
         # fill in the utility table for the master utility node
         master_utility_node_id = self.diagram.addUtilityNode(  # type: ignore
             gum.LabelizedVariable(
-                "master_utility",
-                "master_utility",
+                self.combined_utility_node_name,
+                self.combined_utility_node_name,
                 1,
             )
         )
-        self.node_lookup["master_utility"] = master_utility_node_id  # type: ignore
+        self.node_lookup[self.combined_utility_node_name] = master_utility_node_id  # type: ignore
         for node_id in nodes_to_connect:
             if node_id == master_utility_node_id:
                 continue
@@ -369,8 +370,8 @@ class PyagrumSolver:
         master_utility_cpt = self.diagram.utility(master_utility_node_id)  # type: ignore
         for row in assignments:
             master_utility_cpt[
-                {dim: row[dim] for dim in issue_ids if dim != 'value'}
-            ] = row["value"]  # type: ignore
+                {dim: row[dim] for dim in issue_ids if dim != ComputationalNames.UTILITY_NODE_VALUE.value}
+            ] = row[ComputationalNames.UTILITY_NODE_VALUE.value]  # type: ignore
         return
 
     def fill_utility_table(self, issue: IssueOutgoingDto):
