@@ -17,7 +17,7 @@ from src.dtos.model_solution_dtos import (
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator
 from typing import TypeVar, Optional
 
-from src.utils.utility_node_merger import UtilityDataFrameConstructor
+from src.utils.utility_node_merger import UtilityNodeMerger
 
 T = TypeVar("T", OptionOutgoingDto, OutcomeOutgoingDto)
 
@@ -341,7 +341,7 @@ class PyagrumSolver:
         
     def construct_common_utility_table(self, issues: list[IssueOutgoingDto]):
         utility_issues = [issue for issue in issues if issue.type == Type.UTILITY.value and issue.utility is not None]
-        utility_dataframe_constructor = UtilityDataFrameConstructor(issues)
+        utility_dataframe_constructor = UtilityNodeMerger(issues)
         utility_tables = utility_dataframe_constructor.convert_utility_dtos_to_data_points([issue.utility for issue in utility_issues])
         # add utility tables for all decision and uncertainty issues that have utilities
         utility_tables += utility_dataframe_constructor.convert_virtual_utilities_to_data_points()

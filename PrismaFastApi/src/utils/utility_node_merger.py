@@ -3,7 +3,10 @@ from src.dtos.issue_dtos import IssueOutgoingDto
 from src.utils.combine_nodes import DataPoint, State, combine_nodes
 from src.constants import Type, ComputationalNames
 
-class UtilityDataFrameConstructor:
+class UtilityNodeMerger:
+    """
+    A class to help merge utility nodes for a given set of issues.
+    """
     def __init__(self, issues: list[IssueOutgoingDto]):
         self.issues = issues
 

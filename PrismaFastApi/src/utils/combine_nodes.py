@@ -4,14 +4,18 @@ from functools import reduce
 from pydantic import BaseModel
 
 class State(BaseModel):
-    id: str # a1
-    parent_id: str # a
+    id: str
+    parent_id: str
 
 class DataPoint(BaseModel):
     value: int
     states: list[State]
 
 def _build_node_array(datapoints: list[DataPoint]) -> xr.DataArray:
+    """
+    Build an xarray DataArray from a list of DataPoints.
+    Each DataPoint represents a value associated with a combination of states.
+    """
     dims: list[str] = []
     coords: dict[str, list[str]] = {}
 
@@ -37,5 +41,7 @@ def _build_node_array(datapoints: list[DataPoint]) -> xr.DataArray:
 
 
 def combine_nodes(nodes: list[list[DataPoint]]) -> xr.DataArray:
-    """Sum DataArrays from each node, broadcasting over all dimensions."""
+    """
+    Sum DataArrays from each node, broadcasting over all dimensions.
+    """
     return reduce(lambda a, b: a + b, (_build_node_array(dps) for dps in nodes))
