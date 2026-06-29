@@ -1,4 +1,5 @@
 import uuid
+import math
 from fastapi import APIRouter, Depends
 from src.project_lock_manager import ProjectQueueManager
 from src.services.solver_service import SolverService
@@ -29,14 +30,26 @@ async def get_optimal_decisions_for_project_with_evidence(
     evidence_state_ids = [e.state_ids for e in evidence]
     results: list[SolutionDto] = await solver_service.find_optimal_decision_pyagrum_from_with_evidence(issues, edges, evidence_state_ids)
     # decision_solutions[0].mean is the expected utility for the first optimal decision, i.e. the root node which represents the expected utility for the model
-    return [
+    populated_evidence = [
         EvidenceOutgoingDto(
             evidence_id=evi.evidence_id,
             state_ids=evi.state_ids,
-            expected_utility=results[n].decision_solutions[0].mean if results[n].decision_solutions else None,
+            expected_utility=results[n].decision_solutions[0].mean 
+            if results[n].decision_solutions 
+                and not math.isnan(results[n].decision_solutions[0].mean) 
+            else None,
         )
         for n, evi in enumerate(evidence)
     ]
+    exception_message = ""
+    for populated in populated_evidence:
+        if populated.expected_utility is None:
+            exception_message += f"Impossible state reached for evidence {populated.evidence_id} with state_ids {populated.state_ids}\n"
+    # If any of the evidence leads to an impossible state, we raise an exception with the details of which evidence caused the issue. 
+    if exception_message:
+        raise ValueError(f"One or more evidence states lead to an impossible state:\n{exception_message}")
+    
+    return populated_evidence
 
 
 @router.get("/solvers/project/{project_id}/decision_tree/v2")
