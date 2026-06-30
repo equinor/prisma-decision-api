@@ -29,6 +29,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         var isPublicInstance = builder.Environment.EnvironmentName.Equals("Public", StringComparison.OrdinalIgnoreCase);
+        var isResearchInstance = builder.Environment.EnvironmentName.Equals("Research", StringComparison.OrdinalIgnoreCase);
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
@@ -39,7 +40,7 @@ public class Program
         {
             builder.Configuration["AzureAd:ClientSecret"] = clientSecret;
         }
-        if (!isPublicInstance)
+        if (!isPublicInstance && !isResearchInstance)
         {
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -47,14 +48,6 @@ public class Program
                 .EnableTokenAcquisitionToCallDownstreamApi()
                 .AddDownstreamApi("FastApi", builder.Configuration.GetSection("FastApiService"))
                 .AddMicrosoftGraph(builder.Configuration.GetSection("GraphApi"))
-                .AddInMemoryTokenCaches();
-        }
-        else
-        {
-
-            builder.Services.AddMicrosoftIdentityWebAppAuthentication(builder.Configuration, "AzureAd")
-                .EnableTokenAcquisitionToCallDownstreamApi()
-                .AddDownstreamApi("FastApi", builder.Configuration.GetSection("FastApiService"))
                 .AddInMemoryTokenCaches();
         }
 
@@ -144,7 +137,7 @@ public class Program
         builder.Services.AddScoped<IRestrictionTableService, RestrictionTableService>();
         builder.Services.AddScoped<IRestrictionEntryService, RestrictionEntryService>();
 
-        if (isPublicInstance)
+        if (isPublicInstance || isResearchInstance)
         {
             builder.Services.AddScoped<IUserProvider, PublicUserService>();
         }
@@ -173,7 +166,7 @@ public class Program
         {
             options.AddPolicy(AppRolesPolicy.UserRoleRequired, policy =>
             {
-                if (isPublicInstance)
+                if (isPublicInstance || isResearchInstance)
                 {
                     policy.RequireAssertion(_ => true);
                 }
@@ -195,10 +188,13 @@ public class Program
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
-        if (NotRunningIntegrationTests && (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Local")))
+        if (NotRunningIntegrationTests && (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Local") || isPublicInstance || isResearchInstance))
         {
             app.UseSwagger();
-            app.UseSwaggerWithAuth(builder.Configuration);
+            if (!isPublicInstance && !isResearchInstance)
+            {
+                app.UseSwaggerWithAuth(builder.Configuration);
+            }
             app.UseSwaggerUI();
         }
 
@@ -209,7 +205,7 @@ public class Program
         // Use CORS - must be before UseAuthorization
         app.UseCors(CorsPolicy.AllowOriginsPolicy);
 
-        if (!isPublicInstance)
+        if (!isPublicInstance && !isResearchInstance)
         {
             app.UseAuthorization();
         }
