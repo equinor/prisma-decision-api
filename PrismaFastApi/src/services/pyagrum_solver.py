@@ -374,13 +374,17 @@ class PyagrumSolver:
         if issue.type == Type.UTILITY.value:
             return
         
-        if issue.type == Type.DECISION and issue.decision is not None:
-            if all([option.utility == 0 for option in issue.decision.options]):
-                return
+        # the following code used to skip adding a virtual utility node if all utilities were zero, but this caused issues with pyagrum's inference engine, so it has been commented out. 
+        # the excpected utility became incorrect in many cases, the only method to address this is to add all possible utilities to one master utility node, 
+        # which was found to be very slow and inefficient, so the decision was made to add a virtual utility node for all decision and uncertainty nodes, even if all utilities are zero.
+
+        # if issue.type == Type.DECISION and issue.decision is not None:
+        #     if all([option.utility == 0 for option in issue.decision.options]):
+        #         return
             
-        if issue.type == Type.UNCERTAINTY and issue.uncertainty is not None:
-            if all([outcome.utility == 0 for outcome in issue.uncertainty.outcomes]):
-                return
+        # if issue.type == Type.UNCERTAINTY and issue.uncertainty is not None:
+        #     if all([outcome.utility == 0 for outcome in issue.uncertainty.outcomes]):
+        #         return
             
         node_id = self.diagram.addUtilityNode(  # type: ignore
             gum.LabelizedVariable(
