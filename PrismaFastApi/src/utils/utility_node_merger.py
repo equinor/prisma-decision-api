@@ -83,6 +83,7 @@ class UtilityNodeMerger:
         issue_ids = df.columns[df.columns != ComputationalNames.UTILITY_NODE_VALUE.value]
         
         # Create a dictionary to hold the assignments
-        assignments: list[dict[str, float|str]] = [row.to_dict() for _, row in df.iterrows()]
+        assignments: list[dict[str, float | str]] = df.to_dict('records')
+        # assignments: list[dict[str, float|str]] = [row.to_dict() for _, row in df.iterrows()]
 
         return issue_ids, assignments
