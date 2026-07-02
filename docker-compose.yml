@@ -20,7 +20,7 @@ services:
       - fastapi
     environment:
       ASPNETCORE_ENVIRONMENT: Research
-      FastApiService__BaseUrl: http://localhost:8000
+      FastApiService__BaseUrl: http://fastapi:8000
       ConnectionStrings__SqliteConnection: "Data Source=/data/Prisma.db"
       AllowedOrigins__0: http://localhost:5004
       AllowedOrigins__1: http://127.0.0.1:5004
