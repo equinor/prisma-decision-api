@@ -51,7 +51,11 @@ public class Program
                 .AddInMemoryTokenCaches();
         }
 
-        builder.Services.AddSingleton(new AppDbContextOptions { IsPublicInstance = isPublicInstance });
+        builder.Services.AddSingleton(new AppDbContextOptions
+        {
+            IsPublicInstance = isPublicInstance,
+            IsResearchInstance = isResearchInstance
+        });
 
         builder.Services.AddMemoryCache(options =>
         {
@@ -76,10 +80,10 @@ public class Program
         if (!string.IsNullOrEmpty(sqliteConnectionString))
         {
             builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
-            {
-                options.UseSqlite(sqliteConnectionString,
-                    x => x.MigrationsAssembly("SqliteMigrations"));
-            });
+                {
+                    options.UseSqlite(sqliteConnectionString,
+                        x => x.MigrationsAssembly("SqliteMigrations"));
+                });
         }
         else
         {
