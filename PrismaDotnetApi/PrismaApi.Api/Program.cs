@@ -63,7 +63,7 @@ public class Program
         });
 
         var appInsightsConnectionString = Environment.GetEnvironmentVariable("APPLICATION_INSIGHTS_CONNECTIONSTRING") ?? builder.Configuration.GetSection("ApplicationInsights:ConnectionString").Value;
-        if (!string.IsNullOrEmpty(appInsightsConnectionString) && builder.Environment.EnvironmentName != "Local" && isResearchInstance)
+        if (!string.IsNullOrEmpty(appInsightsConnectionString) && builder.Environment.EnvironmentName != "Local" && !isResearchInstance)
         {
             builder.Services.AddOpenTelemetry().UseAzureMonitor(options =>
             {
