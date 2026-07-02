@@ -224,7 +224,7 @@ class PyagrumSolver:
             solutions.append(solution)
         return solutions
     
-    async def get_MEU_given_evidence(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []) -> list[Optional[float]]:
+    async def get_mean_expected_utilities_given_evidence(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []) -> list[Optional[float]]:
         ie = await self.build_inference_engine(issues, edges)
         MEUs: list[Optional[float]] = []
         for evidence_item in evidence:

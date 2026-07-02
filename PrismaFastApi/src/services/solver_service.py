@@ -54,7 +54,7 @@ class SolverService:
     ) -> list[Optional[float]]:
         
         solver = PyagrumSolver()
-        return await solver.get_MEU_given_evidence(issues=issues, edges=edges, evidence=evidence)
+        return await solver.get_mean_expected_utilities_given_evidence(issues=issues, edges=edges, evidence=evidence)
 
     async def get_decision_tree_for_optimal_decisions_old(
         self, project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]
