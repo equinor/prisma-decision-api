@@ -29,11 +29,19 @@ Run both APIs together with Docker Compose from the repository root.
 ### Prerequisites
 
 - Docker Desktop (or Docker Engine + Compose)
-- `AZURE_AD_CLIENT_SECRET` set in your shell
 
-```bash
-export AZURE_AD_CLIENT_SECRET="your-secret"
-```
+### Runtime Mode
+
+The docker compose setup runs the .NET API in **Research** mode with SQLite:
+
+- `ASPNETCORE_ENVIRONMENT=Research`
+- `ConnectionStrings__SqliteConnection=Data Source=/data/Prisma.db`
+- `FastApiService__BaseUrl=http://fastapi:8000`
+
+Important networking note:
+
+- From your host machine, FastAPI is available at `http://localhost:8000`.
+- From the `api` container, FastAPI must be addressed as `http://fastapi:8000` (service DNS name on the compose network).
 
 ### Start Services
 
@@ -51,7 +59,6 @@ docker compose down
 ### Rebuild from scratch (clear cache)
 
 ```bash
-
 docker compose build --no-cache
 docker compose up
 ```
