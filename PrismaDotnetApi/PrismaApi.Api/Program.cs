@@ -32,6 +32,7 @@ public class Program
             builder.Configuration.AddUserSecrets<Program>();
 
         var isPublicInstance = builder.Environment.EnvironmentName.Equals("Public", StringComparison.OrdinalIgnoreCase);
+        var isResearchInstance = builder.Environment.EnvironmentName.Equals("Research", StringComparison.OrdinalIgnoreCase);
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
@@ -42,7 +43,7 @@ public class Program
         {
             builder.Configuration["AzureAd:ClientSecret"] = clientSecret;
         }
-        if (!isPublicInstance)
+        if (!isPublicInstance && !isResearchInstance)
         {
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -52,16 +53,12 @@ public class Program
                 .AddMicrosoftGraph(builder.Configuration.GetSection("GraphApi"))
                 .AddInMemoryTokenCaches();
         }
-        else
+
+        builder.Services.AddSingleton(new AppDbContextOptions
         {
-
-            builder.Services.AddMicrosoftIdentityWebAppAuthentication(builder.Configuration, "AzureAd")
-                .EnableTokenAcquisitionToCallDownstreamApi()
-                .AddDownstreamApi("FastApi", builder.Configuration.GetSection("FastApiService"))
-                .AddInMemoryTokenCaches();
-        }
-
-        builder.Services.AddSingleton(new AppDbContextOptions { IsPublicInstance = isPublicInstance });
+            IsPublicInstance = isPublicInstance,
+            IsResearchInstance = isResearchInstance
+        });
 
         builder.Services.AddMemoryCache(options =>
         {
@@ -69,7 +66,7 @@ public class Program
         });
 
         var appInsightsConnectionString = Environment.GetEnvironmentVariable("APPLICATION_INSIGHTS_CONNECTIONSTRING") ?? builder.Configuration.GetSection("ApplicationInsights:ConnectionString").Value;
-        if (!string.IsNullOrEmpty(appInsightsConnectionString) && builder.Environment.EnvironmentName != "Local")
+        if (!string.IsNullOrEmpty(appInsightsConnectionString) && builder.Environment.EnvironmentName != "Local" && !isResearchInstance)
         {
             builder.Services.AddOpenTelemetry().UseAzureMonitor(options =>
             {
@@ -86,10 +83,10 @@ public class Program
         if (!string.IsNullOrEmpty(sqliteConnectionString))
         {
             builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
-            {
-                options.UseSqlite(sqliteConnectionString,
-                    x => x.MigrationsAssembly("SqliteMigrations"));
-            });
+                {
+                    options.UseSqlite(sqliteConnectionString,
+                        x => x.MigrationsAssembly("SqliteMigrations"));
+                });
         }
         else
         {
@@ -147,7 +144,7 @@ public class Program
         builder.Services.AddScoped<IRestrictionTableService, RestrictionTableService>();
         builder.Services.AddScoped<IRestrictionEntryService, RestrictionEntryService>();
 
-        if (isPublicInstance)
+        if (isPublicInstance || isResearchInstance)
         {
             builder.Services.AddScoped<IUserProvider, PublicUserService>();
         }
@@ -176,7 +173,7 @@ public class Program
         {
             options.AddPolicy(AppRolesPolicy.UserRoleRequired, policy =>
             {
-                if (isPublicInstance)
+                if (isPublicInstance || isResearchInstance)
                 {
                     policy.RequireAssertion(_ => true);
                 }
@@ -198,10 +195,13 @@ public class Program
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
-        if (NotRunningIntegrationTests && (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Local")))
+        if (NotRunningIntegrationTests && (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Local") || isResearchInstance))
         {
             app.UseSwagger();
-            app.UseSwaggerWithAuth(builder.Configuration);
+            if (!isResearchInstance)
+            {
+                app.UseSwaggerWithAuth(builder.Configuration);
+            }
             app.UseSwaggerUI();
         }
 
@@ -212,7 +212,7 @@ public class Program
         // Use CORS - must be before UseAuthorization
         app.UseCors(CorsPolicy.AllowOriginsPolicy);
 
-        if (!isPublicInstance)
+        if (!isPublicInstance && !isResearchInstance)
         {
             app.UseAuthorization();
         }

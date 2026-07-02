@@ -44,7 +44,7 @@ public partial class AppDbContext : DbContext
 
         foreach (var entry in projectRolesEntries)
         {
-            if (AppOptions.IsPublicInstance)
+            if (AppOptions.IsPublicInstance || AppOptions.IsResearchInstance)
             {
                 var userName = entry.Entity.User?.Name
                     ?? await Users.Where(u => u.Id == entry.Entity.UserId).Select(u => u.Name).FirstAsync();

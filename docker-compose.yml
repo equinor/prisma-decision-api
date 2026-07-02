@@ -19,10 +19,11 @@ services:
     depends_on:
       - fastapi
     environment:
-      ASPNETCORE_ENVIRONMENT: Local
-      FASTAPI_BASE_URL: http://localhost:8000
+      ASPNETCORE_ENVIRONMENT: Research
+      FastApiService__BaseUrl: http://fastapi:8000
       ConnectionStrings__SqliteConnection: "Data Source=/data/Prisma.db"
-      AzureAd__ClientSecret: "${AZURE_AD_CLIENT_SECRET}"
+      AllowedOrigins__0: http://localhost:5004
+      AllowedOrigins__1: http://127.0.0.1:5004
     volumes:
       - api-data:/data
     networks:
