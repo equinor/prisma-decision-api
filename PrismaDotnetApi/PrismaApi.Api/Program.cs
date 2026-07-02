@@ -192,10 +192,10 @@ public class Program
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
-        if (NotRunningIntegrationTests && (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Local") || isPublicInstance || isResearchInstance))
+        if (NotRunningIntegrationTests && (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Local") || isResearchInstance))
         {
             app.UseSwagger();
-            if (!isPublicInstance && !isResearchInstance)
+            if (!isResearchInstance)
             {
                 app.UseSwaggerWithAuth(builder.Configuration);
             }
