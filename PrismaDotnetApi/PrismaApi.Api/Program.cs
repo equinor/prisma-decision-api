@@ -28,6 +28,9 @@ public class Program
 
         var builder = WebApplication.CreateBuilder(args);
 
+        if (builder.Environment.IsEnvironment("Local"))
+            builder.Configuration.AddUserSecrets<Program>();
+
         var isPublicInstance = builder.Environment.EnvironmentName.Equals("Public", StringComparison.OrdinalIgnoreCase);
 
         builder.Services.AddControllers();

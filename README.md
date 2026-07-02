@@ -22,6 +22,25 @@ dotnet build
 dotnet run
 ```
 
+### .NET User Secrets
+
+The .NET API requires `AzureAd:ClientSecret` for Azure AD authentication. User secrets let you store sensitive config locally without committing it to source control.
+
+If not already initialized, run once (from the repository root):
+
+```bash
+dotnet user-secrets init --project PrismaDotnetApi/PrismaApi.Api/PrismaApi.Api.csproj
+```
+
+Then set the secret:
+
+```bash
+dotnet user-secrets set "AzureAd:ClientSecret" "your-secret" --project PrismaDotnetApi/PrismaApi.Api/PrismaApi.Api.csproj
+```
+
+> **Note:** User secrets are only loaded automatically when `ASPNETCORE_ENVIRONMENT=Development` or `ASPNETCORE_ENVIRONMENT=Local`
+
+
 ## Docker Compose
 
 Run both APIs together with Docker Compose from the repository root.
