@@ -224,6 +224,15 @@ class PyagrumSolver:
             solutions.append(solution)
         return solutions
     
+    async def get_mean_expected_utilities_given_evidence(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []) -> list[Optional[float]]:
+        ie = await self.build_inference_engine(issues, edges)
+        MEUs: list[Optional[float]] = []
+        for evidence_item in evidence:
+            ie_with_evidence = self.set_evidence(ie, [str(x) for x in evidence_item])
+            MEU: dict[str, float] = ie_with_evidence.MEU()
+            MEUs.append(MEU.get("mean", None)) # type: ignore
+        return MEUs
+    
     # method for adding evidence to the inference engine, takes a list of state_id, method internally finds the corresponding issue and state, then adds the evidence to the inference engine
     def set_evidence(self, ie: gum.ShaferShenoyLIMIDInference, state_ids: list[str]):
         ie.eraseAllEvidence() # type: ignore
