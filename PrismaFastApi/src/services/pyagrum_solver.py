@@ -1,12 +1,14 @@
 import uuid
 import pyagrum as gum  # type: ignore
 from itertools import product
-from src.constants import Type
+from src.utils.combine_nodes import DataPoint, State, combine_nodes
+from src.constants import Type, ComputationalNames
 from src.utils.discrete_probability_array_manager import DiscreteProbabilityArrayManager
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.dtos.option_dtos import OptionOutgoingDto
 from src.dtos.outcome_dtos import OutcomeOutgoingDto
+from src.dtos.utility_dtos import UtilityOutgoingDto, DiscreteUtilityOutgoingDto
 from src.dtos.model_solution_dtos import (
     ParentState,
     OptimalOption,
@@ -15,6 +17,8 @@ from src.dtos.model_solution_dtos import (
 )
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator
 from typing import TypeVar, Optional
+
+from src.utils.utility_node_merger import UtilityNodeMerger
 
 T = TypeVar("T", OptionOutgoingDto, OutcomeOutgoingDto)
 
@@ -29,6 +33,7 @@ class PyagrumSolver:
         self.edges: list[EdgeOutgoingDto] = []
         self.ie: Optional[gum.ShaferShenoyLIMIDInference] = None
         self.partial_order: Optional[list[uuid.UUID]] = None
+        self.combined_utility_node_name = "master_utility"
 
     def _reset_diagram(self):
         self.diagram = gum.InfluenceDiagram()
@@ -42,8 +47,7 @@ class PyagrumSolver:
         self.add_nodes(issues)
         self.add_edges(edges)
         self.fill_cpts(issues)
-        self.add_virtual_utilities(issues)
-        self.fill_utilities(issues)
+        self.construct_common_utility_table(issues)
 
     def _sort_state_dtos(self, dtos: list[T]) -> list[T]:
         return sorted(dtos, key=lambda x: x.id.__str__())
@@ -292,21 +296,11 @@ class PyagrumSolver:
             )
             self.add_to_lookup(issue, node_id)
 
-        if issue.type == Type.UTILITY:
-            assert issue.utility is not None
-            node_id = self.diagram.addUtilityNode(  # type: ignore
-                gum.LabelizedVariable(
-                    f"{issue.id.__str__()}",
-                    f"{issue.id.__str__()}",
-                    1,
-                )
-            )
-            self.add_to_lookup(issue, node_id)
-
     def add_edge(self, edge: EdgeOutgoingDto):
-        tail_id = self.node_lookup[edge.tail_node.issue_id.__str__()]
-        head_id = self.node_lookup[edge.head_node.issue_id.__str__()]
-
+        tail_id = self.node_lookup.get(edge.tail_node.issue_id.__str__(), None)
+        head_id = self.node_lookup.get(edge.head_node.issue_id.__str__(), None)
+        if tail_id is None or head_id is None:
+            return
         self.diagram.addArc(tail_id, head_id)  # type: ignore
 
     def fill_cpts(self, issues: list[IssueOutgoingDto]):
@@ -355,6 +349,45 @@ class PyagrumSolver:
             return probabilities
         else:
             return probabilities
+        
+    def construct_common_utility_table(self, issues: list[IssueOutgoingDto]):
+        utility_issues = [issue for issue in issues if issue.type == Type.UTILITY.value and issue.utility is not None]
+        utility_dataframe_constructor = UtilityNodeMerger(issues)
+        utility_tables = utility_dataframe_constructor.convert_utility_dtos_to_data_points([issue.utility for issue in utility_issues])
+        utility_tables += utility_dataframe_constructor.convert_virtual_utilities_to_data_points()
+
+        # Get the combined array directly — skip the DataFrame/dict pipeline
+        data_array = combine_nodes(utility_tables)
+        issue_ids = list(data_array.dims)
+        nodes_to_connect = [self.node_lookup[issue_id] for issue_id in issue_ids]
+
+        master_utility_node_id = self.diagram.addUtilityNode(  # type: ignore
+            gum.LabelizedVariable(self.combined_utility_node_name, self.combined_utility_node_name, 1)
+        )
+        self.node_lookup[self.combined_utility_node_name] = master_utility_node_id  # type: ignore
+
+        for node_id in nodes_to_connect:
+            self.diagram.addArc(node_id, master_utility_node_id)  # type: ignore
+
+        master_utility_cpt = self.diagram.utility(master_utility_node_id)  # type: ignore
+        # Get pyagrum's exact variable ordering and label ordering per variable
+        var_sequence = [
+            v for v in master_utility_cpt.variablesSequence()  # type: ignore
+            if v.name() != self.combined_utility_node_name
+        ]
+
+        a = data_array.to_dataframe(name = "sad")
+        res = a.sort_values(by =issue_ids).to_numpy()
+
+        # Reindex xarray to match pyagrum's dim order and label order within each dim
+
+        master_utility_cpt[:] = res.reshape(master_utility_cpt[:].shape) # reindexed.values.flatten().reshape(master_utility_cpt[:].shape)  # type: ignore
+    
+    def assign_utility_to_master_utility_node(self, utility_cpt: gum.Tensor, issue_ids: list[str], assignment: dict[str, float | str]):
+        utility_cpt[
+            {dim: assignment[dim] for dim in issue_ids if dim != ComputationalNames.UTILITY_NODE_VALUE.value}
+        ] = assignment[ComputationalNames.UTILITY_NODE_VALUE.value]
+        return
 
     def fill_utility_table(self, issue: IssueOutgoingDto):
         if issue.type in [Type.DECISION.value, Type.UNCERTAINTY.value]:
@@ -419,3 +452,5 @@ class PyagrumSolver:
 
     def fill_utilities(self, issues: list[IssueOutgoingDto]):
         [self.fill_utility_table(x) for x in issues]
+
+    
