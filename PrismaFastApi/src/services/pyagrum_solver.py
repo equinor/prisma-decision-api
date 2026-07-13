@@ -46,9 +46,9 @@ class PyagrumSolver:
         self.fill_utilities(issues)
 
     def raise_if_issues_edges_not_set(self):
-        if not self.issues or not self.edges:
+        if not self.issues:
             raise RuntimeError(
-                "Issues and edges have not been set. Call build_influence_diagram first."
+                "Issues have not been set. Call build_influence_diagram first."
             )
 
 
