@@ -190,17 +190,7 @@ class PyagrumSolver:
                 edges = self.edges
             )
             
-            partial_order = await decision_tree_creator.calculate_partial_order()
-
-            partial_order = [
-                (await decision_tree_creator.get_node_from_uuid(tree_node_id))
-                for tree_node_id in partial_order
-            ]
-
-            self.partial_order = [
-                tree_node.issue.id
-                for tree_node in partial_order if tree_node is not None
-            ]
+            self.partial_order = await decision_tree_creator.calculate_partial_order_issues()
         return self.partial_order
     
     async def add_no_forgetting_assumption_using_partial_order(self, ie: gum.ShaferShenoyLIMIDInference) -> None:
