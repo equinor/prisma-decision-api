@@ -196,9 +196,9 @@ class PyagrumSolver:
         self.partial_order = [
             tree_node.issue.id
             for tree_node in partial_order if tree_node is not None
-        ]
-        partial_order_decisions = [x for x in self.partial_order if x in [issue.id for issue in self.issues if issue.type == Type.DECISION.value]]
-        ie.addNoForgettingAssumption([str(x) for x in partial_order_decisions]) # type: ignore
+        decision_ids = {issue.id for issue in self.issues if issue.type == Type.DECISION.value}
+        partial_order_decisions = [x for x in self.partial_order if x in decision_ids]
+        ie.addNoForgettingAssumption([str(x) for x in partial_order_decisions])  # type: ignore
     
     async def build_inference_engine(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]) -> gum.ShaferShenoyLIMIDInference:
         self.build_influence_diagram(issues, edges)
