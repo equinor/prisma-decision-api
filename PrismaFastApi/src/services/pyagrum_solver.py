@@ -180,12 +180,10 @@ class PyagrumSolver:
             raise RuntimeError("Partial order has not been calculated. Call find_optimal_decisions first.")
         return self.partial_order
     
-    async def build_inference_engine(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]) -> gum.ShaferShenoyLIMIDInference:
-        self.build_influence_diagram(issues, edges)
-
-        decision_tree_creator = await DecisionTreeCreator.initialize(project_id = issues[0].project_id,
-            nodes = issues,
-            edges = edges
+    async def add_no_forgetting_assumption_using_partial_order(self, ie: gum.ShaferShenoyLIMIDInference):
+        decision_tree_creator = await DecisionTreeCreator.initialize(project_id = self.issues[0].project_id,
+            nodes = self.issues,
+            edges = self.edges
         )
         
         partial_order = await decision_tree_creator.calculate_partial_order()
@@ -199,11 +197,18 @@ class PyagrumSolver:
             tree_node.issue.id
             for tree_node in partial_order if tree_node is not None
         ]
+        partial_order_decisions = [x for x in self.partial_order if x in [issue.id for issue in self.issues if issue.type == Type.DECISION.value]]
+        ie.addNoForgettingAssumption([str(x) for x in partial_order_decisions]) # type: ignore
+    
+    async def build_inference_engine(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]) -> gum.ShaferShenoyLIMIDInference:
+        self.build_influence_diagram(issues, edges)
 
-        partial_order_decisions = [x for x in self.partial_order if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]]
         self.ie = gum.ShaferShenoyLIMIDInference(self.diagram)
-        self.ie.addNoForgettingAssumption([str(x) for x in partial_order_decisions]) # type: ignore
 
+        if not self.ie.isSolvable():
+            # try adding no forgetting assumption for decision nodes in the partial order
+            await self.add_no_forgetting_assumption_using_partial_order(self.ie)
+        
         if not self.ie.isSolvable():
             raise RuntimeError("Influence diagram is not solvable")
         self.ie.makeInference()
