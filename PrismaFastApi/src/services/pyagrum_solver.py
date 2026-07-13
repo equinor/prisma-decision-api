@@ -175,27 +175,28 @@ class PyagrumSolver:
             )
         return self.ie
     
-    def get_partial_order(self) -> list[uuid.UUID]:
+    async def get_partial_order(self) -> list[uuid.UUID]:
         if self.partial_order is None:
-            raise RuntimeError("Partial order has not been calculated. Call find_optimal_decisions first.")
+            decision_tree_creator = await DecisionTreeCreator.initialize(project_id = self.issues[0].project_id,
+                nodes = self.issues,
+                edges = self.edges
+            )
+            
+            partial_order = await decision_tree_creator.calculate_partial_order()
+
+            partial_order = [
+                (await decision_tree_creator.get_node_from_uuid(tree_node_id))
+                for tree_node_id in partial_order
+            ]
+
+            self.partial_order = [
+                tree_node.issue.id
+                for tree_node in partial_order if tree_node is not None
+            ]
         return self.partial_order
     
     async def add_no_forgetting_assumption_using_partial_order(self, ie: gum.ShaferShenoyLIMIDInference):
-        decision_tree_creator = await DecisionTreeCreator.initialize(project_id = self.issues[0].project_id,
-            nodes = self.issues,
-            edges = self.edges
-        )
-        
-        partial_order = await decision_tree_creator.calculate_partial_order()
-
-        partial_order = [
-            (await decision_tree_creator.get_node_from_uuid(tree_node_id))
-            for tree_node_id in partial_order
-        ]
-
-        self.partial_order = [
-            tree_node.issue.id
-            for tree_node in partial_order if tree_node is not None
+        self.partial_order = await self.get_partial_order()
         decision_ids = {issue.id for issue in self.issues if issue.type == Type.DECISION.value}
         partial_order_decisions = [x for x in self.partial_order if x in decision_ids]
         ie.addNoForgettingAssumption([str(x) for x in partial_order_decisions])  # type: ignore
@@ -217,7 +218,7 @@ class PyagrumSolver:
 
     async def find_optimal_decisions(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]) -> SolutionDto:
         await self.build_inference_engine(issues, edges)
-        solution =  self.get_solution(self.get_inference(), [str(x) for x in self.get_partial_order() if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
+        solution =  self.get_solution(self.get_inference(), [str(x) for x in await self.get_partial_order() if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
         return solution
     
     async def get_solutions_given_evidence(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []) -> list[SolutionDto]:
@@ -225,7 +226,7 @@ class PyagrumSolver:
         solutions: list[SolutionDto] = []
         for evidence_item in evidence:
             ie_with_evidence = self.set_evidence(ie, [str(x) for x in evidence_item])
-            solution = self.get_solution(ie_with_evidence, [str(x) for x in self.get_partial_order() if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
+            solution = self.get_solution(ie_with_evidence, [str(x) for x in await self.get_partial_order() if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
             solutions.append(solution)
         return solutions
     
