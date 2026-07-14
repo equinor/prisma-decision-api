@@ -24,6 +24,7 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
         var connectionString = IsSqlServer(args)
             ? config.GetSection("ConnectionStrings")["DefaultConnection"]
             : config.GetSection("ConnectionStrings")["SqliteConnection"];
+        connectionString = "Server=localhost\\SQLEXPRESS;Database=sqldb-prisma-decision-local;Trust Server Certificate=true;Max Pool Size = 32767;Pooling=true;Integrated Security=True;";
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
 

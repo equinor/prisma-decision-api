@@ -78,6 +78,26 @@ public static class EntitiesExtensions
             entity.StrokeWidth = incomingEntity.StrokeWidth;
             entity.Opacity = incomingEntity.Opacity;
             entity.TextSize = incomingEntity.TextSize;
+            entity.BoardSheetId = incomingEntity.BoardSheetId;
+            entity.UpdatedById = incomingEntity.UpdatedById;
+        }
+    }
+
+    public static void Update(this ICollection<BoardSheet> entities, ICollection<BoardSheet> incomingEntities, AppDbContext context)
+    {
+        // delete
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<BoardSheet, Guid>(incomingEntities, entities, context);
+
+        // create
+        RepositoryUtilities.AddMissingFromCollectionMutate<BoardSheet, Guid>(incomingEntities, entities, context);
+
+        // update
+        foreach (var entity in entities)
+        {
+            var incomingEntity = incomingEntities.Where(x => x.Id == entity.Id).First();
+
+            entity.ProjectId = incomingEntity.ProjectId;
+            entity.Name = incomingEntity.Name;
             entity.UpdatedById = incomingEntity.UpdatedById;
         }
     }
