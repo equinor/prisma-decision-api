@@ -90,6 +90,7 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
     public override async Task DeleteByIdsAsync(IEnumerable<string> ids, Expression<Func<User, bool>>? filterPredicate = null, CancellationToken ct = default)
     {
         var entries = await DbContext.Users
+            .OptionalWhere(filterPredicate)
             .Where(u => ids.Contains(u.Id))
             .ToListAsync(cancellationToken: ct);
 
