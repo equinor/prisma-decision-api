@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PrismaApi.Infrastructure.Context;
 
@@ -10,12 +11,14 @@ using PrismaApi.Infrastructure.Context;
 namespace PrismaApi.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260715095307_AddDeletedUser")]
+    partial class AddDeletedUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.13");
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Assessment", b =>
                 {
@@ -63,9 +66,6 @@ namespace PrismaApi.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("BoardSheetId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Color")
@@ -137,8 +137,6 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BoardSheetId");
-
                     b.HasIndex("CreatedById");
 
                     b.HasIndex("ProjectId");
@@ -146,45 +144,6 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasIndex("UpdatedById");
 
                     b.ToTable("BoardNode", (string)null);
-                });
-
-            modelBuilder.Entity("PrismaApi.Domain.Entities.BoardSheet", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("CreatedById")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("ProjectId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UpdatedById")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("ProjectId");
-
-                    b.HasIndex("UpdatedById");
-
-                    b.ToTable("BoardSheet", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Decision", b =>
@@ -1117,12 +1076,6 @@ namespace PrismaApi.Infrastructure.Migrations
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.BoardNode", b =>
                 {
-                    b.HasOne("PrismaApi.Domain.Entities.BoardSheet", "BoardSheet")
-                        .WithMany()
-                        .HasForeignKey("BoardSheetId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("PrismaApi.Domain.Entities.User", "CreatedBy")
                         .WithMany()
                         .HasForeignKey("CreatedById")
@@ -1131,35 +1084,6 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany("BoardNodes")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("PrismaApi.Domain.Entities.User", "UpdatedBy")
-                        .WithMany()
-                        .HasForeignKey("UpdatedById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("BoardSheet");
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("Project");
-
-                    b.Navigation("UpdatedBy");
-                });
-
-            modelBuilder.Entity("PrismaApi.Domain.Entities.BoardSheet", b =>
-                {
-                    b.HasOne("PrismaApi.Domain.Entities.User", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
-                        .WithMany("BoardSheets")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1569,22 +1493,22 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Option", "ChildOption")
                         .WithMany()
                         .HasForeignKey("ChildOptionId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PrismaApi.Domain.Entities.Outcome", "ChildOutcome")
                         .WithMany()
                         .HasForeignKey("ChildOutcomeId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PrismaApi.Domain.Entities.Option", "ParentOption")
                         .WithMany()
                         .HasForeignKey("ParentOptionId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PrismaApi.Domain.Entities.Outcome", "ParentOutcome")
                         .WithMany()
                         .HasForeignKey("ParentOutcomeId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
@@ -1784,8 +1708,6 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Navigation("Assessments");
 
                     b.Navigation("BoardNodes");
-
-                    b.Navigation("BoardSheets");
 
                     b.Navigation("Edges");
 

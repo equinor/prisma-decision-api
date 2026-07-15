@@ -82,6 +82,12 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
         return user;
     }
 
+    /// <summary>
+    /// Deletes users by their ids. 
+    /// Before deleting, it updates all auditable entities that reference the user to point to the deleted user entry. 
+    /// This is done to avoid foreign key constraint violations when deleting a user.
+    /// Also, deletes all related project roles for the user
+    /// </summary>
     public override async Task DeleteByIdsAsync(IEnumerable<string> ids, Expression<Func<User, bool>>? filterPredicate = null, CancellationToken ct = default)
     {
         var entries = await DbContext.Users
@@ -103,44 +109,27 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
         }).ToArray();
         var inClause = string.Join(",", idParams.Select(p => p.ParameterName));
 
+        // get all auditable entity types that need the user id updated to the deleted user id. 
+        // This is done to avoid foreign key constraint violations when deleting a user.
         var auditableEntityTypes = DbContext.Model.GetEntityTypes()
             .Where(t => typeof(AuditableEntity).IsAssignableFrom(t.ClrType) && !t.ClrType.IsAbstract);
 
         foreach (var entityType in auditableEntityTypes)
         {
             var tableName = entityType.GetTableName();
-            try
-            {
                 
-                await DbContext.Database.ExecuteSqlRawAsync($"""
-                    UPDATE [{tableName}]
-                    SET CreatedById = '{DomainConstants.DeletedUserId}'
-                    WHERE CreatedById IN ({inClause});
-                    UPDATE [{tableName}]
-                    SET UpdatedById = '{DomainConstants.DeletedUserId}'
-                    WHERE UpdatedById IN ({inClause});
-                    """, [.. idParams.Concat(idParams).Cast<object>()], ct);
-            }
-            catch (Exception e)
-            {
-                
-                throw e;
-            }
+            // using raw SQL over the parameterized ExecuteSqlAsync due to issues with the in clause.
+            // ExecuteSqlAsync protects against SQL injection, 
+            // but all inputed data are controlled by the api and takes no user input.
+            await DbContext.Database.ExecuteSqlRawAsync($"""
+                UPDATE [{tableName}]
+                SET CreatedById = '{DomainConstants.DeletedUserId}'
+                WHERE CreatedById IN ({inClause});
+                UPDATE [{tableName}]
+                SET UpdatedById = '{DomainConstants.DeletedUserId}'
+                WHERE UpdatedById IN ({inClause});
+                """, [.. idParams.Concat(idParams).Cast<object>()], ct);
         }
-        // var auditableEntitiesToUpdate = DbContext.
-
-        // foreach (var auditableEntity in auditableEntitiesToUpdate)
-        // {
-        //     if (ids.Contains(auditableEntity.UpdatedById))
-        //     {
-        //         auditableEntity.UpdatedById = DomainConstants.DeletedUserId;
-        //     }
-
-        //     if (ids.Contains(auditableEntity.CreatedById))
-        //     {
-        //         auditableEntity.CreatedById = DomainConstants.DeletedUserId;
-        //     }
-        // }
 
         // delete project roles
         var projectRoles = await DbContext.ProjectRoles
