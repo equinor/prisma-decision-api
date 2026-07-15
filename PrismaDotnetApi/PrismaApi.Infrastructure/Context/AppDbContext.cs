@@ -165,7 +165,7 @@ public partial class AppDbContext : DbContext
             var currentFacilitatorCount = await ProjectRoles
                 .AsNoTracking()
                 .CountAsync(r => r.ProjectId == projectId &&
-                    r.Role.IsFacilitator(), 
+                    r.Role.ToLower() == ProjectRoleType.Facilitator.ToString().ToLower(),
                     cancellationToken);
 
             if (currentFacilitatorCount - facilitatorsBeingRemoved <= 0)
