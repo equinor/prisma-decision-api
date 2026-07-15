@@ -59,9 +59,11 @@ public class ObjectivesController : PrismaBaseEntityController
     }
 
     [HttpGet("projects/{projectId:guid}/objectives")]
-    public IActionResult GetObjectivesByProject(Guid projectId, CancellationToken ct = default)
+    public async Task<ActionResult<List<ObjectiveOutgoingDto>>> GetObjectivesByProject(Guid projectId, CancellationToken ct = default)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented);
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
+        var result = await _objectiveService.GetByProjectAsync(projectId, user, ct);
+        return Ok(result);
     }
 
     [HttpPut("objectives")]

@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Services;
 
-public class ObjectiveService: IObjectiveService
+public class ObjectiveService : IObjectiveService
 {
     private readonly IObjectiveRepository _objectiveRepository;
 
@@ -48,7 +48,14 @@ public class ObjectiveService: IObjectiveService
         var entities = await _objectiveRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
         return entities.ToOutgoingDtos();
     }
+    public async Task<List<ObjectiveOutgoingDto>> GetByProjectAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
+    {
+        var objectives = await _objectiveRepository.GetAllAsync(filterPredicate: ProjectAndUserFilter(projectId, user), ct: ct);
+        return objectives.ToOutgoingDtos();
+    }
 
     private static Expression<Func<Objective, bool>> UserFilter(UserOutgoingDto user)
         => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+    private static Expression<Func<Objective, bool>> ProjectAndUserFilter(Guid projectId, UserOutgoingDto user)
+        => e => e.ProjectId == projectId && e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 }

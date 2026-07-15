@@ -3,6 +3,7 @@ using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
+using PrismaApi.Domain.Extensions;
 using PrismaApi.Infrastructure.Context;
 using System.Linq.Expressions;
 
@@ -41,11 +42,11 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
         var entities = await GetByIdsAsync(incomingEntities.Select(e => e.Id), withTracking: true, filterPredicate: filterPredicate, ct: ct);
         foreach (var entity in entities)
         {
-            var incomingEntity = incomingEntities.Where(x => x.Id == entity.Id).First();
+            var incomingEntity = incomingEntities.First(x => x.Id == entity.Id);
 
             // if user is not a facillitator, they cannnot change the role type.
             bool isUserFacillitator = entity.ProjectRoles
-                .Any(r => string.Equals(r.Role, ProjectRoleType.Facilitator.ToString(), StringComparison.OrdinalIgnoreCase) && r.UserId == userDto.Id);
+                .Any(r => r.Role.IsFacilitator() && r.UserId == userDto.Id);
 
             if (!isUserFacillitator)
             {
@@ -60,12 +61,15 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
             entity.EndDate = incomingEntity.EndDate;
             entity.UpdatedById = incomingEntity.UpdatedById;
 
-            if (incomingEntity.ProjectRoles.Count != 0)
+            if (incomingEntity.ProjectRoles.Count == 0)
             {
-                entity.ProjectRoles.Update(incomingEntity.ProjectRoles, DbContext);
+                throw new InvalidOperationException("At least one project role is required.");
             }
-            entity.Objectives.Update(incomingEntity.Objectives, DbContext);
-            entity.Strategies.Update(incomingEntity.Strategies, DbContext);
+            if (!incomingEntity.ProjectRoles.Any(x => x.Role.IsFacilitator()))
+            {
+                throw new InvalidOperationException(ExceptionMessages.MinimumFacilitatorRequirement);
+            }
+            entity.ProjectRoles.Update(incomingEntity.ProjectRoles, DbContext);
             entity.BoardNodes.Update(incomingEntity.BoardNodes, DbContext);
         }
 

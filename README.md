@@ -22,6 +22,82 @@ dotnet build
 dotnet run
 ```
 
+### .NET User Secrets
+
+The .NET API requires `AzureAd:ClientSecret` for Azure AD authentication. User secrets let you store sensitive config locally without committing it to source control.
+
+If not already initialized, run once (from the repository root):
+
+```bash
+dotnet user-secrets init --project PrismaDotnetApi/PrismaApi.Api/PrismaApi.Api.csproj
+```
+
+Then set the secret:
+
+```bash
+dotnet user-secrets set "AzureAd:ClientSecret" "your-secret" --project PrismaDotnetApi/PrismaApi.Api/PrismaApi.Api.csproj
+```
+
+> **Note:** User secrets are only loaded automatically when `ASPNETCORE_ENVIRONMENT=Development` or `ASPNETCORE_ENVIRONMENT=Local`
+
+
+## Docker Compose
+
+Run both APIs together with Docker Compose from the repository root.
+
+### Prerequisites
+
+- Docker Desktop (or Docker Engine + Compose)
+
+### Runtime Mode
+
+The docker compose setup runs the .NET API in **Research** mode with SQLite:
+
+- `ASPNETCORE_ENVIRONMENT=Research`
+- `ConnectionStrings__SqliteConnection=Data Source=/data/Prisma.db`
+- `FastApiService__BaseUrl=http://fastapi:8000`
+
+Important networking note:
+
+- From your host machine, FastAPI is available at `http://localhost:8000`.
+- From the `api` container, FastAPI must be addressed as `http://fastapi:8000` (service DNS name on the compose network).
+
+### Start Services
+
+```bash
+docker compose up --build
+```
+
+### Stop Services
+
+```bash
+docker compose down
+```
+
+
+### Rebuild from scratch (clear cache)
+
+```bash
+docker compose build --no-cache
+docker compose up
+```
+
+
+### Reset SQLite Data
+
+The API stores SQLite at `/data/Prisma.db` in the `api-data` named volume.
+
+Remove containers and volume (full DB reset):
+
+```bash
+docker compose down -v
+```
+
+### Notes
+
+- The `api` service runs as root in Docker Compose for local development to avoid SQLite write-permission issues on the named volume.
+- Normal `docker compose down` keeps your SQLite data. Use `-v` only when you want to reset it.
+
 ## Database Migrations
 
 Migrations use Entity Framework Core with separate projects for SQLite and SQL Server ([docs](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/projects?tabs=dotnet-core-cli)).

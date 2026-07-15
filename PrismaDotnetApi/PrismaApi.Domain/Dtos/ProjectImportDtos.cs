@@ -12,6 +12,11 @@ public class ProjectImportDto
     [JsonPropertyName("issues")]
     public List<IssueIncomingDto> Issues { get; set; } = new();
 
+    [JsonPropertyName("objectives")]
+    public List<ObjectiveIncomingDto> Objectives { get; set; } = new();
+    [JsonPropertyName("strategies")]
+    public List<StrategyIncomingDto> Strategies { get; set; } = new();
+
     [JsonPropertyName("edges")]
     public List<EdgeIncomingDto> Edges { get; set; } = new();
     [JsonPropertyName("assessments")]

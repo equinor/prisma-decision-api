@@ -35,27 +35,30 @@ public static class MemoryCacheExtensions
     public static InfluenceDiagramDto? GetCacheItemAsInfluenceDiagram(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached diagram
-        if (!user.HasAccessToProject(projectId))
+
+        if (!cache.HasAccessToProject(user, projectId))
         {
             return null;
         }
-        return cache.GetCacheItem<InfluenceDiagramDto>(CacheKeys.GetInfluenceDiagramKey(projectId));  
+        return cache.GetCacheItem<InfluenceDiagramDto>(CacheKeys.GetInfluenceDiagramKey(projectId));
     }
 
     public static List<IssueOutgoingDto>? GetCacheItemAsIssues(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached issues
-        if (!user.HasAccessToProject(projectId))
+
+        if (!cache.HasAccessToProject(user, projectId))
         {
             return null;
         }
         return cache.GetCacheItem<List<IssueOutgoingDto>>(CacheKeys.GetIssuesInProjectKey(projectId));
     }
 
-     public static List<EdgeOutgoingDto>? GetCacheItemAsEdges(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
+    public static List<EdgeOutgoingDto>? GetCacheItemAsEdges(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached edges
-        if (!user.HasAccessToProject(projectId))
+
+        if (!cache.HasAccessToProject(user, projectId))
         {
             return null;
         }
@@ -65,7 +68,8 @@ public static class MemoryCacheExtensions
     public static List<NodeOutgoingDto>? GetCacheItemAsNodes(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached nodes
-        if (!user.HasAccessToProject(projectId))
+
+        if (!cache.HasAccessToProject(user, projectId))
         {
             return null;
         }
@@ -75,7 +79,7 @@ public static class MemoryCacheExtensions
     public static List<BoardNodeOutgoingDto>? GetCacheItemAsBoardNodes(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached board nodes
-        if (!user.HasAccessToProject(projectId))
+        if (!cache.HasAccessToProject(user, projectId))
         {
             return null;
         }
@@ -85,12 +89,44 @@ public static class MemoryCacheExtensions
     public static List<AssessmentOutgoingDto>? GetCacheItemAsAssessment(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached assessment
-        if (!user.HasAccessToProject(projectId))
+        if (!cache.HasAccessToProject(user, projectId))
         {
             return null;
         }
         return cache.GetCacheItem<List<AssessmentOutgoingDto>>(CacheKeys.GetAssessmentKey(projectId));
     }
+
+
+
+    public static HashSet<Guid> GetPublicProjectIds(this IMemoryCache cache)
+    {
+        // check that the user has access to the public projects before returning cached public project ids
+        return cache.GetCacheItem<HashSet<Guid>>(CacheKeys.PublicProjectIdsKey) ?? new HashSet<Guid>();
+    }
+
+    public static HashSet<Guid> GetAccessibleProjectIds(this IMemoryCache cache, UserOutgoingDto user)
+    {
+        var projectIds = user.ProjectRoles.Select(r => r.ProjectId).ToHashSet();
+        projectIds.UnionWith(cache.GetPublicProjectIds());
+        return projectIds;
+    }
+
+    public static void UpdatePublicProjectIds(this IMemoryCache cache, HashSet<Guid> idsToRemove, HashSet<Guid> idsToAdd)
+    {
+        cacheLock.Wait();
+        try
+        {
+            var publicProjectIds = new HashSet<Guid>(cache.GetPublicProjectIds());
+            publicProjectIds.ExceptWith(idsToRemove);
+            publicProjectIds.UnionWith(idsToAdd);
+            cache.Set(CacheKeys.PublicProjectIdsKey, publicProjectIds, CacheEntryOptions);
+        }
+        finally
+        {
+            _ = cacheLock.Release();
+        }
+    }
+
 
     public static void AddCacheItem(this IMemoryCache cache, CacheItem key, TimeSpan? duration,
         object? value)
@@ -104,6 +140,7 @@ public static class MemoryCacheExtensions
         cacheLock.Wait();
         try
         {
+
             if (duration.HasValue)
             {
                 _ = cache.Set(key.CacheKey, value, duration.Value);
@@ -191,6 +228,12 @@ public static class MemoryCacheExtensions
         return Math.Round(totalBytes / (1024.0 * 1024.0), 4);
     }
 
-    private static bool HasAccessToProject(this UserOutgoingDto user, Guid projectId)
-        => user.ProjectRoles.Any(pr => pr.ProjectId == projectId);
+    private static bool HasAccessToProject(this IMemoryCache cache, UserOutgoingDto user, Guid projectId)
+    {
+        if (user.ProjectRoles.Any(pr => pr.ProjectId == projectId))
+            return true;
+
+        var publicIds = cache.GetCacheItem<HashSet<Guid>>(CacheKeys.PublicProjectIdsKey);
+        return publicIds?.Contains(projectId) == true;
+    }
 }

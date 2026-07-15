@@ -9,4 +9,5 @@ public static class CacheKeys
     public static string GetAssessmentKey(Guid projectId) => $"Assessment_Project_{projectId}";
     public static string GetBoardNodesInProjectKey(Guid projectId) => $"BoardNodes_Project_{projectId}";
     public static string GetUserKey(string key) => $"user_{key.ToLower()}"; // id internal, name in public
+    public const string PublicProjectIdsKey = "Public_Project_Ids";
 }

@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 from src.utils.visit_tree_node_and_populate import visit_tree_node_and_populate
 from src.services.decision_tree.decision_tree_creator_v3 import DecisionTreeCreator_v3
 from concurrent.futures import ThreadPoolExecutor
@@ -40,6 +41,20 @@ class SolverService:
         solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
 
         return solution
+    
+    async def find_optimal_decision_pyagrum_from_with_evidence(
+        self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []
+    ) -> list[SolutionDto]:
+        
+        solver = PyagrumSolver()
+        return await solver.get_solutions_given_evidence(issues=issues, edges=edges, evidence=evidence)
+    
+    async def get_MEU_given_evidence(
+        self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []
+    ) -> list[Optional[float]]:
+        
+        solver = PyagrumSolver()
+        return await solver.get_mean_expected_utilities_given_evidence(issues=issues, edges=edges, evidence=evidence)
 
     async def get_decision_tree_for_optimal_decisions_old(
         self, project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]

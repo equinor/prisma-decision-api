@@ -6,7 +6,7 @@ using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure.Caching;
-using Scampi.Domain.Extensions;
+using PrismaApi.Domain.Extensions;
 
 namespace PrismaApi.Application.Services;
 

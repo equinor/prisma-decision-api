@@ -742,6 +742,121 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.ToTable("ProjectRoles");
                 });
 
+            modelBuilder.Entity("PrismaApi.Domain.Entities.RestrictionEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ChildOptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ChildOutcomeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ChildStateId")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("uniqueidentifier")
+                        .HasComputedColumnSql("COALESCE([ChildOptionId], [ChildOutcomeId])", true);
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("ParentOptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ParentOutcomeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ParentStateId")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("uniqueidentifier")
+                        .HasComputedColumnSql("COALESCE([ParentOptionId], [ParentOutcomeId])", true);
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RestrictionTableId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double>("RestrictionValue")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(53)
+                        .HasColumnType("float(53)")
+                        .HasDefaultValue(1.0);
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChildOptionId");
+
+                    b.HasIndex("ChildOutcomeId");
+
+                    b.HasIndex("ParentOptionId");
+
+                    b.HasIndex("ParentOutcomeId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("RestrictionTableId");
+
+                    b.HasIndex("ParentStateId", "ChildStateId", "RestrictionTableId")
+                        .IsUnique();
+
+                    b.ToTable("RestrictionEntries", t =>
+                        {
+                            t.HasCheckConstraint("CK_RestrictionEntry_Child", "([ChildOptionId] IS NULL AND [ChildOutcomeId] IS NOT NULL) OR ([ChildOptionId] IS NOT NULL AND [ChildOutcomeId] IS NULL)");
+
+                            t.HasCheckConstraint("CK_RestrictionEntry_Parent", "([ParentOptionId] IS NULL AND [ParentOutcomeId] IS NOT NULL) OR ([ParentOptionId] IS NOT NULL AND [ParentOutcomeId] IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("PrismaApi.Domain.Entities.RestrictionTable", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("EdgeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UpdatedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("EdgeId")
+                        .IsUnique();
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("RestrictionTables");
+                });
+
             modelBuilder.Entity("PrismaApi.Domain.Entities.Strategy", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1375,6 +1490,88 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("PrismaApi.Domain.Entities.RestrictionEntry", b =>
+                {
+                    b.HasOne("PrismaApi.Domain.Entities.Option", "ChildOption")
+                        .WithMany()
+                        .HasForeignKey("ChildOptionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PrismaApi.Domain.Entities.Outcome", "ChildOutcome")
+                        .WithMany()
+                        .HasForeignKey("ChildOutcomeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PrismaApi.Domain.Entities.Option", "ParentOption")
+                        .WithMany()
+                        .HasForeignKey("ParentOptionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PrismaApi.Domain.Entities.Outcome", "ParentOutcome")
+                        .WithMany()
+                        .HasForeignKey("ParentOutcomeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("PrismaApi.Domain.Entities.RestrictionTable", "RestrictionTable")
+                        .WithMany("RestrictionEntries")
+                        .HasForeignKey("RestrictionTableId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChildOption");
+
+                    b.Navigation("ChildOutcome");
+
+                    b.Navigation("ParentOption");
+
+                    b.Navigation("ParentOutcome");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("RestrictionTable");
+                });
+
+            modelBuilder.Entity("PrismaApi.Domain.Entities.RestrictionTable", b =>
+                {
+                    b.HasOne("PrismaApi.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PrismaApi.Domain.Entities.Edge", "Edge")
+                        .WithOne()
+                        .HasForeignKey("PrismaApi.Domain.Entities.RestrictionTable", "EdgeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("PrismaApi.Domain.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Edge");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("PrismaApi.Domain.Entities.Strategy", b =>
                 {
                     b.HasOne("PrismaApi.Domain.Entities.User", "CreatedBy")
@@ -1525,6 +1722,11 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Navigation("ProjectRoles");
 
                     b.Navigation("Strategies");
+                });
+
+            modelBuilder.Entity("PrismaApi.Domain.Entities.RestrictionTable", b =>
+                {
+                    b.Navigation("RestrictionEntries");
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Strategy", b =>

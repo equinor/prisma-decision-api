@@ -17,8 +17,6 @@ public static class ProjectMappingExtensions
             OpportunityStatement = entity.OpportunityStatement,
             Public = entity.Public,
             EndDate = entity.EndDate,
-            Objectives = entity.Objectives.ToOutgoingDtos(),
-            Strategies = entity.Strategies.ToOutgoingDtos(),
             Users = entity.ProjectRoles.ToOutgoingDtos(),
             BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
         };
@@ -30,15 +28,16 @@ public static class ProjectMappingExtensions
         {
             Id = entity.Id,
             Name = entity.Name,
+            Objectives = entity.Objectives.ToOutgoingDtos(),
+            Strategies = entity.Strategies.ToOutgoingDtos(),
             ParentProjectId = entity.ParentProjectId,
             ParentProjectName = entity.ParentProjectName ?? "",
             OpportunityStatement = entity.OpportunityStatement,
             Public = entity.Public,
             EndDate = entity.EndDate,
-            Objectives = entity.Objectives.ToOutgoingDtos(),
-            Strategies = entity.Strategies.ToOutgoingDtos(),
             Users = entity.ProjectRoles.ToOutgoingDtos(),
             BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
+
         };
     }
 
@@ -63,9 +62,9 @@ public static class ProjectMappingExtensions
             OpportunityStatement = entity.OpportunityStatement,
             Public = entity.Public,
             EndDate = entity.EndDate,
-            Objectives = entity.Objectives.ToOutgoingDtos(),
-            Strategies = entity.Strategies.ToOutgoingDtos(),
             Users = entity.ProjectRoles.ToOutgoingDtos(),
+            strategies = entity.Strategies.ToOutgoingDtos(),
+            objectives = entity.Objectives.ToOutgoingDtos(),
             Issues = entity.Issues.ToOutgoingDtos(),
             Edges = entity.Edges.ToOutgoingDtos(),
             BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
@@ -86,7 +85,6 @@ public static class ProjectMappingExtensions
             EndDate = dto.EndDate,
             CreatedById = userDto.Id,
             UpdatedById = userDto.Id,
-            Objectives = dto.Objectives.ToEntities(dto.Id, userDto),
             ProjectRoles = dto.Users.ToEntities(userDto),
             BoardNodes = dto.BoardNodes.ToEntities(userDto),
         };
@@ -105,8 +103,6 @@ public static class ProjectMappingExtensions
             EndDate = dto.EndDate,
             CreatedById = userDto.Id,
             UpdatedById = userDto.Id,
-            Objectives = dto.Objectives.ToEntities(dto.Id, userDto),
-            Strategies = dto.Strategies.ToEntities(userDto),
             ProjectRoles = dto.Users.ToEntities(userDto),
             BoardNodes = dto.BoardNodes.ToEntities(userDto),
         };

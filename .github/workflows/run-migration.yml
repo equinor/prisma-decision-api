@@ -71,6 +71,10 @@ jobs:
       - name: Install EF Core tools
         run: dotnet tool install --global dotnet-ef
 
+      - name: Restore NuGet packages
+        working-directory: PrismaDotnetApi/
+        run: dotnet restore PrismaApi.sln
+
       - name: Run migration
         working-directory: PrismaDotnetApi/
         env:

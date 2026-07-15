@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
+using PrismaApi.Domain.Extensions;
 using PrismaApi.Domain.Interfaces;
 using PrismaApi.Infrastructure.DiscreteTables;
 
@@ -47,6 +48,8 @@ public partial class AppDbContext : DbContext
     public DbSet<Assessment> Assessments => Set<Assessment>();
     public DbSet<DecisionQualityAssessment> DecisionQualityAssessments => Set<DecisionQualityAssessment>();
     public DbSet<BoardNode> BoardNodes => Set<BoardNode>();
+    public DbSet<RestrictionTable> RestrictionTables => Set<RestrictionTable>();
+    public DbSet<RestrictionEntry> RestrictionEntries => Set<RestrictionEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -77,6 +80,8 @@ public partial class AppDbContext : DbContext
         Assessment.OnModelConfiguring(modelBuilder);
         DecisionQualityAssessment.OnModelConfiguring(modelBuilder);
         BoardNode.OnModelConfiguring(modelBuilder);
+        RestrictionTable.OnModelConfiguring(modelBuilder);
+        RestrictionEntry.OnModelConfiguring(modelBuilder);
     }
 
     private IEnumerable<EntityEntry<T>> GetChangedEntries<T>() where T : class =>
@@ -146,13 +151,13 @@ public partial class AppDbContext : DbContext
 
         foreach (var (projectId, roles) in affectedByProject)
         {
+            var facilitatorRole = ProjectRoleType.Facilitator.ToString();
+
             var facilitatorsBeingRemoved = roles.Count(role =>
                 role.State == EntityState.Deleted
-                    ? string.Equals(role.Entity.Role, ProjectRoleType.Facilitator.ToString(), StringComparison.OrdinalIgnoreCase)
-                    : string.Equals(
-                        role.OriginalValues.GetValue<string>(nameof(ProjectRole.Role)),
-                        ProjectRoleType.Facilitator.ToString(),
-                        StringComparison.OrdinalIgnoreCase));
+                    ? role.Entity.Role.IsFacilitator()
+                    : role.OriginalValues.GetValue<string>(nameof(ProjectRole.Role)).IsFacilitator()
+                    && !role.CurrentValues.GetValue<string>(nameof(ProjectRole.Role)).IsFacilitator());
 
             if (facilitatorsBeingRemoved == 0)
                 continue;
@@ -160,11 +165,11 @@ public partial class AppDbContext : DbContext
             var currentFacilitatorCount = await ProjectRoles
                 .AsNoTracking()
                 .CountAsync(r => r.ProjectId == projectId &&
-                                 r.Role.ToUpper() == ProjectRoleType.Facilitator.ToString().ToUpper(),
-                             cancellationToken);
+                    r.Role.IsFacilitator(), 
+                    cancellationToken);
 
             if (currentFacilitatorCount - facilitatorsBeingRemoved <= 0)
-                throw new InvalidOperationException("Projects must have at least one Facilitator.");
+                throw new InvalidOperationException(ExceptionMessages.MinimumFacilitatorRequirement);
         }
     }
 

@@ -26,7 +26,8 @@ ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 
 # Run as non-root
 RUN addgroup -S -g 2001 ep-sb-non-root-group && \
-    adduser -S -u 2001 -G ep-sb-non-root-group ep-sb-non-root-user
+    adduser -S -u 2001 -G ep-sb-non-root-group ep-sb-non-root-user && \
+    mkdir -p /data && chown 2001:2001 /data
 USER 2001
 
 ENV ASPNETCORE_URLS="http://+:7075"

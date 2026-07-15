@@ -9,7 +9,7 @@ spec:
         from: prod|prod-deploy*
     - name: test
       build:
-        from: v0*
+        from: v*
     - name: dev
       build:
         from: main|dev-deploy*
