@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Graph.IdentityGovernance.EntitlementManagement.Assignments.AdditionalAccessWithAccessPackageIdWithIncompatibleAccessPackageId;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Constants;
