@@ -127,7 +127,7 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
                 UPDATE [{tableName}]
                 SET UpdatedById = '{DomainConstants.DeletedUserId}'
                 WHERE UpdatedById IN ({inClause});
-                """, [.. idParams.Concat(idParams).Cast<object>()], ct);
+                """, [.. idParams.Cast<object>()], ct);
         }
 
         // delete project roles
