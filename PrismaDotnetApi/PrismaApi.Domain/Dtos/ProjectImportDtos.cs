@@ -23,4 +23,6 @@ public class ProjectImportDto
     public List<AssessmentIncomingDto> Assessments { get; set; } = new();
     [JsonPropertyName("boardNodes")]
     public List<BoardNodeIncomingDto> BoardNodes { get; set; } = new();
+    [JsonPropertyName("board_sheets")]
+    public List<BoardSheetIncomingDto> BoardSheets { get; set; } = new();
 }

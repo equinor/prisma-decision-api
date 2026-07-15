@@ -61,7 +61,7 @@ namespace PrismaApi.Infrastructure.Migrations
                 SELECT 
                     NEWID() as Id,
                     p.Id as ProjectId,
-                    'Default Board' as Name,
+                    'Default Board Sheet' as Name,
                     SYSDATETIMEOFFSET() as CreatedAt,
                     SYSDATETIMEOFFSET() as UpdatedAt,
                     p.CreatedById as CreatedById,

@@ -19,7 +19,9 @@ public class ProjectDuplicationService : IProjectDuplicationService
     private readonly IAssessmentService _assessmentService;
     private readonly IObjectiveService _objectiveService;
     private readonly IDecisionQualityAssessmentService _decisionQualityAssessmentService;
-    private readonly IBoardNodeService _boardNodeService; private readonly IMemoryCache _cache;
+    private readonly IBoardNodeService _boardNodeService;
+    private readonly IBoardSheetService _boardSheetService;
+    private readonly IMemoryCache _cache;
 
     public ProjectDuplicationService(
         IProjectDuplicationRepository duplicationRepo,
@@ -33,6 +35,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         IAssessmentService assessmentService,
         IDecisionQualityAssessmentService decisionQualityAssessmentService,
         IBoardNodeService boardNodeService,
+        IBoardSheetService boardSheetService,
         IObjectiveService objectiveService)
     {
         _duplicationRepo = duplicationRepo;
@@ -45,6 +48,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         _assessmentService = assessmentService;
         _decisionQualityAssessmentService = decisionQualityAssessmentService;
         _boardNodeService = boardNodeService;
+        _boardSheetService = boardSheetService;
         _objectiveService = objectiveService;
         _cache = cache;
     }
@@ -136,6 +140,10 @@ public class ProjectDuplicationService : IProjectDuplicationService
         var decisionQualityAssessmentDtos = CreateDecisionQualityAssessments(fullProject.Assessments.SelectMany(a => a.DecisionQualityAssessments ?? []), assessmentIdMap, newProjectId);
         if (decisionQualityAssessmentDtos.Count > 0)
             await _decisionQualityAssessmentService.CreateAsync(decisionQualityAssessmentDtos, user, ct);
+
+        var boardSheetDtos = CreateBoardSheets(fullProject.BoardSheets, newProjectId, mappings);
+        if (boardSheetDtos.Count > 0)
+            await _boardSheetService.CreateAsync(boardSheetDtos, user, ct);
 
         foreach (var boardNode in fullProject.BoardNodes)
             mappings.Node[boardNode.Id] = Guid.NewGuid();
@@ -234,6 +242,10 @@ public class ProjectDuplicationService : IProjectDuplicationService
         var decisionQualityAssessmentDtos = CreateDecisionQualityAssessments(dto.Assessments.SelectMany(a => a.DecisionQualityAssessments ?? []), assessmentIdMap, newProjectId);
         if (decisionQualityAssessmentDtos.Count > 0)
             await _decisionQualityAssessmentService.CreateAsync(decisionQualityAssessmentDtos, user, ct);
+
+        var boardSheetDtosFromImport = CreateBoardSheets(dto.BoardSheets, newProjectId, mappings);
+        if (boardSheetDtosFromImport.Count > 0)
+            await _boardSheetService.CreateAsync(boardSheetDtosFromImport, user, ct);
 
         var boardNodes = CreateBoardNodes(dto.BoardNodes, newProjectId, mappings);
         if (boardNodes.Count > 0)
@@ -542,7 +554,26 @@ public class ProjectDuplicationService : IProjectDuplicationService
             YPosition = boardNode.YPosition,
             Rotation = boardNode.Rotation,
             Data = RemapBoardNodeData(boardNode.Type, boardNode.Data, mappings),
-            Color = boardNode.Color
+            Color = boardNode.Color,
+            BoardSheetId = mappings.BoardSheet.GetValueOrDefault(boardNode.BoardSheetId, boardNode.BoardSheetId)
+        }).ToList();
+    }
+
+    private static List<BoardSheetIncomingDto> CreateBoardSheets<TBoardSheet>(
+        IEnumerable<TBoardSheet> boardSheets,
+        Guid newProjectId,
+        IdMappings mappings) where TBoardSheet : BoardSheetDto
+    {
+        return boardSheets.Select(boardSheet =>
+        {
+            var newId = Guid.NewGuid();
+            mappings.BoardSheet[boardSheet.Id] = newId;
+            return new BoardSheetIncomingDto
+            {
+                Id = newId,
+                ProjectId = newProjectId,
+                Name = boardSheet.Name
+            };
         }).ToList();
     }
 
@@ -638,5 +669,6 @@ public class ProjectDuplicationService : IProjectDuplicationService
         public Dictionary<Guid, Guid> Node { get; } = new();
         public Dictionary<Guid, Guid> Outcome { get; } = new();
         public Dictionary<Guid, Guid> Option { get; } = new();
+        public Dictionary<Guid, Guid> BoardSheet { get; } = new();
     }
 }

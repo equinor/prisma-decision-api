@@ -32,7 +32,7 @@ public class BoardNodeDto
     [JsonPropertyName("stroke_width")]
     public float StrokeWidth { get; set; } = DomainConstants.DefaultStrokeWidth;
     [JsonPropertyName("board_sheet_id")]
-    public Guid BoardSheetId { get; set; }
+    public required Guid BoardSheetId { get; set; }
 }
 
 public class BoardNodeIncomingDto : BoardNodeDto, ITypedBoardNode
