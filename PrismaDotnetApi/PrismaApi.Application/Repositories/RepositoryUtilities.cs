@@ -13,7 +13,8 @@ public static class RepositoryUtilities
         var entitiesToRemove = entities.Where(e => !incomingEntities.Any(ie => EqualityComparer<TId>.Default.Equals(ie.Id, e.Id))).ToList();
         foreach (var entityToRemove in entitiesToRemove)
         {
-            entities.Remove(entityToRemove);
+            // Marking the entity as Deleted in the context
+            // so that it will be removed from the database when SaveChanges is called.
             context.Entry(entityToRemove).State = EntityState.Deleted;
         }
         return entities;
@@ -24,7 +25,8 @@ public static class RepositoryUtilities
         var entitiesToAdd = incomingEntities.Where(ie => !entities.Any(e => EqualityComparer<TId>.Default.Equals(ie.Id, e.Id))).ToList();
         foreach (var entityToAdd in entitiesToAdd)
         {
-            entities.Add(entityToAdd);
+            // Marking the entity as Added in the context
+            // so that it will be inserted into the database when SaveChanges is called.
             context.Entry(entityToAdd).State = EntityState.Added;
         }
         return entities;
@@ -36,7 +38,8 @@ public static class RepositoryUtilities
         var entitiesToRemove = entities.Where(e => !incomingEntities.Any(ie => EqualityComparer<TId>.Default.Equals(ie.Id, e.Id))).ToList();
         foreach (var entityToRemove in entitiesToRemove)
         {
-            entities.Remove(entityToRemove);
+            // Marking the entity as Deleted in the context
+            // so that it will be removed from the database when SaveChanges is called.
             context.Entry(entityToRemove).State = EntityState.Deleted;
         }
     }
@@ -46,7 +49,8 @@ public static class RepositoryUtilities
         var entitiesToAdd = incomingEntities.Where(ie => !entities.Any(e => EqualityComparer<TId>.Default.Equals(ie.Id, e.Id))).ToList();
         foreach (var entityToAdd in entitiesToAdd)
         {
-            entities.Add(entityToAdd);
+            // Marking the entity as Added in the context
+            // so that it will be inserted into the database when SaveChanges is called.
             context.Entry(entityToAdd).State = EntityState.Added;
         }
     }
