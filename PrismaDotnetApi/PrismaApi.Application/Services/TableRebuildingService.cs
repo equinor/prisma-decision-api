@@ -18,8 +18,6 @@ public class TableRebuildingService : ITableRebuildingService
 
     private static Guid GetDeterministicId(Guid issueId, Guid stateId, List<Guid> parentOutcomeIds, List<Guid> parentOptionIds)
     {
-        // Temporary fix as original code was tested in sqlie and switching to sql server seems to have caused some issue
-        return Guid.NewGuid();
         var combined = $"{issueId}|" +
                        $"StateId:{stateId}|" +
                        $"Outcomes:{string.Join(",", parentOutcomeIds.OrderBy(id => id))}|" +
@@ -226,7 +224,6 @@ public class TableRebuildingService : ITableRebuildingService
         {
             if (IsIssueType(issue.Type, IssueType.Uncertainty) && issue.Uncertainty != null)
             {
-
                 await RebuildUncertaintyTable(issue, ct);
             }
             else if (IsIssueType(issue.Type, IssueType.Utility) && issue.Utility != null)
