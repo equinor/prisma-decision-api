@@ -22,7 +22,7 @@ public class TableRebuildingService : ITableRebuildingService
                        $"StateId:{stateId}|" +
                        $"Outcomes:{string.Join(",", parentOutcomeIds.OrderBy(id => id))}|" +
                        $"Options:{string.Join(",", parentOptionIds.OrderBy(id => id))}";
-        return combined.GenerateDeterministicUuid();
+        return combined.GenerateDeterministicGuid();
     }
 
     private static Guid GetDeterministicIdRestrictionEntry(Guid restrictionTableId, Guid parentId, Guid childId)
@@ -30,7 +30,7 @@ public class TableRebuildingService : ITableRebuildingService
         var combined = $"{restrictionTableId}|" +
                        $"ParentId:{parentId}|" +
                        $"ChildId:{childId}";
-        return combined.GenerateDeterministicUuid();
+        return combined.GenerateDeterministicGuid();
     }
 
     public async Task RebuildTablesAsync(CancellationToken ct = default)
