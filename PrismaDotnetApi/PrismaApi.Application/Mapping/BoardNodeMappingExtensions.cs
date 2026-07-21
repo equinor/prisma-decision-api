@@ -22,6 +22,7 @@ public static class BoardNodeMappingExtensions
             StrokeWidth = entity.StrokeWidth,
             StrokeStyle = entity.StrokeStyle,
             Opacity = entity.Opacity,
+            BoardSheetId = entity.BoardSheetId,
         };
     }
 
@@ -47,6 +48,7 @@ public static class BoardNodeMappingExtensions
             StrokeWidth = dto.StrokeWidth,
             StrokeStyle = dto.StrokeStyle,
             Opacity = dto.Opacity,
+            BoardSheetId = dto.BoardSheetId,
             CreatedById = userDto.Id,
             UpdatedById = userDto.Id,
         };

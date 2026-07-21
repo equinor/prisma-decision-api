@@ -15,6 +15,7 @@ public static class DomainConstants
     public static readonly Guid DefaultValueMetricId =
         Guid.Parse("288e0811-7ab6-5d24-b80c-9fa925b848a6");
     public static readonly string DefaultValueMetricName = "value";
+    public static readonly string DefaultBoardSheetName = "Default Board Sheet";
     public const double DefaultRestrictionValue = 1.0;
 }
 
