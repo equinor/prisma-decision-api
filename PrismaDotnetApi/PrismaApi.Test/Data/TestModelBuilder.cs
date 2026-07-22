@@ -349,6 +349,24 @@ public class TestModelBuilder
             new Edge { Id = Guid.NewGuid(), ProjectId = secondaryProject.Id, TailId = secondaryUncertainty2Id, HeadId = secondaryDecision3Id },
             new Edge { Id = Guid.NewGuid(), ProjectId = secondaryProject.Id, TailId = secondaryDecision3Id, HeadId = secondaryUncertainty3Id });
 
+        db.BoardSheets.AddRange(
+            new BoardSheet
+            {
+                Id = args.BoardSheetId,
+                ProjectId = primaryProject.Id,
+                Name = "Primary Board Sheet",
+                CreatedById = primaryUser.Id,
+                UpdatedById = primaryUser.Id
+            },
+            new BoardSheet
+            {
+                Id = args.BoardSheetDeleteId,
+                ProjectId = primaryProject.Id,
+                Name = "Delete Board Sheet",
+                CreatedById = primaryUser.Id,
+                UpdatedById = primaryUser.Id
+            });
+
         await db.SaveChangesAsync();
         return args;
     }
@@ -389,6 +407,8 @@ public class TestArguments
     public Guid EdgeId { get; set; } = Guid.NewGuid();
     public Guid EdgeDeleteId { get; set; } = Guid.NewGuid();
     public Guid EdgeBulkDeleteId { get; set; } = Guid.NewGuid();
+    public Guid BoardSheetId { get; set; } = Guid.NewGuid();
+    public Guid BoardSheetDeleteId { get; set; } = Guid.NewGuid();
 
     public static int GenerateUniqueId()
     {

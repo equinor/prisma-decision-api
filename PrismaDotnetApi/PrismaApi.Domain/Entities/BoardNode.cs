@@ -20,7 +20,9 @@ public class BoardNode : AuditableEntity, IBaseEntity<Guid>
     public string StrokeStyle { get; set; } = BoardNodeStrokeStyles.Solid.ToString();
     public int Opacity { get; set; } = DomainConstants.MaxOpacity;
     public int TextSize { get; set; } = DomainConstants.DefaultTextSize;
+    public required Guid BoardSheetId { get; set; }
     public Project? Project { get; set; }
+    public BoardSheet? BoardSheet { get; set; }
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<BoardNode>(entity =>
@@ -37,10 +39,16 @@ public class BoardNode : AuditableEntity, IBaseEntity<Guid>
             entity.Property(e => e.TextSize)
                 .HasDefaultValue(DomainConstants.DefaultTextSize);
             entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
+
+            entity.HasOne(e => e.BoardSheet)
+                .WithMany()
+                .HasForeignKey(e => e.BoardSheetId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasOne(e => e.CreatedBy)
-            .WithMany()
-            .HasForeignKey(e => e.CreatedById)
-            .OnDelete(DeleteBehavior.Restrict);
+                .WithMany()
+                .HasForeignKey(e => e.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.UpdatedBy)
                 .WithMany()

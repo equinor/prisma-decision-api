@@ -17,6 +17,7 @@ public class ProjectService : IProjectService
     private readonly IIssueRepository _issueRepository;
     private readonly IEdgeRepository _edgeRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IBoardSheetRepository _boardSheetRepository;
     private readonly IMemoryCache _cache;
 
     public ProjectService(
@@ -25,6 +26,7 @@ public class ProjectService : IProjectService
         IIssueRepository issueRepository,
         IEdgeRepository edgeRepository,
         IUserRepository userRepository,
+        IBoardSheetRepository boardSheetRepository,
         IMemoryCache cache)
     {
         _projectRepository = projectRepository;
@@ -33,6 +35,7 @@ public class ProjectService : IProjectService
         _edgeRepository = edgeRepository;
         _userRepository = userRepository;
         _cache = cache;
+        _boardSheetRepository = boardSheetRepository;
         _userRepository = userRepository;
     }
 
@@ -57,6 +60,7 @@ public class ProjectService : IProjectService
             }).Distinct();
 
             await _projectRoleRepository.AddRangeAsync(facilitatorRole.ToEntities(userDto), ct);
+            await EnsureDefaultSheetsExists([.. projectEntities.Select(p => p.Id)], userDto, ct);
         }
 
         var ids = projectEntities.Select(p => p.Id).ToList();
@@ -74,6 +78,7 @@ public class ProjectService : IProjectService
 
         var projectEntities = dtos.ToEntities(userDto);
         var projects = await _projectRepository.UpdateRangeAsync(projectEntities, userDto, filterPredicate: UserFilter(userDto), ct);
+        await EnsureDefaultSheetsExists([.. projectEntities.Select(p => p.Id)], userDto, ct);
         return projects.ToOutgoingDtos();
     }
 
@@ -130,6 +135,24 @@ public class ProjectService : IProjectService
 
         _cache.AddCacheItem(new CacheItem { CacheKey = CacheKeys.GetInfluenceDiagramKey(projectId) }, CacheConstants.DefaultMediumQueryCacheInTimeSpan, diagram);
         return diagram;
+    }
+
+    private async Task EnsureDefaultSheetsExists(List<Guid> projectIds, UserOutgoingDto user, CancellationToken ct = default)
+    {
+        var existingSheets = await _boardSheetRepository.GetAllAsync(withTracking: false, filterPredicate: e => projectIds.Contains(e.ProjectId), ct: ct);
+        var projectIdsWithSheets = existingSheets.Select(e => e.ProjectId).ToHashSet();
+        var projectIdsWithoutSheets = projectIds.Except(projectIdsWithSheets).ToList();
+
+        if (projectIdsWithoutSheets.Count > 0)
+        {
+            var defaultSheets = projectIdsWithoutSheets.Select(projectId => new BoardSheetIncomingDto
+            {
+                Id = Guid.NewGuid(),
+                Name = DomainConstants.DefaultBoardSheetName,
+                ProjectId = projectId
+            }).ToList();
+            await _boardSheetRepository.AddRangeAsync(defaultSheets.ToEntities(user), ct);
+        }
     }
 
     private static Expression<Func<Project, bool>> UserFilter(UserOutgoingDto user)

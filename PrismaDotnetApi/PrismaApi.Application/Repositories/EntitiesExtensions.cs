@@ -78,6 +78,26 @@ public static class EntitiesExtensions
             entity.StrokeWidth = incomingEntity.StrokeWidth;
             entity.Opacity = incomingEntity.Opacity;
             entity.TextSize = incomingEntity.TextSize;
+            entity.BoardSheetId = incomingEntity.BoardSheetId;
+            entity.UpdatedById = incomingEntity.UpdatedById;
+        }
+    }
+
+    public static void Update(this ICollection<BoardSheet> entities, ICollection<BoardSheet> incomingEntities, AppDbContext context)
+    {
+        // delete
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<BoardSheet, Guid>(incomingEntities, entities, context);
+
+        // create
+        RepositoryUtilities.AddMissingFromCollectionMutate<BoardSheet, Guid>(incomingEntities, entities, context);
+
+        // update
+        foreach (var entity in entities)
+        {
+            var incomingEntity = incomingEntities.Where(x => x.Id == entity.Id).First();
+
+            entity.ProjectId = incomingEntity.ProjectId;
+            entity.Name = incomingEntity.Name;
             entity.UpdatedById = incomingEntity.UpdatedById;
         }
     }
@@ -160,7 +180,6 @@ public static class EntitiesExtensions
         foreach (var entityToAdd in entitiesToAdd)
         {
             context.Entry(entityToAdd).State = EntityState.Added;
-            entities.Add(entityToAdd);
         }
     }
 
@@ -196,15 +215,6 @@ public static class EntitiesExtensions
     public static async Task Update(this ICollection<Option> entities, ICollection<Option> incomingEntities, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
     {
         RepositoryUtilities.RemoveMissingFromCollectionMutate<Option, Guid>(incomingEntities, entities, context);
-        var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Option, Guid>(incomingEntities, entities);
-        foreach (var entityToAdd in entitiesToAdd)
-        {
-            context.Entry(entityToAdd).State = EntityState.Added;
-            entities.Add(entityToAdd);
-        }
-        if (ruleTrigger != null)
-            await ruleTrigger.OnDecisionOptionsAddedAsync([.. entitiesToAdd.Select(e => e.DecisionId)], ct);
-
         foreach (var entity in entities)
         {
             var inncommingEntity = incomingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
@@ -213,6 +223,14 @@ public static class EntitiesExtensions
             entity.Name = inncommingEntity.Name;
             entity.Utility = inncommingEntity.Utility;
         }
+        var entitiesToAdd = RepositoryUtilities.GetEntitiesToBeAdded<Option, Guid>(incomingEntities, entities);
+        foreach (var entityToAdd in entitiesToAdd)
+        {
+            context.Entry(entityToAdd).State = EntityState.Added;
+        }
+        if (ruleTrigger != null)
+            await ruleTrigger.OnDecisionOptionsAddedAsync([.. entitiesToAdd.Select(e => e.DecisionId)], ct);
+
     }
 
     public static async Task<Uncertainty> Update(this Uncertainty entity, Uncertainty incomingEntity, AppDbContext context, IDiscreteTableRuleEventHandler? ruleTrigger = null, CancellationToken ct = default)
@@ -234,7 +252,6 @@ public static class EntitiesExtensions
         foreach (var entityToAdd in entitiesToAdd)
         {
             context.Entry(entityToAdd).State = EntityState.Added;
-            entities.Add(entityToAdd);
         }
         if (ruleTrigger != null)
             await ruleTrigger.OnUncertaintyOutcomesAddedAsync([.. entitiesToAdd.Select(e => e.UncertaintyId)], ct);

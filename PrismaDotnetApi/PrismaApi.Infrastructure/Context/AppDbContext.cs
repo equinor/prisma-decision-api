@@ -48,6 +48,7 @@ public partial class AppDbContext : DbContext
     public DbSet<Assessment> Assessments => Set<Assessment>();
     public DbSet<DecisionQualityAssessment> DecisionQualityAssessments => Set<DecisionQualityAssessment>();
     public DbSet<BoardNode> BoardNodes => Set<BoardNode>();
+    public DbSet<BoardSheet> BoardSheets => Set<BoardSheet>();
     public DbSet<RestrictionTable> RestrictionTables => Set<RestrictionTable>();
     public DbSet<RestrictionEntry> RestrictionEntries => Set<RestrictionEntry>();
 
@@ -80,6 +81,7 @@ public partial class AppDbContext : DbContext
         Assessment.OnModelConfiguring(modelBuilder);
         DecisionQualityAssessment.OnModelConfiguring(modelBuilder);
         BoardNode.OnModelConfiguring(modelBuilder);
+        BoardSheet.OnModelConfiguring(modelBuilder);
         RestrictionTable.OnModelConfiguring(modelBuilder);
         RestrictionEntry.OnModelConfiguring(modelBuilder);
     }

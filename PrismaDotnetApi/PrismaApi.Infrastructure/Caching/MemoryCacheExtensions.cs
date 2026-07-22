@@ -86,6 +86,16 @@ public static class MemoryCacheExtensions
         return cache.GetCacheItem<List<BoardNodeOutgoingDto>>(CacheKeys.GetBoardNodesInProjectKey(projectId));
     }
 
+    public static List<BoardSheetOutgoingDto>? GetCacheItemAsBoardSheets(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
+    {
+        // check that the user has access to the project before returning cached board sheets
+        if (!cache.HasAccessToProject(user, projectId))
+        {
+            return null;
+        }
+        return cache.GetCacheItem<List<BoardSheetOutgoingDto>>(CacheKeys.GetBoardSheetsInProjectKey(projectId));
+    }
+
     public static List<AssessmentOutgoingDto>? GetCacheItemAsAssessment(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached assessment

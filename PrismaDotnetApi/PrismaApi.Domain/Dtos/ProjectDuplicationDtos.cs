@@ -16,4 +16,6 @@ public class FullProjectForDuplicationDto : ProjectOutgoingDto
     public List<EdgeOutgoingDto> Edges { get; set; } = new();
     [JsonPropertyName("assessments")]
     public List<AssessmentOutgoingDto> Assessments { get; set; } = new();
+    [JsonPropertyName("board_sheets")]
+    public List<BoardSheetOutgoingDto> BoardSheets { get; set; } = new();
 }
