@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PrismaApi.Infrastructure.Context;
 
@@ -10,12 +11,14 @@ using PrismaApi.Infrastructure.Context;
 namespace PrismaApi.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260722065526_AddDeletedUser")]
+    partial class AddDeletedUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.13");
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Assessment", b =>
                 {
@@ -1569,22 +1572,22 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Option", "ChildOption")
                         .WithMany()
                         .HasForeignKey("ChildOptionId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PrismaApi.Domain.Entities.Outcome", "ChildOutcome")
                         .WithMany()
                         .HasForeignKey("ChildOutcomeId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PrismaApi.Domain.Entities.Option", "ParentOption")
                         .WithMany()
                         .HasForeignKey("ParentOptionId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PrismaApi.Domain.Entities.Outcome", "ParentOutcome")
                         .WithMany()
                         .HasForeignKey("ParentOutcomeId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
