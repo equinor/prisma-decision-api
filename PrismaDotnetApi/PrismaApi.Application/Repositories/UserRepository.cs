@@ -7,6 +7,7 @@ using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
 using PrismaApi.Infrastructure.Extensions;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace PrismaApi.Application.Repositories;
 
@@ -89,58 +90,76 @@ public class UserRepository : BaseRepository<User, string>, IUserRepository
     /// </summary>
     public override async Task DeleteByIdsAsync(IEnumerable<string> ids, Expression<Func<User, bool>>? filterPredicate = null, CancellationToken ct = default)
     {
+        var idsList = ids.ToList();
         var entries = await DbContext.Users
             .OptionalWhere(filterPredicate)
-            .Where(u => ids.Contains(u.Id))
+            .Where(u => idsList.Contains(u.Id))
             .ToListAsync(cancellationToken: ct);
 
         if (entries.Count == 0)
             return;
 
-        // update all auditable entities to point to deleted user entry
-        var connection = DbContext.Database.GetDbConnection();
-        using var cmd = connection.CreateCommand();
-        var idParams = ids.Select((id, i) =>
-        {
-            var param = cmd.CreateParameter();
-            param.ParameterName = $"@id{i}";
-            param.Value = id;
-            return param;
-        }).ToArray();
-        var inClause = string.Join(",", idParams.Select(p => p.ParameterName));
-
-        // get all auditable entity types that need the user id updated to the deleted user id. 
-        // This is done to avoid foreign key constraint violations when deleting a user.
         var auditableEntityTypes = DbContext.Model.GetEntityTypes()
-            .Where(t => typeof(AuditableEntity).IsAssignableFrom(t.ClrType) && !t.ClrType.IsAbstract);
+            .Where(t => typeof(AuditableEntity).IsAssignableFrom(t.ClrType) && !t.ClrType.IsAbstract)
+            .Select(t => t.ClrType)
+            .Distinct()
+            .ToList();
 
-        foreach (var entityType in auditableEntityTypes)
+        foreach (var auditableEntityType in auditableEntityTypes)
         {
-            var tableName = entityType.GetTableName();
-                
-            // using raw SQL over the parameterized ExecuteSqlAsync due to issues with the in clause.
-            // ExecuteSqlAsync protects against SQL injection, 
-            // but all inputed data are controlled by the api and takes no user input.
-            await DbContext.Database.ExecuteSqlRawAsync($"""
-                UPDATE [{tableName}]
-                SET CreatedById = '{DomainConstants.DeletedUserId}'
-                WHERE CreatedById IN ({inClause});
-                UPDATE [{tableName}]
-                SET UpdatedById = '{DomainConstants.DeletedUserId}'
-                WHERE UpdatedById IN ({inClause});
-                """, [.. idParams.Cast<object>()], ct);
+            await UpdateAuditableReferencesByTypeAsync(auditableEntityType, idsList, DomainConstants.DeletedUserId, ct);
         }
 
         // delete project roles
         var projectRoles = await DbContext.ProjectRoles
-            .Where(e => ids.Contains(e.UserId))
+            .Where(e => idsList.Contains(e.UserId))
             .ToListAsync(cancellationToken: ct);
-
         DbContext.ProjectRoles.RemoveRange(projectRoles);
+
         foreach (var entry in entries)
         {
             DbContext.Users.Remove(entry);
         }
+
         await DbContext.SaveChangesAsync(ct);
+    }
+
+    private async Task UpdateAuditableReferencesByTypeAsync(
+        Type auditableEntityType,
+        IReadOnlyCollection<string> idsList,
+        string userId,
+        CancellationToken ct)
+    {
+        // Use reflection to call the generic method with the specific entity type
+        var UpdateAuditableReferencesByTypeMethod = typeof(UserRepository)
+            .GetMethod(nameof(UpdateAuditableReferencesByTypeAsync), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var genericMethod = UpdateAuditableReferencesByTypeMethod.MakeGenericMethod(auditableEntityType);
+        var updateTask = (Task<int>?)genericMethod.Invoke(null, [DbContext, idsList, userId, ct]);
+        if (updateTask == null)
+        {
+            throw new InvalidOperationException($"Could not execute auditable reference update for type '{auditableEntityType.Name}'.");
+        }
+        await updateTask;
+    }
+
+    private static Task<int> UpdateAuditableReferencesByTypeAsync<TEntity>(
+        AppDbContext dbContext,
+        List<string> idsList,
+        string userId,
+        CancellationToken ct) where TEntity : AuditableEntity
+    {
+        // Use ExecuteUpdateAsync to update the CreatedById and UpdatedById properties to userId for all entities of type TEntity 
+        return dbContext
+            .Set<TEntity>()
+            .Where(e => idsList.Contains(e.CreatedById) || idsList.Contains(e.UpdatedById))
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(
+                        e => e.CreatedById,
+                        e => idsList.Contains(e.CreatedById) ? userId : e.CreatedById)
+                    .SetProperty(
+                        e => e.UpdatedById,
+                        e => idsList.Contains(e.UpdatedById) ? userId : e.UpdatedById),
+                cancellationToken: ct);
     }
 }
