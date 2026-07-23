@@ -84,9 +84,13 @@ public class ProjectDuplicationService : IProjectDuplicationService
             ct.ThrowIfCancellationRequested();
             var mappedIssueId = GetMappedOrThrow(mappings.Issue, issue.Id, "issue");
 
+            var matchingDiscreteProbabilities = fullProject.DiscreteProbabilities
+                .Where(dp => dp.UncertaintyId == issue.Uncertainty?.Id)
+                .ToList();
+
             var uncertaintyResult = CreateUncertainty(
                 issue.Uncertainty?.Id, issue.Uncertainty?.IsKey ?? true,
-                issue.Uncertainty?.Outcomes, issue.Uncertainty?.DiscreteProbabilities,
+                issue.Uncertainty?.Outcomes, matchingDiscreteProbabilities,
                 mappedIssueId, mappings, newProjectId);
             var utilityResult = CreateUtility(
                 issue.Utility?.Id, issue.Utility?.DiscreteUtilities, mappedIssueId, mappings, newProjectId);
@@ -186,9 +190,13 @@ public class ProjectDuplicationService : IProjectDuplicationService
             ct.ThrowIfCancellationRequested();
             var mappedIssueId = GetMappedOrThrow(mappings.Issue, issue.Id, "issue");
 
+            var matchingDiscreteProbabilities = dto.DiscreteProbabilities
+                .Where(dp => dp.UncertaintyId == issue.Uncertainty?.Id)
+                .ToList();
+
             var uncertaintyResult = CreateUncertainty(
                 issue.Uncertainty?.Id, issue.Uncertainty?.IsKey ?? true,
-                issue.Uncertainty?.Outcomes, issue.Uncertainty?.DiscreteProbabilities,
+                issue.Uncertainty?.Outcomes, matchingDiscreteProbabilities,
                 mappedIssueId, mappings, newProjectId);
             var utilityResult = CreateUtility(
                 issue.Utility?.Id, issue.Utility?.DiscreteUtilities,
@@ -408,7 +416,6 @@ public class ProjectDuplicationService : IProjectDuplicationService
             ProjectId = newProjectId,
             IsKey = isKey,
             Outcomes = mappedOutcomes,
-            DiscreteProbabilities = []
         };
 
         return (uncertaintyDto, mappedDiscreteProbabilities);
