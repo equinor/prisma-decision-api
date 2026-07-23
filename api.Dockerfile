@@ -1,5 +1,5 @@
 # Create build environment
-FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /App
 
 # Do not send telemetry to MS
@@ -16,7 +16,7 @@ RUN dotnet restore "PrismaDotnetApi/PrismaApi.Api/PrismaApi.Api.csproj"
 RUN dotnet publish "PrismaDotnetApi/PrismaApi.Api/PrismaApi.Api.csproj" --no-restore -c Release -o /App/out
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
 WORKDIR /App
 COPY --from=build /App/out .
 
