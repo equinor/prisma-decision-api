@@ -18,6 +18,9 @@ public class ProjectService : IProjectService
     private readonly IEdgeRepository _edgeRepository;
     private readonly IUserRepository _userRepository;
     private readonly IBoardSheetRepository _boardSheetRepository;
+    private readonly IDiscreteProbabilityRepository _discreteProbabilityRepository;
+    private readonly IDiscreteUtilityRepository _discreteUtilityRepository;
+    private readonly IRestrictionTableRepository _restrictionTableRepository;
     private readonly IMemoryCache _cache;
 
     public ProjectService(
@@ -27,6 +30,9 @@ public class ProjectService : IProjectService
         IEdgeRepository edgeRepository,
         IUserRepository userRepository,
         IBoardSheetRepository boardSheetRepository,
+        IDiscreteProbabilityRepository discreteProbabilityRepository,
+        IDiscreteUtilityRepository discreteUtilityRepository,
+        IRestrictionTableRepository restrictionTableRepository,
         IMemoryCache cache)
     {
         _projectRepository = projectRepository;
@@ -36,7 +42,10 @@ public class ProjectService : IProjectService
         _userRepository = userRepository;
         _cache = cache;
         _boardSheetRepository = boardSheetRepository;
+        _discreteProbabilityRepository = discreteProbabilityRepository;
+        _discreteUtilityRepository = discreteUtilityRepository;
         _userRepository = userRepository;
+        _restrictionTableRepository = restrictionTableRepository;
     }
 
     public async Task<List<ProjectOutgoingDto>> CreateAsync(List<ProjectCreateDto> dtos, bool createDefaultRole, UserOutgoingDto userDto, CancellationToken ct = default)
@@ -126,11 +135,17 @@ public class ProjectService : IProjectService
 
         var issueEntities = await _issueRepository.GetIssuesInInfluenceDiagram(projectId, IssuesUserFilter(user), ct);
         var edgeEntities = await _edgeRepository.GetEdgesInInfluenceDiagram(projectId, EdgesUserFilter(user), ct);
+        var discreteProbabilities = await _discreteProbabilityRepository.GetAllAsync(filterPredicate: e => e.Uncertainty!.Issue!.ProjectId == projectId, ct: ct);
+        var discreteUtilities = await _discreteUtilityRepository.GetAllAsync(filterPredicate: e => e.Utility!.Issue!.ProjectId == projectId, ct: ct);
+        var restrictionTables = await _restrictionTableRepository.GetAllAsync(filterPredicate: e => e.ProjectId == projectId, ct: ct);
         var diagram = new InfluenceDiagramDto
         {
             projectId = projectId,
             issues = issueEntities.ToOutgoingDtos(),
-            edges = edgeEntities.ToOutgoingDtos()
+            edges = edgeEntities.ToOutgoingDtos(),
+            discreteProbabilities = discreteProbabilities.ToDtos(),
+            discreteUtilities = discreteUtilities.ToDtos(),
+            restrictionTables = restrictionTables.ToOutgoingDtos(),
         };
 
         _cache.AddCacheItem(new CacheItem { CacheKey = CacheKeys.GetInfluenceDiagramKey(projectId) }, CacheConstants.DefaultMediumQueryCacheInTimeSpan, diagram);

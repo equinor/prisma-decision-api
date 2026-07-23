@@ -27,6 +27,8 @@ public class ProjectImportDto
     public List<BoardSheetIncomingDto> BoardSheets { get; set; } = new();
     [JsonPropertyName("discrete_probabilities")]
     public List<DiscreteProbabilityDto> DiscreteProbabilities { get; set; } = new();
+    [JsonPropertyName("discrete_utilities")]
+    public List<DiscreteUtilityDto> DiscreteUtilities { get; set; } = new();
     [JsonPropertyName("restriction_tables")]
     public List<RestrictionTableIncomingDto> RestrictionTables { get; set; } = new();
 }

@@ -14,7 +14,6 @@ public static class UtilityMappingExtensions
             Id = entity.Id,
             IssueId = entity.IssueId,
             ProjectId = entity.ProjectId,
-            DiscreteUtilities = entity.DiscreteUtilities.ToDtos()
         };
     }
 

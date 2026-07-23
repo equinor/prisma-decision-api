@@ -20,6 +20,8 @@ public class FullProjectForDuplicationDto : ProjectOutgoingDto
     public List<BoardSheetOutgoingDto> BoardSheets { get; set; } = new();
     [JsonPropertyName("discrete_probabilities")]
     public List<DiscreteProbabilityDto> DiscreteProbabilities { get; set; } = new();
+    [JsonPropertyName("discrete_utilities")]
+    public List<DiscreteUtilityDto> DiscreteUtilities { get; set; } = new();
     [JsonPropertyName("restriction_tables")]
     public List<RestrictionTableOutgoingDto> RestrictionTables { get; set; } = new();
 }
