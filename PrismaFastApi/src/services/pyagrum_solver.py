@@ -425,3 +425,77 @@ class PyagrumSolver:
 
     def fill_utilities(self, issues: list[IssueOutgoingDto]):
         [self.fill_utility_table(x) for x in issues]
+
+    def reverse_chance_arc(
+        self,
+        tail_node_name: str,
+        head_node_name: str,
+    ) -> tuple[dict[str, float], dict[str, dict[str, float]]]:
+        """
+        Reverses the chance-to-chance arc tail→head using a BayesNet as intermediary.
+
+        Extracts the tail node (and any of its parents) plus the head node into a
+        temporary BayesNet, calls BayesNet.reverseArc to recompute CPTs via Bayes'
+        theorem, then returns the resulting discrete probabilities.
+
+        Assumes tail has no other parents. Raises ValueError if nodes are not chance
+        nodes, the arc does not exist, or tail has parents (which would require a
+        multi-variable conditional return).
+
+        Returns:
+            new_head_marginal: P(head) — dict keyed by head state labels
+            new_tail_cpt:      P(tail|head) — dict keyed by head state label,
+                               values are dicts of {tail_state_label: probability}
+        """
+        tail_id = self.diagram.idFromName(tail_node_name)  # type: ignore
+        head_id = self.diagram.idFromName(head_node_name)  # type: ignore
+
+        if not self.diagram.isChanceNode(tail_id):  # type: ignore
+            raise ValueError(f"Node '{tail_node_name}' is not a chance node")
+        if not self.diagram.isChanceNode(head_id):  # type: ignore
+            raise ValueError(f"Node '{head_node_name}' is not a chance node")
+        if not self.diagram.existsArc(tail_id, head_id):  # type: ignore
+            raise ValueError(f"No arc exists from '{tail_node_name}' to '{head_node_name}'")
+
+        tail_parents: list[int] = list(self.diagram.parents(tail_id))  # type: ignore
+        if tail_parents:
+            raise ValueError(
+                f"Node '{tail_node_name}' has parents. Arc reversal with parent nodes "
+                "produces a multi-variable conditional table; handle via bn.cpt() directly."
+            )
+
+        # Build temporary BayesNet mirroring the local structure
+        bn = gum.BayesNet()
+        for node_id, node_name in [(tail_id, tail_node_name), (head_id, head_node_name)]:
+            var = self.diagram.variable(node_id)  # type: ignore
+            bn.add(gum.LabelizedVariable(var.name(), var.description(), list(var.labels())))
+        bn.addArc(tail_node_name, head_node_name)
+
+        # Copy CPTs — toarray() preserves variable ordering within each potential
+        bn.cpt(tail_node_name)[:] = self.diagram.cpt(tail_id).toarray()  # type: ignore
+        bn.cpt(head_node_name)[:] = self.diagram.cpt(head_id).toarray()  # type: ignore
+
+        # Reverse arc: BayesNet recomputes CPTs using Bayes' theorem
+        bn.reverseArc(tail_node_name, head_node_name)
+
+        # P(head) — head is now parentless
+        head_labels: tuple[str, ...] = bn.variable(head_node_name).labels()
+        new_head_marginal: dict[str, float] = {
+            label: float(bn.cpt(head_node_name).toarray().flatten()[i])
+            for i, label in enumerate(head_labels)
+        }
+
+        # P(tail|head) — tail is now conditioned on head
+        tail_labels: tuple[str, ...] = bn.variable(tail_node_name).labels()
+        new_tail_cpt: dict[str, dict[str, float]] = {
+            head_label: {
+                tail_label: float(prob)
+                for tail_label, prob in zip(
+                    tail_labels,
+                    bn.cpt(tail_node_name)[{head_node_name: head_label}].flatten(),
+                )
+            }
+            for head_label in head_labels
+        }
+
+        return new_head_marginal, new_tail_cpt

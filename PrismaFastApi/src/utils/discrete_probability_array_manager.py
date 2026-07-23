@@ -17,6 +17,7 @@ class DiscreteProbabilityArrayManager:
 
     def __init__(self, probabilities: List[DiscreteProbabilityOutgoingDto]) -> None:
         self.array: xr.DataArray = self.create_xarray_grid(probabilities)
+        self.uncertainty_id = probabilities[0].uncertainty_id if probabilities else None
 
     def _create_parents_label(self, parents: List[str] | tuple[str] | set[str]):
         """
