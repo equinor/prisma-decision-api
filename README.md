@@ -14,7 +14,7 @@ poetry install
 uvicorn src.main:app --port 8080
 ```
 
-### .NET API ([.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0))
+### .NET API ([.NET 10](https://dotnet.microsoft.com/en-us/download/dotnet/10.0))
 
 ```bash
 cd PrismaApi
