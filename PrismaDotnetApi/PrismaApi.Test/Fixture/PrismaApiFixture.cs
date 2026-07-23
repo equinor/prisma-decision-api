@@ -46,10 +46,9 @@ public class PrismaApiFixture : IAsyncLifetime
     {
         using var scope = ApiFactory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        db.Database.EnsureDeleted();
+        await db.Database.EnsureDeletedAsync();
 
         GC.SuppressFinalize(db);
-        await Task.CompletedTask;
     }
 
     public TestClientScope UserScope() => new(PrismaUser);
