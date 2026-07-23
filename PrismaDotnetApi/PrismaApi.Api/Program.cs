@@ -119,6 +119,7 @@ public class Program
         builder.Services.AddScoped<IAssessmentRepository, AssessmentRepository>();
         builder.Services.AddScoped<IDecisionQualityAssessmentRepository, DecisionQualityAssessmentRepository>();
         builder.Services.AddScoped<IBoardNodeRepository, BoardNodeRepository>();
+        builder.Services.AddScoped<IBoardSheetRepository, BoardSheetRepository>();
         builder.Services.AddScoped<IRestrictionTableRepository, RestrictionTableRepository>();
         builder.Services.AddScoped<IRestrictionEntryRepository, RestrictionEntryRepository>();
 
@@ -140,6 +141,7 @@ public class Program
         builder.Services.AddScoped<IObjectiveService, ObjectiveService>();
         builder.Services.AddScoped<IProjectRoleService, ProjectRoleService>();
         builder.Services.AddScoped<IBoardNodeService, BoardNodeService>();
+        builder.Services.AddScoped<IBoardSheetService, BoardSheetService>();
         builder.Services.AddHostedService<TableCleanupService>();
         builder.Services.AddScoped<IRestrictionTableService, RestrictionTableService>();
         builder.Services.AddScoped<IRestrictionEntryService, RestrictionEntryService>();

@@ -70,6 +70,9 @@ namespace PrismaApi.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("BoardSheetId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Color")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -139,6 +142,8 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BoardSheetId");
+
                     b.HasIndex("CreatedById");
 
                     b.HasIndex("ProjectId");
@@ -146,6 +151,45 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasIndex("UpdatedById");
 
                     b.ToTable("BoardNode", (string)null);
+                });
+
+            modelBuilder.Entity("PrismaApi.Domain.Entities.BoardSheet", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UpdatedById")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("BoardSheet", (string)null);
                 });
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Decision", b =>
@@ -1078,6 +1122,12 @@ namespace PrismaApi.Infrastructure.Migrations
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.BoardNode", b =>
                 {
+                    b.HasOne("PrismaApi.Domain.Entities.BoardSheet", "BoardSheet")
+                        .WithMany()
+                        .HasForeignKey("BoardSheetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("PrismaApi.Domain.Entities.User", "CreatedBy")
                         .WithMany()
                         .HasForeignKey("CreatedById")
@@ -1086,6 +1136,35 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany("BoardNodes")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("PrismaApi.Domain.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BoardSheet");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("UpdatedBy");
+                });
+
+            modelBuilder.Entity("PrismaApi.Domain.Entities.BoardSheet", b =>
+                {
+                    b.HasOne("PrismaApi.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
+                        .WithMany("BoardSheets")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1710,6 +1789,8 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Navigation("Assessments");
 
                     b.Navigation("BoardNodes");
+
+                    b.Navigation("BoardSheets");
 
                     b.Navigation("Edges");
 

@@ -34,6 +34,17 @@ public partial class AppDbContext : DbContext
         }
     }
 
+    private void InvalidateBoardSheetsCache()
+    {
+        var affectedProjectIds = GetChangedEntries<BoardSheet>()
+            .Select(e => e.Entity.ProjectId)
+            .ToHashSet();
+        foreach (var projectId in affectedProjectIds)
+        {
+            _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetBoardSheetsInProjectKey(projectId) });
+        }
+    }
+
 
     private async Task InvalidateProjectUsersAsync()
     {
@@ -113,6 +124,7 @@ public partial class AppDbContext : DbContext
         InvalidatePublicProjectsCache();
         InvalidateAssessmentsCache();
         InvalidateBoardNodesCache();
+        InvalidateBoardSheetsCache();
         InvalidateInfluenceDiagramData();
         await InvalidateProjectUsersAsync();
     }

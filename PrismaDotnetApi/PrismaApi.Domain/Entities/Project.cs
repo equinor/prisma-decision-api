@@ -21,6 +21,7 @@ public class Project : AuditableEntity, IBaseEntity<Guid>
     public ICollection<Node> Nodes { get; set; } = new List<Node>();
     public ICollection<Edge> Edges { get; set; } = new List<Edge>();
     public ICollection<BoardNode> BoardNodes { get; set; } = new List<BoardNode>();
+    public ICollection<BoardSheet> BoardSheets { get; set; } = new List<BoardSheet>();
     public ICollection<Assessment> Assessments { get; set; } = new List<Assessment>();
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
@@ -66,10 +67,15 @@ public class Project : AuditableEntity, IBaseEntity<Guid>
                 .HasForeignKey(e => e.ProjectId)
                 .OnDelete(DeleteBehavior.NoAction); // will be cascade deleted through Issues
 
-            entity.HasMany(e => e.BoardNodes)
+            entity.HasMany(e => e.BoardSheets)
                 .WithOne(e => e.Project)
                 .HasForeignKey(e => e.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.BoardNodes)
+                .WithOne(e => e.Project)
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.NoAction); // will be cascade deleted through BoardSheets
 
             entity.HasMany(e => e.Edges)
                 .WithOne(e => e.Project)

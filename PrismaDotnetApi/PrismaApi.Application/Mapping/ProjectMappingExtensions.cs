@@ -69,6 +69,7 @@ public static class ProjectMappingExtensions
             Edges = entity.Edges.ToOutgoingDtos(),
             BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
             Assessments = entity.Assessments.ToOutgoingDtos(),
+            BoardSheets = entity.BoardSheets.ToOutgoingDtos(),
         };
     }
 
