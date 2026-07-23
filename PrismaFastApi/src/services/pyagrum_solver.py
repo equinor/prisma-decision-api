@@ -6,6 +6,8 @@ from src.utils.discrete_probability_array_manager import DiscreteProbabilityArra
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.dtos.option_dtos import OptionOutgoingDto
+from src.dtos.discrete_probability_dtos import DiscreteProbabilityOutgoingDto
+from src.dtos.discrete_utility_dtos import DiscreteUtilityOutgoingDto
 from src.dtos.outcome_dtos import OutcomeOutgoingDto
 from src.dtos.model_solution_dtos import (
     ParentState,
@@ -27,6 +29,8 @@ class PyagrumSolver:
         self.diagram = gum.InfluenceDiagram()
         self.issues: list[IssueOutgoingDto] = []
         self.edges: list[EdgeOutgoingDto] = []
+        self.discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = []
+        self.discrete_utilities: list[DiscreteUtilityOutgoingDto] = []
         self.ie: Optional[gum.ShaferShenoyLIMIDInference] = None
         self.partial_order: Optional[list[uuid.UUID]] = None
 
@@ -36,9 +40,17 @@ class PyagrumSolver:
     def add_to_lookup(self, issue: IssueOutgoingDto, node_id: int) -> None:
         self.node_lookup[issue.id.__str__()] = node_id
 
-    def build_influence_diagram(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]):
+    def build_influence_diagram(
+            self, 
+            issues: list[IssueOutgoingDto], 
+            edges: list[EdgeOutgoingDto],
+            discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+            discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        ):
         self.issues = issues
         self.edges = edges
+        self.discrete_probabilities = discrete_probabilities
+        self.discrete_utilities = discrete_utilities
         self.add_nodes(issues)
         self.add_edges(edges)
         self.fill_cpts(issues)
@@ -199,8 +211,14 @@ class PyagrumSolver:
         partial_order_decisions = [x for x in partial_order if x in decision_ids]
         ie.addNoForgettingAssumption([str(x) for x in partial_order_decisions])  # type: ignore
     
-    async def build_inference_engine(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]) -> gum.ShaferShenoyLIMIDInference:
-        self.build_influence_diagram(issues, edges)
+    async def build_inference_engine(
+            self, 
+            issues: list[IssueOutgoingDto], 
+            edges: list[EdgeOutgoingDto],
+            discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+            discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        ) -> gum.ShaferShenoyLIMIDInference:
+        self.build_influence_diagram(issues, edges, discrete_probabilities, discrete_utilities)
 
         self.ie = gum.ShaferShenoyLIMIDInference(self.diagram)
 
@@ -214,14 +232,20 @@ class PyagrumSolver:
         
         return self.ie
 
-    async def find_optimal_decisions(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]) -> SolutionDto:
-        await self.build_inference_engine(issues, edges)
+    async def find_optimal_decisions(
+            self, 
+            issues: list[IssueOutgoingDto], 
+            edges: list[EdgeOutgoingDto],
+            discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+            discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        ) -> SolutionDto:
+        await self.build_inference_engine(issues, edges, discrete_probabilities, discrete_utilities)
         partial_order = await self.get_partial_order()
         solution =  self.get_solution(self.get_inference(), [str(x) for x in partial_order if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
         return solution
     
-    async def get_solutions_given_evidence(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []) -> list[SolutionDto]:
-        ie = await self.build_inference_engine(issues, edges)
+    async def get_solutions_given_evidence(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = [], discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [], discrete_utilities: list[DiscreteUtilityOutgoingDto] = []) -> list[SolutionDto]:
+        ie = await self.build_inference_engine(issues, edges, discrete_probabilities, discrete_utilities)
         solutions: list[SolutionDto] = []
         partial_order = await self.get_partial_order()
         for evidence_item in evidence:
@@ -230,8 +254,15 @@ class PyagrumSolver:
             solutions.append(solution)
         return solutions
     
-    async def get_mean_expected_utilities_given_evidence(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []) -> list[Optional[float]]:
-        ie = await self.build_inference_engine(issues, edges)
+    async def get_mean_expected_utilities_given_evidence(
+            self, 
+            issues: list[IssueOutgoingDto], 
+            edges: list[EdgeOutgoingDto], 
+            discrete_probabilities: list[DiscreteProbabilityOutgoingDto], 
+            discrete_utilities: list[DiscreteUtilityOutgoingDto], 
+            evidence: list[list[uuid.UUID]] = [],
+        ) -> list[Optional[float]]:
+        ie = await self.build_inference_engine(issues, edges, discrete_probabilities, discrete_utilities)
         MEUs: list[Optional[float]] = []
         for evidence_item in evidence:
             ie_with_evidence = self.set_evidence(ie, [str(x) for x in evidence_item])
@@ -331,7 +362,7 @@ class PyagrumSolver:
         parent_combinations = list(product(*parent_labels))
 
         discrete_probability_manager = DiscreteProbabilityArrayManager(
-            issue.uncertainty.discrete_probabilities
+            [dp for dp in self.discrete_probabilities if dp.uncertainty_id == issue.uncertainty.id],
         )
 
         cpt = self.diagram.cpt(node_id)  # type: ignore
@@ -374,7 +405,8 @@ class PyagrumSolver:
         # Build all parent state combinations
         parent_combinations = list(product(*parent_labels))
         for combination in parent_combinations:
-            for utility in issue.utility.discrete_utilities:
+            disc_utilities = [utility for utility in self.discrete_utilities if utility.utility_id == issue.utility.id]
+            for utility in disc_utilities:
                 parents = [str(option_id) for option_id in utility.parent_option_ids] + [
                     str(outcome_id) for outcome_id in utility.parent_outcome_ids
                 ]
