@@ -68,6 +68,9 @@ public class FastApiService : IFastApiService
         {
             issues = influanceDiagram.issues,
             edges = influanceDiagram.edges,
+            discrete_probabilities = influanceDiagram.discreteProbabilities,
+            discrete_utilities = influanceDiagram.discreteUtilities,
+            restriction_tables = influanceDiagram.restrictionTables,
             paths
         };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
@@ -81,6 +84,9 @@ public class FastApiService : IFastApiService
         {
             issues = influenceDiagram.issues,
             edges = influenceDiagram.edges,
+            discrete_probabilities = influenceDiagram.discreteProbabilities,
+            discrete_utilities = influenceDiagram.discreteUtilities,
+            restriction_tables = influenceDiagram.restrictionTables,
             evidence = data,
         };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
