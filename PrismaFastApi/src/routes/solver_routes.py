@@ -7,6 +7,8 @@ from src.services.solver_service import SolverService
 from src.dependencies import get_solver_service, get_project_lock_manager
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
+from src.dtos.discrete_probability_dtos import DiscreteProbabilityOutgoingDto
+from src.dtos.discrete_utility_dtos import DiscreteUtilityOutgoingDto
 from src.dtos.model_solution_dtos import SolutionDto
 from src.dtos.evidence_dtos import EvidenceIncomingDto, EvidenceOutgoingDto
 
@@ -17,19 +19,23 @@ router = APIRouter(tags=["solvers"])
 async def get_optimal_decisions_for_project_from_dtos(
     issues: list[IssueOutgoingDto],
     edges: list[EdgeOutgoingDto],
+    discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [],
+    discrete_utilities: list[DiscreteUtilityOutgoingDto] = [],
     solver_service: SolverService = Depends(get_solver_service),
 ) -> SolutionDto:
-    return await solver_service.find_optimal_decision_pyagrum_from_dtos(issues, edges)
+    return await solver_service.find_optimal_decision_pyagrum_from_dtos(issues, edges, discrete_probabilities, discrete_utilities)
 
 @router.post("/solvers/project/{project_id}/with_evidence")
 async def get_optimal_decisions_for_project_with_evidence(
     issues: list[IssueOutgoingDto],
     edges: list[EdgeOutgoingDto],
+    discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [],
+    discrete_utilities: list[DiscreteUtilityOutgoingDto] = [],
     evidence: list[EvidenceIncomingDto] = [],
     solver_service: SolverService = Depends(get_solver_service),
 ) -> list[EvidenceOutgoingDto]:
     evidence_state_ids = [e.state_ids for e in evidence]
-    results: list[Optional[float]] = await solver_service.get_MEU_given_evidence(issues, edges, evidence_state_ids)
+    results: list[Optional[float]] = await solver_service.get_MEU_given_evidence(issues, edges, discrete_probabilities, discrete_utilities, evidence_state_ids)
     # decision_solutions[0].mean is the expected utility for the first optimal decision, i.e. the root node which represents the expected utility for the model
     populated_evidence = [
         EvidenceOutgoingDto(
@@ -57,12 +63,14 @@ async def get_optimal_decisions_for_project_as_tree_tmp(
     project_id: uuid.UUID,
     issues: list[IssueOutgoingDto],
     edges: list[EdgeOutgoingDto],
+    discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [],
+    discrete_utilities: list[DiscreteUtilityOutgoingDto] = [],
     solver_service: SolverService = Depends(get_solver_service),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ):
     async with lock_manager.acquire_project_lock(project_id):
         return await solver_service.get_decision_tree_for_optimal_decisions(
-            project_id, issues, edges
+            project_id, issues, edges, discrete_probabilities, discrete_utilities
         )
 
 
@@ -71,12 +79,14 @@ async def get_optimal_decisions_for_project_as_tree_tmp_from_dtos(
     project_id: uuid.UUID,
     issues: list[IssueOutgoingDto],
     edges: list[EdgeOutgoingDto],
+    discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [],
+    discrete_utilities: list[DiscreteUtilityOutgoingDto] = [],
     solver_service: SolverService = Depends(get_solver_service),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ):
     async with lock_manager.acquire_project_lock(project_id):
         return await solver_service.get_decision_tree_for_optimal_decisions_from_dtos(
-            project_id, issues, edges
+            project_id, issues, edges, discrete_probabilities, discrete_utilities
         )
     
 @router.post("/solvers/project/{project_id}/partial_decision_tree/v3")
@@ -84,12 +94,14 @@ async def get_optimal_decisions_for_project_as_tree_tmp_from_dtos_v3(
     project_id: uuid.UUID,
     issues: list[IssueOutgoingDto],
     edges: list[EdgeOutgoingDto],
+    discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [],
+    discrete_utilities: list[DiscreteUtilityOutgoingDto] = [],
     paths: list[list[uuid.UUID]] = [],
     solver_service: SolverService = Depends(get_solver_service),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
 ):
     async with lock_manager.acquire_project_lock(project_id):
         return await solver_service.get_decision_tree_for_optimal_decisions_from_dtos_by_constructing_paths(
-            project_id, issues, edges, paths,
+            project_id, issues, edges, discrete_probabilities, discrete_utilities, paths,
         )
 

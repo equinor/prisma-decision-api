@@ -104,7 +104,9 @@ class SolverService:
         )
 
         decision_tree_creator = await DecisionTreeCreator.initialize(
-            project_id, nodes=issues, edges=edges
+            project_id, nodes=issues, edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
         )
         DT_partial_order = await decision_tree_creator.calculate_partial_order()
         decision_tree = await decision_tree_creator.convert_to_decision_tree(
@@ -135,7 +137,9 @@ class SolverService:
         )
 
         decision_tree_creator = await DecisionTreeCreator.initialize(
-            project_id, nodes=issues, edges=edges
+            project_id, nodes=issues, edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
         )
         DT_partial_order = await decision_tree_creator.calculate_partial_order()
         decision_tree = await decision_tree_creator.convert_to_decision_tree(
@@ -165,7 +169,9 @@ class SolverService:
         )
 
         decision_tree_creator = await DecisionTreeCreator.initialize(
-            project_id, nodes=issues, edges=edges
+            project_id, nodes=issues, edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
         )
         DT_partial_order = await decision_tree_creator.calculate_partial_order()
         decision_tree = await decision_tree_creator.convert_to_decision_tree(
@@ -203,7 +209,13 @@ class SolverService:
 
         paths = self.filter_paths_from_solution(solution, paths, issues)
 
-        decision_tree_creator = DecisionTreeCreator_v3.initialize(project_id, nodes = issues, edges = edges)
+        decision_tree_creator = DecisionTreeCreator_v3.initialize(
+            project_id,
+            nodes=issues,
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+        )
 
         decision_tree = decision_tree_creator.convert_to_decision_tree_partial(project_id=project_id, paths=paths)
 

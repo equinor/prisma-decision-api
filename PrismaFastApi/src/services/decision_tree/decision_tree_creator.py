@@ -23,6 +23,7 @@ from src.dtos.decision_tree_dtos import (
     DecisionTreeDtoOld,  # tmp due to backward compabilities, to be removed
 )
 from src.dtos.discrete_probability_dtos import DiscreteProbabilityOutgoingDto
+from src.dtos.discrete_utility_dtos import DiscreteUtilityOutgoingDto
 from src.services.decision_tree.decision_tree_utils import TreeNodeLookup
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,8 @@ class DecisionTreeGraph:
         self.utility_lookup: Dict[tuple[str, ...], List[float]] = {}
         self.treenode_lookup: TreeNodeLookup
         self.final_expected_value: float = 0
+        self.discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = []
+        self.discrete_utilities: list[DiscreteUtilityOutgoingDto] = []
 
     async def add_node(self, node: uuid.UUID) -> None:
         self.nx.add_node(node)  # type: ignore
@@ -57,8 +60,10 @@ class DecisionTreeGraph:
             if isinstance(node.issue, EndPointNodeDto) or node.issue.type != Type.UTILITY.value:
                 continue
             utility = node.issue.utility
-            if utility and utility.discrete_utilities:
-                for discrete_utility in utility.discrete_utilities:
+            if utility:
+                for discrete_utility in self.discrete_utilities:
+                    if discrete_utility.utility_id != utility.id:
+                        continue
                     if discrete_utility.utility_value:
                         parents = tuple(
                             sorted(
@@ -264,20 +269,21 @@ class DecisionTreeGraph:
             isinstance(issue, IssueOutgoingDto)
             and issue.type == Type.UNCERTAINTY.value
             and issue.uncertainty is not None
-            and len(issue.uncertainty.discrete_probabilities) > 0
         ):
-            parent_labels: list[uuid.UUID] = []
-            parent_id = await self.get_parent(treenode_id)
-            count = 0
-            while parent_id and count < 1000:
-                parent_labels.append(uuid.UUID(self.edge_names[(parent_id, treenode_id)]))
-                treenode_id = parent_id
+            uncertainty_discrete_probs = [dp for dp in self.discrete_probabilities if dp.uncertainty_id == issue.uncertainty.id]
+            if len(uncertainty_discrete_probs) > 0:
+                parent_labels: list[uuid.UUID] = []
                 parent_id = await self.get_parent(treenode_id)
-                count += 1
+                count = 0
+                while parent_id and count < 1000:
+                    parent_labels.append(uuid.UUID(self.edge_names[(parent_id, treenode_id)]))
+                    treenode_id = parent_id
+                    parent_id = await self.get_parent(treenode_id)
+                    count += 1
 
-            discrete_prob_dtos = await self.find_matching_probabilities_dtos(
-                parent_labels, issue.uncertainty.discrete_probabilities
-            )
+                discrete_prob_dtos = await self.find_matching_probabilities_dtos(
+                    parent_labels, uncertainty_discrete_probs
+                )
 
             for dto in discrete_prob_dtos:
                 if dto.probability is not None:
@@ -416,13 +422,22 @@ class DecisionTreeCreator:
         self.treenode_edge_dtos: list[EdgeUUIDDto] = []
         self.treenode_lookup: Dict[str, TreeNodeDto] = {}
         self.outcomes_lookup: Dict[str, str] = {}
+        self.discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = []
+        self.discrete_utilities: list[DiscreteUtilityOutgoingDto] = []
 
     @classmethod
     async def initialize(
-        cls, project_id: uuid.UUID, nodes: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]
+        cls,
+        project_id: uuid.UUID,
+        nodes: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto] = [],
     ) -> DecisionTreeCreator:
         instance = cls()
         instance.project_id = project_id
+        instance.discrete_probabilities = discrete_probabilities
+        instance.discrete_utilities = discrete_utilities
         treenodes = [TreeNodeDto(issue=node) for node in nodes]
         instance.treenode_ids, instance.treenode_edge_dtos = await instance.create_data_struct(
             treenodes, edges
@@ -636,6 +651,8 @@ class DecisionTreeCreator:
 
         await decision_tree.populate_treenode_lookup(self.treenode_lookup)
         decision_tree.outcomes_lookup = copy.deepcopy(self.outcomes_lookup)
+        decision_tree.discrete_probabilities = self.discrete_probabilities
+        decision_tree.discrete_utilities = self.discrete_utilities
         return decision_tree
 
     async def copy_treenode(self, node_id: uuid.UUID) -> uuid.UUID:
