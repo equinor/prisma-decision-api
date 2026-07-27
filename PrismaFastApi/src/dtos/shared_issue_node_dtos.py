@@ -8,7 +8,7 @@ from src.dtos.uncertainty_dtos import (
     UncertaintyOutgoingDto,
 )
 from src.dtos.utility_dtos import (
-    UtilityOutgoingDto,
+    UtilityDto,
 )
 from src.constants import DatabaseConstants
 
@@ -28,4 +28,4 @@ class IssueViaNodeOutgoingDto(IssueDto):
     boundary: str
     decision: Optional[DecisionOutgoingDto]
     uncertainty: Optional[UncertaintyOutgoingDto]
-    utility: Optional[UtilityOutgoingDto]
+    utility: Optional[UtilityDto]

@@ -3,6 +3,12 @@ from typing import Optional
 from src.dtos.decision_dtos import (
     DecisionOutgoingDto,
 )
+from src.dtos.discrete_probability_dtos import (
+    DiscreteProbabilityOutgoingDto,
+)
+from src.dtos.outcome_dtos import (
+    UtilityDto,
+)
 from src.dtos.uncertainty_dtos import (
     UncertaintyOutgoingDto,
 )
