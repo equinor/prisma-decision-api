@@ -7,13 +7,13 @@ from src.dtos.discrete_probability_dtos import (
     DiscreteProbabilityOutgoingDto,
 )
 from src.dtos.outcome_dtos import (
-    UtilityDto,
+    OutcomeOutgoingDto,
 )
 from src.dtos.uncertainty_dtos import (
     UncertaintyOutgoingDto,
 )
 from src.dtos.utility_dtos import (
-    UtilityDto
+    UtilityDto,
 )
 from src.dtos.node_dtos import (
     NodeViaIssueOutgoingDto,
