@@ -44,7 +44,6 @@ public class ProjectService : IProjectService
         _boardSheetRepository = boardSheetRepository;
         _discreteProbabilityRepository = discreteProbabilityRepository;
         _discreteUtilityRepository = discreteUtilityRepository;
-        _userRepository = userRepository;
         _restrictionTableRepository = restrictionTableRepository;
     }
 

@@ -188,17 +188,12 @@ class SolverService:
     async def get_decision_tree_for_optimal_decisions_from_dtos_by_constructing_paths(
         self, 
         project_id: uuid.UUID, 
-        issues: list[IssueOutgoingDto] | None = None, 
-        edges: list[EdgeOutgoingDto] | None = None,
-        discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [],
-        discrete_utilities: list[DiscreteUtilityOutgoingDto] = [],
-        paths: list[list[uuid.UUID]] = [],
+        issues: list[IssueOutgoingDto], 
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        paths: list[list[uuid.UUID]],
     ):
-        if not issues:
-            raise ValueError("issues must be provided and non-empty")
-        if edges is None:
-            edges = []
-
         solver = PyagrumSolver()
         solution = await solver.find_optimal_decisions(
             issues=issues, 
