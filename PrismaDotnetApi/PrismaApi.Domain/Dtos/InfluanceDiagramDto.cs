@@ -13,8 +13,6 @@ public class InfluenceDiagramDto
 }
 
 
-// add extension method to replace the restrictionservice.ApplyRestrictions method with a more functional approach
-
 public static class InfluenceDiagramDtoExtensions
 {
     public static void ApplyRestrictions(this InfluenceDiagramDto influenceDiagramDto)
