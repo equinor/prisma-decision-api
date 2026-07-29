@@ -19,10 +19,8 @@ public static class InfluenceDiagramDtoExtensions
 {
     public static void ApplyRestrictions(this InfluenceDiagramDto influenceDiagramDto)
     {
-        var restrictionTables = influenceDiagramDto.restrictionTables;
-        var restrictionEntries = restrictionTables.SelectMany(rt => rt.RestrictionEntries).ToList();
+        var restrictionEntries = influenceDiagramDto.restrictionTables.SelectMany(rt => rt.RestrictionEntries).ToList();
         var discreteProbabilities = influenceDiagramDto.discreteProbabilities;
-        var discreteUtilities = influenceDiagramDto.discreteUtilities;
 
         foreach (var entry in restrictionEntries)
         {
@@ -34,8 +32,9 @@ public static class InfluenceDiagramDtoExtensions
                 {
                     probability.Probability = 0;
                     // need to normalize the probabilities for the parent state after setting some to 0
-                    // need to also address the case where all probabilities for a parent state are set to 0, in which case we need to eliminate that parent state? unsure if pyagrum can handle that on the backend, so assume that if all probabilities for a row are 0 skip normalization
+                    // need to also address the case where all probabilities for a parent state are set to 0, in which case we need to eliminate that parent state? Edit: pyagrum handles this, but does not normalize the probabilities, so we need to normalize them ourselves
                 }
+                
             }
             else
             {
@@ -48,6 +47,21 @@ public static class InfluenceDiagramDtoExtensions
                 {
                     option.Utility = double.NegativeInfinity;
                 }
+            }
+        }
+        var probabilityRows = discreteProbabilities.GroupBy(dp => new { dp.ParentOptionIds, dp.ParentOutcomeIds });
+        foreach (var row in probabilityRows)
+        {
+            int precision = 2;
+            var totalProbability = row.Sum(x => x.Probability);
+            if (totalProbability is null || Math.Round(totalProbability.Value, precision) == 0 || Math.Round(totalProbability.Value, precision) == 1) continue; // no need to normalize 
+            
+            // normalize the probabilities for this row, but leave out any probabilities that are already 0, since they are restricted and should not be normalized
+            var nonZeroProbabilities = row.Where(x => x.Probability > 0).ToList();
+            var nonZeroTotalProbability = nonZeroProbabilities.Sum(x => x.Probability);
+            foreach (var probability in nonZeroProbabilities)
+            {
+                probability.Probability = probability.Probability / nonZeroTotalProbability;
             }
         }
     }
