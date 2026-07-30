@@ -106,7 +106,35 @@ public static class MemoryCacheExtensions
         return cache.GetCacheItem<List<AssessmentOutgoingDto>>(CacheKeys.GetAssessmentKey(projectId));
     }
 
+    public static List<DiscreteProbabilityDto>? GetCacheItemAsDiscreteProbabilities(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
+    {
+        // check that the user has access to the project before returning cached discrete probabilities
+        if (!cache.HasAccessToProject(user, projectId))
+        {
+            return null;
+        }
+        return cache.GetCacheItem<List<DiscreteProbabilityDto>>(CacheKeys.GetDiscreteProbabilitiesInProjectKey(projectId));
+    }
 
+    public static List<DiscreteUtilityDto>? GetCacheItemAsDiscreteUtilities(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
+    {
+        // check that the user has access to the project before returning cached discrete utilities
+        if (!cache.HasAccessToProject(user, projectId))
+        {
+            return null;
+        }
+        return cache.GetCacheItem<List<DiscreteUtilityDto>>(CacheKeys.GetDiscreteUtilitiesInProjectKey(projectId));
+    }
+
+    public static List<RestrictionTableOutgoingDto>? GetCacheItemAsRestrictionTables(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
+    {
+        // check that the user has access to the project before returning cached restriction tables
+        if (!cache.HasAccessToProject(user, projectId))
+        {
+            return null;
+        }
+        return cache.GetCacheItem<List<RestrictionTableOutgoingDto>>(CacheKeys.GetRestrictionTablesInProjectKey(projectId));
+    }
 
     public static HashSet<Guid> GetPublicProjectIds(this IMemoryCache cache)
     {

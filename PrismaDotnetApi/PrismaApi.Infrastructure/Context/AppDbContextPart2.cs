@@ -85,6 +85,8 @@ public partial class AppDbContext : DbContext
             ..GetChangedEntries<Outcome>().Select(e => e.Entity.ProjectId),
             ..GetChangedEntries<DiscreteProbability>().Select(e => e.Entity.ProjectId),
             ..GetChangedEntries<DiscreteUtility>().Select(e => e.Entity.ProjectId),
+            ..GetChangedEntries<RestrictionTable>().Select(e => e.Entity.ProjectId),
+            ..GetChangedEntries<RestrictionEntry>().Select(e => e.Entity.ProjectId),
         ];
 
         foreach (var projectId in affectedProjectIds)
@@ -93,6 +95,9 @@ public partial class AppDbContext : DbContext
             _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetIssuesInProjectKey(projectId) });
             _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetEdgesInProjectKey(projectId) });
             _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetNodesInProjectKey(projectId) });
+            _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetDiscreteProbabilitiesInProjectKey(projectId) });
+            _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetDiscreteUtilitiesInProjectKey(projectId) });
+            _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetRestrictionTablesInProjectKey(projectId) });
         }
     }
 

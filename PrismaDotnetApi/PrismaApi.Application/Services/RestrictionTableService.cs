@@ -1,8 +1,10 @@
+using Microsoft.Extensions.Caching.Memory;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
+using PrismaApi.Infrastructure.Caching;
 using PrismaApi.Infrastructure.Interfaces;
 using System.Linq.Expressions;
 
@@ -12,11 +14,13 @@ public class RestrictionTableService : IRestrictionTableService
 {
     private readonly IRestrictionTableRepository _restrictionTableRepository;
     private readonly IDiscreteTableRuleEventHandler _discreteTableRuleEventHandler;
+    private readonly IMemoryCache _cache;
 
-    public RestrictionTableService(IRestrictionTableRepository restrictionTableRepository, IDiscreteTableRuleEventHandler discreteTableRuleEventHandler)
+    public RestrictionTableService(IRestrictionTableRepository restrictionTableRepository, IDiscreteTableRuleEventHandler discreteTableRuleEventHandler, IMemoryCache cache)
     {
         _restrictionTableRepository = restrictionTableRepository;
         _discreteTableRuleEventHandler = discreteTableRuleEventHandler;
+        _cache = cache;
     }
 
     public async Task<List<RestrictionTableOutgoingDto>> CreateAsync(List<RestrictionTableIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
@@ -51,10 +55,42 @@ public class RestrictionTableService : IRestrictionTableService
 
     public async Task<List<RestrictionTableOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var entities = await _restrictionTableRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-        return entities.ToOutgoingDtos();
+        var restrictionTables = new List<RestrictionTableOutgoingDto>();
+        var projectIdsToGetFromDb = new HashSet<Guid>();
+
+        var projectIds = _cache.GetAccessibleProjectIds(user);
+
+        foreach (var projectId in projectIds)
+        {
+            var cachedRestrictionTables = _cache.GetCacheItemAsRestrictionTables(projectId, user);
+            if (cachedRestrictionTables != null)
+            {
+                restrictionTables.AddRange(cachedRestrictionTables);
+            }
+            else
+            {
+                projectIdsToGetFromDb.Add(projectId);
+            }
+        }
+
+        if (projectIdsToGetFromDb.Count > 0)
+        {
+            var projectRestrictionTables = await _restrictionTableRepository.GetAllAsync(withTracking: false, filterPredicate: ProjectFilter(projectIdsToGetFromDb), ct: ct);
+            var restrictionTableDtos = projectRestrictionTables.ToOutgoingDtos();
+            restrictionTables.AddRange(restrictionTableDtos);
+            foreach (var projectId in projectIdsToGetFromDb)
+            {
+                var cacheKey = CacheKeys.GetRestrictionTablesInProjectKey(projectId);
+                var projectRestrictionTableDtos = restrictionTableDtos.Where(rt => rt.ProjectId == projectId).ToList();
+                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, projectRestrictionTableDtos);
+            }
+        }
+        return restrictionTables;
     }
 
     private static Expression<Func<RestrictionTable, bool>> UserFilter(UserOutgoingDto user)
         => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
+
+    private static Expression<Func<RestrictionTable, bool>> ProjectFilter(HashSet<Guid> projectIds)
+        => e => projectIds.Contains(e.ProjectId);
 }
