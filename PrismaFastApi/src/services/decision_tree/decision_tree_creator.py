@@ -64,7 +64,7 @@ class DecisionTreeGraph:
                 for discrete_utility in self.discrete_utilities:
                     if discrete_utility.utility_id != utility.id:
                         continue
-                    if discrete_utility.utility_value:
+                    if discrete_utility.utility_value is not None:
                         parents = tuple(
                             sorted(
                                 p.__str__()
@@ -284,7 +284,9 @@ class DecisionTreeGraph:
                 discrete_prob_dtos = await self.find_matching_probabilities_dtos(
                     parent_labels, uncertainty_discrete_probs
                 )
-
+            if len(discrete_prob_dtos) == 0:
+                return probability_dtos
+            
             for dto in discrete_prob_dtos:
                 if dto.probability is not None:
                     probability_dto = ProbabilityDto(

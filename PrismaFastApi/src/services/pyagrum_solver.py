@@ -244,7 +244,14 @@ class PyagrumSolver:
         solution =  self.get_solution(self.get_inference(), [str(x) for x in partial_order if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
         return solution
     
-    async def get_solutions_given_evidence(self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = [], discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [], discrete_utilities: list[DiscreteUtilityOutgoingDto] = []) -> list[SolutionDto]:
+    async def get_solutions_given_evidence(
+            self, 
+            issues: list[IssueOutgoingDto], 
+            edges: list[EdgeOutgoingDto], 
+            evidence: list[list[uuid.UUID]], 
+            discrete_probabilities: list[DiscreteProbabilityOutgoingDto], 
+            discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        ) -> list[SolutionDto]:
         ie = await self.build_inference_engine(issues, edges, discrete_probabilities, discrete_utilities)
         solutions: list[SolutionDto] = []
         partial_order = await self.get_partial_order()
@@ -260,7 +267,7 @@ class PyagrumSolver:
             edges: list[EdgeOutgoingDto], 
             discrete_probabilities: list[DiscreteProbabilityOutgoingDto], 
             discrete_utilities: list[DiscreteUtilityOutgoingDto], 
-            evidence: list[list[uuid.UUID]] = [],
+            evidence: list[list[uuid.UUID]],
         ) -> list[Optional[float]]:
         ie = await self.build_inference_engine(issues, edges, discrete_probabilities, discrete_utilities)
         MEUs: list[Optional[float]] = []
@@ -404,8 +411,8 @@ class PyagrumSolver:
 
         # Build all parent state combinations
         parent_combinations = list(product(*parent_labels))
+        disc_utilities = [utility for utility in self.discrete_utilities if utility.utility_id == issue.utility.id]
         for combination in parent_combinations:
-            disc_utilities = [utility for utility in self.discrete_utilities if utility.utility_id == issue.utility.id]
             for utility in disc_utilities:
                 parents = [str(option_id) for option_id in utility.parent_option_ids] + [
                     str(outcome_id) for outcome_id in utility.parent_outcome_ids

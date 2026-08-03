@@ -69,7 +69,7 @@ class DecisionTreeGraph_v3:
                 if isinstance(node, EndPointNodeDto) or node.type != Type.UTILITY.value:
                     continue
                 utility = node.utility
-                if utility:
+                if utility is not None:
                     for discrete_utility in self.discrete_utilities:
                         if discrete_utility.utility_id != utility.id:
                             continue
