@@ -56,21 +56,21 @@ public class FastApiService : IFastApiService
 
     public async Task<ApiResponseDto> SendInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var influanceDiagram = await _projectService.GetInfluenceDiagramAsync(projectId, user, ct);
-        var content = new StringContent(JsonSerializer.Serialize(influanceDiagram), Encoding.UTF8, "application/json");
+        var influenceDiagram = await _projectService.GetInfluenceDiagramAsync(projectId, user, ct);
+        var content = new StringContent(JsonSerializer.Serialize(influenceDiagram), Encoding.UTF8, "application/json");
         return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
     }
 
     public async Task<ApiResponseDto> SendPartialInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, List<List<Guid>> paths, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var influanceDiagram = await _projectService.GetInfluenceDiagramAsync(projectId, user, ct);
+        var influenceDiagram = await _projectService.GetInfluenceDiagramAsync(projectId, user, ct);
         var payload = new
         {
-            issues = influanceDiagram.issues,
-            edges = influanceDiagram.edges,
-            discrete_probabilities = influanceDiagram.discreteProbabilities,
-            discrete_utilities = influanceDiagram.discreteUtilities,
-            restriction_tables = influanceDiagram.restrictionTables,
+            issues = influenceDiagram.issues,
+            edges = influenceDiagram.edges,
+            discrete_probabilities = influenceDiagram.discreteProbabilities,
+            discrete_utilities = influenceDiagram.discreteUtilities,
+            restriction_tables = influenceDiagram.restrictionTables,
             paths
         };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
