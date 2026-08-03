@@ -20,14 +20,10 @@ public class UncertaintyIncomingDto : UncertaintyDto
 {
     [JsonPropertyName("outcomes")]
     public List<OutcomeIncomingDto> Outcomes { get; set; } = new();
-    [JsonPropertyName("discrete_probabilities")]
-    public List<DiscreteProbabilityDto> DiscreteProbabilities { get; set; } = new();
 }
 
 public class UncertaintyOutgoingDto : UncertaintyDto
 {
     [JsonPropertyName("outcomes")]
     public List<OutcomeOutgoingDto> Outcomes { get; set; } = new();
-    [JsonPropertyName("discrete_probabilities")]
-    public List<DiscreteProbabilityDto> DiscreteProbabilities { get; set; } = new();
 }

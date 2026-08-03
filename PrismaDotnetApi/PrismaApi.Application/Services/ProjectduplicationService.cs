@@ -84,12 +84,20 @@ public class ProjectDuplicationService : IProjectDuplicationService
             ct.ThrowIfCancellationRequested();
             var mappedIssueId = GetMappedOrThrow(mappings.Issue, issue.Id, "issue");
 
+            var matchingDiscreteProbabilities = fullProject.DiscreteProbabilities
+                .Where(dp => dp.UncertaintyId == issue.Uncertainty?.Id)
+                .ToList();
+
+            var matchingDiscreteUtilities = fullProject.DiscreteUtilities
+                .Where(du => du.UtilityId == issue.Utility?.Id)
+                .ToList();
+
             var uncertaintyResult = CreateUncertainty(
                 issue.Uncertainty?.Id, issue.Uncertainty?.IsKey ?? true,
-                issue.Uncertainty?.Outcomes, issue.Uncertainty?.DiscreteProbabilities,
+                issue.Uncertainty?.Outcomes, matchingDiscreteProbabilities,
                 mappedIssueId, mappings, newProjectId);
             var utilityResult = CreateUtility(
-                issue.Utility?.Id, issue.Utility?.DiscreteUtilities, mappedIssueId, mappings, newProjectId);
+                issue.Utility?.Id, matchingDiscreteUtilities, mappedIssueId, mappings, newProjectId);
 
             if (uncertaintyResult.DiscreteProbabilities.Count > 0)
                 discreteProbabilityDtos.AddRange(uncertaintyResult.DiscreteProbabilities);
@@ -186,12 +194,20 @@ public class ProjectDuplicationService : IProjectDuplicationService
             ct.ThrowIfCancellationRequested();
             var mappedIssueId = GetMappedOrThrow(mappings.Issue, issue.Id, "issue");
 
+            var matchingDiscreteProbabilities = dto.DiscreteProbabilities
+                .Where(dp => dp.UncertaintyId == issue.Uncertainty?.Id)
+                .ToList();
+
+            var matchingDiscreteUtilities = dto.DiscreteUtilities
+                .Where(du => du.UtilityId == issue.Utility?.Id)
+                .ToList();
+
             var uncertaintyResult = CreateUncertainty(
                 issue.Uncertainty?.Id, issue.Uncertainty?.IsKey ?? true,
-                issue.Uncertainty?.Outcomes, issue.Uncertainty?.DiscreteProbabilities,
+                issue.Uncertainty?.Outcomes, matchingDiscreteProbabilities,
                 mappedIssueId, mappings, newProjectId);
             var utilityResult = CreateUtility(
-                issue.Utility?.Id, issue.Utility?.DiscreteUtilities,
+                issue.Utility?.Id, matchingDiscreteUtilities,
                 mappedIssueId, mappings, newProjectId);
 
             if (uncertaintyResult.DiscreteProbabilities.Count > 0)
@@ -408,7 +424,6 @@ public class ProjectDuplicationService : IProjectDuplicationService
             ProjectId = newProjectId,
             IsKey = isKey,
             Outcomes = mappedOutcomes,
-            DiscreteProbabilities = []
         };
 
         return (uncertaintyDto, mappedDiscreteProbabilities);

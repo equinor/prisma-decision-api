@@ -3,11 +3,12 @@ from typing import Optional
 from src.dtos.decision_dtos import (
     DecisionOutgoingDto,
 )
+
 from src.dtos.uncertainty_dtos import (
     UncertaintyOutgoingDto,
 )
 from src.dtos.utility_dtos import (
-    UtilityOutgoingDto,
+    UtilityDto,
 )
 from src.dtos.node_dtos import (
     NodeViaIssueOutgoingDto,
@@ -21,6 +22,6 @@ class IssueOutgoingDto(IssueDto):
     node: NodeViaIssueOutgoingDto
     decision: Optional[DecisionOutgoingDto]
     uncertainty: Optional[UncertaintyOutgoingDto]
-    utility: Optional[UtilityOutgoingDto]
+    utility: Optional[UtilityDto]
     created_at: datetime
     updated_at: datetime

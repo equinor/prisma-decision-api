@@ -14,16 +14,10 @@ public class UtilityDto
     public required Guid ProjectId { get; set; }
 }
 
-public abstract class UtilityWithDiscreteUtilitiesDto : UtilityDto
-{
-    [JsonPropertyName("discrete_utilities")]
-    public List<DiscreteUtilityDto> DiscreteUtilities { get; set; } = new();
-}
-
-public class UtilityIncomingDto : UtilityWithDiscreteUtilitiesDto
+public class UtilityIncomingDto : UtilityDto
 {
 }
 
-public class UtilityOutgoingDto : UtilityWithDiscreteUtilitiesDto
+public class UtilityOutgoingDto : UtilityDto
 {
 }

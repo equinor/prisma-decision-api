@@ -7,11 +7,6 @@ from src.dtos.outcome_dtos import (
     OutcomeOutgoingDto,
 )
 
-from src.dtos.discrete_probability_dtos import (
-    DiscreteProbabilityIncomingDto,
-    DiscreteProbabilityOutgoingDto,
-)
-
 
 class UncertaintyDto(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
@@ -20,10 +15,8 @@ class UncertaintyDto(BaseModel):
 
 
 class UncertaintyIncomingDto(UncertaintyDto):
-    discrete_probabilities: list[DiscreteProbabilityIncomingDto] = []
     outcomes: List[OutcomeIncomingDto] = []
 
 
 class UncertaintyOutgoingDto(UncertaintyDto):
-    discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = []
     outcomes: List[OutcomeOutgoingDto] = []

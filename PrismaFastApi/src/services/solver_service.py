@@ -15,6 +15,8 @@ from src.services.decision_tree_pruning_service import (
 )
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
+from src.dtos.discrete_probability_dtos import DiscreteProbabilityOutgoingDto
+from src.dtos.discrete_utility_dtos import DiscreteUtilityOutgoingDto
 from src.dtos.model_solution_dtos import SolutionDto
 from src.constants import Type
 
@@ -28,17 +30,35 @@ class SolverService:
         pass
 
     async def find_optimal_decision_pyagrum(
-        self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]
+        self, 
+        issues: list[IssueOutgoingDto], 
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
     ) -> SolutionDto:
 
-        solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
+        solution = await PyagrumSolver().find_optimal_decisions(
+            issues=issues, 
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+        )
 
         return solution
 
     async def find_optimal_decision_pyagrum_from_dtos(
-        self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]
+        self, 
+        issues: list[IssueOutgoingDto], 
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
     ):
-        solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
+        solution = await PyagrumSolver().find_optimal_decisions(
+            issues=issues, 
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+        )
 
         return solution
     
@@ -50,20 +70,43 @@ class SolverService:
         return await solver.get_solutions_given_evidence(issues=issues, edges=edges, evidence=evidence)
     
     async def get_MEU_given_evidence(
-        self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []
+        self, 
+        issues: list[IssueOutgoingDto], 
+        edges: list[EdgeOutgoingDto], 
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        evidence: list[list[uuid.UUID]] = []
     ) -> list[Optional[float]]:
         
         solver = PyagrumSolver()
-        return await solver.get_mean_expected_utilities_given_evidence(issues=issues, edges=edges, evidence=evidence)
+        return await solver.get_mean_expected_utilities_given_evidence(
+            issues=issues, 
+            edges=edges, 
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+            evidence=evidence
+        )
 
     async def get_decision_tree_for_optimal_decisions_old(
-        self, project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]
+        self, 
+        project_id: uuid.UUID, 
+        issues: list[IssueOutgoingDto], 
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
     ):
 
-        solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
+        solution = await PyagrumSolver().find_optimal_decisions(
+            issues=issues, 
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+        )
 
         decision_tree_creator = await DecisionTreeCreator.initialize(
-            project_id, nodes=issues, edges=edges
+            project_id, nodes=issues, edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
         )
         DT_partial_order = await decision_tree_creator.calculate_partial_order()
         decision_tree = await decision_tree_creator.convert_to_decision_tree(
@@ -78,13 +121,25 @@ class SolverService:
         return pruning_service.prune_tree_for_optimal_decisions(dt_dtos, solution)
 
     async def get_decision_tree_for_optimal_decisions(
-        self, project_id: uuid.UUID, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto]
+        self, 
+        project_id: uuid.UUID, 
+        issues: list[IssueOutgoingDto], 
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
     ):
 
-        solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
+        solution = await PyagrumSolver().find_optimal_decisions(
+            issues=issues, 
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+        )
 
         decision_tree_creator = await DecisionTreeCreator.initialize(
-            project_id, nodes=issues, edges=edges
+            project_id, nodes=issues, edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
         )
         DT_partial_order = await decision_tree_creator.calculate_partial_order()
         decision_tree = await decision_tree_creator.convert_to_decision_tree(
@@ -103,11 +158,20 @@ class SolverService:
         project_id: uuid.UUID,
         issues: list[IssueOutgoingDto],
         edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
     ):
-        solution = await PyagrumSolver().find_optimal_decisions(issues=issues, edges=edges)
+        solution = await PyagrumSolver().find_optimal_decisions(
+            issues=issues, 
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+        )
 
         decision_tree_creator = await DecisionTreeCreator.initialize(
-            project_id, nodes=issues, edges=edges
+            project_id, nodes=issues, edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
         )
         DT_partial_order = await decision_tree_creator.calculate_partial_order()
         decision_tree = await decision_tree_creator.convert_to_decision_tree(
@@ -122,23 +186,31 @@ class SolverService:
         return pruning_service.prune_tree_for_optimal_decisions(dt_dtos, solution)
         
     async def get_decision_tree_for_optimal_decisions_from_dtos_by_constructing_paths(
-            self, 
-            project_id: uuid.UUID, 
-            issues: list[IssueOutgoingDto] | None = None, 
-            edges: list[EdgeOutgoingDto] | None = None,
-            paths: list[list[uuid.UUID]] = [],
-        ):
-        if not issues:
-            raise ValueError("issues must be provided and non-empty")
-        if edges is None:
-            edges = []
-
+        self, 
+        project_id: uuid.UUID, 
+        issues: list[IssueOutgoingDto], 
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        paths: list[list[uuid.UUID]],
+    ):
         solver = PyagrumSolver()
-        solution = await solver.find_optimal_decisions(issues=issues, edges=edges)
+        solution = await solver.find_optimal_decisions(
+            issues=issues, 
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+        )
 
         paths = self.filter_paths_from_solution(solution, paths, issues)
 
-        decision_tree_creator = DecisionTreeCreator_v3.initialize(project_id, nodes = issues, edges = edges)
+        decision_tree_creator = DecisionTreeCreator_v3.initialize(
+            project_id,
+            nodes=issues,
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+        )
 
         decision_tree = decision_tree_creator.convert_to_decision_tree_partial(project_id=project_id, paths=paths)
 
