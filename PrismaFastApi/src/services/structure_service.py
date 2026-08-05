@@ -6,8 +6,6 @@ from src.services.decision_tree.decision_tree_creator_v3 import DecisionTreeCrea
 from src.dtos.decision_tree_dtos import DecisionTreeDto, PartialOrderDto, TreeNodeDto2
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
-from src.dtos.discrete_probability_dtos import DiscreteProbabilityOutgoingDto
-from src.dtos.discrete_utility_dtos import DiscreteUtilityOutgoingDto
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator
 from src.utils.visit_tree_node_and_populate import visit_tree_node_and_populate
 from src.services.pyagrum_solver import PyagrumSolver
