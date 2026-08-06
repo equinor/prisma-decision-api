@@ -48,7 +48,10 @@ async def get_optimal_decisions_for_project_with_evidence(
         for n, evi in enumerate(evidence)
     ]
     exception_message = ""
-    for populated in populated_evidence:
+    for n, populated in enumerate(populated_evidence):
+        if n == 0 and populated.expected_utility is not None and populated.expected_utility < -1e10:
+            exception_message += f"Impossible state reached due to all possibilities being restricted"
+            
         if populated.expected_utility is None:
             exception_message += f"Impossible state reached for evidence {populated.evidence_id} with state_ids {populated.state_ids}\n"
     # If any of the evidence leads to an impossible state, we raise an exception with the details of which evidence caused the issue. 

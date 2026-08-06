@@ -4,6 +4,7 @@ from typing import Optional
 from src.dtos.decision_tree_dtos import TreeNodeDto2, ProbabilityDto2
 from src.services.pyagrum_solver import PyagrumSolver
 from src.dtos.model_solution_dtos import SolutionDto
+from src.dtos.decision_tree_dtos import UtilityDTDto2
 from src.constants import Type
 from src.constants import PrecisionConstants
 
@@ -50,6 +51,8 @@ def _populate_root_node_if_needed(
         )
         if math.isnan(expected_utility):
             tree_node.expected_value = 0
+        if expected_utility < -1e10:
+            raise ValueError(f"Impossible state reached due to all possibilities being restricted")
         else:
             tree_node.expected_value = expected_utility
 
@@ -159,6 +162,14 @@ def visit_tree_node_and_populate(
         tree_node.cumulative_probability = cumulative_probability
         return
 
+    inds_to_remove = []
+    if tree_node.utilities:
+        for n, utility in enumerate(tree_node.utilities):
+            if utility.utility_value < -1e10:
+                inds_to_remove.append(n)
+    tree_node.utilities = [u for n, u in enumerate(tree_node.utilities or []) if n not in inds_to_remove]
+    if tree_node.children:
+        tree_node.children = [c for n, c in enumerate(tree_node.children) if n not in inds_to_remove]
 
     # Prune non-optimal children for decision nodes when solution is provided
     if optimal_option_lookup is not None and tree_node.type == Type.DECISION.value:
@@ -167,4 +178,7 @@ def visit_tree_node_and_populate(
     if not tree_node.children:
         return
     for child in tree_node.children:
-        _visit_child(solver, tree_node, child, current_path, cumulative_probability, solution)
+        try:
+            _visit_child(solver, tree_node, child, current_path, cumulative_probability, solution)
+        except Exception as e:
+            raise ValueError(f"Error visiting child node {child.issue_id} with parent state id {child.parent_state_id}: {str(e)}") from e
