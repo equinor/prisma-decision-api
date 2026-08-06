@@ -5,15 +5,22 @@ namespace PrismaApi.Test.Configuration;
 
 public class TestClientScope : IDisposable
 {
-    private static readonly AsyncLocal<List<KeyValuePair<string, string>>> CurrentHeaders = new();
-    private static readonly AsyncLocal<TestPersonProfile> CurrentUser = new();
+    private static readonly AsyncLocal<List<KeyValuePair<string, string>>?> CurrentHeaders = new();
+    private static readonly AsyncLocal<TestPersonProfile?> CurrentUser = new();
     private static readonly AsyncLocal<Guid?> CurrentAppId = new();
 
     public TestClientScope(Guid id) => CurrentAppId.Value = id;
 
     public TestClientScope(TestPersonProfile profile) => CurrentUser.Value = profile;
 
-    public void Dispose() => GC.SuppressFinalize(this);
+    public void Dispose()
+    {
+        CurrentHeaders.Value = null;
+        CurrentUser.Value = null;
+        CurrentAppId.Value = null;
+
+        GC.SuppressFinalize(this);
+    }
 
     public TestClientScope SetSigninAppId(Guid? appId)
     {
