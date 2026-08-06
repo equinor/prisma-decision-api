@@ -17,7 +17,7 @@ namespace PrismaApi.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.13")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -1565,22 +1565,22 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Option", "ChildOption")
                         .WithMany()
                         .HasForeignKey("ChildOptionId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("PrismaApi.Domain.Entities.Outcome", "ChildOutcome")
                         .WithMany()
                         .HasForeignKey("ChildOutcomeId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("PrismaApi.Domain.Entities.Option", "ParentOption")
                         .WithMany()
                         .HasForeignKey("ParentOptionId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("PrismaApi.Domain.Entities.Outcome", "ParentOutcome")
                         .WithMany()
                         .HasForeignKey("ParentOutcomeId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()

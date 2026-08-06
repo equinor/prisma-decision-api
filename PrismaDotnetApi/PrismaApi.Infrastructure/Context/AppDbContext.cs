@@ -233,6 +233,13 @@ public partial class AppDbContext : DbContext
                 .ToList();
 
             DiscreteUtilities.RemoveRange(affectedUtils);
+
+            var affectedRestrictionEntries = await RestrictionEntries
+                .Where(
+                    re => (re.ParentOutcomeId != null && deletedOutcomeIds.Contains((Guid)re.ParentOutcomeId)) || 
+                    (re.ChildOutcomeId != null && deletedOutcomeIds.Contains((Guid)re.ChildOutcomeId)))
+                .ToListAsync(cancellationToken);
+            RestrictionEntries.RemoveRange(affectedRestrictionEntries);
         }
     }
     private async Task OnOptionDeletedCleanupAsync(CancellationToken cancellationToken = default)
@@ -286,6 +293,13 @@ public partial class AppDbContext : DbContext
 
             DiscreteUtilities.RemoveRange(affectedUtils);
             DiscreteUtilityParentOptions.RemoveRange(affectedUtilParentOptions);
+
+            var affectedRestrictionEntries = await RestrictionEntries
+                .Where(
+                    re => (re.ParentOptionId != null && deletedOptionIds.Contains((Guid)re.ParentOptionId)) || 
+                    (re.ChildOptionId != null && deletedOptionIds.Contains((Guid)re.ChildOptionId)))
+                .ToListAsync(cancellationToken);
+            RestrictionEntries.RemoveRange(affectedRestrictionEntries);
         }
     }
 

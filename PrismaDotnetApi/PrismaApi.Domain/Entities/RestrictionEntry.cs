@@ -50,22 +50,22 @@ public class RestrictionEntry : BaseEntity, IBaseEntity<Guid>
             entity.HasOne(e => e.ParentOption)
                 .WithMany()
                 .HasForeignKey(e => e.ParentOptionId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasOne(e => e.ChildOption)
                 .WithMany()
                 .HasForeignKey(e => e.ChildOptionId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasOne(e => e.ParentOutcome)
                 .WithMany()
                 .HasForeignKey(e => e.ParentOutcomeId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasOne(e => e.ChildOutcome)
                 .WithMany()
                 .HasForeignKey(e => e.ChildOutcomeId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
 
             entity.Property<Guid>(e => e.ParentStateId) 
                 .HasComputedColumnSql($"COALESCE([{nameof(ParentOptionId)}], [{nameof(ParentOutcomeId)}])", stored: true);
