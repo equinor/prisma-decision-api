@@ -9,6 +9,8 @@ class SessionInfoParameters(str, Enum):
 class AccessRoles(str, Enum):
     User = "PrismaDecisionUser"
 
+class ComputationalNames(str, Enum):
+    UTILITY_NODE_VALUE = "value"
 
 class Type(str, Enum):
     UNASSIGNED = "Unassigned"
