@@ -241,7 +241,7 @@ public static class EntitiesExtensions
         await entity.Outcomes.Update(incomingEntity.Outcomes, context, ruleTrigger, ct);
         entity.IssueId = incomingEntity.IssueId;
         entity.IsKey = incomingEntity.IsKey;
-        entity.DiscreteProbabilities.Update(incomingEntity.DiscreteProbabilities, context);
+        entity.DiscreteProbabilities.UpdateProperties(incomingEntity.DiscreteProbabilities, context);
         return entity;
     }
 
@@ -278,10 +278,20 @@ public static class EntitiesExtensions
         }
     }
 
+    public static void UpdateProperties(this ICollection<DiscreteProbability> entities, ICollection<DiscreteProbability> incomingEntities, AppDbContext context)
+    {
+        foreach (var entity in entities)
+        {
+            var inncommingEntity = incomingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
+            if (inncommingEntity == null) continue;
+            entity.Probability = inncommingEntity.Probability;
+        }
+    }
+
     public static Utility Update(this Utility entity, Utility incomingEntity, AppDbContext context, CancellationToken ct = default)
     {
         entity.IssueId = incomingEntity.IssueId;
-        entity.DiscreteUtilities.Update(incomingEntity.DiscreteUtilities, context);
+        entity.DiscreteUtilities.UpdateProperties(incomingEntity.DiscreteUtilities, context);
         return entity;
     }
 
@@ -289,6 +299,16 @@ public static class EntitiesExtensions
     {
         RepositoryUtilities.RemoveMissingFromCollectionMutate<DiscreteUtility, Guid>(incomingEntities, entities, context);
         RepositoryUtilities.AddMissingFromCollectionMutate<DiscreteUtility, Guid>(incomingEntities, entities, context);
+        foreach (var entity in entities)
+        {
+            var inncommingEntity = incomingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
+            if (inncommingEntity == null) continue;
+            entity.UtilityValue = inncommingEntity.UtilityValue;
+        }
+    }
+
+    public static void UpdateProperties(this ICollection<DiscreteUtility> entities, ICollection<DiscreteUtility> incomingEntities, AppDbContext context)
+    {
         foreach (var entity in entities)
         {
             var inncommingEntity = incomingEntities.Where(x => x.Id == entity.Id).FirstOrDefault();
