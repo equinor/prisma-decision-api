@@ -348,8 +348,8 @@ class PyagrumSolver:
             self.add_to_lookup(issue, node_id)
 
     def add_edge(self, edge: EdgeOutgoingDto):
-        tail_id = self.node_lookup[edge.tail_node.issue_id.__str__()]
-        head_id = self.node_lookup[edge.head_node.issue_id.__str__()]
+        tail_id = self.node_lookup[edge.tail_issue_id.__str__()]
+        head_id = self.node_lookup[edge.head_issue_id.__str__()]
 
         self.diagram.addArc(tail_id, head_id)  # type: ignore
 

@@ -466,8 +466,8 @@ class DecisionTreeCreator:
         return node_ids, edge_dtos
 
     async def to_arc_dto(self, nodes: list[TreeNodeDto], edge: EdgeOutgoingDto) -> EdgeUUIDDto:
-        tail_node = [x for x in nodes if x.issue.id == edge.tail_node.issue_id][0]
-        head_node = [x for x in nodes if x.issue.id == edge.head_node.issue_id][0]
+        tail_node = [x for x in nodes if x.issue.id == edge.tail_issue_id][0]
+        head_node = [x for x in nodes if x.issue.id == edge.head_issue_id][0]
         return EdgeUUIDDto(tail=tail_node.id, head=head_node.id)
 
     async def data_to_networkx(

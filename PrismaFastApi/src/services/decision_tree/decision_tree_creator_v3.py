@@ -531,8 +531,8 @@ class DecisionTreeCreator_v3:
             self.add_node(treenode_id)
 
         for edge in edges:
-            tail_node = [x for x in nodes if x.id == edge.tail_node.issue_id][0]
-            head_node = [x for x in nodes if x.id == edge.head_node.issue_id][0]
+            tail_node = [x for x in nodes if x.id == edge.tail_issue_id][0]
+            head_node = [x for x in nodes if x.id == edge.head_issue_id][0]
             tail_treenode_id = self.node_treenode_lookup.get_treenode_ids_for_dto(tail_node.id)[0]
             head_treenode_id = self.node_treenode_lookup.get_treenode_ids_for_dto(head_node.id)[0]
             self.add_edge(EdgeUUIDDto(tail=tail_treenode_id, head=head_treenode_id))

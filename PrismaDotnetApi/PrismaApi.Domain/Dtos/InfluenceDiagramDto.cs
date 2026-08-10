@@ -20,13 +20,116 @@ public static class InfluenceDiagramDtoExtensions
         var json = JsonSerializer.Serialize(source);
         return JsonSerializer.Deserialize<InfluenceDiagramDto>(json)!;
     }
+
+    public static List<DiscreteUtilityDto> GetRestrictedDiscreteUtilities(this InfluenceDiagramDto influanceDiagramDto, Guid RestrictionTableId)
+    {
+        return influanceDiagramDto.discreteUtilities.Where(du => du.UtilityId == RestrictionTableId).ToList();
+    }
+
+    public static void CreateRestrictedDiscreteUtilities(this InfluenceDiagramDto influanceDiagramDto, Guid RestrictionTableId, EdgeOutgoingDto edge)
+    {
+        var restrictionTable = influanceDiagramDto.restrictionTables.FirstOrDefault(rt => rt.Id == RestrictionTableId);
+        if (restrictionTable is null) return;
+
+        // create the utility issue and nodes and edges
+        var utilityNode = new NodeViaIssueOutgoingDto
+        {
+            Id = RestrictionTableId,
+            IssueId = RestrictionTableId,
+            Name = restrictionTable.Name,
+        };
+        var utilityIssue = new IssueOutgoingDto
+        {
+            Id = RestrictionTableId,
+            Name = restrictionTable.Name,
+            Type = IssueType.Utility.ToString(),
+            Utility = new UtilityOutgoingDto
+            {
+                ProjectId = influanceDiagramDto.projectId,
+                Id = RestrictionTableId,
+            },
+            Node = utilityNode
+        };
+        var nodeDto = new NodeOutgoingDto
+        {
+            Id = RestrictionTableId,
+            IssueId = RestrictionTableId,
+            Name = restrictionTable.Name,
+            Issue = new IssueViaNodeOutgoingDto
+            {
+                Id = RestrictionTableId,
+                Name = restrictionTable.Name,
+                Type = IssueType.Utility.ToString(),
+                Utility = new UtilityOutgoingDto
+                {
+                    ProjectId = influanceDiagramDto.projectId,
+                    Id = RestrictionTableId,
+                },
+            }
+        };
+
+        var edge1 = new EdgeOutgoingDto
+        {
+            Id = Guid.NewGuid(),
+            TailIssueId = influanceDiagramDto.issues.First(i => i.Node.Id == edge.TailId).Id,
+            TailId = edge.TailId,
+            TailNode = edge.TailNode,
+            HeadIssueId = utilityNode.IssueId,
+            HeadId = utilityNode.Id,
+            HeadNode = nodeDto
+        };
+        var edge2 = new EdgeOutgoingDto
+        {
+            Id = Guid.NewGuid(),
+            TailIssueId = influanceDiagramDto.issues.First(i => i.Node.Id == edge.HeadId).Id,
+            TailId = edge.HeadId,
+            TailNode = edge.HeadNode,
+            HeadIssueId = utilityNode.IssueId,
+            HeadId = utilityNode.Id,
+            HeadNode = nodeDto
+        };
+        influanceDiagramDto.issues.Add(utilityIssue);
+        influanceDiagramDto.edges.Add(edge1);
+        influanceDiagramDto.edges.Add(edge2);
+        foreach (var entry in restrictionTable.RestrictionEntries)
+        {
+            if (!entry.IsChildUncertainty && entry.ParentStateId is not null && entry.ChildStateId is not null)
+            {
+                // The child of the entry is an option, meaning it is a parent of the discrete utility, but the parent can be either an option or an outcome, 
+                // Check which one it is and add it to the appropriate list of parent ids
+                var parentOutcomeIds = entry.IsParentUncertainty ? new List<Guid> { (Guid)entry.ParentStateId } : new List<Guid>();
+                var parentOptionIds = entry.IsParentUncertainty ? new List<Guid>{(Guid)entry.ChildStateId} : new List<Guid> { (Guid)entry.ChildStateId, (Guid)entry.ParentStateId };
+                // create a discrete utility for the restricted option given the parent state
+                var discreteUtility = new DiscreteUtilityDto
+                {
+                    ProjectId = influanceDiagramDto.projectId,
+                    UtilityId = RestrictionTableId,
+                    ParentOptionIds = parentOptionIds,
+                    ParentOutcomeIds = parentOutcomeIds,
+                    UtilityValue = entry.RestrictionValue == 0 ? double.MinValue : 0
+                };
+                influanceDiagramDto.discreteUtilities.Add(discreteUtility);
+            }
+        }
+    }
     
     public static void ApplyRestrictions(this InfluenceDiagramDto influenceDiagramDto)
     {
-        var restrictionEntries = influenceDiagramDto.restrictionTables.SelectMany(rt => rt.RestrictionEntries).ToList();
+        // var restrictionEntries = influenceDiagramDto.restrictionTables.SelectMany(rt => rt.RestrictionEntries).ToList();
+        // we can apply uncertainty restrictions to the existing discrete probabilities, 
+        // but for decision restrictions we need to create new discrete utilities for the restricted options given the parent states
+        var restrictionEntriesUncertainties = influenceDiagramDto.restrictionTables.SelectMany(rt => rt.RestrictionEntries).Where(re => re.IsChildUncertainty).ToList();
+        var restrictionTablesDecisions = influenceDiagramDto.restrictionTables.Where(rt => !rt.RestrictionEntries.All(re => re.IsChildUncertainty)).ToList();
         var discreteProbabilities = influenceDiagramDto.discreteProbabilities;
 
-        foreach (var entry in restrictionEntries)
+        foreach (var table in restrictionTablesDecisions)
+        {
+            // skip if all entries have a restriction value of 1, meaning no restrictions
+            if (table.RestrictionEntries.All(re => re.RestrictionValue == 1)) continue;
+            var edge = influenceDiagramDto.edges.First(e => e.Id == table.EdgeId);
+            influenceDiagramDto.CreateRestrictedDiscreteUtilities(table.Id, edge);
+        }
+        foreach (var entry in restrictionEntriesUncertainties)
         {
             if (entry.IsChildUncertainty)
             {
@@ -40,24 +143,6 @@ public static class InfluenceDiagramDtoExtensions
                     probability.Probability = probability.Probability * entry.RestrictionValue;
                     // need to normalize the probabilities for the parent state after setting some to 0
                     // need to also address the case where all probabilities for a parent state are set to 0, in which case we need to eliminate that parent state? Edit: pyagrum handles this, but does not normalize the probabilities, so we need to normalize them ourselves
-                }
-            }
-            else
-            {
-                if (entry.RestrictionValue != 0)
-                {
-                    // only need to set the utility to -inf if the restriction value is 0, otherwise we can leave it as is
-                    continue; 
-                }
-                var affectedOptions = influenceDiagramDto.issues
-                    .Where(x => x.Type == IssueType.Decision.ToString() && x.Decision is not null && x.Decision.Options.Count != 0)
-                    .SelectMany(y => y.Decision!.Options)
-                    .Where(op => op.Id == entry.ChildStateId);
-
-                foreach (var option in affectedOptions)
-                {
-                    option.Utility = double.MinValue;
-                    // option.Utility = double.NegativeInfinity;
                 }
             }
         }

@@ -50,13 +50,13 @@ async def get_optimal_decisions_for_project_with_evidence(
     exception_message = ""
     for n, populated in enumerate(populated_evidence):
         if n == 0 and populated.expected_utility is not None and populated.expected_utility < -1e10:
-            exception_message += f"Impossible state reached due to all possibilities being restricted"
+            exception_message += f"Impossible state reached due to all possible paths being restricted"
             
         if populated.expected_utility is None:
             exception_message += f"Impossible state reached for evidence {populated.evidence_id} with state_ids {populated.state_ids}\n"
     # If any of the evidence leads to an impossible state, we raise an exception with the details of which evidence caused the issue. 
     if exception_message:
-        raise ValueError(f"One or more evidence states lead to an impossible state:\n{exception_message}")
+        raise ValueError(f"Restrictions/Evidence states lead to an impossible state:\n{exception_message}")
     
     return populated_evidence
 
