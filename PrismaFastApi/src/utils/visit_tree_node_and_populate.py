@@ -162,16 +162,16 @@ def visit_tree_node_and_populate(
         tree_node.cumulative_probability = cumulative_probability
         return
 
-    inds_to_remove = []
-    if tree_node.utilities:
-        for n, utility in enumerate(tree_node.utilities):
-            if utility.utility_value < -1e10:
-                inds_to_remove.append(n)
-    tree_node.utilities = [u for n, u in enumerate(tree_node.utilities or []) if n not in inds_to_remove]
-    if tree_node.children:
-        tree_node.children = [c for n, c in enumerate(tree_node.children) if n not in inds_to_remove]
+    state_ids_to_prune: set[str] = set()
+    if tree_node.utilities and any([ut.utility_value < -1e10 for ut in tree_node.utilities if ut.utility_value is not None]):
+        state_ids_to_prune.update({
+            ut.option_id.__str__() if ut.option_id is not None else ut.outcome_id.__str__()
+            for ut in tree_node.utilities if ut.utility_value is not None and ut.utility_value < -1e10})
 
-    # Prune non-optimal children for decision nodes when solution is provided
+    if tree_node.probabilities and any([p.probability_value == 0 for p in tree_node.probabilities]):
+        state_ids_to_prune.update({p.outcome_id.__str__() for p in tree_node.probabilities if p.probability_value == 0})
+
+    prune_tree_node_child(tree_node, state_ids_to_prune)
     if optimal_option_lookup is not None and tree_node.type == Type.DECISION.value:
         _prune_to_optimal_child(tree_node, current_path, optimal_option_lookup)
 
@@ -182,3 +182,27 @@ def visit_tree_node_and_populate(
             _visit_child(solver, tree_node, child, current_path, cumulative_probability, solution)
         except Exception as e:
             raise ValueError(f"Error visiting child node {child.issue_id} with parent state id {child.parent_state_id}: {str(e)}") from e
+
+def prune_tree_node_child(
+    tree_node: TreeNodeDto2,
+    states_to_prune: set[str],
+) -> None:
+    # set utility pruned to true, also set the utility value to None, and remove the child from the children list if it exists
+    # remove the probability from the probabilities list if it exists
+    if tree_node.utilities:
+        for utility in tree_node.utilities:
+            state_id = utility.option_id.__str__() if utility.option_id is not None else utility.outcome_id.__str__()
+            if state_id in states_to_prune:
+                utility.pruned = True
+                utility.utility_value = None
+    if tree_node.children:
+        tree_node.children = [
+            child for child in tree_node.children
+            if child.parent_state_id.__str__() not in states_to_prune
+        ]
+    if tree_node.probabilities:
+        tree_node.probabilities = [
+            prob for prob in tree_node.probabilities
+            if prob.outcome_id.__str__() not in states_to_prune
+        ]
+    

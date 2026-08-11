@@ -43,7 +43,8 @@ class UtilityDTDto2(BaseModel):
     option_id: Optional[uuid.UUID] = None
     outcome_id: Optional[uuid.UUID] = None
     name: str = ""
-    utility_value: float
+    utility_value: Optional[float] = None
+    pruned: bool = False
 
 
 class TreeNodeDto(BaseModel):
