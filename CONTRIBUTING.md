@@ -7,7 +7,7 @@ Whether it's reporting a bug, proposing new features, discussing the current sta
 ## Ground Rules
 
 1. We use [Black](https://github.com/psf/black) and [Flake8](https://flake8.pycqa.org/) for Python formatting/linting, and C# nullable reference types with implicit usings for .NET.
-2. All code must be testable and covered by unit/integration tests.
+2. All endpoints must be testable and covered by unit/integration tests.
 3. Pre-commit hooks must pass before pushing (see [Code Style](#code-style)).
 4. Security vulnerabilities must be reported privately — see [SECURITY.md](SECURITY.md).
 
@@ -27,89 +27,7 @@ This repository contains two API services:
 
 ### Local Development Setup
 
-#### Using Docker Compose (recommended for running both services)
-
-```bash
-docker compose up --build
-```
-
-This starts:
-- FastAPI service on port **8000**
-- .NET API service on port **7075**
-
-#### Running Services Individually
-
-**Python (FastAPI):**
-
-```bash
-cd PrismaFastApi
-poetry install
-uvicorn src.main:app --port 8000
-```
-
-**C# (.NET):**
-
-```bash
-cd PrismaDotnetApi
-dotnet build
-dotnet run --project PrismaApi.Api
-```
-
-> **Note:** The .NET API requires user secrets for Azure AD authentication. See the [README](README.md) for setup instructions.
-
-### Running Tests
-
-**.NET:**
-
-```bash
-dotnet test PrismaDotnetApi/PrismaApi.Test/PrismaApi.Test.csproj --configuration Release
-```
-
-**Python:**
-
-```bash
-cd PrismaFastApi
-poetry install
-pytest
-```
-
-### Database Migrations
-
-This project uses dual database providers (SQLite for development, SQL Server for production). Helper scripts are provided in `PrismaDotnetApi/scripts/`:
-
-```bash
-cd PrismaDotnetApi
-
-# Add a new migration to both providers
-./scripts/Add-Migrations.sh MigrationName
-
-# Apply SQLite migrations locally
-./scripts/Update-Sqlite-Database.sh
-```
-
-> Always add migrations to **both** SQLite and SQL Server providers simultaneously.
-
-## Code Style
-
-We use [pre-commit](https://pre-commit.com/) hooks to enforce consistent code formatting:
-
-```bash
-pip install pre-commit
-pre-commit install
-```
-
-The hooks include:
-- Trailing whitespace removal
-- End-of-file fixer
-- YAML validation
-- **Black** (Python) — line length 100
-- **Flake8** (Python) — line length 100
-
-Run all hooks manually:
-
-```bash
-pre-commit run --all-files
-```
+Can be find [here](https://github.com/equinor/prisma-decision-api#quick-start)
 
 ## Commits
 
