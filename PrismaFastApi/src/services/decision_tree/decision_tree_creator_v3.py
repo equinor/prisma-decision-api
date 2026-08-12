@@ -748,6 +748,26 @@ class DecisionTreeCreator_v3:
 
         visited_states: set[tuple[tuple[uuid.UUID, ...], uuid.UUID]] = set()
 
+        # auto-expand the paths that are almost at the endnodes
+        almost_endnode_paths = [path for path in paths if len(path) == len(partial_order) - 1]
+        for path in almost_endnode_paths:
+            state_id = path[-1]
+            issue = self.get_node_from_uuid(partial_order[len(path)])
+
+            # get the last states of the tree from the issues
+            if issue is not None and isinstance(issue, IssueOutgoingDto):
+                next_states = []
+                if issue.type == Type.DECISION.value and issue.decision is not None:
+                    next_states = [option.id for option in issue.decision.options]
+                elif issue.type == Type.UNCERTAINTY.value and issue.uncertainty is not None:
+                    next_states = [outcome.id for outcome in issue.uncertainty.outcomes]
+            else:
+                continue
+            for last_state in next_states:
+                if last_state != state_id:
+                    new_path = path + [last_state]
+                    paths.append(new_path)
+
         for path in paths:
             for k, state_id in enumerate(path):
                 issue = self.get_node_from_uuid(partial_order[k])
