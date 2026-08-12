@@ -8,6 +8,8 @@ from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.discrete_probability_dtos import DiscreteProbabilityOutgoingDto
 from src.dtos.discrete_utility_dtos import DiscreteUtilityOutgoingDto
 from src.services.structure_service import StructureService
+from src.dtos.discrete_utility_dtos import DiscreteUtilityOutgoingDto
+from src.dtos.discrete_probability_dtos import DiscreteProbabilityOutgoingDto
 from src.dependencies import (
     get_project_lock_manager,
     get_structure_service,
