@@ -9,13 +9,13 @@ namespace PrismaApi.Application.Services;
 public class FastApiService : IFastApiService
 {
     private readonly HttpClient _httpClient;
-    private readonly IProjectService _projectService;
+    private readonly IInfluenceDiagramService _influenceDiagramService;
     private readonly IConfiguration _configuration;
-    public FastApiService(HttpClient httpClient, IProjectService projectService, IConfiguration configuration)
+    public FastApiService(HttpClient httpClient, IInfluenceDiagramService influenceDiagramService, IConfiguration configuration)
     {
         _httpClient = httpClient;
         _httpClient.Timeout = TimeSpan.FromSeconds(180);
-        _projectService = projectService;
+        _influenceDiagramService = influenceDiagramService;
         _configuration = configuration;
     }
 
@@ -56,28 +56,22 @@ public class FastApiService : IFastApiService
 
     public async Task<ApiResponseDto> SendInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var influenceDiagram = await _projectService.GetInfluenceDiagramAsync(projectId, user, ct);
-        // make a clone to avoid mutating the chached influence diagram in the project service
-        var influenceDiagramClone = influenceDiagram.DeepClone();
-        influenceDiagramClone.ApplyRestrictions();
-        var content = new StringContent(JsonSerializer.Serialize(influenceDiagramClone), Encoding.UTF8, "application/json");
+        var influenceDiagram = await _influenceDiagramService.GetRestrictedInfluenceDiagramAsync(projectId, user, ct);
+        var content = new StringContent(JsonSerializer.Serialize(influenceDiagram), Encoding.UTF8, "application/json");
         return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
     }
 
     public async Task<ApiResponseDto> SendPartialInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, List<List<Guid>> paths, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var influenceDiagram = await _projectService.GetInfluenceDiagramAsync(projectId, user, ct);
-        // make a clone to avoid mutating the chached influence diagram in the project service
-        var influenceDiagramClone = influenceDiagram.DeepClone();
-        influenceDiagramClone.ApplyRestrictions();
+        var influenceDiagram = await _influenceDiagramService.GetRestrictedInfluenceDiagramAsync(projectId, user, ct);
         
         var payload = new
         {
-            issues = influenceDiagramClone.issues,
-            edges = influenceDiagramClone.edges,
-            discrete_probabilities = influenceDiagramClone.discreteProbabilities,
-            discrete_utilities = influenceDiagramClone.discreteUtilities,
-            restriction_tables = influenceDiagramClone.restrictionTables,
+            issues = influenceDiagram.issues,
+            edges = influenceDiagram.edges,
+            discrete_probabilities = influenceDiagram.discreteProbabilities,
+            discrete_utilities = influenceDiagram.discreteUtilities,
+            restriction_tables = influenceDiagram.restrictionTables,
             paths
         };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
@@ -86,18 +80,15 @@ public class FastApiService : IFastApiService
 
     public async Task<ApiResponseDto> SendInfluenceDiagramWithEvidenceToFastApiAsync(Guid projectId, string endpoint, List<EvidenceRequestDto> data, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var influenceDiagram = await _projectService.GetInfluenceDiagramAsync(projectId, user, ct);
-        // make a clone to avoid mutating the chached influence diagram in the project service
-        var influenceDiagramClone = influenceDiagram.DeepClone();
-        influenceDiagramClone.ApplyRestrictions();
+        var influenceDiagram = await _influenceDiagramService.GetRestrictedInfluenceDiagramAsync(projectId, user, ct);
 
         var payload = new
         {
-            issues = influenceDiagramClone.issues,
-            edges = influenceDiagramClone.edges,
-            discrete_probabilities = influenceDiagramClone.discreteProbabilities,
-            discrete_utilities = influenceDiagramClone.discreteUtilities,
-            restriction_tables = influenceDiagramClone.restrictionTables,
+            issues = influenceDiagram.issues,
+            edges = influenceDiagram.edges,
+            discrete_probabilities = influenceDiagram.discreteProbabilities,
+            discrete_utilities = influenceDiagram.discreteUtilities,
+            restriction_tables = influenceDiagram.restrictionTables,
             evidence = data,
         };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");

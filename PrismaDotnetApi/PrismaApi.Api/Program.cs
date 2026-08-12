@@ -125,6 +125,7 @@ public class Program
 
         builder.Services.AddScoped<ITableRebuildingService, TableRebuildingService>();
         builder.Services.AddScoped<IProjectService, ProjectService>();
+        builder.Services.AddScoped<IInfluenceDiagramService, InfluenceDiagramService>();
         builder.Services.AddScoped<IIssueService, IssueService>();
         builder.Services.AddScoped<INodeService, NodeService>();
         builder.Services.AddScoped<INodeStyleService, NodeStyleService>();
