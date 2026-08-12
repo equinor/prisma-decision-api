@@ -26,9 +26,9 @@ public static class InfluenceDiagramDtoExtensions
         return influanceDiagramDto.discreteUtilities.Where(du => du.UtilityId == RestrictionTableId).ToList();
     }
 
-    public static void CreateRestrictedDiscreteUtilities(this InfluenceDiagramDto influanceDiagramDto, Guid RestrictionTableId, EdgeOutgoingDto edge)
+    public static void CreateRestrictedDiscreteUtilities(this InfluenceDiagramDto influenceDiagramDto, Guid RestrictionTableId, EdgeOutgoingDto edge)
     {
-        var restrictionTable = influanceDiagramDto.restrictionTables.FirstOrDefault(rt => rt.Id == RestrictionTableId);
+        var restrictionTable = influenceDiagramDto.restrictionTables.FirstOrDefault(rt => rt.Id == RestrictionTableId);
         if (restrictionTable is null) return;
 
         // create the utility issue and nodes and edges
@@ -45,7 +45,7 @@ public static class InfluenceDiagramDtoExtensions
             Type = IssueType.Utility.ToString(),
             Utility = new UtilityOutgoingDto
             {
-                ProjectId = influanceDiagramDto.projectId,
+                ProjectId = influenceDiagramDto.projectId,
                 Id = RestrictionTableId,
             },
             Node = utilityNode
@@ -62,7 +62,7 @@ public static class InfluenceDiagramDtoExtensions
                 Type = IssueType.Utility.ToString(),
                 Utility = new UtilityOutgoingDto
                 {
-                    ProjectId = influanceDiagramDto.projectId,
+                    ProjectId = influenceDiagramDto.projectId,
                     Id = RestrictionTableId,
                 },
             }
@@ -71,7 +71,7 @@ public static class InfluenceDiagramDtoExtensions
         var edge1 = new EdgeOutgoingDto
         {
             Id = Guid.NewGuid(),
-            TailIssueId = influanceDiagramDto.issues.First(i => i.Node.Id == edge.TailId).Id,
+            TailIssueId = influenceDiagramDto.issues.First(i => i.Node.Id == edge.TailId).Id,
             TailId = edge.TailId,
             TailNode = edge.TailNode,
             HeadIssueId = utilityNode.IssueId,
@@ -81,16 +81,16 @@ public static class InfluenceDiagramDtoExtensions
         var edge2 = new EdgeOutgoingDto
         {
             Id = Guid.NewGuid(),
-            TailIssueId = influanceDiagramDto.issues.First(i => i.Node.Id == edge.HeadId).Id,
+            TailIssueId = influenceDiagramDto.issues.First(i => i.Node.Id == edge.HeadId).Id,
             TailId = edge.HeadId,
             TailNode = edge.HeadNode,
             HeadIssueId = utilityNode.IssueId,
             HeadId = utilityNode.Id,
             HeadNode = nodeDto
         };
-        influanceDiagramDto.issues.Add(utilityIssue);
-        influanceDiagramDto.edges.Add(edge1);
-        influanceDiagramDto.edges.Add(edge2);
+        influenceDiagramDto.issues.Add(utilityIssue);
+        influenceDiagramDto.edges.Add(edge1);
+        influenceDiagramDto.edges.Add(edge2);
         foreach (var entry in restrictionTable.RestrictionEntries)
         {
             if (!entry.IsChildUncertainty && entry.ParentStateId is not null && entry.ChildStateId is not null)
@@ -102,13 +102,13 @@ public static class InfluenceDiagramDtoExtensions
                 // create a discrete utility for the restricted option given the parent state
                 var discreteUtility = new DiscreteUtilityDto
                 {
-                    ProjectId = influanceDiagramDto.projectId,
+                    ProjectId = influenceDiagramDto.projectId,
                     UtilityId = RestrictionTableId,
                     ParentOptionIds = parentOptionIds,
                     ParentOutcomeIds = parentOutcomeIds,
                     UtilityValue = entry.RestrictionValue == 0 ? double.MinValue : 0
                 };
-                influanceDiagramDto.discreteUtilities.Add(discreteUtility);
+                influenceDiagramDto.discreteUtilities.Add(discreteUtility);
             }
         }
     }
