@@ -11,14 +11,14 @@ using PrismaApi.Infrastructure.Context;
 namespace PrismaApi.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260722065526_AddDeletedUser")]
+    [Migration("20260813065648_AddDeletedUser")]
     partial class AddDeletedUser
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.13");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
 
             modelBuilder.Entity("PrismaApi.Domain.Entities.Assessment", b =>
                 {
@@ -1572,22 +1572,22 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasOne("PrismaApi.Domain.Entities.Option", "ChildOption")
                         .WithMany()
                         .HasForeignKey("ChildOptionId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("PrismaApi.Domain.Entities.Outcome", "ChildOutcome")
                         .WithMany()
                         .HasForeignKey("ChildOutcomeId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("PrismaApi.Domain.Entities.Option", "ParentOption")
                         .WithMany()
                         .HasForeignKey("ParentOptionId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("PrismaApi.Domain.Entities.Outcome", "ParentOutcome")
                         .WithMany()
                         .HasForeignKey("ParentOutcomeId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
                         .WithMany()
