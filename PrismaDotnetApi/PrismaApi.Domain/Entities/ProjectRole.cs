@@ -10,6 +10,7 @@ public class ProjectRole : AuditableEntity, IBaseEntity<Guid>
     public required Guid ProjectId { get; set; }
     public required string UserId { get; set; }
     public string Role { get; set; } = string.Empty;
+    public bool Favorite { get; set; } = false;
 
     public Project? Project { get; set; }
     public User? User { get; set; }

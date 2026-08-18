@@ -6,7 +6,7 @@ namespace PrismaApi.Application.Mapping;
 
 public static class ProjectMappingExtensions
 {
-    public static ProjectOutgoingDto ToOutgoingDto(this Project entity)
+    public static ProjectOutgoingDto ToOutgoingDto(this Project entity, string userId)
     {
         return new ProjectOutgoingDto
         {
@@ -16,13 +16,14 @@ public static class ProjectMappingExtensions
             ParentProjectName = entity.ParentProjectName ?? "",
             OpportunityStatement = entity.OpportunityStatement,
             Public = entity.Public,
+            Favorite = entity.ProjectRoles.FirstOrDefault(role => role.UserId == userId)?.Favorite ?? false,
             EndDate = entity.EndDate,
             Users = entity.ProjectRoles.ToOutgoingDtos(),
             BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
         };
     }
 
-    public static PopulatedProjectDto ToPopulatedDto(this Project entity)
+    public static PopulatedProjectDto ToPopulatedDto(this Project entity, string userId)
     {
         return new PopulatedProjectDto
         {
@@ -34,6 +35,7 @@ public static class ProjectMappingExtensions
             ParentProjectName = entity.ParentProjectName ?? "",
             OpportunityStatement = entity.OpportunityStatement,
             Public = entity.Public,
+            Favorite = entity.ProjectRoles.FirstOrDefault(role => role.UserId == userId)?.Favorite ?? false,
             EndDate = entity.EndDate,
             Users = entity.ProjectRoles.ToOutgoingDtos(),
             BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
@@ -41,14 +43,14 @@ public static class ProjectMappingExtensions
         };
     }
 
-    public static List<ProjectOutgoingDto> ToOutgoingDtos(this IEnumerable<Project> entities)
+    public static List<ProjectOutgoingDto> ToOutgoingDtos(this IEnumerable<Project> entities, string userId)
     {
-        return entities.Select(ToOutgoingDto).ToList();
+        return entities.Select(entity => entity.ToOutgoingDto(userId)).ToList();
     }
 
-    public static List<PopulatedProjectDto> ToPopulatedDtos(this IEnumerable<Project> entities)
+    public static List<PopulatedProjectDto> ToPopulatedDtos(this IEnumerable<Project> entities, string userId)
     {
-        return entities.Select(ToPopulatedDto).ToList();
+        return entities.Select(entity => entity.ToPopulatedDto(userId)).ToList();
     }
 
     public static FullProjectForDuplicationDto ToFullProjectForDuplicationDto(this Project entity)
@@ -118,4 +120,5 @@ public static class ProjectMappingExtensions
     {
         return dtos.Select(dto => dto.ToEntity(userDto)).ToList();
     }
+
 }

@@ -22,6 +22,12 @@ public class ProjectDto
     public DateTimeOffset EndDate { get; set; } = DateTimeOffset.UtcNow.AddDays(30);
 }
 
+public class ProjectFavoriteIncomingDto
+{
+    [JsonPropertyName("favorite")]
+    public bool Favorite { get; set; }
+}
+
 public class ProjectCreateDto : ProjectDto
 {
     [JsonPropertyName("board_nodes")]
@@ -41,6 +47,8 @@ public class ProjectIncomingDto : ProjectDto
 
 public class ProjectOutgoingDto : ProjectDto
 {
+    [JsonPropertyName("favorite")]
+    public bool Favorite { get; set; }
 
     [JsonPropertyName("board_nodes")]
     public List<BoardNodeOutgoingDto> BoardNodes { get; set; } = new();
@@ -51,6 +59,9 @@ public class ProjectOutgoingDto : ProjectDto
 
 public class PopulatedProjectDto : ProjectDto
 {
+    [JsonPropertyName("favorite")]
+    public bool Favorite { get; set; }
+
     [JsonPropertyName("strategies")]
     public List<StrategyOutgoingDto> Strategies { get; set; } = new();
     [JsonPropertyName("objectives")]
