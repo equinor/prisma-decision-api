@@ -475,6 +475,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
             Name = o.Name,
             Description = o.Description,
             Type = o.Type,
+            Ordering = o.Ordering,
             ProjectId = newProjectId
         }).ToList();
     }
@@ -487,6 +488,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
             Name = o.Name,
             Description = o.Description,
             Type = o.Type,
+            Ordering = o.Ordering,
             ProjectId = newProjectId
         }).ToList();
     }

@@ -48,6 +48,7 @@ public static class EntitiesExtensions
             entity.Type = incomingEntity.Type;
             entity.ProjectId = incomingEntity.ProjectId;
             entity.Description = incomingEntity.Description;
+            entity.Ordering = incomingEntity.Ordering;
             entity.UpdatedById = incomingEntity.UpdatedById;
         }
     }

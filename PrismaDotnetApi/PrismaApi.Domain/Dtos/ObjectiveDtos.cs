@@ -11,6 +11,8 @@ public class ObjectiveDto
     public string Name { get; set; } = string.Empty;
     [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
+    [JsonPropertyName("ordering")]
+    public int Ordering { get; set; }
 }
 
 public class ObjectiveViaProjectDto : ObjectiveDto
