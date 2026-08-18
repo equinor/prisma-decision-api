@@ -23,7 +23,10 @@ async def get_optimal_decisions_for_project_from_dtos(
     discrete_utilities: list[DiscreteUtilityOutgoingDto] = [],
     solver_service: SolverService = Depends(get_solver_service),
 ) -> SolutionDto:
-    return await solver_service.find_optimal_decision_pyagrum_from_dtos(issues, edges, discrete_probabilities, discrete_utilities)
+    return await solver_service.find_optimal_decision_pyagrum_from_dtos(
+        issues, edges, discrete_probabilities, discrete_utilities
+    )
+
 
 @router.post("/solvers/project/{project_id}/with_evidence")
 async def get_optimal_decisions_for_project_with_evidence(
@@ -35,29 +38,37 @@ async def get_optimal_decisions_for_project_with_evidence(
     solver_service: SolverService = Depends(get_solver_service),
 ) -> list[EvidenceOutgoingDto]:
     evidence_state_ids = [e.state_ids for e in evidence]
-    results: list[Optional[float]] = await solver_service.get_MEU_given_evidence(issues, edges, discrete_probabilities, discrete_utilities, evidence_state_ids)
+    results: list[Optional[float]] = await solver_service.get_MEU_given_evidence(
+        issues, edges, discrete_probabilities, discrete_utilities, evidence_state_ids
+    )
     # decision_solutions[0].mean is the expected utility for the first optimal decision, i.e. the root node which represents the expected utility for the model
     populated_evidence = [
         EvidenceOutgoingDto(
             evidence_id=evi.evidence_id,
             state_ids=evi.state_ids,
-            expected_utility=results[n] 
-            if len(results) > n and not math.isnan(results[n]) # type: ignore
-            else None,
+            expected_utility=(
+                results[n]
+                if len(results) > n and not math.isnan(results[n])  # type: ignore
+                else None
+            ),
         )
         for n, evi in enumerate(evidence)
     ]
     exception_message = ""
     for n, populated in enumerate(populated_evidence):
         if n == 0 and populated.expected_utility is not None and populated.expected_utility < -1e10:
-            exception_message += f"Impossible state reached due to all possible paths being restricted"
-            
+            exception_message += (
+                "Impossible state reached due to all possible paths being restricted"
+            )
+
         if populated.expected_utility is None:
             exception_message += f"Impossible state reached for evidence {populated.evidence_id} with state_ids {populated.state_ids}\n"
-    # If any of the evidence leads to an impossible state, we raise an exception with the details of which evidence caused the issue. 
+    # If any of the evidence leads to an impossible state, we raise an exception with the details of which evidence caused the issue.
     if exception_message:
-        raise ValueError(f"Restrictions/Evidence states lead to an impossible state:\n{exception_message}")
-    
+        raise ValueError(
+            f"Restrictions/Evidence states lead to an impossible state:\n{exception_message}"
+        )
+
     return populated_evidence
 
 
@@ -91,7 +102,8 @@ async def get_optimal_decisions_for_project_as_tree_tmp_from_dtos(
         return await solver_service.get_decision_tree_for_optimal_decisions_from_dtos(
             project_id, issues, edges, discrete_probabilities, discrete_utilities
         )
-    
+
+
 @router.post("/solvers/project/{project_id}/partial_decision_tree/v3")
 async def get_optimal_decisions_for_project_as_tree_tmp_from_dtos_v3(
     project_id: uuid.UUID,
@@ -105,6 +117,32 @@ async def get_optimal_decisions_for_project_as_tree_tmp_from_dtos_v3(
 ):
     async with lock_manager.acquire_project_lock(project_id):
         return await solver_service.get_decision_tree_for_optimal_decisions_from_dtos_by_constructing_paths(
-            project_id, issues, edges, discrete_probabilities, discrete_utilities, paths,
+            project_id,
+            issues,
+            edges,
+            discrete_probabilities,
+            discrete_utilities,
+            paths,
         )
 
+
+@router.post("/solvers/project/{project_id}/policy_table")
+async def get_policy_table_for_project(
+    project_id: uuid.UUID,
+    issues: list[IssueOutgoingDto],
+    edges: list[EdgeOutgoingDto],
+    discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [],
+    discrete_utilities: list[DiscreteUtilityOutgoingDto] = [],
+    evidence: Optional[EvidenceIncomingDto] = None,
+    solver_service: SolverService = Depends(get_solver_service),
+    lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
+) -> dict[str, list[dict[str, str | float]]]:
+    async with lock_manager.acquire_project_lock(project_id):
+        evidence_state_ids = evidence.state_ids if evidence else None
+        return await solver_service.get_policy_table(
+            issues=issues,
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+            evidence=evidence_state_ids,
+        )

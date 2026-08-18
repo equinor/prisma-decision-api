@@ -30,15 +30,15 @@ class SolverService:
         pass
 
     async def find_optimal_decision_pyagrum(
-        self, 
-        issues: list[IssueOutgoingDto], 
+        self,
+        issues: list[IssueOutgoingDto],
         edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
     ) -> SolutionDto:
 
         solution = await PyagrumSolver().find_optimal_decisions(
-            issues=issues, 
+            issues=issues,
             edges=edges,
             discrete_probabilities=discrete_probabilities,
             discrete_utilities=discrete_utilities,
@@ -47,64 +47,77 @@ class SolverService:
         return solution
 
     async def find_optimal_decision_pyagrum_from_dtos(
-        self, 
-        issues: list[IssueOutgoingDto], 
+        self,
+        issues: list[IssueOutgoingDto],
         edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
     ):
         solution = await PyagrumSolver().find_optimal_decisions(
-            issues=issues, 
+            issues=issues,
             edges=edges,
             discrete_probabilities=discrete_probabilities,
             discrete_utilities=discrete_utilities,
         )
 
         return solution
-    
+
     async def find_optimal_decision_pyagrum_from_with_evidence(
-        self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []
-    ) -> list[SolutionDto]:
-        
-        solver = PyagrumSolver()
-        return await solver.get_solutions_given_evidence(issues=issues, edges=edges, evidence=evidence)
-    
-    async def get_MEU_given_evidence(
-        self, 
-        issues: list[IssueOutgoingDto], 
-        edges: list[EdgeOutgoingDto], 
+        self,
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
-        evidence: list[list[uuid.UUID]] = []
-    ) -> list[Optional[float]]:
-        
+        evidence: list[list[uuid.UUID]] = [],
+    ) -> list[SolutionDto]:
+
         solver = PyagrumSolver()
-        return await solver.get_mean_expected_utilities_given_evidence(
-            issues=issues, 
-            edges=edges, 
+        return await solver.get_solutions_given_evidence(
+            issues=issues,
+            edges=edges,
+            evidence=evidence,
             discrete_probabilities=discrete_probabilities,
             discrete_utilities=discrete_utilities,
-            evidence=evidence
+        )
+
+    async def get_MEU_given_evidence(
+        self,
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        evidence: list[list[uuid.UUID]] = [],
+    ) -> list[Optional[float]]:
+
+        solver = PyagrumSolver()
+        return await solver.get_mean_expected_utilities_given_evidence(
+            issues=issues,
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+            evidence=evidence,
         )
 
     async def get_decision_tree_for_optimal_decisions_old(
-        self, 
-        project_id: uuid.UUID, 
-        issues: list[IssueOutgoingDto], 
+        self,
+        project_id: uuid.UUID,
+        issues: list[IssueOutgoingDto],
         edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
     ):
 
         solution = await PyagrumSolver().find_optimal_decisions(
-            issues=issues, 
+            issues=issues,
             edges=edges,
             discrete_probabilities=discrete_probabilities,
             discrete_utilities=discrete_utilities,
         )
 
         decision_tree_creator = await DecisionTreeCreator.initialize(
-            project_id, nodes=issues, edges=edges,
+            project_id,
+            nodes=issues,
+            edges=edges,
             discrete_probabilities=discrete_probabilities,
             discrete_utilities=discrete_utilities,
         )
@@ -121,23 +134,25 @@ class SolverService:
         return pruning_service.prune_tree_for_optimal_decisions(dt_dtos, solution)
 
     async def get_decision_tree_for_optimal_decisions(
-        self, 
-        project_id: uuid.UUID, 
-        issues: list[IssueOutgoingDto], 
+        self,
+        project_id: uuid.UUID,
+        issues: list[IssueOutgoingDto],
         edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
     ):
 
         solution = await PyagrumSolver().find_optimal_decisions(
-            issues=issues, 
+            issues=issues,
             edges=edges,
             discrete_probabilities=discrete_probabilities,
             discrete_utilities=discrete_utilities,
         )
 
         decision_tree_creator = await DecisionTreeCreator.initialize(
-            project_id, nodes=issues, edges=edges,
+            project_id,
+            nodes=issues,
+            edges=edges,
             discrete_probabilities=discrete_probabilities,
             discrete_utilities=discrete_utilities,
         )
@@ -162,14 +177,16 @@ class SolverService:
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
     ):
         solution = await PyagrumSolver().find_optimal_decisions(
-            issues=issues, 
+            issues=issues,
             edges=edges,
             discrete_probabilities=discrete_probabilities,
             discrete_utilities=discrete_utilities,
         )
 
         decision_tree_creator = await DecisionTreeCreator.initialize(
-            project_id, nodes=issues, edges=edges,
+            project_id,
+            nodes=issues,
+            edges=edges,
             discrete_probabilities=discrete_probabilities,
             discrete_utilities=discrete_utilities,
         )
@@ -184,11 +201,11 @@ class SolverService:
 
         pruning_service = DecisionTreePruningService(pruner=OptimalDecisionTreePruner())
         return pruning_service.prune_tree_for_optimal_decisions(dt_dtos, solution)
-        
+
     async def get_decision_tree_for_optimal_decisions_from_dtos_by_constructing_paths(
-        self, 
-        project_id: uuid.UUID, 
-        issues: list[IssueOutgoingDto] | None = None, 
+        self,
+        project_id: uuid.UUID,
+        issues: list[IssueOutgoingDto] | None = None,
         edges: list[EdgeOutgoingDto] | None = None,
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [],
         discrete_utilities: list[DiscreteUtilityOutgoingDto] = [],
@@ -201,7 +218,7 @@ class SolverService:
 
         solver = PyagrumSolver()
         solution = await solver.find_optimal_decisions(
-            issues=issues, 
+            issues=issues,
             edges=edges,
             discrete_probabilities=discrete_probabilities,
             discrete_utilities=discrete_utilities,
@@ -217,13 +234,15 @@ class SolverService:
             discrete_utilities=discrete_utilities,
         )
 
-        decision_tree = decision_tree_creator.convert_to_decision_tree_partial(project_id=project_id, paths=paths)
+        decision_tree = decision_tree_creator.convert_to_decision_tree_partial(
+            project_id=project_id, paths=paths
+        )
 
         dt_dtos = decision_tree.to_issue_dtos(backwards_calc=False)
 
         visit_tree_node_and_populate(solver, [], dt_dtos, solution=solution)
         return dt_dtos
-    
+
     def filter_paths_from_solution(
         self,
         solution: SolutionDto,
@@ -254,14 +273,39 @@ class SolverService:
             path_str_set = set(str(x) for x in current_path)
             path_to_options = optimal_option_lookup.get(str(issue.id), {})
             optimal_option_id = next(
-                (option_id for key, option_id in path_to_options.items()
-                 if set(key).issubset(path_str_set)),
+                (
+                    option_id
+                    for key, option_id in path_to_options.items()
+                    if set(key).issubset(path_str_set)
+                ),
                 None,
             )
             return str(state_id) == optimal_option_id
 
         return [
-            path for path in paths
+            path
+            for path in paths
             if all(is_valid_state(state_id, path[:i]) for i, state_id in enumerate(path))
         ]
-    
+
+    async def get_policy_table(
+        self,
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        evidence: Optional[list[uuid.UUID]] = None,
+    ) -> dict[str, list[dict[str, str | float]]]:
+        solver = PyagrumSolver()
+        ie = await solver.build_inference_engine(
+            issues=issues,
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+        )
+
+        if evidence:
+            solver.set_evidence(ie, [str(x) for x in evidence])
+
+        decision_ids = [str(issue.id) for issue in issues if issue.type == Type.DECISION.value]
+        return {decision_id: solver.get_policy_table(decision_id) for decision_id in decision_ids}
