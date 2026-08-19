@@ -2,20 +2,20 @@ using System.Text.Json.Serialization;
 
 namespace PrismaApi.Domain.Dtos;
 
-public class PolicyTableRowOutgoingDto
+public class PolicyTableStatesOutgoingDto
 {
     [JsonPropertyName("states")]
-    public Dictionary<string, string> States { get; set; } = [];
+    public List<string> States { get; set; } = [];
 
     [JsonPropertyName("value")]
     public double Value { get; set; }
 }
 
-public class PolicyTableDecisionOutgoingDto
+public class PolicyTableOutgoingDto
 {
     [JsonPropertyName("decision_id")]
     public string DecisionId { get; set; } = string.Empty;
 
     [JsonPropertyName("rows")]
-    public List<PolicyTableRowOutgoingDto> Rows { get; set; } = [];
+    public List<PolicyTableStatesOutgoingDto> Rows { get; set; } = [];
 }

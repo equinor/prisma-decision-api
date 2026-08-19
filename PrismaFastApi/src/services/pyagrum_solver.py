@@ -493,22 +493,29 @@ class PyagrumSolver:
     def fill_utilities(self, issues: list[IssueOutgoingDto]):
         [self.fill_utility_table(x) for x in issues]
 
-    def get_policy_table(self, decision_issue_id: str) -> list[dict[str, str | float]]:
+    def get_policy_table(self, decision_issue_id: str) -> list[dict[str, list[str] | int]]:
         ie = self.get_inference()
         optimal_decision_tensor = ie.optimalDecision(decision_issue_id)  # type: ignore
         return self._parse_policy_tensor(optimal_decision_tensor)
 
-    def _parse_policy_tensor(self, optimal_decision_tensor: Any) -> list[dict[str, str | float]]:
+    def _parse_policy_tensor(
+        self, optimal_decision_tensor: Any
+    ) -> list[dict[str, list[str] | int]]:
+        """Flatten a policy tensor into row objects with ordered state labels and value.
+
+        Iterates every Instantiation of the tensor, collects each variable's current
+        label into `states` (in tensor variable order), and reads the cell value for
+        that assignment. Integer-like values are emitted as int for cleaner output.
+        """
         inst: Any = gum.Instantiation(optimal_decision_tensor)
         variables: list[Any] = list(inst.variablesSequence())
-        parsed_rows: list[dict[str, str | float]] = []
+        parsed_rows: list[dict[str, list[str] | int]] = []
 
         inst.setFirst()
         while not inst.end():
-            row: dict[str, str | float] = {
-                str(variable): str(variable.label(inst.val(variable))) for variable in variables
-            }
-            row["value"] = float(optimal_decision_tensor.get(inst))
+            states = [str(variable.label(inst.val(variable))) for variable in variables]
+            value: int = int(float(optimal_decision_tensor.get(inst)))
+            row: dict[str, list[str] | int] = {"states": states, "value": value}
             parsed_rows.append(row)
             inst.inc()
         return parsed_rows
