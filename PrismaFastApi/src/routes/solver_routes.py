@@ -117,12 +117,7 @@ async def get_optimal_decisions_for_project_as_tree_tmp_from_dtos_v3(
 ):
     async with lock_manager.acquire_project_lock(project_id):
         return await solver_service.get_decision_tree_for_optimal_decisions_from_dtos_by_constructing_paths(
-            project_id,
-            issues,
-            edges,
-            discrete_probabilities,
-            discrete_utilities,
-            paths,
+            project_id, issues, edges, discrete_probabilities, discrete_utilities, paths
         )
 
 
