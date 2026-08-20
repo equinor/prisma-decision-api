@@ -111,4 +111,21 @@ public class FastApiService : IFastApiService
         return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
     }
 
+    public List<PolicyTableOutgoingDto> ParsePolicyTableResponse(string? content)
+    {
+        Dictionary<string, List<PolicyTableStatesOutgoingDto>> response = [];
+        if (!string.IsNullOrWhiteSpace(content))
+        {
+            response = JsonSerializer.Deserialize<Dictionary<string, List<PolicyTableStatesOutgoingDto>>>(content) ?? [];
+        }
+
+        return response
+            .Select(kvp => new PolicyTableOutgoingDto
+            {
+                DecisionId = kvp.Key,
+                Rows = kvp.Value
+            })
+            .ToList();
+    }
+
 }

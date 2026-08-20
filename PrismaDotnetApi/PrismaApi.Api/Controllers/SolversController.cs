@@ -4,7 +4,6 @@ using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Extensions;
 using System.Net;
 using PrismaApi.Api.Extensions;
-using System.Text.Json;
 
 namespace PrismaApi.Api.Controllers;
 
@@ -79,23 +78,7 @@ public class SolversController : PrismaBaseController
         var fastApiResponse = await _fastApiService.SendInfluenceDiagramPolicyTableToFastApiAsync(projectId, $"/solvers/project/{projectId}/policy_table", evidence, user, ct);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
-            Dictionary<string, List<PolicyTableStatesOutgoingDto>> response = [];
-            if (!string.IsNullOrWhiteSpace(fastApiResponse.Content))
-            {
-                response = JsonSerializer.Deserialize<Dictionary<string, List<PolicyTableStatesOutgoingDto>>>(
-                    fastApiResponse.Content
-                ) ?? [];
-            }
-
-            var result = response
-                .Select(kvp => new PolicyTableOutgoingDto
-                {
-                    DecisionId = kvp.Key,
-                    Rows = kvp.Value
-                })
-                .ToList();
-
-            return Ok(result);
+            return Ok(_fastApiService.ParsePolicyTableResponse(fastApiResponse.Content));
         }
         return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
     }
