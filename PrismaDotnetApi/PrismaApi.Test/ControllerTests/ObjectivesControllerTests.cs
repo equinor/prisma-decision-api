@@ -99,6 +99,7 @@ public class ObjectivesControllerTests : IClassFixture<PrismaApiFixture>
                 ProjectId = projectId,
                 Name = updatedName,
                 Description = "Objective A description",
+                Ordering = 7,
                 Type = ObjectiveType.Fundamental.ToString()
             }
         };
@@ -106,7 +107,13 @@ public class ObjectivesControllerTests : IClassFixture<PrismaApiFixture>
         var updateResponse = await Client.TestClientPutAsync<List<ObjectiveOutgoingDto>>("objectives", updatePayload);
 
         Assert.Equal(HttpStatusCode.OK, updateResponse.Response.StatusCode);
-        Assert.Contains(updateResponse.Value, objective => objective.Id == objectiveId && objective.Name == updatedName);
+        Assert.Contains(updateResponse.Value, objective =>
+            objective.Id == objectiveId && objective.Name == updatedName && objective.Ordering == 7);
+
+        var getUpdatedResponse = await Client.TestClientGetAsync<ObjectiveOutgoingDto>($"objectives/{objectiveId}");
+
+        Assert.Equal(HttpStatusCode.OK, getUpdatedResponse.Response.StatusCode);
+        Assert.Equal(7, getUpdatedResponse.Value.Ordering);
     }
 
     [Fact]

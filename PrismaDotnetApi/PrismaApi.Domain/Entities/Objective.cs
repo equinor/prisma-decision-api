@@ -11,6 +11,7 @@ public class Objective : AuditableEntity, IBaseEntity<Guid>
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public int Ordering { get; set; }
     public Project? Project { get; set; }
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
