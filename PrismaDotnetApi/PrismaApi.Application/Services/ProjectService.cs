@@ -58,7 +58,7 @@ public class ProjectService : IProjectService
 
         var ids = projectEntities.Select(p => p.Id).ToList();
         var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, ct: ct);
-        return projects.ToOutgoingDtos();
+        return projects.ToOutgoingDtos(userDto.Id);
     }
 
     public async Task<List<ProjectOutgoingDto>> UpdateAsync(List<ProjectIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
@@ -72,7 +72,17 @@ public class ProjectService : IProjectService
         var projectEntities = dtos.ToEntities(userDto);
         var projects = await _projectRepository.UpdateRangeAsync(projectEntities, userDto, filterPredicate: UserFilter(userDto), ct);
         await EnsureDefaultSheetsExists([.. projectEntities.Select(p => p.Id)], userDto, ct);
-        return projects.ToOutgoingDtos();
+        return projects.ToOutgoingDtos(userDto.Id);
+    }
+
+    public async Task<ProjectOutgoingDto?> UpdateFavoriteAsync(Guid id, bool favorite, UserOutgoingDto user, CancellationToken ct = default)
+    {
+        var updated = await _projectRoleRepository.UpdateFavoriteAsync(id, user.Id, favorite, ct);
+        if (!updated)
+            return null;
+
+        var projects = await _projectRepository.GetByIdsAsync([id], withTracking: false, filterPredicate: UserFilter(user), ct: ct);
+        return projects.FirstOrDefault()?.ToOutgoingDto(user.Id);
     }
 
     public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
@@ -83,7 +93,7 @@ public class ProjectService : IProjectService
     public async Task<List<ProjectOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
         var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-        var dtos = projects.ToOutgoingDtos();
+        var dtos = projects.ToOutgoingDtos(user.Id);
         RegisterPublicProjectsInCache(dtos);
         return dtos;
     }
@@ -91,7 +101,7 @@ public class ProjectService : IProjectService
     public async Task<List<ProjectOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
         var projects = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-        var dtos = projects.ToOutgoingDtos();
+        var dtos = projects.ToOutgoingDtos(user.Id);
         RegisterPublicProjectsInCache(dtos);
         return dtos;
     }
@@ -100,13 +110,13 @@ public class ProjectService : IProjectService
     {
         var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
 
-        return projects.ToPopulatedDtos();
+        return projects.ToPopulatedDtos(user.Id);
     }
 
     public async Task<List<PopulatedProjectDto>> GetAllPopulatedAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
         var projects = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-        return projects.ToPopulatedDtos();
+        return projects.ToPopulatedDtos(user.Id);
     }
 
     private async Task EnsureDefaultSheetsExists(List<Guid> projectIds, UserOutgoingDto user, CancellationToken ct = default)
