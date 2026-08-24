@@ -70,7 +70,6 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
                 throw new InvalidOperationException(ExceptionMessages.MinimumFacilitatorRequirement);
             }
             entity.ProjectRoles.Update(incomingEntity.ProjectRoles, DbContext);
-            entity.BoardNodes.Update(incomingEntity.BoardNodes, DbContext);
         }
 
         await DbContext.SaveChangesAsync(ct);
@@ -82,6 +81,7 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
         return DbContext.Projects
             .Include(p => p.Objectives)
             .Include(p => p.BoardNodes)
+            .Include(p => p.BoardSheets)
             .Include(p => p.ProjectRoles)
                 .ThenInclude(pr => pr.User)
             .Include(p => p.Strategies)
