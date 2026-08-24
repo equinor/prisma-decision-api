@@ -12,7 +12,7 @@ public class ObjectiveDto
     [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
     [JsonPropertyName("ordering")]
-    public int Ordering { get; set; }
+    public int Ordering { get; set; } = 0;
 }
 
 public class ObjectiveViaProjectDto : ObjectiveDto
