@@ -25,7 +25,7 @@ public class ProjectDto
 public class ProjectFavoriteIncomingDto
 {
     [JsonPropertyName("favorite")]
-    public bool Favorite { get; set; }
+    public bool Favorite { get; set; } = false;
 }
 
 public class ProjectCreateDto : ProjectDto
