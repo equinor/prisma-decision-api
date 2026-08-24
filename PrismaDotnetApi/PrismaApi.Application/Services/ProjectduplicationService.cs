@@ -130,6 +130,10 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (discreteUtilityDtos.Count > 0)
             await _discreteUtilityService.CreateAsync(discreteUtilityDtos);
 
+        var objectiveDtos = CreateObjectives(fullProject.objectives, newProjectId);
+
+        if (objectiveDtos.Count > 0)
+            await _objectiveService.CreateAsync(objectiveDtos, user);
         var strategyDtos = CreateStrategies(fullProject.strategies, s => s.Options, newProjectId, mappings);
         if (strategyDtos.Count > 0)
             await _strategyService.CreateAsync(strategyDtos, user);
