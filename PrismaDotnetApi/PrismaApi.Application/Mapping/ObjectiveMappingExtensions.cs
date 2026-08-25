@@ -16,6 +16,7 @@ public static class ObjectiveMappingExtensions
             Name = entity.Name,
             Type = entity.Type,
             Description = entity.Description,
+            Ordering = entity.Ordering,
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt
         };
@@ -35,6 +36,7 @@ public static class ObjectiveMappingExtensions
             Name = dto.Name,
             Type = dto.Type,
             Description = dto.Description,
+            Ordering = dto.Ordering,
             CreatedById = userDto.Id,
             UpdatedById = userDto.Id,
         };
@@ -49,6 +51,7 @@ public static class ObjectiveMappingExtensions
             Name = dto.Name,
             Type = dto.Type,
             Description = dto.Description,
+            Ordering = dto.Ordering,
             CreatedById = userDto.Id,
             UpdatedById = userDto.Id,
         };

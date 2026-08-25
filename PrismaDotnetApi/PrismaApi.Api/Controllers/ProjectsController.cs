@@ -79,6 +79,27 @@ public class ProjectsController : PrismaBaseEntityController
         }
     }
 
+    [HttpPatch("projects/{id:guid}/favorite")]
+    public async Task<ActionResult<ProjectOutgoingDto>> UpdateFavorite(
+        Guid id,
+        [FromBody] ProjectFavoriteIncomingDto dto,
+        CancellationToken ct = default)
+    {
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
+        await BeginTransactionAsync(ct);
+        try
+        {
+            var result = await _projectService.UpdateFavoriteAsync(id, dto.Favorite, user, ct);
+            await CommitTransactionAsync(ct);
+            return result is null ? NotFound() : Ok(result);
+        }
+        catch
+        {
+            await RollbackTransactionAsync(CancellationToken.None);
+            throw;
+        }
+    }
+
     [HttpDelete("projects/{id:guid}")]
     public async Task<IActionResult> DeleteProject(Guid id, CancellationToken ct = default)
     {

@@ -14,6 +14,19 @@ public class ProjectRoleRepository : BaseRepository<ProjectRole, Guid>, IProject
     {
     }
 
+    public async Task<bool> UpdateFavoriteAsync(Guid projectId, string userId, bool favorite, CancellationToken ct = default)
+    {
+        var projectRole = await DbContext.ProjectRoles
+            .SingleOrDefaultAsync(role => role.ProjectId == projectId && role.UserId == userId, ct);
+        if (projectRole is null)
+            return false;
+
+        projectRole.Favorite = favorite;
+        projectRole.UpdatedById = userId;
+        await DbContext.SaveChangesAsync(ct);
+        return true;
+    }
+
     public async Task UpdateRangeAsync(IEnumerable<ProjectRole> incomingEntities, Expression<Func<ProjectRole, bool>> filterPredicate, CancellationToken ct = default)
     {
         var incomingList = incomingEntities.ToList();

@@ -129,6 +129,124 @@ public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>
     }
 
     [Fact]
+    public async Task UpdateFavorite_UpdatesOnlyCurrentUser()
+    {
+        var projectId = Guid.NewGuid();
+        using (var scope = _fixture.UserScope())
+        {
+            var createResponse = await Client.TestClientPostAsync<List<ProjectOutgoingDto>>("projects",
+                new List<ProjectCreateDto>
+                {
+                    new()
+                    {
+                        Id = projectId,
+                        Name = "Shared Project",
+                        Users =
+                        [
+                            new ProjectRoleCreateDto
+                            {
+                                Id = Guid.NewGuid(),
+                                ProjectId = projectId,
+                                UserId = _fixture.SecondaryUser.Id!,
+                                Name = _fixture.SecondaryUser.Name!,
+                                Role = ProjectRoleType.Member.ToString()
+                            }
+                        ]
+                    }
+                });
+
+            Assert.Equal(HttpStatusCode.OK, createResponse.Response.StatusCode);
+
+            var favoriteResponse = await Client.TestClientPatchAsync<ProjectOutgoingDto>(
+                $"projects/{projectId}/favorite",
+                new ProjectFavoriteIncomingDto { Favorite = true });
+
+            Assert.Equal(HttpStatusCode.OK, favoriteResponse.Response.StatusCode);
+            Assert.True(favoriteResponse.Value.Favorite);
+        }
+
+        using (var scope = _fixture.SecondaryUserScope())
+        {
+            var secondaryResponse = await Client.TestClientGetAsync<ProjectOutgoingDto>($"projects/{projectId}");
+
+            Assert.Equal(HttpStatusCode.OK, secondaryResponse.Response.StatusCode);
+            Assert.False(secondaryResponse.Value.Favorite);
+        }
+    }
+
+    [Fact]
+    public async Task DuplicateProject_ResetsFavorite()
+    {
+        using var scope = _fixture.UserScope();
+
+        var favoriteResponse = await Client.TestClientPatchAsync<ProjectOutgoingDto>(
+            $"projects/{_fixture.TestArgs.TestProjectId}/favorite",
+            new ProjectFavoriteIncomingDto { Favorite = true });
+        Assert.Equal(HttpStatusCode.OK, favoriteResponse.Response.StatusCode);
+
+        var duplicateResponse = await Client.TestClientPostNoPayloadAsync<ProjectOutgoingDto>(
+            $"projects/{_fixture.TestArgs.TestProjectId}/duplicate");
+
+        Assert.Equal(HttpStatusCode.OK, duplicateResponse.Response.StatusCode);
+        Assert.False(duplicateResponse.Value.Favorite);
+    }
+
+    [Fact]
+    public async Task ImportProject_ResetsFavoriteForAllUsers()
+    {
+        var sourceProjectId = Guid.NewGuid();
+        Guid importedProjectId;
+
+        using (var scope = _fixture.UserScope())
+        {
+            var importResponse = await Client.TestClientPostAsync<List<ProjectOutgoingDto>>("projects/import",
+                new List<ProjectImportDto>
+                {
+                    new()
+                    {
+                        Projects = new ProjectIncomingDto
+                        {
+                            Id = sourceProjectId,
+                            Name = "Imported Project",
+                            Users =
+                            [
+                                new ProjectRoleIncomingDto
+                                {
+                                    Id = Guid.NewGuid(),
+                                    ProjectId = sourceProjectId,
+                                    UserId = _fixture.PrismaUser.Id!,
+                                    Name = _fixture.PrismaUser.Name!,
+                                    Role = ProjectRoleType.Facilitator.ToString()
+                                },
+                                new ProjectRoleIncomingDto
+                                {
+                                    Id = Guid.NewGuid(),
+                                    ProjectId = sourceProjectId,
+                                    UserId = _fixture.SecondaryUser.Id!,
+                                    Name = _fixture.SecondaryUser.Name!,
+                                    Role = ProjectRoleType.Member.ToString()
+                                }
+                            ]
+                        }
+                    }
+                });
+
+            Assert.Equal(HttpStatusCode.OK, importResponse.Response.StatusCode);
+            var importedProject = Assert.Single(importResponse.Value);
+            Assert.False(importedProject.Favorite);
+            importedProjectId = importedProject.Id;
+        }
+
+        using (var scope = _fixture.SecondaryUserScope())
+        {
+            var secondaryResponse = await Client.TestClientGetAsync<ProjectOutgoingDto>($"projects/{importedProjectId}");
+
+            Assert.Equal(HttpStatusCode.OK, secondaryResponse.Response.StatusCode);
+            Assert.False(secondaryResponse.Value.Favorite);
+        }
+    }
+
+    [Fact]
     public async Task DeleteProject_RemovesProject()
     {
         using var scope = _fixture.UserScope();

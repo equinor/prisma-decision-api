@@ -177,12 +177,21 @@ def visit_tree_node_and_populate(
 
     if not tree_node.children:
         return
+
+    # another pass to visit children and prune based on expected utility 
+    # since the children need to be visited to calculate expected utility before pruning
+    state_ids_to_prune = set()
     for child in tree_node.children:
         try:
             _visit_child(solver, tree_node, child, current_path, cumulative_probability, solution)
         except Exception as e:
             raise ValueError(f"Error visiting child node {child.issue_id} with parent state id {child.parent_state_id}: {str(e)}") from e
+        if child.expected_value is not None and child.expected_value < -1e10:
+            state_ids_to_prune.add(child.parent_state_id.__str__())
 
+    if state_ids_to_prune:
+        prune_tree_node_child(tree_node, state_ids_to_prune)
+        
 def prune_tree_node_child(
     tree_node: TreeNodeDto2,
     states_to_prune: set[str],

@@ -4,6 +4,11 @@ Two APIs working together:
 - **.NET API** — handles the database and delegates to the Python API
 - **Python (FastAPI)** — interfaces with Python packages such as [pyagrum](https://pyagrum.readthedocs.io/)
 
+## Related repositories
+
+- [Prisma Decisions Docs](https://github.com/equinor/prisma-decision-docs) - Documentation and more information about Prisma Decisions
+- [Prisma Decisions Web](https://github.com/equinor/prisma-decision-web) - Web application for Prisma Decisions
+
 ## Quick start
 
 ### Python API ([Python 3.12+](https://www.python.org/downloads/))
