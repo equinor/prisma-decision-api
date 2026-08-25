@@ -55,4 +55,14 @@ public class TestUserService : IUserService
         var users = await _userRepository.GetByIdsAsync(ids, withTracking: false);
         return users.ToOutgoingDtos();
     }
+
+    public async Task DeleteUserAsync(string userId, UserOutgoingDto user, CancellationToken ct = default)
+    {
+        // user is the user making the request, and only allows to delete itself.
+        if (userId != user.Id)
+        {
+            throw new InvalidOperationException("Users can only delete themselves.");
+        }
+        await _userRepository.DeleteByIdsAsync([userId], ct: ct);
+    }
 }
