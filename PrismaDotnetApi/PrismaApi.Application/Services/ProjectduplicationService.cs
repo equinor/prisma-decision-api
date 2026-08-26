@@ -71,7 +71,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
             i => i.Utility?.Id,
             mappings);
 
-        var createProjectDto = CreateProjectDto(fullProject, newProjectId);
+        var createProjectDto = CreateProjectDto(fullProject, newProjectId, user);
         var createdProjects = await _projectService.CreateAsync([createProjectDto], createDefaultRole, userDto: user);
         var createdProject = createdProjects[0];
 
@@ -176,7 +176,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         var importedProjectId = dto.Projects.Id == Guid.Empty ? Guid.NewGuid() : dto.Projects.Id;
         mappings.Project[importedProjectId] = newProjectId;
 
-        var createProjectDto = CreateProjectDtoFromImport(dto.Projects, newProjectId);
+        var createProjectDto = CreateProjectDtoFromImport(dto.Projects, newProjectId, user);
         var createdProjects = await _projectService.CreateAsync([createProjectDto], createDefaultRole: false, userDto: user);
         if (createdProjects.Count == 0)
             return null;
@@ -273,8 +273,47 @@ public class ProjectDuplicationService : IProjectDuplicationService
 
         return createdProjects[0];
     }
-    private static ProjectCreateDto CreateProjectDto(FullProjectForDuplicationDto fullProject, Guid newProjectId)
+
+    private static void CreateFacilitatorRoleViaDuplicate(FullProjectForDuplicationDto fullProject, Guid newProjectId, UserOutgoingDto user)
     {
+        var existingUserRole = fullProject.Users.FirstOrDefault(u => u.UserId == user.Id);
+        if (existingUserRole is null)
+        {
+            fullProject.Users.Add(new ProjectRoleOutgoingDto
+            {
+                UserId = user.Id,
+                ProjectId = newProjectId,
+                Role = ProjectRoleType.Facilitator.ToString(),
+                Name = user.Name
+            });
+        }
+        else
+        {
+            existingUserRole.Role = ProjectRoleType.Facilitator.ToString();
+        }
+    }
+
+    private static void CreateFacilitatorRoleViaImport(ProjectIncomingDto project, Guid newProjectId, UserOutgoingDto user)
+    {
+        var existingUserRole = project.Users.FirstOrDefault(u => u.UserId == user.Id);
+        if (existingUserRole is null)
+        {
+            project.Users.Add(new ProjectRoleIncomingDto
+            {
+                UserId = user.Id,
+                ProjectId = newProjectId,
+                Role = ProjectRoleType.Facilitator.ToString(),
+                Name = user.Name
+            });
+        }
+        else
+        {
+            existingUserRole.Role = ProjectRoleType.Facilitator.ToString();
+        }
+    }
+    private static ProjectCreateDto CreateProjectDto(FullProjectForDuplicationDto fullProject, Guid newProjectId, UserOutgoingDto user)
+    {
+        CreateFacilitatorRoleViaDuplicate(fullProject, newProjectId, user);
         return new ProjectCreateDto
         {
             Id = newProjectId,
@@ -296,8 +335,10 @@ public class ProjectDuplicationService : IProjectDuplicationService
         };
     }
 
-    private static ProjectCreateDto CreateProjectDtoFromImport(ProjectIncomingDto project, Guid newProjectId)
+    private static ProjectCreateDto CreateProjectDtoFromImport(ProjectIncomingDto project, Guid newProjectId, UserOutgoingDto user)
     {
+        CreateFacilitatorRoleViaImport(project, newProjectId, user);
+
         return new ProjectCreateDto
         {
             Id = newProjectId,
