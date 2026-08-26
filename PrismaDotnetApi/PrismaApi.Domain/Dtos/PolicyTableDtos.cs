@@ -2,22 +2,28 @@ using System.Text.Json.Serialization;
 
 namespace PrismaApi.Domain.Dtos;
 
-public class PolicyTableStatesOutgoingDto
+public class PolicyTableOutgoingDto
 {
-    [JsonPropertyName("states")]
-    public List<string> States { get; set; } = [];
+    [JsonPropertyName("decision_id")]
+    public required Guid DecisionId { get; set; }
+
+    [JsonPropertyName("parent_state_ids")]
+    public List<Guid> ParentStateIds { get; set; } = [];
+
     [JsonPropertyName("option_id")]
-    public required string OptionId { get; set; }
+    public required Guid OptionId { get; set; }
 
     [JsonPropertyName("value")]
     public double Value { get; set; }
 }
-
-public class PolicyTableOutgoingDto
+public class PolicyTableFromFastApiDto
 {
-    [JsonPropertyName("decision_id")]
-    public string DecisionId { get; set; } = string.Empty;
+    [System.Text.Json.Serialization.JsonPropertyName("states")]
+    public List<string> States { get; set; } = [];
 
-    [JsonPropertyName("rows")]
-    public List<PolicyTableStatesOutgoingDto> Rows { get; set; } = [];
+    [System.Text.Json.Serialization.JsonPropertyName("option_id")]
+    public required string OptionId { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("value")]
+    public double Value { get; set; }
 }
