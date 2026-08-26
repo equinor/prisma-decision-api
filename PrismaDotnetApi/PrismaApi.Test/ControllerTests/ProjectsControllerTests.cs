@@ -9,11 +9,11 @@ using PrismaApi.Test.Fixture;
 namespace PrismaApi.Test.ControllerTests;
 
 [Collection(nameof(PrismaCollection))]
-public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>
+public class ProjectsControllerTests : PrismaApiControllerTestBase
 {
     private readonly PrismaApiFixture _fixture;
 
-    public ProjectsControllerTests(PrismaApiFixture fixture)
+    public ProjectsControllerTests(PrismaApiFixture fixture) : base(fixture)
     {
         _fixture = fixture;
     }
@@ -251,7 +251,7 @@ public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>
     {
         using var scope = _fixture.UserScope();
 
-        var deleteResponse = await Client.TestClientDeleteAsync<string>($"projects/{TestArgs.TestProjectId.ToString()}");
+        var deleteResponse = await Client.TestClientDeleteAsync<string>($"projects/{_fixture.TestArgs.TestProjectId}");
 
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.Response.StatusCode);
     }

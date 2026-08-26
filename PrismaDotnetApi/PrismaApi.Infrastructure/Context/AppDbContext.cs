@@ -153,6 +153,12 @@ public partial class AppDbContext : DbContext
 
         foreach (var (projectId, roles) in affectedByProject)
         {
+            var projectIsBeingDeleted = ChangeTracker
+                .Entries<Project>()
+                .Any(e => e.Entity.Id == projectId && e.State == EntityState.Deleted);
+            if (projectIsBeingDeleted)
+                continue;
+
             var facilitatorRole = ProjectRoleType.Facilitator.ToString();
 
             var facilitatorsBeingRemoved = roles.Count(role =>

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using PrismaApi.Application.Exceptions;
 
 namespace PrismaApi.Application.Filters;
 
@@ -26,7 +27,8 @@ public class ApiExceptionFilterAttribute : ExceptionFilterAttribute
             { typeof(TaskCanceledException), HandleTaskCanceledException },
             { typeof(SqlException), HandleSqlException },
             { typeof(CannotInsertNullException), HandleInsertNullSqlException },
-            { typeof(UniqueConstraintException), HandleUniqueConstraintSqlException }
+            { typeof(UniqueConstraintException), HandleUniqueConstraintSqlException },
+            { typeof(NotFoundException), HandleNotFoundException },
         };
 
     private static void HandleBadHttpRequestException(ExceptionContext context)
@@ -54,6 +56,22 @@ public class ApiExceptionFilterAttribute : ExceptionFilterAttribute
             Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5",
             Status = 400,
             Detail = exception.GetInnermostExceptionMessage()
+        };
+
+        context.Result = new ObjectResult(details);
+
+        context.ExceptionHandled = true;
+    }
+
+    private static void HandleNotFoundException(ExceptionContext context)
+    {
+        var exception = (NotFoundException)context.Exception;
+
+        var details = new ProblemDetails
+        {
+            Type = "https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.4",
+            Status = 404,
+            Detail = exception.Message
         };
 
         context.Result = new ObjectResult(details);

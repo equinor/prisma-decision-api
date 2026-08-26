@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PrismaApi.Application.Exceptions;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Domain.Interfaces;
 using PrismaApi.Infrastructure.Context;
@@ -111,7 +112,7 @@ public class BaseRepository<TEntity, TId> : ICrudRepository<TEntity, TId>
 
         if (entities.Count == 0)
         {
-            return;
+            throw new NotFoundException($"No {typeof(TEntity).Name} entities found. Either the entities do not exist or the user does not have permission to delete them.");
         }
 
         Set.RemoveRange(entities);

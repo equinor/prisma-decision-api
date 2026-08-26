@@ -87,7 +87,7 @@ public class ProjectService : IProjectService
 
     public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        await _projectRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
+        await _projectRepository.DeleteByIdsAsync(ids, filterPredicate: UserFacilitatorFilter(user), ct: ct);
     }
 
     public async Task<List<ProjectOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
@@ -139,6 +139,9 @@ public class ProjectService : IProjectService
 
     private static Expression<Func<Project, bool>> UserFilter(UserOutgoingDto user)
         => e => e.Public || e.ProjectRoles.Any(p => p.UserId == user.Id);
+
+    private static Expression<Func<Project, bool>> UserFacilitatorFilter(UserOutgoingDto user)
+        => e => e.Public || e.ProjectRoles.Any(p => p.UserId == user.Id && p.Role == ProjectRoleType.Facilitator.ToString());
 
     private void RegisterPublicProjectsInCache(List<ProjectOutgoingDto> projects)
     {
