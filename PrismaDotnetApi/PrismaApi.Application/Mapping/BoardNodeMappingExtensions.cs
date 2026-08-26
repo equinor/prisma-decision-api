@@ -22,6 +22,7 @@ public static class BoardNodeMappingExtensions
             StrokeWidth = entity.StrokeWidth,
             StrokeStyle = entity.StrokeStyle,
             Opacity = entity.Opacity,
+            ZIndex = entity.ZIndex,
             BoardSheetId = entity.BoardSheetId,
         };
     }
@@ -48,6 +49,7 @@ public static class BoardNodeMappingExtensions
             StrokeWidth = dto.StrokeWidth,
             StrokeStyle = dto.StrokeStyle,
             Opacity = dto.Opacity,
+            ZIndex = dto.ZIndex,
             BoardSheetId = dto.BoardSheetId,
             CreatedById = userDto.Id,
             UpdatedById = userDto.Id,
