@@ -76,7 +76,16 @@ async def build_partial_decision_tree_from_dtos_optimal(
     paths: list[list[uuid.UUID]] = [],
     structure_service: StructureService = Depends(get_structure_service),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
+    risk_tolerance: Optional[float] = None,
 ) -> Optional[TreeNodeDto2]:
     async with lock_manager.acquire_project_lock(project_id):
-        return await structure_service.create_partial_decision_tree_from_dtos_optimal(project_id, issues, edges, discrete_probabilities=discrete_probabilities, discrete_utilities=discrete_utilities, paths=paths)
+        return await structure_service.create_partial_decision_tree_from_dtos_optimal(
+            project_id,
+            issues,
+            edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+            paths=paths,
+            risk_tolerance=risk_tolerance,
+        )
         

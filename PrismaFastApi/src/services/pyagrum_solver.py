@@ -1,3 +1,4 @@
+import math
 import uuid
 import pyagrum as gum  # type: ignore
 from itertools import product
@@ -22,9 +23,23 @@ T = TypeVar("T", OptionOutgoingDto, OutcomeOutgoingDto)
 
 # run for each optimal solution
 
+def apply_utility_function(x: float, risk_tolerance: float):
+    # U(x) = 1 - exp(-x / R)
+    if risk_tolerance is None or risk_tolerance <= 0:
+        raise ValueError("Risk tolerance must be a positive number.")
+    return 1 - math.exp(-x / risk_tolerance)
+
+def apply_inverse_utility_function(u: float, risk_tolerance: float):
+    # U^-1(u) = -R * ln(1 - u)
+    if risk_tolerance is None or risk_tolerance <= 0:
+        raise ValueError("Risk tolerance must be a positive number.")
+    return -risk_tolerance * math.log(1 - u)
+
 
 class PyagrumSolver:
-    def __init__(self):
+    def __init__(self, risk_tolerance: Optional[float] = None):
+        self.apply_utility_function = True if risk_tolerance is not None else False
+        self.risk_tolerance = risk_tolerance if risk_tolerance is not None else 2000
         self.node_lookup: dict[str, int] = {}
         self.diagram = gum.InfluenceDiagram()
         self.issues: list[IssueOutgoingDto] = []
@@ -145,6 +160,8 @@ class PyagrumSolver:
     def _pyagrum_get_mean_utility(
         self, ie: gum.ShaferShenoyLIMIDInference, node_name: str
     ) -> float:
+        if self.apply_utility_function:
+            return apply_inverse_utility_function(ie.meanVar(node_name)["mean"], self.risk_tolerance)  # type: ignore
         return ie.meanVar(node_name)["mean"]  # type: ignore
 
     def _pyagrum_get_node_labels(self, node_identifier: str | int) -> tuple[str]:
@@ -274,7 +291,10 @@ class PyagrumSolver:
         for evidence_item in evidence:
             ie_with_evidence = self.set_evidence(ie, [str(x) for x in evidence_item])
             MEU: dict[str, float] = ie_with_evidence.MEU()
-            MEUs.append(MEU.get("mean", None)) # type: ignore
+            mean_expected_utility = MEU.get("mean", None)
+            if mean_expected_utility is not None and self.apply_utility_function:
+                mean_expected_utility = apply_inverse_utility_function(mean_expected_utility, self.risk_tolerance)
+            MEUs.append(mean_expected_utility) # type: ignore
         return MEUs
     
     # method for adding evidence to the inference engine, takes a list of state_id, method internally finds the corresponding issue and state, then adds the evidence to the inference engine
@@ -422,7 +442,10 @@ class PyagrumSolver:
                         self.diagram.variable(parent_id).name(): state  # type: ignore
                         for parent_id, state in zip(parent_ids, combination)
                     }  # type: ignore
-                    self.diagram.utility(node_id)[assign] = utility.utility_value  # type: ignore
+                    if self.apply_utility_function:
+                        self.diagram.utility(node_id)[assign] = apply_utility_function(utility.utility_value, self.risk_tolerance)  # type: ignore
+                    else:
+                        self.diagram.utility(node_id)[assign] = utility.utility_value  # type: ignore
 
     def add_virtual_utility_node(self, issue: IssueOutgoingDto):
         if issue.type == Type.UTILITY.value:
@@ -446,8 +469,10 @@ class PyagrumSolver:
         self.diagram.addArc(self.diagram.idFromName(issue.id.__str__()), node_id)  # type: ignore
 
         if issue.type == Type.DECISION and issue.decision is not None:
-            for n, x in enumerate(self._sort_state_dtos(issue.decision.options)):
-                self.diagram.utility(node_id)[{issue.id.__str__(): n}] = x.utility  # type: ignore
+                if self.apply_utility_function:
+                    self.diagram.utility(node_id)[{issue.id.__str__(): n}] = apply_utility_function(x.utility, self.risk_tolerance)  # type: ignore
+                else:
+                    self.diagram.utility(node_id)[{issue.id.__str__(): n}] = x.utility  # type: ignore
 
         if issue.type == Type.UNCERTAINTY and issue.uncertainty is not None:
             for n, x in enumerate(self._sort_state_dtos(issue.uncertainty.outcomes)):

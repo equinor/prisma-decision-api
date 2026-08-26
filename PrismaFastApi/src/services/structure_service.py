@@ -64,6 +64,7 @@ class StructureService:
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [],
         discrete_utilities: list[DiscreteUtilityOutgoingDto] = [],
         paths: Optional[list[list[uuid.UUID]]] = None,
+        risk_tolerance: Optional[float] = None,
     ) -> Optional[TreeNodeDto2]:
         if issues is None:
             issues = []
@@ -74,7 +75,7 @@ class StructureService:
         decision_tree_creator = DecisionTreeCreator_v3.initialize(
             project_id=project_id, nodes=issues, edges=edges, discrete_probabilities=discrete_probabilities, discrete_utilities=discrete_utilities
         )
-        solver = PyagrumSolver()
+        solver = PyagrumSolver(risk_tolerance=risk_tolerance)
         await solver.build_inference_engine(issues=issues, edges=edges, discrete_probabilities=discrete_probabilities, discrete_utilities=discrete_utilities)
 
         dt = decision_tree_creator.create_decision_tree_partial(paths=paths)

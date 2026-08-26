@@ -35,9 +35,10 @@ class SolverService:
         edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        risk_tolerance: Optional[float] = None,
     ) -> SolutionDto:
 
-        solution = await PyagrumSolver().find_optimal_decisions(
+        solution = await PyagrumSolver(risk_tolerance=risk_tolerance).find_optimal_decisions(
             issues=issues, 
             edges=edges,
             discrete_probabilities=discrete_probabilities,
@@ -52,8 +53,9 @@ class SolverService:
         edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        risk_tolerance: Optional[float] = None,
     ):
-        solution = await PyagrumSolver().find_optimal_decisions(
+        solution = await PyagrumSolver(risk_tolerance=risk_tolerance).find_optimal_decisions(
             issues=issues, 
             edges=edges,
             discrete_probabilities=discrete_probabilities,
@@ -63,10 +65,14 @@ class SolverService:
         return solution
     
     async def find_optimal_decision_pyagrum_from_with_evidence(
-        self, issues: list[IssueOutgoingDto], edges: list[EdgeOutgoingDto], evidence: list[list[uuid.UUID]] = []
+        self,
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        evidence: list[list[uuid.UUID]] = [],
+        risk_tolerance: Optional[float] = None,
     ) -> list[SolutionDto]:
         
-        solver = PyagrumSolver()
+        solver = PyagrumSolver(risk_tolerance=risk_tolerance)
         return await solver.get_solutions_given_evidence(issues=issues, edges=edges, evidence=evidence)
     
     async def get_MEU_given_evidence(
@@ -75,16 +81,17 @@ class SolverService:
         edges: list[EdgeOutgoingDto], 
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
-        evidence: list[list[uuid.UUID]] = []
+        evidence: list[list[uuid.UUID]] = [],
+        risk_tolerance: Optional[float] = None,
     ) -> list[Optional[float]]:
         
-        solver = PyagrumSolver()
+        solver = PyagrumSolver(risk_tolerance=risk_tolerance)
         return await solver.get_mean_expected_utilities_given_evidence(
             issues=issues, 
             edges=edges, 
             discrete_probabilities=discrete_probabilities,
             discrete_utilities=discrete_utilities,
-            evidence=evidence
+            evidence=evidence,
         )
 
     async def get_decision_tree_for_optimal_decisions_old(
@@ -94,9 +101,10 @@ class SolverService:
         edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        risk_tolerance: Optional[float] = None,
     ):
 
-        solution = await PyagrumSolver().find_optimal_decisions(
+        solution = await PyagrumSolver(risk_tolerance=risk_tolerance).find_optimal_decisions(
             issues=issues, 
             edges=edges,
             discrete_probabilities=discrete_probabilities,
@@ -127,9 +135,10 @@ class SolverService:
         edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        risk_tolerance: Optional[float] = None,
     ):
 
-        solution = await PyagrumSolver().find_optimal_decisions(
+        solution = await PyagrumSolver(risk_tolerance=risk_tolerance).find_optimal_decisions(
             issues=issues, 
             edges=edges,
             discrete_probabilities=discrete_probabilities,
@@ -160,8 +169,9 @@ class SolverService:
         edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        risk_tolerance: Optional[float] = None,
     ):
-        solution = await PyagrumSolver().find_optimal_decisions(
+        solution = await PyagrumSolver(risk_tolerance=risk_tolerance).find_optimal_decisions(
             issues=issues, 
             edges=edges,
             discrete_probabilities=discrete_probabilities,
@@ -193,13 +203,14 @@ class SolverService:
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [],
         discrete_utilities: list[DiscreteUtilityOutgoingDto] = [],
         paths: list[list[uuid.UUID]] = [],
+        risk_tolerance: Optional[float] = None,
     ):
         if not issues:
             raise ValueError("issues must be provided and non-empty")
         if edges is None:
             edges = []
 
-        solver = PyagrumSolver()
+        solver = PyagrumSolver(risk_tolerance=risk_tolerance)
         solution = await solver.find_optimal_decisions(
             issues=issues, 
             edges=edges,
