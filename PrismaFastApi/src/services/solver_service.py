@@ -295,7 +295,7 @@ class SolverService:
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
         evidence: Optional[list[uuid.UUID]] = None,
-    ) -> dict[str, list[dict[str, list[str] | int]]]:
+    ) -> dict[str, list[dict[str, list[str] | int | str]]]:
         solver = PyagrumSolver()
         ie = await solver.build_inference_engine(
             issues=issues,

@@ -131,7 +131,7 @@ async def get_policy_table_for_project(
     evidence: Optional[EvidenceIncomingDto] = None,
     solver_service: SolverService = Depends(get_solver_service),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
-) -> dict[str, list[dict[str, list[str] | int]]]:
+) -> dict[str, list[dict[str, list[str] | int | str]]]:
     async with lock_manager.acquire_project_lock(project_id):
         evidence_state_ids = evidence.state_ids if evidence else None
         return await solver_service.get_policy_table(

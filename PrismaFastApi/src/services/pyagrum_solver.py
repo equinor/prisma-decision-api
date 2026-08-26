@@ -114,6 +114,13 @@ class PyagrumSolver:
 
         return [state for state in states if str(state.id) == state_id][0]
 
+    def _get_option_id_from_state(
+        self, state_id: str, issues: Optional[list[IssueOutgoingDto]] = None
+    ) -> uuid.UUID:
+        """Return the option UUID represented by a decision-node state label."""
+        state = self._find_state_decision(state_id, issues)
+        return state.id
+
     def _find_state_uncertainty(
         self, state_id: str, issues: Optional[list[IssueOutgoingDto]] = None
     ) -> OutcomeOutgoingDto:
@@ -493,14 +500,27 @@ class PyagrumSolver:
     def fill_utilities(self, issues: list[IssueOutgoingDto]):
         [self.fill_utility_table(x) for x in issues]
 
-    def get_policy_table(self, decision_issue_id: str) -> list[dict[str, list[str] | int]]:
+    def get_policy_table(self, decision_issue_id: str) -> list[dict[str, list[str] | int | str]]:
         ie = self.get_inference()
         optimal_decision_tensor = ie.optimalDecision(decision_issue_id)  # type: ignore
         return self._parse_policy_tensor(optimal_decision_tensor)
 
+    def _get_option_id_from_policy_table_states(self, states: list[str]) -> str:
+        option_ids = [
+            str(option.id)
+            for issue in self.issues
+            if issue.decision is not None
+            for option in issue.decision.options
+        ]
+        for state in states:
+            if state in option_ids:
+                return str(self._find_state_decision(state).id)
+
+        raise ValueError("No option ID found in policy states")
+
     def _parse_policy_tensor(
         self, optimal_decision_tensor: Any
-    ) -> list[dict[str, list[str] | int]]:
+    ) -> list[dict[str, list[str] | int | str]]:
         """Flatten a policy tensor into row objects with ordered state labels and value.
 
         Iterates every Instantiation of the tensor, collects each variable's current
@@ -509,13 +529,17 @@ class PyagrumSolver:
         """
         inst: Any = gum.Instantiation(optimal_decision_tensor)
         variables: list[Any] = list(inst.variablesSequence())
-        parsed_rows: list[dict[str, list[str] | int]] = []
+        parsed_rows: list[dict[str, list[str] | int | str]] = []
 
         inst.setFirst()
         while not inst.end():
             states = [str(variable.label(inst.val(variable))) for variable in variables]
             value: int = int(float(optimal_decision_tensor.get(inst)))
-            row: dict[str, list[str] | int] = {"states": states, "value": value}
+            row: dict[str, list[str] | int | str] = {
+                "states": states,
+                "option_id": self._get_option_id_from_policy_table_states(states),
+                "value": value,
+            }
             parsed_rows.append(row)
             inst.inc()
         return parsed_rows
