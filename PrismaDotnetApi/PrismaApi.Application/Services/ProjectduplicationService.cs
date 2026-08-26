@@ -343,8 +343,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         {
             Id = newProjectId,
             Name = project.Name,
-            ParentProjectId = null,
-            ParentProjectName = string.Empty,
+            ParentProjectId = project.ParentProjectId,
+            ParentProjectName = project.ParentProjectName,
             OpportunityStatement = project.OpportunityStatement,
             Public = project.Public,
             EndDate = project.EndDate,

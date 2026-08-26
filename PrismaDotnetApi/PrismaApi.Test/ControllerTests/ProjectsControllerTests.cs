@@ -91,7 +91,7 @@ public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>
         using var scope = _fixture.UserScope();
 
         var getResponse = await Client.TestClientGetAsync<ProjectOutgoingDto>($"projects/{_fixture.TestArgs.TestProjectId}");
-        
+
         Assert.NotNull(getResponse.Value);
 
         var existingUsers = getResponse.Value.Users.Select(u => new ProjectRoleIncomingDto
@@ -244,6 +244,230 @@ public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>
             Assert.Equal(HttpStatusCode.OK, secondaryResponse.Response.StatusCode);
             Assert.False(secondaryResponse.Value.Favorite);
         }
+    }
+
+    [Fact]
+    public async Task DuplicateProject_SetsParentProjectToSourceProject()
+    {
+        using var scope = _fixture.UserScope();
+
+        var sourceProjectResponse = await Client.TestClientGetAsync<ProjectOutgoingDto>($"projects/{_fixture.TestArgs.TestProjectId}");
+        Assert.Equal(HttpStatusCode.OK, sourceProjectResponse.Response.StatusCode);
+
+        var duplicateResponse = await Client.TestClientPostNoPayloadAsync<ProjectOutgoingDto>(
+            $"projects/{_fixture.TestArgs.TestProjectId}/duplicate");
+
+        Assert.Equal(HttpStatusCode.OK, duplicateResponse.Response.StatusCode);
+        Assert.Equal(_fixture.TestArgs.TestProjectId, duplicateResponse.Value.ParentProjectId);
+        Assert.Equal(sourceProjectResponse.Value.Name, duplicateResponse.Value.ParentProjectName);
+    }
+
+
+    [Fact]
+    public async Task ImportProject_DoesNotSetParentProject()
+    {
+        using var scope = _fixture.UserScope();
+
+        var sourceProjectId = Guid.NewGuid();
+        var importPayload = new List<ProjectImportDto>
+        {
+            new()
+            {
+                Projects = new ProjectIncomingDto
+                {
+                    Id = sourceProjectId,
+                    Name = "Imported Project Without Parent",
+                    Users =
+                    [
+                        new ProjectRoleIncomingDto
+                        {
+                            Id = Guid.NewGuid(),
+                            ProjectId = sourceProjectId,
+                            UserId = _fixture.PrismaUser.Id!,
+                            Name = _fixture.PrismaUser.Name!,
+                            Role = ProjectRoleType.Facilitator.ToString()
+                        }
+                    ]
+                }
+            }
+        };
+
+        var importResponse = await Client.TestClientPostAsync<List<ProjectOutgoingDto>>("projects/import", importPayload);
+
+        Assert.Equal(HttpStatusCode.OK, importResponse.Response.StatusCode);
+        var importedProject = Assert.Single(importResponse.Value);
+        Assert.Null(importedProject.ParentProjectId);
+        Assert.Equal(string.Empty, importedProject.ParentProjectName);
+    }
+
+    [Fact]
+    public async Task ImportProject_SetParentProject()
+
+    {
+        using var scope = _fixture.UserScope();
+
+        var sourceProjectId = Guid.NewGuid();
+        var parentProjectId = Guid.NewGuid();
+        var importPayload = new List<ProjectImportDto>
+        {
+            new()
+            {
+                Projects = new ProjectIncomingDto
+                {
+                    Id = sourceProjectId,
+                    Name = "Imported Project With Parent",
+                    ParentProjectId = parentProjectId,
+                    ParentProjectName = "Original Parent Project",
+                    Users =
+                    [
+                        new ProjectRoleIncomingDto
+                        {
+                            Id = Guid.NewGuid(),
+                            ProjectId = sourceProjectId,
+                            UserId = _fixture.PrismaUser.Id!,
+                            Name = _fixture.PrismaUser.Name!,
+                            Role = ProjectRoleType.Facilitator.ToString()
+                        }
+                    ]
+                }
+            }
+        };
+
+        var importResponse = await Client.TestClientPostAsync<List<ProjectOutgoingDto>>("projects/import", importPayload);
+
+        Assert.Equal(HttpStatusCode.OK, importResponse.Response.StatusCode);
+        var importedProject = Assert.Single(importResponse.Value);
+        Assert.Equal(parentProjectId, importedProject.ParentProjectId);
+    }
+
+    [Fact]
+    public async Task DuplicateProject_SetsDuplicatingUserAsFacilitatorEvenIfListedAsMember()
+    {
+        var projectId = Guid.NewGuid();
+        using (var setupScope = _fixture.UserScope())
+        {
+            // Current (duplicating) user is SecondaryUser, starting as Member; PrismaUser stays Facilitator.
+            var createResponse = await Client.TestClientPostAsync<List<ProjectOutgoingDto>>("projects",
+                new List<ProjectCreateDto>
+                {
+                    new()
+                    {
+                        Id = projectId,
+                        Name = "Facilitator And Member Project",
+                        Users =
+                        [
+                            new ProjectRoleCreateDto
+                            {
+                                Id = Guid.NewGuid(),
+                                ProjectId = projectId,
+                                UserId = _fixture.PrismaUser.Id!,
+                                Name = _fixture.PrismaUser.Name!,
+                                Role = ProjectRoleType.Facilitator.ToString()
+                            },
+                            new ProjectRoleCreateDto
+                            {
+                                Id = Guid.NewGuid(),
+                                ProjectId = projectId,
+                                UserId = _fixture.SecondaryUser.Id!,
+                                Name = _fixture.SecondaryUser.Name!,
+                                Role = ProjectRoleType.Member.ToString()
+                            }
+                        ]
+                    }
+                });
+            Assert.Equal(HttpStatusCode.OK, createResponse.Response.StatusCode);
+        }
+
+        // Current user (SecondaryUser) duplicates the project while still a Member.
+        using var currentUserScope = _fixture.SecondaryUserScope();
+
+        var duplicateResponse = await Client.TestClientPostNoPayloadAsync<ProjectOutgoingDto>(
+            $"projects/{projectId}/duplicate");
+
+        Assert.Equal(HttpStatusCode.OK, duplicateResponse.Response.StatusCode);
+
+        // The current user should now be Facilitator in the duplicated project.
+        var currentUserRoleInDuplicate = Assert.Single(duplicateResponse.Value.Users, u => u.UserId == _fixture.SecondaryUser.Id);
+        Assert.Equal(ProjectRoleType.Facilitator.ToString(), currentUserRoleInDuplicate.Role);
+    }
+
+
+    [Fact]
+    public async Task ImportProject_SetsImportingUserAsFacilitatorEvenIfListedAsMember()
+    {
+        // Current (importing) user is PrismaUser.
+        using var scope = _fixture.UserScope();
+
+        var sourceProjectId = Guid.NewGuid();
+        var importPayload = new List<ProjectImportDto>
+        {
+            new()
+            {
+                Projects = new ProjectIncomingDto
+                {
+                    Id = sourceProjectId,
+                    Name = "Imported Project With Member Role",
+                    Users =
+                    [
+                        // The current user is listed as Member in the import payload.
+                        new ProjectRoleIncomingDto
+                        {
+                            Id = Guid.NewGuid(),
+                            ProjectId = sourceProjectId,
+                            UserId = _fixture.PrismaUser.Id!,
+                            Name = _fixture.PrismaUser.Name!,
+                            Role = ProjectRoleType.Member.ToString()
+                        }
+                    ]
+                }
+            }
+        };
+
+        var importResponse = await Client.TestClientPostAsync<List<ProjectOutgoingDto>>("projects/import", importPayload);
+
+        Assert.Equal(HttpStatusCode.OK, importResponse.Response.StatusCode);
+        var importedProject = Assert.Single(importResponse.Value);
+
+        // The current user should now be Facilitator in the imported project.
+        var importingUserRole = Assert.Single(importedProject.Users, u => u.UserId == _fixture.PrismaUser.Id);
+        Assert.Equal(ProjectRoleType.Facilitator.ToString(), importingUserRole.Role);
+    }
+
+    [Fact]
+    public async Task ImportProject_AddsImportingUserAsFacilitatorWhenNotInUsersList()
+    {
+        using var scope = _fixture.UserScope();
+
+        var sourceProjectId = Guid.NewGuid();
+        var importPayload = new List<ProjectImportDto>
+        {
+            new()
+            {
+                Projects = new ProjectIncomingDto
+                {
+                    Id = sourceProjectId,
+                    Name = "Imported Project Without Importing User",
+                    Users =
+                    [
+                        new ProjectRoleIncomingDto
+                        {
+                            Id = Guid.NewGuid(),
+                            ProjectId = sourceProjectId,
+                            UserId = _fixture.SecondaryUser.Id!,
+                            Name = _fixture.SecondaryUser.Name!,
+                            Role = ProjectRoleType.Member.ToString()
+                        }
+                    ]
+                }
+            }
+        };
+
+        var importResponse = await Client.TestClientPostAsync<List<ProjectOutgoingDto>>("projects/import", importPayload);
+
+        Assert.Equal(HttpStatusCode.OK, importResponse.Response.StatusCode);
+        var importedProject = Assert.Single(importResponse.Value);
+        var importingUserRole = Assert.Single(importedProject.Users, u => u.UserId == _fixture.PrismaUser.Id);
+        Assert.Equal(ProjectRoleType.Facilitator.ToString(), importingUserRole.Role);
     }
 
     [Fact]
