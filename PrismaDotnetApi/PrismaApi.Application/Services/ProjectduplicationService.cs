@@ -277,20 +277,17 @@ public class ProjectDuplicationService : IProjectDuplicationService
     private static void CreateFacilitatorRoleViaDuplicate(FullProjectForDuplicationDto fullProject, Guid newProjectId, UserOutgoingDto user)
     {
         var existingUserRole = fullProject.Users.FirstOrDefault(u => u.UserId == user.Id);
-        if (existingUserRole is null)
-        {
-            fullProject.Users.Add(new ProjectRoleOutgoingDto
-            {
-                UserId = user.Id,
-                ProjectId = newProjectId,
-                Role = ProjectRoleType.Facilitator.ToString(),
-                Name = user.Name
-            });
-        }
-        else
+        if (existingUserRole.Role == ProjectRoleType.Member.ToString())
         {
             existingUserRole.Role = ProjectRoleType.Facilitator.ToString();
+
         }
+        else if (existingUserRole is null)
+        {
+            throw new InvalidOperationException("You are not allowed to duplicate this project.");
+        }
+
+
     }
 
     private static void CreateFacilitatorRoleViaImport(ProjectIncomingDto project, Guid newProjectId, UserOutgoingDto user)
@@ -305,8 +302,9 @@ public class ProjectDuplicationService : IProjectDuplicationService
                 Role = ProjectRoleType.Facilitator.ToString(),
                 Name = user.Name
             });
+
         }
-        else
+        else if (existingUserRole.Role == ProjectRoleType.Member.ToString())
         {
             existingUserRole.Role = ProjectRoleType.Facilitator.ToString();
         }
