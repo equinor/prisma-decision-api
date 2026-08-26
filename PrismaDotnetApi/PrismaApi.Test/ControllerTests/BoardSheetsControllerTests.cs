@@ -6,11 +6,11 @@ using PrismaApi.Test.Fixture;
 namespace PrismaApi.Test.ControllerTests;
 
 [Collection(nameof(PrismaCollection))]
-public class BoardSheetsControllerTests : IClassFixture<PrismaApiFixture>
+public class BoardSheetsControllerTests : PrismaApiControllerTestBase
 {
     private readonly PrismaApiFixture _fixture;
 
-    public BoardSheetsControllerTests(PrismaApiFixture fixture)
+    public BoardSheetsControllerTests(PrismaApiFixture fixture) : base(fixture)
     {
         _fixture = fixture;
     }

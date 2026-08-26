@@ -7,11 +7,11 @@ using PrismaApi.Test.Fixture;
 namespace PrismaApi.Test.ControllerTests;
 
 [Collection(nameof(PrismaCollection))]
-public class EdgesControllerTests : IClassFixture<PrismaApiFixture>
+public class EdgesControllerTests : PrismaApiControllerTestBase
 {
     private readonly PrismaApiFixture _fixture;
 
-    public EdgesControllerTests(PrismaApiFixture fixture)
+    public EdgesControllerTests(PrismaApiFixture fixture) : base(fixture)
     {
         _fixture = fixture;
     }

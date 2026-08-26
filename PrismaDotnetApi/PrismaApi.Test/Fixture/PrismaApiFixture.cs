@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Infrastructure.Context;
@@ -39,8 +40,23 @@ public class PrismaApiFixture : IAsyncLifetime
     public TestPersonProfile PrismaUser { get; }
     public TestPersonProfile SecondaryUser { get; }
 
-    public async Task InitializeAsync() =>
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public async Task ResetDatabaseAsync()
+    {
+        using var scope = ApiFactory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
+
+        if (cache is MemoryCache memoryCache)
+        {
+            memoryCache.Compact(1.0);
+        }
+
+        await db.Database.EnsureDeletedAsync();
+        await db.Database.EnsureCreatedAsync();
         TestArgs = await TestModelBuilder.BuildFreshTestDataAsync(this);
+    }
 
     public async Task DisposeAsync()
     {
