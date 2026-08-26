@@ -251,7 +251,7 @@ public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>
     {
         using var scope = _fixture.UserScope();
 
-        var deleteResponse = await Client.TestClientDeleteAsync<string>($"projects/{TestArgs.TestProjectId.ToString()}");
+        var deleteResponse = await Client.TestClientDeleteAsync<string>($"projects/{_fixture.TestArgs.TestProjectId}");
 
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.Response.StatusCode);
     }
