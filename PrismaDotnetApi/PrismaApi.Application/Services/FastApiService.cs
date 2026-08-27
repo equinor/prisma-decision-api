@@ -113,20 +113,20 @@ public class FastApiService : IFastApiService
 
     public List<PolicyTableOutgoingDto> ParsePolicyTableResponse(string? content)
     {
-        Dictionary<string, List<PolicyTableFromFastApiDto>> response = [];
+        List<PolicyTableFromFastApiDto> response = [];
         if (!string.IsNullOrWhiteSpace(content))
         {
-            response = JsonSerializer.Deserialize<Dictionary<string, List<PolicyTableFromFastApiDto>>>(content) ?? [];
+            response = JsonSerializer.Deserialize<List<PolicyTableFromFastApiDto>>(content) ?? [];
         }
 
         return response
-            .SelectMany(kvp => kvp.Value.Select(row => new PolicyTableOutgoingDto
+            .Select(row => new PolicyTableOutgoingDto
             {
-                DecisionId = Guid.Parse(kvp.Key),
+                DecisionId = Guid.Parse(row.DecisionId),
                 ParentStateIds = row.States.Select(Guid.Parse).ToList(),
                 OptionId = Guid.Parse(row.OptionId),
                 Value = row.Value
-            }))
+            })
             .ToList();
     }
 }

@@ -18,12 +18,15 @@ public class PolicyTableOutgoingDto
 }
 public class PolicyTableFromFastApiDto
 {
-    [System.Text.Json.Serialization.JsonPropertyName("states")]
+    [JsonPropertyName("decision_id")]
+    public required string DecisionId { get; set; }
+
+    [JsonPropertyName("parent_state_ids")]
     public List<string> States { get; set; } = [];
 
-    [System.Text.Json.Serialization.JsonPropertyName("option_id")]
+    [JsonPropertyName("option_id")]
     public required string OptionId { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("value")]
+    [JsonPropertyName("value")]
     public double Value { get; set; }
 }

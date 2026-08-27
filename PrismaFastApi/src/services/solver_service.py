@@ -13,6 +13,7 @@ from src.services.decision_tree_pruning_service import (
     DecisionTreePruningServiceOld,
     OptimalDecisionTreePrunerOld,
 )
+from src.dtos.policy_table_dtos import PolicyTableRowDto
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.dtos.discrete_probability_dtos import DiscreteProbabilityOutgoingDto
@@ -295,7 +296,7 @@ class SolverService:
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
         evidence: Optional[list[uuid.UUID]] = None,
-    ) -> dict[str, list[dict[str, list[str] | int | str]]]:
+    ) -> list[PolicyTableRowDto]:
         solver = PyagrumSolver()
         ie = await solver.build_inference_engine(
             issues=issues,
@@ -308,4 +309,4 @@ class SolverService:
             solver.set_evidence(ie, [str(x) for x in evidence])
 
         decision_ids = [str(issue.id) for issue in issues if issue.type == Type.DECISION.value]
-        return {decision_id: solver.get_policy_table(decision_id) for decision_id in decision_ids}
+        return [row for decision_id in decision_ids for row in solver.get_policy_table(decision_id)]

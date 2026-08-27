@@ -11,6 +11,7 @@ from src.dtos.discrete_probability_dtos import DiscreteProbabilityOutgoingDto
 from src.dtos.discrete_utility_dtos import DiscreteUtilityOutgoingDto
 from src.dtos.model_solution_dtos import SolutionDto
 from src.dtos.evidence_dtos import EvidenceIncomingDto, EvidenceOutgoingDto
+from src.dtos.policy_table_dtos import PolicyTableRowDto
 
 router = APIRouter(tags=["solvers"])
 
@@ -131,7 +132,7 @@ async def get_policy_table_for_project(
     evidence: Optional[EvidenceIncomingDto] = None,
     solver_service: SolverService = Depends(get_solver_service),
     lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
-) -> dict[str, list[dict[str, list[str] | int | str]]]:
+) -> list[PolicyTableRowDto]:
     async with lock_manager.acquire_project_lock(project_id):
         evidence_state_ids = evidence.state_ids if evidence else None
         return await solver_service.get_policy_table(

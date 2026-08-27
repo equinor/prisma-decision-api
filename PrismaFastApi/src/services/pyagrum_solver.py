@@ -16,6 +16,7 @@ from src.dtos.model_solution_dtos import (
     SolutionDto,
 )
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator
+from src.dtos.policy_table_dtos import PolicyTableRowDto
 from typing import Any, TypeVar, Optional
 
 T = TypeVar("T", OptionOutgoingDto, OutcomeOutgoingDto)
@@ -500,10 +501,10 @@ class PyagrumSolver:
     def fill_utilities(self, issues: list[IssueOutgoingDto]):
         [self.fill_utility_table(x) for x in issues]
 
-    def get_policy_table(self, decision_issue_id: str) -> list[dict[str, list[str] | int | str]]:
+    def get_policy_table(self, decision_issue_id: str) -> list[PolicyTableRowDto]:
         ie = self.get_inference()
         optimal_decision_tensor = ie.optimalDecision(decision_issue_id)  # type: ignore
-        return self._parse_policy_tensor(optimal_decision_tensor)
+        return self._parse_policy_tensor(decision_issue_id, optimal_decision_tensor)
 
     def _get_option_id_from_policy_table_states(self, states: list[str]) -> str:
         option_ids = [
@@ -519,27 +520,29 @@ class PyagrumSolver:
         raise ValueError("No option ID found in policy states")
 
     def _parse_policy_tensor(
-        self, optimal_decision_tensor: Any
-    ) -> list[dict[str, list[str] | int | str]]:
-        """Flatten a policy tensor into row objects with ordered state labels and value.
+        self, decision_issue_id: str, optimal_decision_tensor: Any
+    ) -> list[PolicyTableRowDto]:
+        """Flatten a policy tensor into row DTOs with ordered state labels and value.
 
         Iterates every Instantiation of the tensor, collects each variable's current
         label into `states` (in tensor variable order), and reads the cell value for
-        that assignment. Integer-like values are emitted as int for cleaner output.
+        that assignment.
         """
         inst: Any = gum.Instantiation(optimal_decision_tensor)
         variables: list[Any] = list(inst.variablesSequence())
-        parsed_rows: list[dict[str, list[str] | int | str]] = []
+        parsed_rows: list[PolicyTableRowDto] = []
 
         inst.setFirst()
         while not inst.end():
             states = [str(variable.label(inst.val(variable))) for variable in variables]
-            value: int = int(float(optimal_decision_tensor.get(inst)))
-            row: dict[str, list[str] | int | str] = {
-                "states": states,
-                "option_id": self._get_option_id_from_policy_table_states(states),
-                "value": value,
-            }
-            parsed_rows.append(row)
+            value = int(float(optimal_decision_tensor.get(inst)))
+            parsed_rows.append(
+                PolicyTableRowDto(
+                    decision_id=uuid.UUID(decision_issue_id),
+                    parent_state_ids=[uuid.UUID(state) for state in states],
+                    option_id=uuid.UUID(self._get_option_id_from_policy_table_states(states)),
+                    value=value,
+                )
+            )
             inst.inc()
         return parsed_rows
