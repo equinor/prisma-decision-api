@@ -535,7 +535,7 @@ class PyagrumSolver:
         inst.setFirst()
         while not inst.end():
             states = [str(variable.label(inst.val(variable))) for variable in variables]
-            value = int(float(optimal_decision_tensor.get(inst)))
+            value = float(optimal_decision_tensor.get(inst))
             parsed_rows.append(
                 PolicyTableRowDto(
                     decision_id=uuid.UUID(decision_issue_id),
