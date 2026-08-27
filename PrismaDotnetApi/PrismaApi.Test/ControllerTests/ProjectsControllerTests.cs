@@ -192,6 +192,57 @@ public class ProjectsControllerTests : PrismaApiControllerTestBase
     }
 
     [Fact]
+    public async Task DuplicateProject_AsNonFacilitator_MakesUserFacilitator()
+    {
+        using var scope = _fixture.SecondaryUserScope();
+
+        var duplicateResponse = await Client.TestClientPostNoPayloadAsync<ProjectOutgoingDto>(
+            $"projects/{_fixture.TestArgs.SecondaryProjectId}/duplicate");
+
+        Assert.Equal(HttpStatusCode.OK, duplicateResponse.Response.StatusCode);
+        var userRole = Assert.Single(duplicateResponse.Value.Users,
+            role => role.UserId == _fixture.SecondaryUser.Id);
+        Assert.Equal(ProjectRoleType.Facilitator.ToString(), userRole.Role);
+    }
+
+    [Fact]
+    public async Task ImportProject_WithoutUserRole_AddsUserAsFacilitator()
+    {
+        using var scope = _fixture.SecondaryUserScope();
+        var sourceProjectId = Guid.NewGuid();
+
+        var importResponse = await Client.TestClientPostAsync<List<ProjectOutgoingDto>>("projects/import",
+            new List<ProjectImportDto>
+            {
+                new()
+                {
+                    Projects = new ProjectIncomingDto
+                    {
+                        Id = sourceProjectId,
+                        Name = "Imported Project Without Current User",
+                        Users =
+                        [
+                            new ProjectRoleIncomingDto
+                            {
+                                Id = Guid.NewGuid(),
+                                ProjectId = sourceProjectId,
+                                UserId = _fixture.PrismaUser.Id!,
+                                Name = _fixture.PrismaUser.Name!,
+                                Role = ProjectRoleType.Facilitator.ToString()
+                            }
+                        ]
+                    }
+                }
+            });
+
+        Assert.Equal(HttpStatusCode.OK, importResponse.Response.StatusCode);
+        var importedProject = Assert.Single(importResponse.Value);
+        var userRole = Assert.Single(importedProject.Users,
+            role => role.UserId == _fixture.SecondaryUser.Id);
+        Assert.Equal(ProjectRoleType.Facilitator.ToString(), userRole.Role);
+    }
+
+    [Fact]
     public async Task ImportProject_ResetsFavoriteForAllUsers()
     {
         var sourceProjectId = Guid.NewGuid();

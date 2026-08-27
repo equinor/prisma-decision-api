@@ -72,6 +72,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
             mappings);
 
         var createProjectDto = CreateProjectDto(fullProject, newProjectId);
+        EnsureUserIsFacilitator(createProjectDto, user);
         var createdProjects = await _projectService.CreateAsync([createProjectDto], createDefaultRole, userDto: user);
         var createdProject = createdProjects[0];
 
@@ -177,6 +178,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         mappings.Project[importedProjectId] = newProjectId;
 
         var createProjectDto = CreateProjectDtoFromImport(dto.Projects, newProjectId);
+        EnsureUserIsFacilitator(createProjectDto, user);
         var createdProjects = await _projectService.CreateAsync([createProjectDto], createDefaultRole: false, userDto: user);
         if (createdProjects.Count == 0)
             return null;
@@ -317,6 +319,25 @@ public class ProjectDuplicationService : IProjectDuplicationService
                 })
                 .ToList()
         };
+    }
+
+    private static void EnsureUserIsFacilitator(ProjectCreateDto project, UserOutgoingDto user)
+    {
+        var userRole = project.Users.FirstOrDefault(role => role.UserId == user.Id);
+        if (userRole is not null)
+        {
+            userRole.Role = ProjectRoleType.Facilitator.ToString();
+            return;
+        }
+
+        project.Users.Add(new ProjectRoleCreateDto
+        {
+            Id = Guid.NewGuid(),
+            ProjectId = project.Id,
+            UserId = user.Id,
+            Name = user.Name,
+            Role = ProjectRoleType.Facilitator.ToString()
+        });
     }
 
     private static DecisionIncomingDto? CreateDecision(
