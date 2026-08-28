@@ -310,7 +310,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
     }
     private static ProjectCreateDto CreateProjectDto(FullProjectForDuplicationDto fullProject, Guid newProjectId, UserOutgoingDto user)
     {
-        CreateFacilitatorRoleViaDuplicate(fullProject, newProjectId, user);
+        CreateFacilitatorRoleViaDuplicate(fullProject, user);
         return new ProjectCreateDto
         {
             Id = newProjectId,
