@@ -337,7 +337,8 @@ public class ProjectsControllerTests : IClassFixture<PrismaApiFixture>
 
         Assert.Equal(HttpStatusCode.OK, importResponse.Response.StatusCode);
         var importedProject = Assert.Single(importResponse.Value);
-        Assert.Equal(parentProjectId, importedProject.ParentProjectId);
+        Assert.Null(importedProject.ParentProjectId);
+        Assert.Equal(string.Empty, importedProject.ParentProjectName);
     }
 
     [Fact]
