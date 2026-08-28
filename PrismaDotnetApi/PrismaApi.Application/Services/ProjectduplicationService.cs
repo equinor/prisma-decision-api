@@ -274,7 +274,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         return createdProjects[0];
     }
 
-    private static void CreateFacilitatorRoleViaDuplicate(FullProjectForDuplicationDto fullProject, Guid newProjectId, UserOutgoingDto user)
+    private static void CreateFacilitatorRoleViaDuplicate(FullProjectForDuplicationDto fullProject, UserOutgoingDto user)
     {
         var existingUserRole = fullProject.Users.FirstOrDefault(u => u.UserId == user.Id);
         if (existingUserRole is null)
