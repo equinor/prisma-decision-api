@@ -2144,14 +2144,14 @@ xmp = ["defusedxml"]
 
 [[package]]
 name = "platformdirs"
-version = "4.11.4"
+version = "4.11.5"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a `user data dir`."
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "platformdirs-4.11.4-py3-none-any.whl", hash = "sha256:e34ff91a24bcddc6d939b878bdf3f5c437c9c46fe9e212b1bf455fdf1ee57586"},
-    {file = "platformdirs-4.11.4.tar.gz", hash = "sha256:f3373be828247211d0febabea97e238c3dfde8a60b3c90c32756fb52cb21556d"},
+    {file = "platformdirs-4.11.5-py3-none-any.whl", hash = "sha256:89f8d42695853b89c7170bd49bc3dc593f98a71e695ede88e06a3b247bc4563b"},
+    {file = "platformdirs-4.11.5.tar.gz", hash = "sha256:e8b31f4f8bcbbedef91a6b57a706255e4f148d2a4e01648382a0a47342539173"},
 ]
 
 [[package]]
@@ -2207,17 +2207,17 @@ test = ["psleak", "pytest", "pytest-instafail", "pytest-xdist", "pywin32 ; os_na
 
 [[package]]
 name = "pyagrum"
-version = "3.0.0"
+version = "3.1.1"
 description = "Bayesian networks and other Probabilistic Graphical Models."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "pyagrum-3.0.0-cp310-abi3-macosx_10_15_x86_64.whl", hash = "sha256:6c9275e95a4135e0ddd2f628d8c39374e3f116216194ada7badb863bc2f5ea33"},
-    {file = "pyagrum-3.0.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:9d1e5013845983d3b9c6bf38454fdaa79dca68144791358ffb4ef258270d94dc"},
-    {file = "pyagrum-3.0.0-cp310-abi3-manylinux2014_aarch64.whl", hash = "sha256:1975a03d8def25dffecb18f4187032b9842ea2c3e3a096d44768a03d7c48cbcc"},
-    {file = "pyagrum-3.0.0-cp310-abi3-manylinux2014_x86_64.whl", hash = "sha256:faefe7be773c105c892dcc2502ef9039f79616771cc4538cddd1bf62363834da"},
-    {file = "pyagrum-3.0.0-cp310-abi3-win_amd64.whl", hash = "sha256:1fb486a839cb14539867707b4fb392a39ab3cfa41d405664ccaaf640a5195755"},
+    {file = "pyagrum-3.1.1-cp310-abi3-macosx_10_15_x86_64.whl", hash = "sha256:9299eb8bb128ee334e6efacf83e9ca3e5f49f6d09257b9ed0bee63e972ca83f0"},
+    {file = "pyagrum-3.1.1-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:ac6e5fdfe9ea41a1d66bc001e790955a33885155f3c10865faafcbb4f9e0cd93"},
+    {file = "pyagrum-3.1.1-cp310-abi3-manylinux2014_aarch64.whl", hash = "sha256:1468242656fbee9011815ba67023bb88bf07aba93c6cc1a098dd259262fdb1b1"},
+    {file = "pyagrum-3.1.1-cp310-abi3-manylinux2014_x86_64.whl", hash = "sha256:e09799abde542fe4e4b9f9d1bfecd0914b6e3fd5f5587c46a9511150f6c91b60"},
+    {file = "pyagrum-3.1.1-cp310-abi3-win_amd64.whl", hash = "sha256:c405dd4bb97c7546caf0e43d342a88f9e55a9ca7c0e711526a76702319d46399"},
 ]
 
 [package.dependencies]
@@ -3265,4 +3265,4 @@ viz = ["cartopy (>=0.23)", "matplotlib (>=3.8)", "nc-time-axis", "seaborn"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "78432b4d85399708f6caa0e24713813c7d238fb531c03faef7893d8fbb8e8ff7"
+content-hash = "9af3fbf770d2745362800ef005e3ef812d480abd249545ee43cd37abc9424837"
