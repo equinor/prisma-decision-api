@@ -70,4 +70,16 @@ public class SolversController : PrismaBaseController
 
         return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
     }
+
+    [HttpPost("solvers/project/{projectId:guid}/policy_table")]
+    public async Task<ActionResult<List<PolicyTableOutgoingDto>>> GetPolicyTableAsync([FromRoute] Guid projectId, [FromBody] EvidenceRequestDto? evidence = null, CancellationToken ct = default)
+    {
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramPolicyTableToFastApiAsync(projectId, $"/solvers/project/{projectId}/policy_table", evidence, user, ct);
+        if (fastApiResponse.StatusCode == HttpStatusCode.OK)
+        {
+            return Ok(_fastApiService.ParsePolicyTableResponse(fastApiResponse.Content));
+        }
+        return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
+    }
 }

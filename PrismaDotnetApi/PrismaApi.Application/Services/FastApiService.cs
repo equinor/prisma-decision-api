@@ -61,10 +61,11 @@ public class FastApiService : IFastApiService
         return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
     }
 
+
     public async Task<ApiResponseDto> SendPartialInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, List<List<Guid>> paths, UserOutgoingDto user, CancellationToken ct = default)
     {
         var influenceDiagram = await _influenceDiagramService.GetRestrictedInfluenceDiagramAsync(projectId, user, ct);
-        
+
         var payload = new
         {
             issues = influenceDiagram.issues,
@@ -93,5 +94,39 @@ public class FastApiService : IFastApiService
         };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
         return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
+    }
+    public async Task<ApiResponseDto> SendInfluenceDiagramPolicyTableToFastApiAsync(Guid projectId, string endpoint, EvidenceRequestDto? evidence, UserOutgoingDto user, CancellationToken ct = default)
+    {
+        var influenceDiagram = await _influenceDiagramService.GetRestrictedInfluenceDiagramAsync(projectId, user, ct);
+        var payload = new
+        {
+            issues = influenceDiagram.issues,
+            edges = influenceDiagram.edges,
+            discrete_probabilities = influenceDiagram.discreteProbabilities,
+            discrete_utilities = influenceDiagram.discreteUtilities,
+            restriction_tables = influenceDiagram.restrictionTables,
+            evidence,
+        };
+        var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+        return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
+    }
+
+    public List<PolicyTableOutgoingDto> ParsePolicyTableResponse(string? content)
+    {
+        List<PolicyTableFromFastApiDto> response = [];
+        if (!string.IsNullOrWhiteSpace(content))
+        {
+            response = JsonSerializer.Deserialize<List<PolicyTableFromFastApiDto>>(content) ?? [];
+        }
+
+        return response
+            .Select(row => new PolicyTableOutgoingDto
+            {
+                DecisionId = Guid.Parse(row.DecisionId),
+                ParentStateIds = row.States.Select(Guid.Parse).ToList(),
+                OptionId = Guid.Parse(row.OptionId),
+                Value = row.Value
+            })
+            .ToList();
     }
 }

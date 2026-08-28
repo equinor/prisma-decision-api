@@ -16,7 +16,8 @@ from src.dtos.model_solution_dtos import (
     SolutionDto,
 )
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator
-from typing import TypeVar, Optional
+from src.dtos.policy_table_dtos import PolicyTableRowDto
+from typing import Any, TypeVar, Optional
 
 T = TypeVar("T", OptionOutgoingDto, OutcomeOutgoingDto)
 
@@ -41,12 +42,12 @@ class PyagrumSolver:
         self.node_lookup[issue.id.__str__()] = node_id
 
     def build_influence_diagram(
-            self, 
-            issues: list[IssueOutgoingDto], 
-            edges: list[EdgeOutgoingDto],
-            discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
-            discrete_utilities: list[DiscreteUtilityOutgoingDto],
-        ):
+        self,
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+    ):
         self.issues = issues
         self.edges = edges
         self.discrete_probabilities = discrete_probabilities
@@ -59,10 +60,7 @@ class PyagrumSolver:
 
     def raise_if_issues_edges_not_set(self):
         if not self.issues:
-            raise RuntimeError(
-                "Issues have not been set. Call build_influence_diagram first."
-            )
-
+            raise RuntimeError("Issues have not been set. Call build_influence_diagram first.")
 
     def _sort_state_dtos(self, dtos: list[T]) -> list[T]:
         return sorted(dtos, key=lambda x: x.id.__str__())
@@ -116,6 +114,13 @@ class PyagrumSolver:
             ]
 
         return [state for state in states if str(state.id) == state_id][0]
+
+    def _get_option_id_from_state(
+        self, state_id: str, issues: Optional[list[IssueOutgoingDto]] = None
+    ) -> uuid.UUID:
+        """Return the option UUID represented by a decision-node state label."""
+        state = self._find_state_decision(state_id, issues)
+        return state.id
 
     def _find_state_uncertainty(
         self, state_id: str, issues: Optional[list[IssueOutgoingDto]] = None
@@ -193,31 +198,32 @@ class PyagrumSolver:
                 "Inference engine has not been initialized. Call build_inference_engine or find_optimal_decisions first."
             )
         return self.ie
-    
+
     async def get_partial_order(self) -> list[uuid.UUID]:
         if self.partial_order is None:
             self.raise_if_issues_edges_not_set()
-            decision_tree_creator = await DecisionTreeCreator.initialize(project_id = self.issues[0].project_id,
-                nodes = self.issues,
-                edges = self.edges
+            decision_tree_creator = await DecisionTreeCreator.initialize(
+                project_id=self.issues[0].project_id, nodes=self.issues, edges=self.edges
             )
-            
+
             self.partial_order = await decision_tree_creator.calculate_partial_order_issues()
         return self.partial_order
-    
-    async def add_no_forgetting_assumption_using_partial_order(self, ie: gum.ShaferShenoyLIMIDInference) -> None:
+
+    async def add_no_forgetting_assumption_using_partial_order(
+        self, ie: gum.ShaferShenoyLIMIDInference
+    ) -> None:
         partial_order = await self.get_partial_order()
         decision_ids = {issue.id for issue in self.issues if issue.type == Type.DECISION.value}
         partial_order_decisions = [x for x in partial_order if x in decision_ids]
         ie.addNoForgettingAssumption([str(x) for x in partial_order_decisions])  # type: ignore
-    
+
     async def build_inference_engine(
-            self, 
-            issues: list[IssueOutgoingDto], 
-            edges: list[EdgeOutgoingDto],
-            discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
-            discrete_utilities: list[DiscreteUtilityOutgoingDto],
-        ) -> gum.ShaferShenoyLIMIDInference:
+        self,
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+    ) -> gum.ShaferShenoyLIMIDInference:
         self.build_influence_diagram(issues, edges, discrete_probabilities, discrete_utilities)
 
         self.ie = gum.ShaferShenoyLIMIDInference(self.diagram)
@@ -225,94 +231,122 @@ class PyagrumSolver:
         if not self.ie.isSolvable():
             # try adding no forgetting assumption for decision nodes in the partial order
             await self.add_no_forgetting_assumption_using_partial_order(self.ie)
-        
+
         if not self.ie.isSolvable():
             raise RuntimeError("Influence diagram is not solvable")
         self.ie.makeInference()
-        
+
         return self.ie
 
     async def find_optimal_decisions(
-            self, 
-            issues: list[IssueOutgoingDto], 
-            edges: list[EdgeOutgoingDto],
-            discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
-            discrete_utilities: list[DiscreteUtilityOutgoingDto],
-        ) -> SolutionDto:
+        self,
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+    ) -> SolutionDto:
         await self.build_inference_engine(issues, edges, discrete_probabilities, discrete_utilities)
         partial_order = await self.get_partial_order()
-        solution =  self.get_solution(self.get_inference(), [str(x) for x in partial_order if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
+        solution = self.get_solution(
+            self.get_inference(),
+            [
+                str(x)
+                for x in partial_order
+                if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]
+            ],
+        )
         return solution
-    
+
     async def get_solutions_given_evidence(
-            self, 
-            issues: list[IssueOutgoingDto], 
-            edges: list[EdgeOutgoingDto], 
-            evidence: list[list[uuid.UUID]], 
-            discrete_probabilities: list[DiscreteProbabilityOutgoingDto], 
-            discrete_utilities: list[DiscreteUtilityOutgoingDto],
-        ) -> list[SolutionDto]:
-        ie = await self.build_inference_engine(issues, edges, discrete_probabilities, discrete_utilities)
+        self,
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        evidence: list[list[uuid.UUID]],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+    ) -> list[SolutionDto]:
+        ie = await self.build_inference_engine(
+            issues, edges, discrete_probabilities, discrete_utilities
+        )
         solutions: list[SolutionDto] = []
         partial_order = await self.get_partial_order()
         for evidence_item in evidence:
             ie_with_evidence = self.set_evidence(ie, [str(x) for x in evidence_item])
-            solution = self.get_solution(ie_with_evidence, [str(x) for x in partial_order if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]])
+            solution = self.get_solution(
+                ie_with_evidence,
+                [
+                    str(x)
+                    for x in partial_order
+                    if x in [issue.id for issue in issues if issue.type == Type.DECISION.value]
+                ],
+            )
             solutions.append(solution)
         return solutions
-    
+
     async def get_mean_expected_utilities_given_evidence(
-            self, 
-            issues: list[IssueOutgoingDto], 
-            edges: list[EdgeOutgoingDto], 
-            discrete_probabilities: list[DiscreteProbabilityOutgoingDto], 
-            discrete_utilities: list[DiscreteUtilityOutgoingDto], 
-            evidence: list[list[uuid.UUID]],
-        ) -> list[Optional[float]]:
-        ie = await self.build_inference_engine(issues, edges, discrete_probabilities, discrete_utilities)
+        self,
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        evidence: list[list[uuid.UUID]],
+    ) -> list[Optional[float]]:
+        ie = await self.build_inference_engine(
+            issues, edges, discrete_probabilities, discrete_utilities
+        )
         MEUs: list[Optional[float]] = []
         for evidence_item in evidence:
             ie_with_evidence = self.set_evidence(ie, [str(x) for x in evidence_item])
             MEU: dict[str, float] = ie_with_evidence.MEU()
-            MEUs.append(MEU.get("mean", None)) # type: ignore
+            MEUs.append(MEU.get("mean", None))  # type: ignore
         return MEUs
-    
+
     # method for adding evidence to the inference engine, takes a list of state_id, method internally finds the corresponding issue and state, then adds the evidence to the inference engine
     def set_evidence(self, ie: gum.ShaferShenoyLIMIDInference, state_ids: list[str]):
-        ie.eraseAllEvidence() # type: ignore
+        ie.eraseAllEvidence()  # type: ignore
         evidence: dict[int, str] = {}
         for state_id in state_ids:
             state = self._find_state(state_id)
             if isinstance(state, OptionOutgoingDto):
-                issue = [issue for issue in self.issues if issue.decision is not None and any(option.id == state.id for option in issue.decision.options)][0]
+                issue = [
+                    issue
+                    for issue in self.issues
+                    if issue.decision is not None
+                    and any(option.id == state.id for option in issue.decision.options)
+                ][0]
                 node_id = self.node_lookup[issue.id.__str__()]
                 evidence[node_id] = str(state.id)
-            elif isinstance(state, OutcomeOutgoingDto): # type: ignore
-                issue = [issue for issue in self.issues if issue.uncertainty is not None and any(outcome.id == state.id for outcome in issue.uncertainty.outcomes)][0]
+            elif isinstance(state, OutcomeOutgoingDto):  # type: ignore
+                issue = [
+                    issue
+                    for issue in self.issues
+                    if issue.uncertainty is not None
+                    and any(outcome.id == state.id for outcome in issue.uncertainty.outcomes)
+                ][0]
                 node_id = self.node_lookup[issue.id.__str__()]
                 evidence[node_id] = str(state.id)
-        ie.setEvidence(evidence) # type: ignore
+        ie.setEvidence(evidence)  # type: ignore
         ie.makeInference()
         return ie
-    
+
     def get_expected_utility_given_path(self, issue_id: str, state_ids: list[str]) -> float:
         ie = self.get_inference()
         ie_with_evidence = self.set_evidence(ie, state_ids)
         expected_utility = self._pyagrum_get_mean_utility(ie_with_evidence, issue_id)
         return expected_utility
-     
+
     def get_posterior_given_path(self, issue_id: str, state_ids: list[str]) -> dict[str, float]:
         ie = self.get_inference()
         ie_with_evidence = self.set_evidence(ie, state_ids)
 
         # For chance/uncertainty nodes, posterior returns probabilities in order of node labels
-        # issue_id is the node name 
-        posterior = ie_with_evidence.posterior(issue_id) # type: ignore
+        # issue_id is the node name
+        posterior = ie_with_evidence.posterior(issue_id)  # type: ignore
         labels = self._pyagrum_get_node_labels(issue_id)
-        probs: list[float] = posterior.toarray().tolist() # type: ignore
-        state_to_probability = {label: prob for label, prob in zip(labels, probs)} # type: ignore
+        probs: list[float] = posterior.toarray().tolist()  # type: ignore
+        state_to_probability = {label: prob for label, prob in zip(labels, probs)}  # type: ignore
         return state_to_probability
-    
+
     def add_node(self, issue: IssueOutgoingDto):
         if issue.type == Type.DECISION:
             assert issue.decision is not None
@@ -411,7 +445,9 @@ class PyagrumSolver:
 
         # Build all parent state combinations
         parent_combinations = list(product(*parent_labels))
-        disc_utilities = [utility for utility in self.discrete_utilities if utility.utility_id == issue.utility.id]
+        disc_utilities = [
+            utility for utility in self.discrete_utilities if utility.utility_id == issue.utility.id
+        ]
         for combination in parent_combinations:
             for utility in disc_utilities:
                 parents = [str(option_id) for option_id in utility.parent_option_ids] + [
@@ -427,15 +463,15 @@ class PyagrumSolver:
     def add_virtual_utility_node(self, issue: IssueOutgoingDto):
         if issue.type == Type.UTILITY.value:
             return
-        
+
         if issue.type == Type.DECISION and issue.decision is not None:
             if all([option.utility == 0 for option in issue.decision.options]):
                 return
-            
+
         if issue.type == Type.UNCERTAINTY and issue.uncertainty is not None:
             if all([outcome.utility == 0 for outcome in issue.uncertainty.outcomes]):
                 return
-            
+
         node_id = self.diagram.addUtilityNode(  # type: ignore
             gum.LabelizedVariable(
                 f"{issue.id.__str__()} utility",
@@ -464,3 +500,49 @@ class PyagrumSolver:
 
     def fill_utilities(self, issues: list[IssueOutgoingDto]):
         [self.fill_utility_table(x) for x in issues]
+
+    def get_policy_table(self, decision_issue_id: str) -> list[PolicyTableRowDto]:
+        ie = self.get_inference()
+        optimal_decision_tensor = ie.optimalDecision(decision_issue_id)  # type: ignore
+        return self._parse_policy_tensor(decision_issue_id, optimal_decision_tensor)
+
+    def _get_option_id_from_policy_table_states(self, states: list[str]) -> str:
+        option_ids = [
+            str(option.id)
+            for issue in self.issues
+            if issue.decision is not None
+            for option in issue.decision.options
+        ]
+        for state in states:
+            if state in option_ids:
+                return str(self._find_state_decision(state).id)
+
+        raise ValueError("No option ID found in policy states")
+
+    def _parse_policy_tensor(
+        self, decision_issue_id: str, optimal_decision_tensor: Any
+    ) -> list[PolicyTableRowDto]:
+        """Flatten a policy tensor into row DTOs with ordered state labels and value.
+
+        Iterates every Instantiation of the tensor, collects each variable's current
+        label into `states` (in tensor variable order), and reads the cell value for
+        that assignment.
+        """
+        inst: Any = gum.Instantiation(optimal_decision_tensor)
+        variables: list[Any] = list(inst.variablesSequence())
+        parsed_rows: list[PolicyTableRowDto] = []
+
+        inst.setFirst()
+        while not inst.end():
+            states = [str(variable.label(inst.val(variable))) for variable in variables]
+            value = float(optimal_decision_tensor.get(inst))
+            parsed_rows.append(
+                PolicyTableRowDto(
+                    decision_id=uuid.UUID(decision_issue_id),
+                    parent_state_ids=[uuid.UUID(state) for state in states],
+                    option_id=uuid.UUID(self._get_option_id_from_policy_table_states(states)),
+                    value=value,
+                )
+            )
+            inst.inc()
+        return parsed_rows
