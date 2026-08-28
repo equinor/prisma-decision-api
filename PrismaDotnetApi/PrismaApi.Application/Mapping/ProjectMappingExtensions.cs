@@ -72,6 +72,12 @@ public static class ProjectMappingExtensions
             BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
             Assessments = entity.Assessments.ToOutgoingDtos(),
             BoardSheets = entity.BoardSheets.ToOutgoingDtos(),
+            DiscreteProbabilities = entity.Issues
+                .SelectMany(issue => issue.Uncertainty?.DiscreteProbabilities ?? [])
+                .ToOutgoingDtos(),
+            DiscreteUtilities = entity.Issues
+                .SelectMany(issue => issue.Utility?.DiscreteUtilities ?? [])
+                .ToOutgoingDtos(),
         };
     }
 

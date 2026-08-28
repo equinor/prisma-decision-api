@@ -67,6 +67,11 @@ public static class DiscreteTableMappingExtensions
         return entities.Select(ToDto).ToList();
     }
 
+    public static List<DiscreteProbabilityDto> ToOutgoingDtos(this IEnumerable<DiscreteProbability> entities)
+    {
+        return entities.Select(ToDto).ToList();
+    }
+
     public static List<DiscreteProbability> ToEntities(this IEnumerable<DiscreteProbabilityDto> dtos)
     {
         return dtos.Select(ToEntity).ToList();
@@ -151,6 +156,11 @@ public static class DiscreteTableMappingExtensions
     }
 
     public static List<DiscreteUtilityDto> ToDtos(this IEnumerable<DiscreteUtility> entities)
+    {
+        return entities.Select(ToDto).ToList();
+    }
+
+    public static List<DiscreteUtilityDto> ToOutgoingDtos(this IEnumerable<DiscreteUtility> entities)
     {
         return entities.Select(ToDto).ToList();
     }
