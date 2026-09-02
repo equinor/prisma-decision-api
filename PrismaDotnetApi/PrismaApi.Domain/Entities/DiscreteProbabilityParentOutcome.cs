@@ -1,14 +1,18 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PrismaApi.Domain.Entities;
 
-public class DiscreteProbabilityParentOutcome
+public class DiscreteProbabilityParentOutcome : IEntityHandlingPolicy
 {
     public required Guid DiscreteProbabilityId { get; set; }
     public required Guid ParentOutcomeId { get; set; }
 
     public DiscreteProbability? DiscreteProbability { get; set; }
     public Outcome? ParentOutcome { get; set; }
+
+    [NotMapped]
+    public TransferBehavior IsTransferable => TransferBehavior.Transferable;
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<DiscreteProbabilityParentOutcome>(entity =>

@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Interfaces;
 
 namespace PrismaApi.Domain.Entities;
 
-public class Strategy : AuditableEntity, IBaseEntity<Guid>
+public class Strategy : AuditableEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
 {
     public required Guid Id { get; set; }
     public required Guid ProjectId { get; set; }
@@ -15,7 +16,9 @@ public class Strategy : AuditableEntity, IBaseEntity<Guid>
     public string IconColor { get; set; } = string.Empty;
 
     public Project? Project { get; set; }
-    public ICollection<StrategyOption> StrategyOptions { get; set; } = new List<StrategyOption>();
+    public ICollection<StrategyOption> StrategyOptions { get; set; } = new List<StrategyOption>();    
+    [NotMapped]
+    public TransferBehavior IsTransferable => TransferBehavior.Transferable;
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Strategy>(entity =>

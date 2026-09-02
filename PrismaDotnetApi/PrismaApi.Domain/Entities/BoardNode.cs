@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Interfaces;
 
 namespace PrismaApi.Domain.Entities;
 
-public class BoardNode : AuditableEntity, IBaseEntity<Guid>
+public class BoardNode : AuditableEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
 {
     public required Guid Id { get; set; }
     public required Guid ProjectId { get; set; }
@@ -23,6 +24,8 @@ public class BoardNode : AuditableEntity, IBaseEntity<Guid>
     public required Guid BoardSheetId { get; set; }
     public Project? Project { get; set; }
     public BoardSheet? BoardSheet { get; set; }
+    [NotMapped]
+    public TransferBehavior IsTransferable => TransferBehavior.Transferable;
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<BoardNode>(entity =>
