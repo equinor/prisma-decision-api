@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Interfaces;
 
 namespace PrismaApi.Domain.Entities;
 
-public class DiscreteProbability : BaseEntity, IBaseEntity<Guid>
+public class DiscreteProbability : BaseEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
 {
     public required Guid Id { get; set; }
     public required Guid OutcomeId { get; set; }
@@ -18,6 +19,8 @@ public class DiscreteProbability : BaseEntity, IBaseEntity<Guid>
 
     public ICollection<DiscreteProbabilityParentOutcome> ParentOutcomes { get; set; } = new List<DiscreteProbabilityParentOutcome>();
     public ICollection<DiscreteProbabilityParentOption> ParentOptions { get; set; } = new List<DiscreteProbabilityParentOption>();
+    [NotMapped]
+    public TransferBehavior IsTransferable => TransferBehavior.NotTransferable;
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<DiscreteProbability>(entity =>
