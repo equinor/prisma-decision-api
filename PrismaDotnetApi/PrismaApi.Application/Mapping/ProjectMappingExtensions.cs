@@ -18,6 +18,8 @@ public static class ProjectMappingExtensions
             Public = entity.Public,
             Favorite = entity.ProjectRoles.FirstOrDefault(role => role.UserId == userId)?.Favorite ?? false,
             EndDate = entity.EndDate,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt,
             Users = entity.ProjectRoles.ToOutgoingDtos(),
             BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
         };
@@ -37,6 +39,8 @@ public static class ProjectMappingExtensions
             Public = entity.Public,
             Favorite = entity.ProjectRoles.FirstOrDefault(role => role.UserId == userId)?.Favorite ?? false,
             EndDate = entity.EndDate,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt,
             Users = entity.ProjectRoles.ToOutgoingDtos(),
             BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
 
