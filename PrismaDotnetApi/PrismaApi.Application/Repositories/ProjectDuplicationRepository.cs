@@ -44,6 +44,12 @@ public class ProjectDuplicationRepository : IProjectDuplicationRepository
             .AsSplitQuery()
             .FirstOrDefaultAsync(ct);
 
-        return project?.ToFullProjectForDuplicationDto();
+        var restrictionTables = await _dbContext.RestrictionTables
+            .AsNoTracking()
+            .Where(rt => rt.ProjectId == projectId)
+            .Include(rt => rt.RestrictionEntries)
+            .ToListAsync(ct);
+
+        return project?.ToFullProjectForDuplicationDto(restrictionTables);
     }
 }

@@ -53,7 +53,7 @@ public static class ProjectMappingExtensions
         return entities.Select(entity => entity.ToPopulatedDto(userId)).ToList();
     }
 
-    public static FullProjectForDuplicationDto ToFullProjectForDuplicationDto(this Project entity)
+    public static FullProjectForDuplicationDto ToFullProjectForDuplicationDto(this Project entity, IEnumerable<RestrictionTable>? restrictionTables = null)
     {
         return new FullProjectForDuplicationDto
         {
@@ -78,6 +78,7 @@ public static class ProjectMappingExtensions
             DiscreteUtilities = entity.Issues
                 .SelectMany(issue => issue.Utility?.DiscreteUtilities ?? [])
                 .ToOutgoingDtos(),
+            RestrictionTables = (restrictionTables ?? []).ToOutgoingDtos(),
         };
     }
 

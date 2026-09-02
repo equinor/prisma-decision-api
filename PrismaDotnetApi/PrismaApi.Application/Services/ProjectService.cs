@@ -100,10 +100,37 @@ public class ProjectService : IProjectService
 
     public async Task<List<ProjectOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var projects = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-        var dtos = projects.ToOutgoingDtos(user.Id);
-        RegisterPublicProjectsInCache(dtos);
-        return dtos;
+        var projects = new List<ProjectOutgoingDto>();
+
+        var projectIdsToGetFromDb = new HashSet<Guid>();
+
+        var projectIds = _cache.GetAccessibleProjectIds(user);
+        foreach (var projectId in projectIds)
+        {
+            var cachedProjects = _cache.GetCacheItemAsProjects(projectId, user);
+            if (cachedProjects != null)
+            {
+                projects.AddRange(cachedProjects);
+            }
+            else
+            {
+                projectIdsToGetFromDb.Add(projectId);
+            }
+        }
+        if (projectIdsToGetFromDb.Count > 0)
+        {
+            var projectEntities = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
+            var projectDtos = projectEntities.ToOutgoingDtos(user.Id);
+            projects.AddRange(projectDtos);
+            foreach (var projectId in projectIdsToGetFromDb)
+            {
+                var cacheKey = CacheKeys.GetProjectsInProjectKey(projectId);
+                var projectDtosForCache = projectDtos.Where(rt => rt.Id == projectId).ToList();
+                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, projectDtosForCache);
+            }
+        }
+        RegisterPublicProjectsInCache(projects);
+        return projects;
     }
 
     public async Task<List<PopulatedProjectDto>> GetPopulatedAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)

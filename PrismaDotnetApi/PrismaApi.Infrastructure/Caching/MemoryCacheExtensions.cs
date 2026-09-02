@@ -135,6 +135,15 @@ public static class MemoryCacheExtensions
         }
         return cache.GetCacheItem<List<RestrictionTableOutgoingDto>>(CacheKeys.GetRestrictionTablesInProjectKey(projectId));
     }
+    public static List<ProjectOutgoingDto>? GetCacheItemAsProjects(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
+    {
+        // check that the user has access to the project before returning cached projects
+        if (!cache.HasAccessToProject(user, projectId))
+        {
+            return null;
+        }
+        return cache.GetCacheItem<List<ProjectOutgoingDto>>(CacheKeys.GetProjectsInProjectKey(projectId));
+    }
 
     public static HashSet<Guid> GetPublicProjectIds(this IMemoryCache cache)
     {

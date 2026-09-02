@@ -8,7 +8,7 @@ public class RestrictionEntry : BaseEntity, IBaseEntity<Guid>
 {
     public required Guid Id { get; set; }
     public required Guid ProjectId { get; set; }
-    public double RestrictionValue { get; set; } = DomainConstants.DefaultRestrictionValue; 
+    public double RestrictionValue { get; set; } = DomainConstants.DefaultRestrictionValue;
 
     // parent option id
     public required Guid? ParentOptionId { get; set; }
@@ -35,7 +35,8 @@ public class RestrictionEntry : BaseEntity, IBaseEntity<Guid>
 
             entity.Property(e => e.RestrictionValue)
                 .HasPrecision(DomainConstants.FloatPrecision)
-                .HasDefaultValue(DomainConstants.DefaultRestrictionValue);
+                .HasDefaultValue(DomainConstants.DefaultRestrictionValue)
+                .ValueGeneratedNever(); // otherwise EF omits an explicit 0 (CLR default for double) from INSERTs and the DB default (1) is used instead
 
             entity.HasOne(e => e.Project)
                 .WithMany()
@@ -67,13 +68,13 @@ public class RestrictionEntry : BaseEntity, IBaseEntity<Guid>
                 .HasForeignKey(e => e.ChildOutcomeId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            entity.Property<Guid>(e => e.ParentStateId) 
+            entity.Property<Guid>(e => e.ParentStateId)
                 .HasComputedColumnSql($"COALESCE([{nameof(ParentOptionId)}], [{nameof(ParentOutcomeId)}])", stored: true);
 
             entity.Property<Guid>(e => e.ChildStateId)
                 .HasComputedColumnSql($"COALESCE([{nameof(ChildOptionId)}], [{nameof(ChildOutcomeId)}])", stored: true);
 
-            entity.HasIndex(e => new {e.ParentStateId, e.ChildStateId, e.RestrictionTableId})
+            entity.HasIndex(e => new { e.ParentStateId, e.ChildStateId, e.RestrictionTableId })
                 .IsUnique();
 
 
