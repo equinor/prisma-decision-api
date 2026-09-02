@@ -105,6 +105,7 @@ public class ProjectService : IProjectService
         var projectIdsToGetFromDb = new HashSet<Guid>();
 
         var projectIds = _cache.GetAccessibleProjectIds(user);
+
         foreach (var projectId in projectIds)
         {
             var cachedProjects = _cache.GetCacheItemAsProjects(projectId, user);
@@ -119,7 +120,7 @@ public class ProjectService : IProjectService
         }
         if (projectIdsToGetFromDb.Count > 0)
         {
-            var projectEntities = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
+            var projectEntities = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: x => projectIdsToGetFromDb.Contains(x.Id), ct: ct);
             var projectDtos = projectEntities.ToOutgoingDtos(user.Id);
             projects.AddRange(projectDtos);
             foreach (var projectId in projectIdsToGetFromDb)

@@ -575,8 +575,10 @@ public class ProjectDuplicationService : IProjectDuplicationService
         }).ToList();
     }
 
+    // this is used to ensure that if the CreatedAt is not set, we provide a fallback value based on the index to maintain order
     private static DateTimeOffset GetCreatedAtOrOrderFallback(DateTimeOffset createdAt, int index)
         => createdAt == default ? DateTimeOffset.UnixEpoch.AddSeconds(index + 1) : createdAt;
+
     private static (List<AssessmentIncomingDto> Dtos, Dictionary<Guid, Guid> IdMap) CreateAssessments<TAssessment>(
         IEnumerable<TAssessment> assessments,
         Guid newProjectId) where TAssessment : AssessmentDto
