@@ -8,6 +8,7 @@ using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Interfaces;
 using PrismaApi.Infrastructure.Caching;
 using System.Linq.Expressions;
+using PrismaApi.Application.Exceptions;
 
 namespace PrismaApi.Application.Services;
 
@@ -60,7 +61,14 @@ public class IssueService : IIssueService
     public async Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
         // Remove edges connected to these issues before deleting them
-        await _edgeRepository.DeleteFromPredicateAsync(e => ids.Contains(e.HeadNode!.IssueId), ct);
+        try
+        {
+            await _edgeRepository.DeleteFromPredicateAsync(e => ids.Contains(e.HeadNode!.IssueId), ct);
+        }
+        catch (NotFoundException)
+        {
+            // Ignore if no edges were found to delete
+        }
         await _issueRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
     }
 
