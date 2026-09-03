@@ -71,6 +71,20 @@ public partial class AppDbContext : DbContext
             _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetUserKey(userId) });
     }
 
+    private void InvalidateProjectCache()
+    {
+        // invalidate when a project or a project role is updated
+        HashSet<Guid> affectedProjectIds = [
+            ..GetChangedEntries<Project>().Select(e => e.Entity.Id),
+            ..GetChangedEntries<ProjectRole>().Select(e => e.Entity.ProjectId)
+        ];
+
+        foreach (var projectId in affectedProjectIds)
+        {
+            _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetProjectKey(projectId) });
+        }
+    }
+
     private void InvalidateInfluenceDiagramData()
     {
         HashSet<Guid> affectedProjectIds =
@@ -131,6 +145,7 @@ public partial class AppDbContext : DbContext
         InvalidateBoardNodesCache();
         InvalidateBoardSheetsCache();
         InvalidateInfluenceDiagramData();
+        InvalidateProjectCache();
         await InvalidateProjectUsersAsync();
     }
 }

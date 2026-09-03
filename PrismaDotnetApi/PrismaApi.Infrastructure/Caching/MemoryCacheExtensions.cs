@@ -142,7 +142,7 @@ public static class MemoryCacheExtensions
         {
             return null;
         }
-        return cache.GetCacheItem<List<ProjectOutgoingDto>>(CacheKeys.GetProjectsInProjectKey(projectId));
+        return cache.GetCacheItem<List<ProjectOutgoingDto>>(CacheKeys.GetProjectKey(projectId));
     }
 
     public static HashSet<Guid> GetPublicProjectIds(this IMemoryCache cache)
