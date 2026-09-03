@@ -79,6 +79,7 @@ public static class EntitiesExtensions
             entity.StrokeWidth = incomingEntity.StrokeWidth;
             entity.Opacity = incomingEntity.Opacity;
             entity.TextSize = incomingEntity.TextSize;
+            entity.ZIndex = incomingEntity.ZIndex;
             entity.BoardSheetId = incomingEntity.BoardSheetId;
             entity.UpdatedById = incomingEntity.UpdatedById;
         }

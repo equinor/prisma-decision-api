@@ -140,6 +140,11 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Property<double>("YPosition")
                         .HasColumnType("float");
 
+                    b.Property<int>("ZIndex")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.HasKey("Id");
 
                     b.HasIndex("BoardSheetId");
