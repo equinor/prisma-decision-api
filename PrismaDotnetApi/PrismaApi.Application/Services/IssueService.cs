@@ -96,7 +96,7 @@ public class IssueService : IIssueService
             {
                 var cacheKey = CacheKeys.GetIssuesInProjectKey(projectId);
                 var projectIssueDtos = issueDtos.Where(i => i.ProjectId == projectId).ToList();
-                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, projectIssueDtos);
+                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultLongQueryCacheInTimeSpan, projectIssueDtos);
             }
         }
         return issues;
