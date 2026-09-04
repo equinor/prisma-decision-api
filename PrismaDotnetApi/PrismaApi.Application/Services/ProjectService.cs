@@ -127,7 +127,7 @@ public class ProjectService : IProjectService
             {
                 var cacheKey = CacheKeys.GetProjectKey(projectId);
                 var projectDtosForCache = projectDtos.Where(rt => rt.Id == projectId).ToList();
-                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultQueryCacheInTimeSpan, projectDtosForCache);
+                _cache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, CacheConstants.DefaultLongQueryCacheInTimeSpan, projectDtosForCache);
             }
         }
         RegisterPublicProjectsInCache(projects);
@@ -181,7 +181,7 @@ public class ProjectService : IProjectService
         existing.UnionWith(publicProjectIds);
 
         if (existing.Count > previousCount)
-        {            
+        {
             _cache.AddCacheItem(new CacheItem { CacheKey = CacheKeys.PublicProjectIdsKey }, null, existing);
         }
     }
