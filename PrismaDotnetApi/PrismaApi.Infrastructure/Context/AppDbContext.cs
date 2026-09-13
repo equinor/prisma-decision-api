@@ -84,6 +84,25 @@ public partial class AppDbContext : DbContext
         BoardSheet.OnModelConfiguring(modelBuilder);
         RestrictionTable.OnModelConfiguring(modelBuilder);
         RestrictionEntry.OnModelConfiguring(modelBuilder);
+
+        ValidateEntityHandlingPolicies(modelBuilder);
+    }
+
+    private static void ValidateEntityHandlingPolicies(ModelBuilder modelBuilder)
+    {
+        var entityTypesWithoutPolicy = modelBuilder.Model.GetEntityTypes()
+            .Select(entityType => entityType.ClrType)
+            .Where(entityType => !typeof(IEntityHandlingPolicy).IsAssignableFrom(entityType))
+            .Distinct()
+            .OrderBy(entityType => entityType.Name)
+            .Select(entityType => entityType.FullName ?? entityType.Name)
+            .ToList();
+
+        if (entityTypesWithoutPolicy.Count != 0)
+        {
+            throw new InvalidOperationException(
+                $"All registered entity types must implement {nameof(IEntityHandlingPolicy)}. Missing: {string.Join(", ", entityTypesWithoutPolicy)}");
+        }
     }
 
     private IEnumerable<EntityEntry<T>> GetChangedEntries<T>() where T : class =>

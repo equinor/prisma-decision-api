@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Interfaces;
 
 namespace PrismaApi.Domain.Entities;
 
-public class Decision : BaseEntity, IBaseEntity<Guid>
+public class Decision : BaseEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
 {
     public required Guid Id { get; set; }
     public required Guid IssueId { get; set; }
@@ -13,6 +14,8 @@ public class Decision : BaseEntity, IBaseEntity<Guid>
     public Issue? Issue { get; set; }
     public Project? Project { get; set; }
     public ICollection<Option> Options { get; set; } = new List<Option>();
+    [NotMapped]
+    public TransferBehavior IsTransferable => TransferBehavior.Transferable;
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Decision>(entity =>

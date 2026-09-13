@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Interfaces;
 
 namespace PrismaApi.Domain.Entities;
 
-public class DiscreteUtility : BaseEntity, IBaseEntity<Guid>
+public class DiscreteUtility : BaseEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
 {
     public required Guid Id { get; set; }
     public required Guid ValueMetricId { get; set; }
@@ -18,6 +19,8 @@ public class DiscreteUtility : BaseEntity, IBaseEntity<Guid>
 
     public ICollection<DiscreteUtilityParentOutcome> ParentOutcomes { get; set; } = new List<DiscreteUtilityParentOutcome>();
     public ICollection<DiscreteUtilityParentOption> ParentOptions { get; set; } = new List<DiscreteUtilityParentOption>();
+    [NotMapped]
+    public TransferBehavior IsTransferable => TransferBehavior.Transferable;
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<DiscreteUtility>(entity =>
