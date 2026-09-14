@@ -67,10 +67,18 @@ public class InternalUserService : IUserProvider
                 config.Headers.Add(GraphApiConstants.ConsistencyLevelHeader, GraphApiConstants.ConsistencyLevelEventual);
             });
 
-        return users?.Value?.Select(u => new UserOutgoingDto
-        {
-            Id = u.Id ?? "",
-            Name = u.DisplayName ?? u.UserPrincipalName ?? "",
-        }).ToList() ?? new List<UserOutgoingDto>();
+        Func<Microsoft.Graph.Models.User, bool> filterAZUserOutsideEquinor =
+            u => !(u.DisplayName ?? u.UserPrincipalName ?? "").Contains("AZ (", StringComparison.OrdinalIgnoreCase);
+        Func<Microsoft.Graph.Models.User, bool> filterAZUserInEquinor =
+            u => !(u.DisplayName ?? u.UserPrincipalName ?? "").EndsWith("AZ", StringComparison.OrdinalIgnoreCase);
+
+        return users?.Value?
+            .Where(u => filterAZUserOutsideEquinor(u) && filterAZUserInEquinor(u))
+            .Select(u => new UserOutgoingDto
+            {
+                Id = u.Id ?? "",
+                Name = u.DisplayName ?? u.UserPrincipalName ?? "",
+            })
+            .ToList() ?? new List<UserOutgoingDto>();
     }
 }
