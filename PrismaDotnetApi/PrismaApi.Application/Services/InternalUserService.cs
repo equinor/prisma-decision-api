@@ -9,6 +9,7 @@ using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure.Caching;
 using PrismaApi.Domain.Extensions;
+using Microsoft.Graph.Models;
 
 namespace PrismaApi.Application.Services;
 
@@ -62,23 +63,21 @@ public class InternalUserService : IUserProvider
             .GetAsync(config =>
             {
                 config.QueryParameters.Search = $"\"displayName:{sanitizedQuery}\" OR \"mail:{sanitizedQuery}\"";
+                config.QueryParameters.Count = true;
                 config.QueryParameters.Select = GraphApiConstants.UserSearchSelectFields;
                 config.QueryParameters.Top = GraphApiConstants.DefaultSearchTop;
                 config.Headers.Add(GraphApiConstants.ConsistencyLevelHeader, GraphApiConstants.ConsistencyLevelEventual);
             });
 
-        Func<Microsoft.Graph.Models.User, bool> filterAZUserOutsideEquinor =
-            u => !(u.DisplayName ?? u.UserPrincipalName ?? "").Contains("AZ (", StringComparison.OrdinalIgnoreCase);
-        Func<Microsoft.Graph.Models.User, bool> filterAZUserInEquinor =
-            u => !(u.DisplayName ?? u.UserPrincipalName ?? "").EndsWith("AZ", StringComparison.OrdinalIgnoreCase);
-
-        return users?.Value?
-            .Where(u => filterAZUserOutsideEquinor(u) && filterAZUserInEquinor(u))
+        var filteredUsers = users?.Value?
+            .Where(u => !(u.UserPrincipalName ?? "").Contains("StatoilSRM.onmicrosoft.com", StringComparison.OrdinalIgnoreCase))
             .Select(u => new UserOutgoingDto
             {
                 Id = u.Id ?? "",
                 Name = u.DisplayName ?? u.UserPrincipalName ?? "",
             })
             .ToList() ?? new List<UserOutgoingDto>();
+
+        return filteredUsers;
     }
 }
