@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from typing import Optional
 from src.config import config
@@ -30,6 +31,22 @@ class SolverService:
         self,
     ):
         pass
+
+    async def export_pyagrum_model(
+        self,
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+    ) -> dict[str, object]:
+        solver = PyagrumSolver()
+        solver.build_influence_diagram(
+            issues=issues,
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+        )
+        return await asyncio.to_thread(solver.export_pyagrum_model)
 
     async def find_optimal_decision_pyagrum(
         self,
