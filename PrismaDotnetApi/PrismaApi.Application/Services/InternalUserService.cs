@@ -10,6 +10,7 @@ using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure.Caching;
 using PrismaApi.Domain.Extensions;
 using Microsoft.Graph.Models;
+using System.Text.RegularExpressions;
 
 namespace PrismaApi.Application.Services;
 
@@ -70,7 +71,7 @@ public class InternalUserService : IUserProvider
             });
 
         var filteredUsers = users?.Value?
-            .Where(u => !(u.UserPrincipalName ?? "").Contains("StatoilSRM.onmicrosoft.com", StringComparison.OrdinalIgnoreCase))
+            .Where(u => !(u.UserPrincipalName ?? "").StartsWith("az_", StringComparison.OrdinalIgnoreCase))
             .Select(u => new UserOutgoingDto
             {
                 Id = u.Id ?? "",
