@@ -71,7 +71,7 @@ public class TableRebuildingService : ITableRebuildingService
                     .ThenInclude(node => node!.Issue)
                         .ThenInclude(issue => issue!.Uncertainty)
                             .ThenInclude(uncertainty => uncertainty!.Outcomes)
-            .Include(rt => rt.Edge)                
+            .Include(rt => rt.Edge)
                 .ThenInclude(edge => edge!.TailNode)
                     .ThenInclude(node => node!.Issue)
                         .ThenInclude(issue => issue!.Decision)
@@ -90,20 +90,20 @@ public class TableRebuildingService : ITableRebuildingService
         var childIssue = restrictionTable.Edge!.HeadNode!.Issue!;
         var isParentUncertainty = IsIssueType(parentIssue.Type, IssueType.Uncertainty) && parentIssue.Uncertainty != null;
         var isChildUncertainty = IsIssueType(childIssue.Type, IssueType.Uncertainty) && childIssue.Uncertainty != null;
-        // check if parent and child are in scope of the influence diagram, if not the restriction table should be deleted, 
+        // check if parent and child are in scope of the influence diagram, if not the restriction table should be deleted,
         // if yes then we need to check if the combinations of parent outcomes and options have changed and update the restriction table entries accordingly
-        if (!IsBoundaryInScope(parentIssue.Boundary) || 
-            !IsBoundaryInScope(childIssue.Boundary) || 
-            !IsIssueConfiguredInInfluenceDiagram(parentIssue) || 
+        if (!IsBoundaryInScope(parentIssue.Boundary) ||
+            !IsBoundaryInScope(childIssue.Boundary) ||
+            !IsIssueConfiguredInInfluenceDiagram(parentIssue) ||
             !IsIssueConfiguredInInfluenceDiagram(childIssue))
         {
             DbContext.RestrictionTables.Remove(restrictionTable);
             return;
         }
-        // check that the parent child combination are correct, 
-        // this is simpler than the other tables since a restriction entry can only have one child and one parent, 
-        // so we just need to check that the parent issue has at least one of the relevant types and that the child issue has at least one of the relevant types, 
-        // if not then the restriction table should be deleted, 
+        // check that the parent child combination are correct,
+        // this is simpler than the other tables since a restriction entry can only have one child and one parent,
+        // so we just need to check that the parent issue has at least one of the relevant types and that the child issue has at least one of the relevant types,
+        // if not then the restriction table should be deleted,
         // if yes then we need to check if the combinations of parent outcomes and options have changed and update the restriction table entries accordingly
 
         var restrictionEntries = restrictionTable.RestrictionEntries.ToList();
@@ -123,8 +123,8 @@ public class TableRebuildingService : ITableRebuildingService
             : childIssue.Decision!.Options.Select(o => (Guid?)o.Id);
 
         List<(Guid? ParentId, Guid? ChildId)> validCombinations = (from parentId in parentIds
-            from childId in childIds
-            select (ParentId: parentId, ChildId: childId)).ToList();
+                                                                   from childId in childIds
+                                                                   select (ParentId: parentId, ChildId: childId)).ToList();
 
         // check that the current combinations in the restriction table are still valid, if not then remove them, then add any new valid combinations that are not currently in the restriction table
 
@@ -254,9 +254,9 @@ public class TableRebuildingService : ITableRebuildingService
                 var newEntry = new DiscreteProbability
                 {
                     Id = GetDeterministicId(
-                        issue.Id, 
+                        issue.Id,
                         outcome.Id,
-                        [.. parentOutcomesList.SelectMany(x => x)], 
+                        [.. parentOutcomesList.SelectMany(x => x)],
                         [.. parentOptionsList.SelectMany(x => x)]
                     ),
                     OutcomeId = outcome.Id,
@@ -481,6 +481,7 @@ public class TableRebuildingService : ITableRebuildingService
 
         return discreteProbabilities
             .GroupBy(p => (
+                p.UncertaintyId,
                 p.OutcomeId,
                 ParentOutcomes: string.Join(",", p.ParentOutcomes.Select(o => o.ParentOutcomeId).OrderBy(id => id)),
                 ParentOptions: string.Join(",", p.ParentOptions.Select(o => o.ParentOptionId).OrderBy(id => id))
@@ -512,13 +513,15 @@ public class TableRebuildingService : ITableRebuildingService
             .Include(p => p.ParentOptions)
             .ToListAsync(ct);
 
-        return discreteUtilities
+        var excessDiscreteUtilities = discreteUtilities
             .GroupBy(p => (
+                p.UtilityId,
                 p.ValueMetricId,
                 ParentOutcomes: string.Join(",", p.ParentOutcomes.Select(o => o.ParentOutcomeId).OrderBy(id => id)),
                 ParentOptions: string.Join(",", p.ParentOptions.Select(o => o.ParentOptionId).OrderBy(id => id))
             ))
             .SelectMany(group => group.Skip(1));
+        return excessDiscreteUtilities;
     }
 
     private void RemoveDiscreteProbabilities(IEnumerable<DiscreteProbability> discreteProbabilities)
