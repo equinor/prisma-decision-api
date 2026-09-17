@@ -9,5 +9,6 @@ public interface IFastApiService
     Task<ApiResponseDto> SendPartialInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, List<List<Guid>> paths, UserOutgoingDto user, CancellationToken ct = default);
     Task<ApiResponseDto> SendInfluenceDiagramWithEvidenceToFastApiAsync(Guid projectId, string endpoint, List<EvidenceRequestDto> data, UserOutgoingDto user, CancellationToken ct = default);
     Task<ApiResponseDto> SendInfluenceDiagramPolicyTableToFastApiAsync(Guid projectId, string endpoint, EvidenceRequestDto? evidence, UserOutgoingDto user, CancellationToken ct = default);
+    Task AddMarginsToInfluenceDiagramAsync(InfluenceDiagramDto influenceDiagram, CancellationToken ct = default);
     List<PolicyTableOutgoingDto> ParsePolicyTableResponse(string? content);
 }

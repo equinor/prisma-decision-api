@@ -109,6 +109,17 @@ public static class InfluenceDiagramDtoExtensions
         RestrictUncertainties(influenceDiagramDto);
     }
 
+    public static bool RequiresMarginsForRestrictions(this InfluenceDiagramDto influenceDiagramDto)
+    {
+        // Check if there are any total restrictions (i.e., restrictions where all entries for a given parent state have a restriction value of 0)
+        // this could require margins for rebalincing the probabilities
+        return influenceDiagramDto.restrictionTables.Any(restrictionTable =>
+            restrictionTable.RestrictionEntries
+                .Where(entry => entry.ParentStateId is not null)
+                .GroupBy(entry => entry.ParentStateId)
+                .Any(row => row.All(entry => entry.RestrictionValue == 0)));
+    }
+
     private static void RestrictDecisions(InfluenceDiagramDto influenceDiagramDto)
     {
         // Get all restriction tables that apply to decisions and have at least one restriction entry with a value other than 1
