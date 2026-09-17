@@ -57,6 +57,11 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
                 // handle case where issue is changing from non-uncertainty to uncertainty that has no previous probabilities
                 _ruleTrigger.EnqueueIssuesForRebuild([entity.Id]);
             }
+            if (entity.Type != incomingEntity.Type && incomingEntity.Type == IssueType.Utility.ToString() && incomingEntity.Utility?.DiscreteUtilities.Count == 0)
+            {
+                // handle case where issue is changing from non-utility to utility that has no previous utilities
+                _ruleTrigger.EnqueueIssuesForRebuild([entity.Id]);
+            }
 
             await entity.RemoveOutOfScopeStrategyOptions(incomingEntity, DbContext, ct);
 
@@ -86,7 +91,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
 
     public async Task<ICollection<Issue>> GetIssuesInInfluenceDiagram(Guid projectId, Expression<Func<Issue, bool>>? filterPredicate, CancellationToken ct = default)
     {
-        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId), filterPredicate, ct);
+        return await base.GetAllAsync(false, Query().InfluenceDiagramFilter(projectId), filterPredicate, ct);
     }
 
     private bool WillIssueChangeTables(Issue entity, Issue incomingEntity)
@@ -130,7 +135,7 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
 
 public static class IssueQueryableExtensions
 {
-    public static IQueryable<Issue> IndluenceDiagramFilter(this IQueryable<Issue> query, Guid projectId)
+    public static IQueryable<Issue> InfluenceDiagramFilter(this IQueryable<Issue> query, Guid projectId)
     {
         return query
             .Where(e =>
