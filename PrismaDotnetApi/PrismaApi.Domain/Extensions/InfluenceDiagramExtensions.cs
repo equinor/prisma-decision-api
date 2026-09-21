@@ -105,8 +105,195 @@ public static class InfluenceDiagramDtoExtensions
     
     public static void ApplyRestrictions(this InfluenceDiagramDto influenceDiagramDto)
     {
+        influenceDiagramDto.ValidateRestrictions();
         RestrictDecisions(influenceDiagramDto);
         RestrictUncertainties(influenceDiagramDto);
+    }
+
+    public static void ValidateRestrictions(this InfluenceDiagramDto influenceDiagramDto)
+    {
+        var tablesWithTotalRestrictions = influenceDiagramDto.restrictionTables
+            .Where(table => table.RestrictionEntries
+                .Where(entry => entry.ParentStateId is not null)
+                .GroupBy(entry => entry.ParentStateId)
+                .Any(row => row.All(entry => entry.RestrictionValue == 0)));
+
+        foreach (var table in tablesWithTotalRestrictions)
+        {
+            // TODO: Dont requre edge to utilities
+            var restrictedEdge = influenceDiagramDto.edges.FirstOrDefault(edge => edge.Id == table.EdgeId)
+                ?? throw new InvalidOperationException($"Restriction table '{table.Id}' references an edge that is not in the influence diagram.");
+            var childIssueIds = influenceDiagramDto.edges
+                .Where(edge => edge.TailIssueId == restrictedEdge.HeadIssueId)
+                .Select(edge => edge.HeadIssueId)
+                .Distinct();
+            var missingChildIssueIds = childIssueIds
+                .Where(childIssueId => !influenceDiagramDto.edges.Any(edge =>
+                    edge.TailIssueId == restrictedEdge.TailIssueId && edge.HeadIssueId == childIssueId))
+                .ToList();
+
+            if (missingChildIssueIds.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"Restriction table '{table.Id}' totally restricts an available row, but node '{restrictedEdge.TailIssueId}' does not have an edge to every child of node '{restrictedEdge.HeadIssueId}'. Missing child node ids: {string.Join(", ", missingChildIssueIds)}.");
+            }
+        }
+    }
+
+    public static void ApplyTotalRestrictions(this InfluenceDiagramDto influenceDiagramDto)
+    {
+        influenceDiagramDto.ValidateRestrictions();
+        // this is performed after partial restrictions
+        // get issue ids in topological order to apply the total restrictions in an orderly manner
+        var orderedIssueIds = influenceDiagramDto.OrderIssueIdsByTopologicalSort();
+        foreach (var issueId in orderedIssueIds)
+        {
+            var issue = influenceDiagramDto.issues.FirstOrDefault(i => i.Id == issueId)
+                ?? throw new InvalidOperationException($"Issue with id '{issueId}' not found in the influence diagram.");
+            // apply total restrictions for the issue with id 'issueId'
+            // 1) check if total restriction applies to this issue
+            // meaning that for the first issue there is no restriction table
+            var restrictionTablesForIssue = influenceDiagramDto.restrictionTables
+                .Where(table => table.EdgeId == influenceDiagramDto.edges.FirstOrDefault(edge => edge.HeadIssueId == issueId)?.Id)
+                .ToList();
+            if (!restrictionTablesForIssue.Any())
+            {
+                continue; // no restrictions for this issue
+            }
+            // skip if this is not a total restriction
+            if (restrictionTablesForIssue.All(table => table.RestrictionEntries.All(entry => entry.RestrictionValue == 1)))
+            {
+                continue; // skip if this is not a total restriction
+            }
+            // apply total restriction logic for this issue here
+            if (issue.Type == IssueType.Decision.ToString() && issue.Decision is not null)
+            {
+                var notApplicableOption = new OptionOutgoingDto{ProjectId = issue.ProjectId, Id = Guid.NewGuid(), Name = "N/A" };
+                issue.Decision.Options.Add(notApplicableOption);
+                // all children that are utilities need new discreteutilities
+                foreach (var childEdge in influenceDiagramDto.edges.Where(edge => edge.TailIssueId == issueId))
+                {
+                    var childIssue = influenceDiagramDto.issues.FirstOrDefault(i => i.Id == childEdge.HeadIssueId);
+                    if (childIssue?.Type == IssueType.Utility.ToString() && childIssue.Utility is not null)
+                    {
+                        influenceDiagramDto.AddUtilitiesFromNAState(childIssue, notApplicableOption, issue.Decision);
+                    }
+                }
+            }
+        }
+    }
+
+    public static void AddUtilitiesFromNAState(this InfluenceDiagramDto influenceDiagramDto, IssueOutgoingDto utilityIssue, OptionOutgoingDto notApplicableState, DecisionOutgoingDto parent)
+    {
+        // there are exsiting combinations of parent states that need to be considered when adding utilities from the N/A state
+        // example: parent utilities => a1 and b1, from Decision A and Uncertainty B respectively
+        // adding N/A to Decision A implies adding rows for N/A, b1 and N/A, b2 ... N/A, bn for all existing combinations of parent states
+        // default utility of these new utilities to 0
+        if (utilityIssue.Utility is null)
+        {
+            throw new InvalidOperationException("Utility issue does not have an associated utility.");
+        }
+        // use one of the existing parent states as a template for creating new utilities for the N/A state
+        var existingParentState = parent.Options
+            .FirstOrDefault(option => option.Id != notApplicableState.Id)
+            ?? throw new InvalidOperationException("The parent decision does not have an existing option.");
+
+        var existingUtilities = influenceDiagramDto.discreteUtilities
+            .Where(utility => utility.UtilityId == utilityIssue.Utility.Id)
+            .ToList();
+
+        var utilitiesForExistingParentState = existingUtilities
+            .Where(utility => utility.ParentOptionIds.Contains(existingParentState.Id))
+            .ToList();
+
+        var newUtilities = utilitiesForExistingParentState
+            .Select(utility => new DiscreteUtilityDto
+            {
+                ProjectId = utility.ProjectId,
+                UtilityId = utility.UtilityId,
+                ValueMetricId = utility.ValueMetricId,
+                UtilityValue = 0,
+                ParentOptionIds = utility.ParentOptionIds
+                    .Select(id => id == existingParentState.Id ? notApplicableState.Id : id)
+                    .ToList(),
+                ParentOutcomeIds = [.. utility.ParentOutcomeIds]
+            })
+            .ToList();
+
+        foreach (var newUtility in newUtilities)
+        {
+            influenceDiagramDto.discreteUtilities.Add(newUtility);
+        }
+    }
+
+    public static void AddUtilitiesFromNAState(this InfluenceDiagramDto influenceDiagramDto, IssueOutgoingDto utilityIssue, OutcomeOutgoingDto notApplicableState, UncertaintyOutgoingDto parent)
+    {
+        if (utilityIssue.Utility is null)
+        {
+            throw new InvalidOperationException("Utility issue does not have an associated utility.");
+        }
+        // use one of the existing parent states as a template for creating new utilities for the N/A state
+        var existingParentState = parent.Outcomes
+            .FirstOrDefault(outcome => outcome.Id != notApplicableState.Id)
+            ?? throw new InvalidOperationException("The parent decision does not have an existing option.");
+
+        var existingUtilities = influenceDiagramDto.discreteUtilities
+            .Where(utility => utility.UtilityId == utilityIssue.Utility.Id)
+            .ToList();
+        
+        var newUtilities = existingUtilities
+            .Where(utility => utility.ParentOutcomeIds.Contains(existingParentState.Id))
+            .Select(utility => new DiscreteUtilityDto
+            {
+                ProjectId = utility.ProjectId,
+                UtilityId = utility.UtilityId,
+                ValueMetricId = utility.ValueMetricId,
+                UtilityValue = 0,
+                ParentOutcomeIds = utility.ParentOutcomeIds
+                    .Select(id => id == existingParentState.Id ? notApplicableState.Id : id)
+                    .ToList(),
+                ParentOptionIds = [.. utility.ParentOptionIds]
+            })
+            .ToList();
+
+        foreach (var newUtility in newUtilities)
+        {
+            influenceDiagramDto.discreteUtilities.Add(newUtility);
+        }
+    }
+
+    public static IEnumerable<Guid> OrderIssueIdsByTopologicalSort(this InfluenceDiagramDto influenceDiagramDto)
+    {
+        var sorted = new List<Guid>();
+        var visited = new HashSet<Guid>();
+
+        void Visit(Guid issueId)
+        {
+            if (!visited.Contains(issueId))
+            {
+                visited.Add(issueId);
+                var children = influenceDiagramDto.edges
+                    .Where(edge => edge.TailIssueId == issueId)
+                    .Select(edge => edge.HeadIssueId);
+                foreach (var child in children)
+                {
+                    Visit(child);
+                }
+                sorted.Add(issueId);
+            }
+        }
+
+        var allIssueIds = influenceDiagramDto.edges
+            .SelectMany(edge => new[] { edge.TailIssueId, edge.HeadIssueId })
+            .Distinct();
+
+        foreach (var issueId in allIssueIds)
+        {
+            Visit(issueId);
+        }
+
+        sorted.Reverse();
+        return sorted;
     }
 
     public static bool RequiresMarginsForRestrictions(this InfluenceDiagramDto influenceDiagramDto)
