@@ -204,12 +204,32 @@ class PyagrumSolver:
         )
     def get_margins(self) -> dict[str, list[MarginTableRowDto]]:
         margins: dict[str, list[MarginTableRowDto]] = {}
+        if self.ie is None:
+            raise RuntimeError(
+                "Inference engine has not been initialized. Call build_inference_engine or find_optimal_decisions first."
+            )
         for issue in self.issues:
             if issue.type != Type.UNCERTAINTY.value:
                 continue
-            margin = self.ie.posterior(issue.id.__str__())
-            margins[issue.id.__str__()] = self._parse_margin_tensor(issue.id.__str__(), margin)
+            # margin is dependent on the decision parents. 
+            # Meaning that we need to set the evidence for the decision parents before computing the margin and save the evidence as the information.
+            parents = self.diagram.parents(issue.id.__str__())
+            variable_labels_for_parents = {}
+            for parent in parents:
+                if self.diagram.isChanceNode(parent):
+                    continue
+                # find possible combinations of parent options for the current uncertainty
+                variable_labels = self._pyagrum_get_node_labels(parent)
+                variable_labels_for_parents[parent] = variable_labels
+            # build combinations so they can be iterated over and set as evidence for the inference engine
+            from itertools import product
+            parent_combinations: list[tuple[str]] = list(product(*variable_labels_for_parents.values()))
+            for combination in parent_combinations:
+                self.set_evidence(self.ie, list(combination))
+                margin = self.ie.posterior(issue.id.__str__())
+                margins[f"{issue.id.__str__()} | {'_'.join(list(combination))}"] = self._parse_margin_tensor(issue.id.__str__(), margin, list(combination))
         return margins  # type: ignore
+    
     def get_inference(self) -> gum.ShaferShenoyLIMIDInference:
         if self.ie is None:
             raise RuntimeError(
@@ -591,7 +611,7 @@ class PyagrumSolver:
         return policy_rows
 
     def _parse_margin_tensor(
-            self, uncertainty_id: str, margin_tensor: Any
+            self, uncertainty_id: str, margin_tensor: Any, parent_option_ids: list[str]
         ) -> list[MarginTableRowDto]:
             """Flatten a margin tensor into row DTOs with ordered state labels and probability.
     
@@ -606,6 +626,7 @@ class PyagrumSolver:
                     MarginTableRowDto(
                         uncertainty_id=uuid.UUID(uncertainty_id),
                         outcome_id=uuid.UUID(self._get_outcome_id_from_table_states(parsed_row.states)),
+                        parent_options=[uuid.UUID(option_id) for option_id in parent_option_ids],
                         probability=parsed_row.value,
                     )
                 )
