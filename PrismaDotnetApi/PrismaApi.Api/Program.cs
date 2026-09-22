@@ -122,6 +122,7 @@ public class Program
         builder.Services.AddScoped<IBoardSheetRepository, BoardSheetRepository>();
         builder.Services.AddScoped<IRestrictionTableRepository, RestrictionTableRepository>();
         builder.Services.AddScoped<IRestrictionEntryRepository, RestrictionEntryRepository>();
+        builder.Services.AddScoped<IStakeholderMatrixRepository, StakeholderMatrixRepository>();
 
         builder.Services.AddScoped<ITableRebuildingService, TableRebuildingService>();
         builder.Services.AddScoped<IProjectService, ProjectService>();
@@ -146,6 +147,7 @@ public class Program
         builder.Services.AddHostedService<TableCleanupService>();
         builder.Services.AddScoped<IRestrictionTableService, RestrictionTableService>();
         builder.Services.AddScoped<IRestrictionEntryService, RestrictionEntryService>();
+        builder.Services.AddScoped<IStakeholderMatrixService, StakeholderMatrixService>();
 
         if (isPublicInstance || isResearchInstance)
         {
