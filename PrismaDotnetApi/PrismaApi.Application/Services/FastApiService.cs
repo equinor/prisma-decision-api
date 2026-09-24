@@ -123,41 +123,12 @@ public class FastApiService : IFastApiService
         return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
     }
 
-    public async Task AddMarginsToInfluenceDiagramAsync(InfluenceDiagramDto influenceDiagram, CancellationToken ct = default)
-    {
-        var payload = new
-        {
-            issues = influenceDiagram.issues,
-            edges = influenceDiagram.edges,
-            discrete_probabilities = influenceDiagram.discreteProbabilities,
-            discrete_utilities = influenceDiagram.discreteUtilities,
-        };
-        var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        var response = await CallDownstreamFastApiPostAsync($"/solvers/project/{influenceDiagram.projectId}/margins", content, ct);
-
-        if ((int)response.StatusCode is < 200 or >= 300)
-        {
-            throw new HttpRequestException(
-                $"FastAPI margin calculation failed with status {(int)response.StatusCode}: {response.Content}",
-                null,
-                response.StatusCode);
-        }
-
-        influenceDiagram.margins = string.IsNullOrWhiteSpace(response.Content)
-            ? []
-            : JsonSerializer.Deserialize<Dictionary<Guid, List<MarginTableRowDto>>>(response.Content) ?? [];
-    }
-
     private async Task<InfluenceDiagramDto> GetRestrictedInfluenceDiagramWithMarginsAsync(
         Guid projectId,
         UserOutgoingDto user,
         CancellationToken ct)
     {
         var influenceDiagram = (await _influenceDiagramService.GetInfluenceDiagramAsync(projectId, user, ct)).DeepClone();
-        // if (influenceDiagram.RequiresMarginsForRestrictions())
-        // {
-        //     await AddMarginsToInfluenceDiagramAsync(influenceDiagram, ct);
-        // }
         influenceDiagram.ApplyRestrictions();
         return influenceDiagram;
     }
