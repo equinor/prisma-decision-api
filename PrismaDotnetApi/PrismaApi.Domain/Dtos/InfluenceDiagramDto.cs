@@ -8,5 +8,4 @@ public class InfluenceDiagramDto
     public required ICollection<DiscreteProbabilityDto> discreteProbabilities { get; init; }
     public required ICollection<DiscreteUtilityDto> discreteUtilities { get; init; }
     public required ICollection<RestrictionTableOutgoingDto> restrictionTables { get; init; }
-    public Dictionary<Guid, List<MarginTableRowDto>> margins { get; set; } = [];
 }

@@ -136,7 +136,7 @@ class SolverService:
         )
         # for debugging
         if config.SAVE_INFLUENCE_DIAGRAM:
-            solver.export_as_jgum()
+            solver.export_pyagrum_model()
         return result
 
     async def get_decision_tree_for_optimal_decisions_old(
