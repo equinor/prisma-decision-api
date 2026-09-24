@@ -1,4 +1,5 @@
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Utilities;
 
 namespace PrismaDotnetApi.PrismaApi.Domain.Extensions;
 
@@ -16,6 +17,7 @@ public static class DiscreteProbabilitiesExtensions
             {
                 probabilities.Add(new DiscreteProbabilityDto
                 {
+                    Id = Utilities.GetDeterministicId(dp.ProjectId, addedOutcome.Id, dp.ParentOutcomeIds, dp.ParentOptionIds),
                     ProjectId = dp.ProjectId,
                     UncertaintyId = dp.UncertaintyId,
                     ParentOptionIds = new List<Guid>(dp.ParentOptionIds),
@@ -66,6 +68,7 @@ public static class DiscreteProbabilitiesExtensions
             {
                 var newDp = new DiscreteProbabilityDto
                 {
+                    Id = Utilities.GetDeterministicId(dp.ProjectId, addedStateId, dp.ParentOutcomeIds, dp.ParentOptionIds),
                     ProjectId = dp.ProjectId,
                     UncertaintyId = dp.UncertaintyId,
                     ParentOptionIds = new List<Guid>(dp.ParentOptionIds),

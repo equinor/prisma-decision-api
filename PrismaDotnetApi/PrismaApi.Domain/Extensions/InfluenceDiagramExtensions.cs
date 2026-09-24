@@ -107,6 +107,7 @@ public static class InfluenceDiagramDtoExtensions
     public static void ApplyRestrictions(this InfluenceDiagramDto influenceDiagramDto)
     {
         influenceDiagramDto.ValidateRestrictions();
+        ApplyTotalRestrictions(influenceDiagramDto);
         RestrictDecisions(influenceDiagramDto);
         RestrictUncertainties(influenceDiagramDto);
     }
@@ -178,7 +179,7 @@ public static class InfluenceDiagramDtoExtensions
                 continue; // no restrictions for this issue
             }
             // throw exception if all entries are restricted
-            if (restrictionTablesForIssue.All(table => table.RestrictionEntries.All(entry => entry.RestrictionValue == 1)))
+            if (restrictionTablesForIssue.All(table => table.RestrictionEntries.All(entry => entry.RestrictionValue == 0)))
             {
                 throw new InvalidOperationException($"All entries for issue with id '{issueId}' are restricted.");
             }
@@ -191,7 +192,7 @@ public static class InfluenceDiagramDtoExtensions
 
             foreach (var row in restrictionEntriesByRow)
             {
-                if (!row.All(entry => entry.RestrictionValue == 1))
+                if (!row.All(entry => entry.RestrictionValue == 0))
                 {
                     continue; // skip this row if not all entries are restricted
                 }
@@ -200,10 +201,17 @@ public static class InfluenceDiagramDtoExtensions
                 {
                     continue; // skip if parent state id is not valid
                 }
+                var stateName = $"N/A {parentStateId}";
                 // apply total restriction logic for this issue here
                 if (issue.Type == IssueType.Decision.ToString() && issue.Decision is not null)
                 {
-                    var notApplicableOption = new OptionOutgoingDto{ProjectId = issue.ProjectId, Id = Guid.NewGuid(), Name = "N/A" };
+                    var notApplicableOption = new OptionOutgoingDto
+                    {
+                        Id = $"{issue.ProjectId}|Uncertainty:{issue.Decision.Id}|State:{stateName}".GenerateDeterministicGuid(),
+                        ProjectId = issue.ProjectId, 
+                        DecisionId = issue.Decision.Id, 
+                        Name = stateName
+                    };
                     issue.Decision.Options.Add(notApplicableOption);
                     // all children that are utilities need new discreteutilities
                     foreach (var childEdge in influenceDiagramDto.edges.Where(edge => edge.TailIssueId == issueId))
@@ -217,17 +225,22 @@ public static class InfluenceDiagramDtoExtensions
                 }
                 if (issue.Type == IssueType.Uncertainty.ToString() && issue.Uncertainty is not null)
                 {
-                    var notApplicableOutcome = new OutcomeOutgoingDto{ProjectId = issue.ProjectId, Id = Guid.NewGuid(), Name = "N/A" };
+                    var notApplicableOutcome = new OutcomeOutgoingDto{
+                        Id = $"{issue.ProjectId}|Uncertainty:{issue.Uncertainty.Id}|State:{stateName}".GenerateDeterministicGuid(),
+                        ProjectId = issue.ProjectId, 
+                        UncertaintyId = issue.Uncertainty.Id, 
+                        Name = stateName 
+                    };
                     issue.Uncertainty.Outcomes.Add(notApplicableOutcome);
                     // all children that are utilities need new discreteutilities
+                    // need to add the new outcome as column in it's probability table
+                    influenceDiagramDto.AddProbabilitiesFromAddedOutcome((Guid)parentStateId, notApplicableOutcome, issue.Uncertainty);
                     foreach (var childEdge in influenceDiagramDto.edges.Where(edge => edge.TailIssueId == issueId))
                     {
                         var childIssue = influenceDiagramDto.issues.FirstOrDefault(i => i.Id == childEdge.HeadIssueId);
                         if (childIssue?.Type == IssueType.Utility.ToString() && childIssue.Utility is not null)
                         {
                             influenceDiagramDto.AddUtilitiesFromNAState(childIssue, notApplicableOutcome, issue.Uncertainty);
-                            // need to add the new outcome as column in it's probability table
-                            influenceDiagramDto.AddProbabilitiesFromAddedOutcome((Guid)parentStateId, notApplicableOutcome, issue.Uncertainty);
                         }
                     }
                 }
@@ -239,78 +252,50 @@ public static class InfluenceDiagramDtoExtensions
 
     public static void AddUtilitiesFromNAState(this InfluenceDiagramDto influenceDiagramDto, IssueOutgoingDto utilityIssue, OptionOutgoingDto notApplicableState, DecisionOutgoingDto parent)
     {
-        // there are exsiting combinations of parent states that need to be considered when adding utilities from the N/A state
-        // example: parent utilities => a1 and b1, from Decision A and Uncertainty B respectively
-        // adding N/A to Decision A implies adding rows for N/A, b1 and N/A, b2 ... N/A, bn for all existing combinations of parent states
-        // default utility of these new utilities to 0
-        if (utilityIssue.Utility is null)
-        {
-            throw new InvalidOperationException("Utility issue does not have an associated utility.");
-        }
-        // use one of the existing parent states as a template for creating new utilities for the N/A state
-        var existingParentState = parent.Options
-            .FirstOrDefault(option => option.Id != notApplicableState.Id)
-            ?? throw new InvalidOperationException("The parent decision does not have an existing option.");
-
-        var existingUtilities = influenceDiagramDto.discreteUtilities
-            .Where(utility => utility.UtilityId == utilityIssue.Utility.Id)
-            .ToList();
-
-        var utilitiesForExistingParentState = existingUtilities
-            .Where(utility => utility.ParentOptionIds.Contains(existingParentState.Id))
-            .ToList();
-
-        var newUtilities = utilitiesForExistingParentState
-            .Select(utility => new DiscreteUtilityDto
-            {
-                ProjectId = utility.ProjectId,
-                UtilityId = utility.UtilityId,
-                ValueMetricId = utility.ValueMetricId,
-                UtilityValue = 0,
-                ParentOptionIds = utility.ParentOptionIds
-                    .Select(id => id == existingParentState.Id ? notApplicableState.Id : id)
-                    .ToList(),
-                ParentOutcomeIds = [.. utility.ParentOutcomeIds]
-            })
-            .ToList();
-
-        foreach (var newUtility in newUtilities)
-        {
-            influenceDiagramDto.discreteUtilities.Add(newUtility);
-        }
+        influenceDiagramDto.AddUtilitiesFromNAState(
+            utilityIssue,
+            notApplicableState.Id,
+            parent.Options.Select(option => option.Id).ToList());
     }
 
     public static void AddUtilitiesFromNAState(this InfluenceDiagramDto influenceDiagramDto, IssueOutgoingDto utilityIssue, OutcomeOutgoingDto notApplicableState, UncertaintyOutgoingDto parent)
+    {
+        influenceDiagramDto.AddUtilitiesFromNAState(
+            utilityIssue,
+            notApplicableState.Id,
+            parent.Outcomes.Select(outcome => outcome.Id).ToList());
+    }
+
+    private static void AddUtilitiesFromNAState(
+        this InfluenceDiagramDto influenceDiagramDto,
+        IssueOutgoingDto utilityIssue,
+        Guid notApplicableStateId,
+        List<Guid> parentStateIds)
     {
         if (utilityIssue.Utility is null)
         {
             throw new InvalidOperationException("Utility issue does not have an associated utility.");
         }
-        // use one of the existing parent states as a template for creating new utilities for the N/A state
-        var existingParentState = parent.Outcomes
-            .FirstOrDefault(outcome => outcome.Id != notApplicableState.Id)
-            ?? throw new InvalidOperationException("The parent decision does not have an existing option.");
 
-        var existingUtilities = influenceDiagramDto.discreteUtilities
+        var siblingStateIds = parentStateIds
+            .Where(stateId => stateId != notApplicableStateId)
+            .ToList();
+        if (siblingStateIds.Count == 0)
+        {
+            throw new InvalidOperationException("The parent does not have an existing state.");
+        }
+
+        var utilityEntries = influenceDiagramDto.discreteUtilities
             .Where(utility => utility.UtilityId == utilityIssue.Utility.Id)
             .ToList();
-        
-        var newUtilities = existingUtilities
-            .Where(utility => utility.ParentOutcomeIds.Contains(existingParentState.Id))
-            .Select(utility => new DiscreteUtilityDto
-            {
-                ProjectId = utility.ProjectId,
-                UtilityId = utility.UtilityId,
-                ValueMetricId = utility.ValueMetricId,
-                UtilityValue = 0,
-                ParentOutcomeIds = utility.ParentOutcomeIds
-                    .Select(id => id == existingParentState.Id ? notApplicableState.Id : id)
-                    .ToList(),
-                ParentOptionIds = [.. utility.ParentOptionIds]
-            })
-            .ToList();
+        if (utilityEntries.Count == 0)
+        {
+            return;
+        }
 
-        foreach (var newUtility in newUtilities)
+        var existingEntryCount = utilityEntries.Count;
+        utilityEntries.AddUtilitiesRow(notApplicableStateId, siblingStateIds);
+        foreach (var newUtility in utilityEntries.Skip(existingEntryCount))
         {
             influenceDiagramDto.discreteUtilities.Add(newUtility);
         }
