@@ -154,10 +154,10 @@ public class FastApiService : IFastApiService
         CancellationToken ct)
     {
         var influenceDiagram = (await _influenceDiagramService.GetInfluenceDiagramAsync(projectId, user, ct)).DeepClone();
-        if (influenceDiagram.RequiresMarginsForRestrictions())
-        {
-            await AddMarginsToInfluenceDiagramAsync(influenceDiagram, ct);
-        }
+        // if (influenceDiagram.RequiresMarginsForRestrictions())
+        // {
+        //     await AddMarginsToInfluenceDiagramAsync(influenceDiagram, ct);
+        // }
         influenceDiagram.ApplyRestrictions();
         return influenceDiagram;
     }
