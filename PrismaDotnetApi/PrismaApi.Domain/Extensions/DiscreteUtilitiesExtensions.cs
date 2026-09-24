@@ -1,4 +1,5 @@
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Utilities;
 
 namespace PrismaDotnetApi.PrismaApi.Domain.Extensions;
 
@@ -14,6 +15,7 @@ public static class DiscreteUtilitiesExtensions
 			var template = row.First();
 			utilities.Add(new DiscreteUtilityDto
 			{
+				Id = Utilities.GetDeterministicId(template.ProjectId, addedValueMetric.Id, template.ParentOutcomeIds, template.ParentOptionIds),
 				ProjectId = template.ProjectId,
 				UtilityId = template.UtilityId,
 				ParentOptionIds = new List<Guid>(template.ParentOptionIds),
@@ -40,6 +42,7 @@ public static class DiscreteUtilitiesExtensions
 			{
 				var newUtility = new DiscreteUtilityDto
 				{
+					Id = Utilities.GetDeterministicId(utility.ProjectId, addedStateId, utility.ParentOutcomeIds, utility.ParentOptionIds),
 					ProjectId = utility.ProjectId,
 					UtilityId = utility.UtilityId,
 					ParentOptionIds = new List<Guid>(utility.ParentOptionIds),

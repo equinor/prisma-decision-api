@@ -5,6 +5,7 @@ using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
 using PrismaApi.Domain.Extensions;
+using PrismaApi.Domain.Utilities;
 
 namespace PrismaApi.Application.Services;
 
@@ -14,15 +15,6 @@ public class TableRebuildingService : ITableRebuildingService
     public TableRebuildingService(AppDbContext dbContext)
     {
         DbContext = dbContext;
-    }
-
-    private static Guid GetDeterministicId(Guid issueId, Guid stateId, List<Guid> parentOutcomeIds, List<Guid> parentOptionIds)
-    {
-        var combined = $"{issueId}|" +
-                       $"StateId:{stateId}|" +
-                       $"Outcomes:{string.Join(",", parentOutcomeIds.OrderBy(id => id))}|" +
-                       $"Options:{string.Join(",", parentOptionIds.OrderBy(id => id))}";
-        return combined.GenerateDeterministicGuid();
     }
 
     private static Guid GetDeterministicIdRestrictionEntry(Guid restrictionTableId, Guid parentId, Guid childId)
@@ -253,7 +245,7 @@ public class TableRebuildingService : ITableRebuildingService
             {
                 var newEntry = new DiscreteProbability
                 {
-                    Id = GetDeterministicId(
+                    Id = Utilities.GetDeterministicId(
                         issue.Id, 
                         outcome.Id,
                         [.. parentOutcomesList.SelectMany(x => x)], 
@@ -282,7 +274,7 @@ public class TableRebuildingService : ITableRebuildingService
                 var parentOutcomeIds = combination.Where(allOutcomes.Contains).OrderBy(id => id).ToList();
                 var parentOptionIds = combination.Where(allOptions.Contains).OrderBy(id => id).ToList();
 
-                var probabilityId = GetDeterministicId(issue.Id, outcome.Id, parentOutcomeIds, parentOptionIds);
+                var probabilityId = Utilities.GetDeterministicId(issue.Id, outcome.Id, parentOutcomeIds, parentOptionIds);
 
                 var newEntity = new DiscreteProbability
                 {
@@ -346,7 +338,7 @@ public class TableRebuildingService : ITableRebuildingService
         {
             var parentOutcomeIds = combination.Where(allOutcomes.Contains).OrderBy(id => id).ToList();
             var parentOptionIds = combination.Where(allOptions.Contains).OrderBy(id => id).ToList();
-            var utilityId = GetDeterministicId(issue.Id, DomainConstants.DefaultValueMetricId, parentOutcomeIds, parentOptionIds);
+            var utilityId = Utilities.GetDeterministicId(issue.Id, DomainConstants.DefaultValueMetricId, parentOutcomeIds, parentOptionIds);
 
             await DbContext.DiscreteUtilities
                 .AddAsync(new DiscreteUtility
