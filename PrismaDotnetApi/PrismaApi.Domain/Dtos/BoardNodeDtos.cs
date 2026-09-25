@@ -31,7 +31,7 @@ public class BoardNodeDto
     public string Color { get; set; } = string.Empty;
     [JsonPropertyName("stroke_width")]
     public float StrokeWidth { get; set; } = DomainConstants.DefaultStrokeWidth;
-    [JsonPropertyName("z_index")]
+    [JsonPropertyName("zIndex")]
     public int ZIndex { get; set; } = 0;
     [JsonPropertyName("board_sheet_id")]
     public required Guid BoardSheetId { get; set; }

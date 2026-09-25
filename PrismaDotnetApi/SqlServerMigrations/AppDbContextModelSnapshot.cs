@@ -835,7 +835,6 @@ namespace PrismaApi.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<double>("RestrictionValue")
-                        .ValueGeneratedOnAdd()
                         .HasPrecision(53)
                         .HasColumnType("float(53)")
                         .HasDefaultValue(1.0);
@@ -1033,7 +1032,9 @@ namespace PrismaApi.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.HasAlternateKey("Name");
+
+                    b.ToTable("Users");
 
                     b.HasData(
                         new
