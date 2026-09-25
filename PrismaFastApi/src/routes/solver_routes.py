@@ -2,6 +2,7 @@ import uuid
 import math
 from typing import Optional
 from fastapi import APIRouter, Depends
+from src.dtos.margin_table_dtos import MarginTableRowDto
 from src.project_lock_manager import ProjectQueueManager
 from src.services.solver_service import SolverService
 from src.dependencies import get_solver_service, get_project_lock_manager
@@ -15,6 +16,18 @@ from src.dtos.policy_table_dtos import PolicyTableRowDto
 
 router = APIRouter(tags=["solvers"])
 
+@router.post("/solvers/project/{project_id}/margins")
+async def get_margins_for_project(
+    project_id: uuid.UUID,
+    issues: list[IssueOutgoingDto],
+    edges: list[EdgeOutgoingDto],
+    discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [],
+    discrete_utilities: list[DiscreteUtilityOutgoingDto] = [],
+    solver_service: SolverService = Depends(get_solver_service),
+) -> dict[str, list[MarginTableRowDto]]:
+    return await solver_service.get_margins_pyagrum(
+        issues, edges, discrete_probabilities, discrete_utilities
+    )
 
 @router.post("/solvers/project/{project_id}/export")
 async def export_pyagrum_model_for_project(
