@@ -14,23 +14,21 @@ namespace PrismaApi.Infrastructure.Migrations
             migrationBuilder.AddColumn<Guid>(
                 name: "ProjectId",
                 table: "StrategyOptions",
-                type: "TEXT",
+                type: "uniqueidentifier",
                 nullable: true);
 
             migrationBuilder.Sql(@"
-                UPDATE StrategyOptions
-                SET ProjectId = (
-                    SELECT s.ProjectId FROM Strategies s
-                    WHERE s.Id = StrategyOptions.StrategyId
-                )");
+                UPDATE so SET so.ProjectId = s.ProjectId
+                FROM StrategyOptions so
+                INNER JOIN Strategies s ON s.Id = so.StrategyId");
 
             migrationBuilder.AlterColumn<Guid>(
                 name: "ProjectId",
                 table: "StrategyOptions",
-                type: "TEXT",
+                type: "uniqueidentifier",
                 nullable: false,
                 oldClrType: typeof(Guid),
-                oldType: "TEXT",
+                oldType: "uniqueidentifier",
                 oldNullable: true);
 
             migrationBuilder.CreateIndex(
