@@ -18,6 +18,7 @@ router = APIRouter(tags=["solvers"])
 
 @router.post("/solvers/project/{project_id}/margins")
 async def get_margins_for_project(
+    project_id: uuid.UUID,
     issues: list[IssueOutgoingDto],
     edges: list[EdgeOutgoingDto],
     discrete_probabilities: list[DiscreteProbabilityOutgoingDto] = [],
