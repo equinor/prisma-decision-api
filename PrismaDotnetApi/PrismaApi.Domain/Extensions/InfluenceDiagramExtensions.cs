@@ -127,18 +127,18 @@ public static class InfluenceDiagramDtoExtensions
 
         foreach (var table in tablesWithTotalRestrictions)
         {
-            // TODO: Dont requre edge to utilities
-            // TODO: the head of the total restriction cannot be the parent of an uncertainty
             var restrictedEdge = influenceDiagramDto.edges.FirstOrDefault(edge => edge.Id == table.EdgeId)
                 ?? throw new InvalidOperationException($"Restriction table '{table.Id}' references an edge that is not in the influence diagram.");
             
             var childIssueIds = influenceDiagramDto.edges
-                .Where(edge => edge.TailIssueId == restrictedEdge.HeadIssueId && !utilityIssueIds.Contains(edge.HeadIssueId)) // filter out utility issues as children we don't have to consider
+                .Where(
+                    edge => edge.TailIssueId == restrictedEdge.HeadIssueId 
+                    && !utilityIssueIds.Contains(edge.HeadIssueId) // filter out utility issues as children we don't have to consider
+                )
                 .Select(edge => edge.HeadIssueId)
                 .Distinct();
 
             // if any of the children are of type uncertainty => throw invalid exception with details of the issue:
-
             if (childIssueIds.Any(childIssueId => influenceDiagramDto.issues.FirstOrDefault(issue => issue.Id == childIssueId)?.Type == IssueType.Uncertainty.ToString()))
             {
                 throw new InvalidOperationException(
@@ -161,16 +161,12 @@ public static class InfluenceDiagramDtoExtensions
     public static void ApplyTotalRestrictions(this InfluenceDiagramDto influenceDiagramDto)
     {
         influenceDiagramDto.ValidateRestrictions();
-        // this is performed after partial restrictions
-        // get issue ids in topological order to apply the total restrictions in an orderly manner
         var orderedIssueIds = influenceDiagramDto.OrderIssueIdsByTopologicalSort();
-        foreach (var issueId in orderedIssueIds)
+        foreach (var issueId in orderedIssueIds) 
         {
             var issue = influenceDiagramDto.issues.FirstOrDefault(i => i.Id == issueId)
                 ?? throw new InvalidOperationException($"Issue with id '{issueId}' not found in the influence diagram.");
-            // apply total restrictions for the issue with id 'issueId'
-            // 1) check if total restriction applies to this issue
-            // meaning that for the first issue there is no restriction table
+                
             var incomingEdgeIds = influenceDiagramDto.edges
                 .Where(edge => edge.HeadIssueId == issueId)
                 .Select(edge => edge.Id)
@@ -209,7 +205,7 @@ public static class InfluenceDiagramDtoExtensions
                         continue; // skip if parent state id is not valid
                     }
                     var stateName = $"N/A {parentStateId}";
-                    // apply total restriction logic for this issue here
+                    // apply total restriction logic for this issue by adding an N/A option or outcome
                     if (issue.Type == IssueType.Decision.ToString() && issue.Decision is not null)
                     {
                         var notApplicableOption = new OptionOutgoingDto
@@ -239,8 +235,6 @@ public static class InfluenceDiagramDtoExtensions
                             Name = stateName 
                         };
                         issue.Uncertainty.Outcomes.Add(notApplicableOutcome);
-                        // all children that are utilities need new discreteutilities
-                        // need to add the new outcome as column in it's probability table
                         influenceDiagramDto.AddProbabilitiesFromAddedOutcome((Guid)parentStateId, notApplicableOutcome, issue.Uncertainty);
                         foreach (var childEdge in influenceDiagramDto.edges.Where(edge => edge.TailIssueId == issueId))
                         {
@@ -253,8 +247,6 @@ public static class InfluenceDiagramDtoExtensions
                     }
                 }
             }
-
-            
         }
     }
 
