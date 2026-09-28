@@ -179,7 +179,7 @@ public static class InfluenceDiagramDtoExtensions
                 .Where(table => incomingEdgeIds.Contains(table.EdgeId))
                 .ToList();
 
-            if (restrictionTablesForIssue is null || restrictionTablesForIssue.Any())
+            if (restrictionTablesForIssue is null || !restrictionTablesForIssue.Any())
             {
                 continue; // no restrictions for this issue
             }
@@ -214,7 +214,7 @@ public static class InfluenceDiagramDtoExtensions
                     {
                         var notApplicableOption = new OptionOutgoingDto
                         {
-                            Id = $"{issue.ProjectId}|Uncertainty:{issue.Decision.Id}|State:{stateName}".GenerateDeterministicGuid(),
+                            Id = $"{issue.ProjectId}|Decision:{issue.Decision.Id}|State:{stateName}".GenerateDeterministicGuid(),
                             ProjectId = issue.ProjectId, 
                             DecisionId = issue.Decision.Id, 
                             Name = stateName
