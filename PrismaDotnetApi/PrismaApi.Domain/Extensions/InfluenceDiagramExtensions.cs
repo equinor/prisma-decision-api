@@ -171,8 +171,12 @@ public static class InfluenceDiagramDtoExtensions
             // apply total restrictions for the issue with id 'issueId'
             // 1) check if total restriction applies to this issue
             // meaning that for the first issue there is no restriction table
+var incomingEdgeIds = influenceDiagramDto.edges
+                .Where(edge => edge.HeadIssueId == issueId)
+                .Select(edge => edge.Id)
+                .ToHashSet();
             var restrictionTablesForIssue = influenceDiagramDto.restrictionTables
-                .Where(table => table.EdgeId == influenceDiagramDto.edges.FirstOrDefault(edge => edge.HeadIssueId == issueId)?.Id)
+                .Where(table => incomingEdgeIds.Contains(table.EdgeId))
                 .ToList();
             if (!restrictionTablesForIssue.Any())
             {
