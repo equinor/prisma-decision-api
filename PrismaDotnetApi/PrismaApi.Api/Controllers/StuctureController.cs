@@ -32,9 +32,10 @@ public class StuctureController : PrismaBaseController
             return NotFound();
         }
 
-        influenceDiagram.ApplyTotalRestrictions();
+var restrictedInfluenceDiagram = influenceDiagram.DeepClone();
+        restrictedInfluenceDiagram.ApplyTotalRestrictions();
 
-        return Ok(influenceDiagram.discreteUtilities);
+        return Ok(restrictedInfluenceDiagram.discreteUtilities);
     }
 
     [HttpGet("structure/{projectId:guid}/decision_tree/v2")]
