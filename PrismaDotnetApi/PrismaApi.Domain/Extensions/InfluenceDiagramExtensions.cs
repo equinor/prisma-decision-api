@@ -179,7 +179,7 @@ public static class InfluenceDiagramDtoExtensions
                 .Where(table => incomingEdgeIds.Contains(table.EdgeId))
                 .ToList();
 
-            if (restrictionTablesForIssue is null || !restrictionTablesForIssue.Any())
+            if (restrictionTablesForIssue is null || restrictionTablesForIssue.Count == 0)
             {
                 continue; // no restrictions for this issue
             }
