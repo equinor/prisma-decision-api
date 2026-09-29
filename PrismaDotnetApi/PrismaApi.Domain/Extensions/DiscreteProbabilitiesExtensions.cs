@@ -13,19 +13,17 @@ public static class DiscreteProbabilitiesExtensions
         // each row needs a new entry for the added outcome, defaults to 0 probability
         foreach (var row in rows)
         {
-            foreach (var dp in row)
+            var template = row.First();
+            probabilities.Add(new DiscreteProbabilityDto
             {
-                probabilities.Add(new DiscreteProbabilityDto
-                {
-                    Id = Utilities.GetDeterministicId(dp.ProjectId, addedOutcome.Id, dp.ParentOutcomeIds, dp.ParentOptionIds),
-                    ProjectId = dp.ProjectId,
-                    UncertaintyId = dp.UncertaintyId,
-                    ParentOptionIds = new List<Guid>(dp.ParentOptionIds),
-                    ParentOutcomeIds = new List<Guid>(dp.ParentOutcomeIds),
-                    OutcomeId = addedOutcome.Id,
-                    Probability = 0
-                });
-            }
+                Id = Utilities.GetDeterministicId(template.UncertaintyId, addedOutcome.Id, template.ParentOutcomeIds, template.ParentOptionIds),
+                ProjectId = template.ProjectId,
+                UncertaintyId = template.UncertaintyId,
+                ParentOptionIds = new List<Guid>(template.ParentOptionIds),
+                ParentOutcomeIds = new List<Guid>(template.ParentOutcomeIds),
+                OutcomeId = addedOutcome.Id,
+                Probability = 0
+            });
         }
     }
 
