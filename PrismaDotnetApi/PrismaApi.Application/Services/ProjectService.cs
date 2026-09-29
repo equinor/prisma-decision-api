@@ -100,10 +100,22 @@ public class ProjectService : IProjectService
 
     public async Task<List<ProjectOutgoingDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
     {
-        var projects = await _projectRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-        var dtos = projects.ToOutgoingDtos(user.Id);
-        RegisterPublicProjectsInCache(dtos);
-        return dtos;
+        var projects = await _cache.GetProjectScopedAsync(
+            user,
+            loadMissingAsync: async (projectIds, ct) => (
+                await _projectRepository.GetAllAsync(
+                    withTracking: false,
+                    filterPredicate: project => projectIds.Contains(project.Id),
+                    ct: ct
+                )
+            ).ToOutgoingDtos(user.Id),
+            getProjectId: dto => dto.Id,
+            getCacheKey: CacheKeys.GetProjectKey,
+            cacheDuration: CacheConstants.DefaultLongQueryCacheInTimeSpan,
+            ct: ct);
+
+        RegisterPublicProjectsInCache(projects);
+        return projects;
     }
 
     public async Task<List<PopulatedProjectDto>> GetPopulatedAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
@@ -153,6 +165,8 @@ public class ProjectService : IProjectService
         existing.UnionWith(publicProjectIds);
 
         if (existing.Count > previousCount)
+        {
             _cache.AddCacheItem(new CacheItem { CacheKey = CacheKeys.PublicProjectIdsKey }, null, existing);
+        }
     }
 }

@@ -18,6 +18,8 @@ public static class ProjectMappingExtensions
             Public = entity.Public,
             Favorite = entity.ProjectRoles.FirstOrDefault(role => role.UserId == userId)?.Favorite ?? false,
             EndDate = entity.EndDate,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt,
             Users = entity.ProjectRoles.ToOutgoingDtos(),
             BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
         };
@@ -37,6 +39,8 @@ public static class ProjectMappingExtensions
             Public = entity.Public,
             Favorite = entity.ProjectRoles.FirstOrDefault(role => role.UserId == userId)?.Favorite ?? false,
             EndDate = entity.EndDate,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt,
             Users = entity.ProjectRoles.ToOutgoingDtos(),
             BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
 
@@ -53,7 +57,7 @@ public static class ProjectMappingExtensions
         return entities.Select(entity => entity.ToPopulatedDto(userId)).ToList();
     }
 
-    public static FullProjectForDuplicationDto ToFullProjectForDuplicationDto(this Project entity)
+    public static FullProjectForDuplicationDto ToFullProjectForDuplicationDto(this Project entity, IEnumerable<RestrictionTable>? restrictionTables = null)
     {
         return new FullProjectForDuplicationDto
         {
@@ -78,6 +82,7 @@ public static class ProjectMappingExtensions
             DiscreteUtilities = entity.Issues
                 .SelectMany(issue => issue.Utility?.DiscreteUtilities ?? [])
                 .ToOutgoingDtos(),
+            RestrictionTables = (restrictionTables ?? []).ToOutgoingDtos(),
         };
     }
 

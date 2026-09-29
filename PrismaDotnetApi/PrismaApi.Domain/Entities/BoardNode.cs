@@ -21,6 +21,7 @@ public class BoardNode : AuditableEntity, IBaseEntity<Guid>, IEntityHandlingPoli
     public string StrokeStyle { get; set; } = BoardNodeStrokeStyles.Solid.ToString();
     public int Opacity { get; set; } = DomainConstants.MaxOpacity;
     public int TextSize { get; set; } = DomainConstants.DefaultTextSize;
+    public int ZIndex { get; set; } = 0;
     public required Guid BoardSheetId { get; set; }
     public Project? Project { get; set; }
     public BoardSheet? BoardSheet { get; set; }
@@ -41,6 +42,8 @@ public class BoardNode : AuditableEntity, IBaseEntity<Guid>, IEntityHandlingPoli
                 .HasDefaultValue(DomainConstants.DefaultStrokeWidth);
             entity.Property(e => e.TextSize)
                 .HasDefaultValue(DomainConstants.DefaultTextSize);
+            entity.Property(e => e.ZIndex)
+                .HasDefaultValue(0);
             entity.Property(e => e.Type).HasMaxLength(DomainConstants.MaxShortStringLength);
 
             entity.HasOne(e => e.BoardSheet)

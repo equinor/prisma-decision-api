@@ -9,6 +9,8 @@ using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Infrastructure.Caching;
 using PrismaApi.Domain.Extensions;
+using Microsoft.Graph.Models;
+using System.Text.RegularExpressions;
 
 namespace PrismaApi.Application.Services;
 
@@ -62,15 +64,21 @@ public class InternalUserService : IUserProvider
             .GetAsync(config =>
             {
                 config.QueryParameters.Search = $"\"displayName:{sanitizedQuery}\" OR \"mail:{sanitizedQuery}\"";
+                config.QueryParameters.Count = true;
                 config.QueryParameters.Select = GraphApiConstants.UserSearchSelectFields;
                 config.QueryParameters.Top = GraphApiConstants.DefaultSearchTop;
                 config.Headers.Add(GraphApiConstants.ConsistencyLevelHeader, GraphApiConstants.ConsistencyLevelEventual);
             });
 
-        return users?.Value?.Select(u => new UserOutgoingDto
-        {
-            Id = u.Id ?? "",
-            Name = u.DisplayName ?? u.UserPrincipalName ?? "",
-        }).ToList() ?? new List<UserOutgoingDto>();
+        var filteredUsers = users?.Value?
+            .Where(u => !(u.UserPrincipalName ?? "").StartsWith("az_", StringComparison.OrdinalIgnoreCase))
+            .Select(u => new UserOutgoingDto
+            {
+                Id = u.Id ?? "",
+                Name = u.DisplayName ?? u.UserPrincipalName ?? "",
+            })
+            .ToList() ?? new List<UserOutgoingDto>();
+
+        return filteredUsers;
     }
 }

@@ -21,6 +21,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
     private readonly IDecisionQualityAssessmentService _decisionQualityAssessmentService;
     private readonly IBoardNodeService _boardNodeService;
     private readonly IBoardSheetService _boardSheetService;
+    private readonly IRestrictionTableService _restrictionTableService;
     private readonly IMemoryCache _cache;
 
     public ProjectDuplicationService(
@@ -36,6 +37,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         IDecisionQualityAssessmentService decisionQualityAssessmentService,
         IBoardNodeService boardNodeService,
         IBoardSheetService boardSheetService,
+        IRestrictionTableService restrictionTableService,
         IObjectiveService objectiveService)
     {
         _duplicationRepo = duplicationRepo;
@@ -49,6 +51,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         _decisionQualityAssessmentService = decisionQualityAssessmentService;
         _boardNodeService = boardNodeService;
         _boardSheetService = boardSheetService;
+        _restrictionTableService = restrictionTableService;
         _objectiveService = objectiveService;
         _cache = cache;
     }
@@ -141,6 +144,10 @@ public class ProjectDuplicationService : IProjectDuplicationService
         var edgeDtos = CreateEdges(fullProject.Edges, newProjectId, mappings);
         if (edgeDtos.Count > 0)
             await _edgeService.CreateAsync(edgeDtos);
+
+        var restrictionTableDtos = CreateRestrictionTables(fullProject.RestrictionTables, rt => rt.RestrictionEntries, newProjectId, mappings);
+        if (restrictionTableDtos.Count > 0)
+            await _restrictionTableService.CreateAsync(restrictionTableDtos, user, ct);
 
         _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetUserKey(user.Id) }); // if internal
         _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetUserKey(user.Name) }); // if public
@@ -255,6 +262,11 @@ public class ProjectDuplicationService : IProjectDuplicationService
         var edgeDtos = CreateEdges(dto.Edges, newProjectId, mappings);
         if (edgeDtos.Count > 0)
             await _edgeService.CreateAsync(edgeDtos);
+
+        var restrictionTableDtos = CreateRestrictionTables(dto.RestrictionTables, rt => rt.RestrictionEntries, newProjectId, mappings);
+        if (restrictionTableDtos.Count > 0)
+            await _restrictionTableService.CreateAsync(restrictionTableDtos, user, ct);
+
         var (assessmentDtos, assessmentIdMap) = CreateAssessments(dto.Assessments, newProjectId);
         if (assessmentDtos.Count > 0)
             await _assessmentService.CreateAsync(assessmentDtos, user);
@@ -376,13 +388,14 @@ public class ProjectDuplicationService : IProjectDuplicationService
             ProjectId = newProjectId,
             Type = decisionType ?? "Focus",
             Options = (options ?? [])
-                .Select(option => new OptionIncomingDto
+                .Select((option, index) => new OptionIncomingDto
                 {
                     Id = GetMappedOrThrow(mappings.Option, option.Id, "option"),
                     DecisionId = mappedDecisionId,
                     ProjectId = newProjectId,
                     Name = option.Name,
-                    Utility = option.Utility
+                    Utility = option.Utility,
+                    CreatedAt = GetCreatedAtOrOrderFallback(option.CreatedAt, index)
                 })
                 .ToList()
         };
@@ -432,13 +445,14 @@ public class ProjectDuplicationService : IProjectDuplicationService
 
         var mappedUncertaintyId = GetMappedOrThrow(mappings.Uncertainty, uncertaintyId.Value, "uncertainty");
         var mappedOutcomes = (outcomes ?? [])
-            .Select(outcome => new OutcomeIncomingDto
+            .Select((outcome, index) => new OutcomeIncomingDto
             {
                 Id = GetMappedOrThrow(mappings.Outcome, outcome.Id, "outcome"),
                 Name = outcome.Name,
                 UncertaintyId = mappedUncertaintyId,
                 ProjectId = newProjectId,
-                Utility = outcome.Utility
+                Utility = outcome.Utility,
+                CreatedAt = GetCreatedAtOrOrderFallback(outcome.CreatedAt, index)
             })
             .ToList();
 
@@ -549,16 +563,22 @@ public class ProjectDuplicationService : IProjectDuplicationService
             Rationale = strategy.Rationale,
             Icon = strategy.Icon,
             IconColor = strategy.IconColor,
-            Options = getOptions(strategy).Select(option => new OptionIncomingDto
+            Options = getOptions(strategy).Select((option, index) => new OptionIncomingDto
             {
                 Id = GetMappedOrThrow(mappings.Option, option.Id, "option"),
                 DecisionId = GetMappedOrThrow(mappings.Decision, option.DecisionId, "decision"),
                 ProjectId = newProjectId,
                 Name = option.Name,
-                Utility = option.Utility
+                Utility = option.Utility,
+                CreatedAt = GetCreatedAtOrOrderFallback(option.CreatedAt, index)
             }).ToList()
         }).ToList();
     }
+
+    // this is used to ensure that if the CreatedAt is not set, we provide a fallback value based on the index to maintain order
+    private static DateTimeOffset GetCreatedAtOrOrderFallback(DateTimeOffset createdAt, int index)
+        => createdAt == default ? DateTimeOffset.UnixEpoch.AddSeconds(index + 1) : createdAt;
+
     private static (List<AssessmentIncomingDto> Dtos, Dictionary<Guid, Guid> IdMap) CreateAssessments<TAssessment>(
         IEnumerable<TAssessment> assessments,
         Guid newProjectId) where TAssessment : AssessmentDto
@@ -645,13 +665,58 @@ public class ProjectDuplicationService : IProjectDuplicationService
 
     private static List<EdgeIncomingDto> CreateEdges(IEnumerable<EdgeDto> edges, Guid newProjectId, IdMappings mappings)
     {
-        return edges.Select(edge => new EdgeIncomingDto
+        return edges.Select(edge =>
         {
-            Id = Guid.NewGuid(),
-            TailId = GetMappedOrThrow(mappings.Node, edge.TailId, "node"),
-            HeadId = GetMappedOrThrow(mappings.Node, edge.HeadId, "node"),
-            ProjectId = newProjectId
+            var newEdgeId = Guid.NewGuid();
+            mappings.Edge[edge.Id] = newEdgeId;
+            return new EdgeIncomingDto
+            {
+                Id = newEdgeId,
+                TailId = GetMappedOrThrow(mappings.Node, edge.TailId, "node"),
+                HeadId = GetMappedOrThrow(mappings.Node, edge.HeadId, "node"),
+                ProjectId = newProjectId
+            };
         }).ToList();
+    }
+
+    private static List<RestrictionTableIncomingDto> CreateRestrictionTables<TRestrictionTable>(
+        IEnumerable<TRestrictionTable> restrictionTables,
+        Func<TRestrictionTable, IEnumerable<RestrictionEntryDto>> getEntries,
+        Guid newProjectId,
+        IdMappings mappings) where TRestrictionTable : RestrictionTableDto
+    {
+        return restrictionTables.Select(restrictionTable =>
+        {
+            var newRestrictionTableId = Guid.NewGuid();
+            mappings.RestrictionTable[restrictionTable.Id] = newRestrictionTableId;
+            return new RestrictionTableIncomingDto
+            {
+                Id = newRestrictionTableId,
+                ProjectId = newProjectId,
+                EdgeId = GetMappedOrThrow(mappings.Edge, restrictionTable.EdgeId, "edge"),
+                Name = restrictionTable.Name,
+                RestrictionEntries = getEntries(restrictionTable).Select(entry => new RestrictionEntryIncomingDto
+                {
+                    Id = Guid.NewGuid(),
+                    ProjectId = newProjectId,
+                    RestrictionTableId = newRestrictionTableId,
+                    RestrictionValue = entry.RestrictionValue,
+                    IsParentUncertainty = entry.IsParentUncertainty,
+                    IsChildUncertainty = entry.IsChildUncertainty,
+                    ParentStateId = MapRestrictionStateId(entry.ParentStateId, entry.IsParentUncertainty, mappings),
+                    ChildStateId = MapRestrictionStateId(entry.ChildStateId, entry.IsChildUncertainty, mappings)
+                }).ToList()
+            };
+        }).ToList();
+    }
+
+    private static Guid? MapRestrictionStateId(Guid? stateId, bool isUncertainty, IdMappings mappings)
+    {
+        if (stateId is null)
+            return null;
+
+        var map = isUncertainty ? mappings.Outcome : mappings.Option;
+        return map.GetValueOrDefault(stateId.Value, stateId.Value);
     }
 
     private static void GenerateIdMappings<TIssue>(
@@ -729,5 +794,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         public Dictionary<Guid, Guid> Outcome { get; } = new();
         public Dictionary<Guid, Guid> Option { get; } = new();
         public Dictionary<Guid, Guid> BoardSheet { get; } = new();
+        public Dictionary<Guid, Guid> Edge { get; } = new();
+        public Dictionary<Guid, Guid> RestrictionTable { get; } = new();
     }
 }

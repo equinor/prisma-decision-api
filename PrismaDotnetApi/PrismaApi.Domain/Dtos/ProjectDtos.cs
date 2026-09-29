@@ -50,6 +50,12 @@ public class ProjectOutgoingDto : ProjectDto
     [JsonPropertyName("favorite")]
     public bool Favorite { get; set; }
 
+    [JsonPropertyName("created_at")]
+    public DateTimeOffset CreatedAt { get; set; }
+
+    [JsonPropertyName("updated_at")]
+    public DateTimeOffset UpdatedAt { get; set; }
+
     [JsonPropertyName("board_nodes")]
     public List<BoardNodeOutgoingDto> BoardNodes { get; set; } = new();
 
@@ -61,6 +67,12 @@ public class PopulatedProjectDto : ProjectDto
 {
     [JsonPropertyName("favorite")]
     public bool Favorite { get; set; }
+
+    [JsonPropertyName("created_at")]
+    public DateTimeOffset CreatedAt { get; set; }
+
+    [JsonPropertyName("updated_at")]
+    public DateTimeOffset UpdatedAt { get; set; }
 
     [JsonPropertyName("strategies")]
     public List<StrategyOutgoingDto> Strategies { get; set; } = new();

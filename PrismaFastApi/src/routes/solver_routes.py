@@ -16,6 +16,23 @@ from src.dtos.policy_table_dtos import PolicyTableRowDto
 router = APIRouter(tags=["solvers"])
 
 
+@router.post("/solvers/project/{project_id}/export")
+async def export_pyagrum_model_for_project(
+    project_id: uuid.UUID,
+    issues: list[IssueOutgoingDto],
+    edges: list[EdgeOutgoingDto],
+    discrete_probabilities: Optional[list[DiscreteProbabilityOutgoingDto]] = None,
+    discrete_utilities: Optional[list[DiscreteUtilityOutgoingDto]] = None,
+    solver_service: SolverService = Depends(get_solver_service),
+) -> dict[str, object]:
+    return await solver_service.export_pyagrum_model(
+        issues=issues,
+        edges=edges,
+        discrete_probabilities=discrete_probabilities or [],
+        discrete_utilities=discrete_utilities or [],
+    )
+
+
 @router.post("/solvers/project/{project_id}")
 async def get_optimal_decisions_for_project_from_dtos(
     issues: list[IssueOutgoingDto],

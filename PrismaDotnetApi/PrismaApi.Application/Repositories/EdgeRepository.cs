@@ -53,7 +53,7 @@ public class EdgeRepository : BaseRepository<Edge, Guid>, IEdgeRepository
 
     public async Task<ICollection<Edge>> GetEdgesInInfluenceDiagram(Guid projectId, Expression<Func<Edge, bool>>? filterPredicate, CancellationToken ct = default)
     {
-        return await base.GetAllAsync(false, Query().IndluenceDiagramFilter(projectId), filterPredicate, ct);
+        return await base.GetAllAsync(false, Query().InfluenceDiagramFilter(projectId), filterPredicate, ct);
     }
 
     public override async Task<Edge> AddAsync(Edge entity, CancellationToken ct = default)
@@ -86,7 +86,7 @@ public class EdgeRepository : BaseRepository<Edge, Guid>, IEdgeRepository
 
 public static class EdgeQueryableExtensions
 {
-    public static IQueryable<Edge> IndluenceDiagramFilter(this IQueryable<Edge> query, Guid projectId)
+    public static IQueryable<Edge> InfluenceDiagramFilter(this IQueryable<Edge> query, Guid projectId)
     {
         return query
             .Where(e =>

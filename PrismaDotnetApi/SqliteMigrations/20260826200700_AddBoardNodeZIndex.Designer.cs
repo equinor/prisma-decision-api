@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PrismaApi.Infrastructure.Context;
 
@@ -10,9 +11,11 @@ using PrismaApi.Infrastructure.Context;
 namespace PrismaApi.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826200700_AddBoardNodeZIndex")]
+    partial class AddBoardNodeZIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -830,6 +833,7 @@ namespace PrismaApi.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<double>("RestrictionValue")
+                        .ValueGeneratedOnAdd()
                         .HasPrecision(53)
                         .HasColumnType("REAL")
                         .HasDefaultValue(1.0);
@@ -971,14 +975,9 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Property<Guid>("OptionId")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("ProjectId")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("StrategyId", "OptionId");
 
                     b.HasIndex("OptionId");
-
-                    b.HasIndex("ProjectId");
 
                     b.ToTable("StrategyOptions");
                 });
@@ -1031,8 +1030,6 @@ namespace PrismaApi.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasAlternateKey("Name");
 
                     b.ToTable("Users");
 
@@ -1698,12 +1695,6 @@ namespace PrismaApi.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.HasOne("PrismaApi.Domain.Entities.Strategy", "Strategy")
                         .WithMany("StrategyOptions")
                         .HasForeignKey("StrategyId")
@@ -1711,8 +1702,6 @@ namespace PrismaApi.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Option");
-
-                    b.Navigation("Project");
 
                     b.Navigation("Strategy");
                 });
