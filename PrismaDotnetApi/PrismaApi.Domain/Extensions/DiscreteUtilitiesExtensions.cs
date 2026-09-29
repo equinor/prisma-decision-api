@@ -42,7 +42,6 @@ public static class DiscreteUtilitiesExtensions
 			{
 				var newUtility = new DiscreteUtilityDto
 				{
-					Id = Utilities.GetDeterministicId(utility.ProjectId, addedStateId, utility.ParentOutcomeIds, utility.ParentOptionIds),
 					ProjectId = utility.ProjectId,
 					UtilityId = utility.UtilityId,
 					ParentOptionIds = new List<Guid>(utility.ParentOptionIds),
@@ -61,6 +60,7 @@ public static class DiscreteUtilitiesExtensions
 				}
 
 				utilities.Add(newUtility);
+				newUtility.Id = Utilities.GetDeterministicId(newUtility.UtilityId, newUtility.ParentOutcomeIds, newUtility.ParentOptionIds);
 			}
 		}
 	}

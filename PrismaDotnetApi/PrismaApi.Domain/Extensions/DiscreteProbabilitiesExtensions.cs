@@ -66,7 +66,6 @@ public static class DiscreteProbabilitiesExtensions
             {
                 var newDp = new DiscreteProbabilityDto
                 {
-                    Id = Utilities.GetDeterministicId(dp.ProjectId, addedStateId, dp.ParentOutcomeIds, dp.ParentOptionIds),
                     ProjectId = dp.ProjectId,
                     UncertaintyId = dp.UncertaintyId,
                     ParentOptionIds = new List<Guid>(dp.ParentOptionIds),
@@ -83,6 +82,7 @@ public static class DiscreteProbabilitiesExtensions
                     newDp.ParentOutcomeIds.Add(addedStateId);
                 }
                 probabilities.Add(newDp);
+                newDp.Id = Utilities.GetDeterministicId(newDp.UncertaintyId, newDp.OutcomeId, newDp.ParentOutcomeIds, newDp.ParentOptionIds);
             }
         }
 
