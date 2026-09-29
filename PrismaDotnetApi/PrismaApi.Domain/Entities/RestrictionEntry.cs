@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Interfaces;
 
 namespace PrismaApi.Domain.Entities;
 
-public class RestrictionEntry : BaseEntity, IBaseEntity<Guid>
+public class RestrictionEntry : BaseEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
 {
     public required Guid Id { get; set; }
     public required Guid ProjectId { get; set; }
@@ -27,6 +28,8 @@ public class RestrictionEntry : BaseEntity, IBaseEntity<Guid>
     public RestrictionTable? RestrictionTable { get; set; } = default;
     public Guid ParentStateId { get; private set; }
     public Guid ChildStateId { get; private set; }
+    [NotMapped]
+    public TransferBehavior IsTransferable => TransferBehavior.Transferable;
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<RestrictionEntry>(entity =>
