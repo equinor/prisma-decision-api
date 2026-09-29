@@ -906,6 +906,61 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.ToTable("RestrictionTables");
                 });
 
+            modelBuilder.Entity("PrismaApi.Domain.Entities.StakeholderMatrix", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AffectedByTheDecision")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("AffectingTheDecision")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ProjectId1")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StakeholderName")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StakeholderRole")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UpdatedById")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("ProjectId1");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("StakeholderMatrixes");
+                });
+
             modelBuilder.Entity("PrismaApi.Domain.Entities.Strategy", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1663,6 +1718,37 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("PrismaApi.Domain.Entities.StakeholderMatrix", b =>
+                {
+                    b.HasOne("PrismaApi.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PrismaApi.Domain.Entities.Project", null)
+                        .WithMany("StakeholderMatrices")
+                        .HasForeignKey("ProjectId1");
+
+                    b.HasOne("PrismaApi.Domain.Entities.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("UpdatedBy");
+                });
+
             modelBuilder.Entity("PrismaApi.Domain.Entities.Strategy", b =>
                 {
                     b.HasOne("PrismaApi.Domain.Entities.User", "CreatedBy")
@@ -1821,6 +1907,8 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Navigation("Objectives");
 
                     b.Navigation("ProjectRoles");
+
+                    b.Navigation("StakeholderMatrices");
 
                     b.Navigation("Strategies");
                 });
