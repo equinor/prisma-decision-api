@@ -15,7 +15,7 @@ public static class DiscreteUtilitiesExtensions
 			var template = row.First();
 			utilities.Add(new DiscreteUtilityDto
 			{
-                Id = Utilities.GetDeterministicId(template.UtilityId, addedValueMetric.Id, template.ParentOutcomeIds, template.ParentOptionIds),
+                Id = IdGenerationUtils.GetDeterministicId(template.UtilityId, addedValueMetric.Id, template.ParentOutcomeIds, template.ParentOptionIds),
 				ProjectId = template.ProjectId,
 				UtilityId = template.UtilityId,
 				ParentOptionIds = new List<Guid>(template.ParentOptionIds),
@@ -60,7 +60,7 @@ public static class DiscreteUtilitiesExtensions
 				}
 
 				utilities.Add(newUtility);
-				newUtility.Id = Utilities.GetDeterministicId(newUtility.UtilityId, newUtility.ParentOutcomeIds, newUtility.ParentOptionIds);
+				newUtility.Id = IdGenerationUtils.GetDeterministicId(newUtility.UtilityId, newUtility.ParentOutcomeIds, newUtility.ParentOptionIds);
 			}
 		}
 	}

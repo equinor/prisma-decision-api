@@ -245,7 +245,7 @@ public class TableRebuildingService : ITableRebuildingService
             {
                 var newEntry = new DiscreteProbability
                 {
-                    Id = Utilities.GetDeterministicId(
+                    Id = IdGenerationUtils.GetDeterministicId(
                         issue.Id, 
                         outcome.Id,
                         [.. parentOutcomesList.SelectMany(x => x)],
@@ -274,7 +274,7 @@ public class TableRebuildingService : ITableRebuildingService
                 var parentOutcomeIds = combination.Where(allOutcomes.Contains).OrderBy(id => id).ToList();
                 var parentOptionIds = combination.Where(allOptions.Contains).OrderBy(id => id).ToList();
 
-                var probabilityId = Utilities.GetDeterministicId(issue.Id, outcome.Id, parentOutcomeIds, parentOptionIds);
+                var probabilityId = IdGenerationUtils.GetDeterministicId(issue.Id, outcome.Id, parentOutcomeIds, parentOptionIds);
 
                 var newEntity = new DiscreteProbability
                 {
@@ -338,7 +338,7 @@ public class TableRebuildingService : ITableRebuildingService
         {
             var parentOutcomeIds = combination.Where(allOutcomes.Contains).OrderBy(id => id).ToList();
             var parentOptionIds = combination.Where(allOptions.Contains).OrderBy(id => id).ToList();
-            var utilityId = Utilities.GetDeterministicId(issue.Id, DomainConstants.DefaultValueMetricId, parentOutcomeIds, parentOptionIds);
+            var utilityId = IdGenerationUtils.GetDeterministicId(issue.Id, DomainConstants.DefaultValueMetricId, parentOutcomeIds, parentOptionIds);
 
             await DbContext.DiscreteUtilities
                 .AddAsync(new DiscreteUtility

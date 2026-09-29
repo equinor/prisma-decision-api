@@ -1,7 +1,7 @@
 using PrismaApi.Domain.Extensions;
 
 namespace PrismaApi.Domain.Utilities;
-public static class Utilities
+public static class IdGenerationUtils
 {
     public static Guid GetDeterministicId(Guid issueId, Guid stateId, List<Guid> parentOutcomeIds, List<Guid> parentOptionIds)
     {

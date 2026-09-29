@@ -16,7 +16,7 @@ public static class DiscreteProbabilitiesExtensions
             var template = row.First();
             probabilities.Add(new DiscreteProbabilityDto
             {
-                Id = Utilities.GetDeterministicId(template.UncertaintyId, addedOutcome.Id, template.ParentOutcomeIds, template.ParentOptionIds),
+                Id = IdGenerationUtils.GetDeterministicId(template.UncertaintyId, addedOutcome.Id, template.ParentOutcomeIds, template.ParentOptionIds),
                 ProjectId = template.ProjectId,
                 UncertaintyId = template.UncertaintyId,
                 ParentOptionIds = new List<Guid>(template.ParentOptionIds),
@@ -82,7 +82,7 @@ public static class DiscreteProbabilitiesExtensions
                     newDp.ParentOutcomeIds.Add(addedStateId);
                 }
                 probabilities.Add(newDp);
-                newDp.Id = Utilities.GetDeterministicId(newDp.UncertaintyId, newDp.OutcomeId, newDp.ParentOutcomeIds, newDp.ParentOptionIds);
+                newDp.Id = IdGenerationUtils.GetDeterministicId(newDp.UncertaintyId, newDp.OutcomeId, newDp.ParentOutcomeIds, newDp.ParentOptionIds);
             }
         }
 
