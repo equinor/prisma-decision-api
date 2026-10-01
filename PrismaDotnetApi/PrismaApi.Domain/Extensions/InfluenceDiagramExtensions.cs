@@ -339,7 +339,7 @@ public static class InfluenceDiagramDtoExtensions
         }
 
         var existingEntryCount = utilityEntries.Count;
-        utilityEntries.AddUtilitiesRow(notApplicableStateId, siblingStateIds);
+        utilityEntries.AddUtilitiesRow(utilityIssue.Id, notApplicableStateId, siblingStateIds);
         foreach (var newUtility in utilityEntries.Skip(existingEntryCount))
         {
             influenceDiagramDto.discreteUtilities.Add(newUtility);
@@ -355,7 +355,7 @@ public static class InfluenceDiagramDtoExtensions
         var relevantDiscreteProbabilities = influenceDiagramDto.discreteProbabilities
             .Where(probability => probability.UncertaintyId == parent.Id)
             .ToList();
-        relevantDiscreteProbabilities.AddProbabilitiesColumn(addedOutcome);
+        relevantDiscreteProbabilities.AddProbabilitiesColumn(parent.IssueId, addedOutcome);
         relevantDiscreteProbabilities.SetProbabilitiesToOne(restrictionParentStateId, addedOutcome.Id);
 
         // from influence diagram replace all probabilities with the uncertainty id with the updated relevantDiscreteProbabilities

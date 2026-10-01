@@ -5,7 +5,10 @@ namespace PrismaDotnetApi.PrismaApi.Domain.Extensions;
 
 public static class DiscreteProbabilitiesExtensions
 {
-    public static void AddProbabilitiesColumn(this ICollection<DiscreteProbabilityDto> probabilities, OutcomeOutgoingDto addedOutcome)
+    public static void AddProbabilitiesColumn(
+        this ICollection<DiscreteProbabilityDto> probabilities, 
+        Guid issueId,
+        OutcomeOutgoingDto addedOutcome)
     {
         probabilities.ValidateProbabilities();
         // Implementation for adding a probabilities column goes here
@@ -16,7 +19,7 @@ public static class DiscreteProbabilitiesExtensions
             var template = row.First();
             probabilities.Add(new DiscreteProbabilityDto
             {
-                Id = IdGenerationUtils.GetDeterministicId(template.UncertaintyId, addedOutcome.Id, template.ParentOutcomeIds, template.ParentOptionIds),
+                Id = IdGenerationUtils.GetDeterministicIdProbability(issueId, addedOutcome.Id, template.ParentOutcomeIds, template.ParentOptionIds),
                 ProjectId = template.ProjectId,
                 UncertaintyId = template.UncertaintyId,
                 ParentOptionIds = new List<Guid>(template.ParentOptionIds),
@@ -51,7 +54,11 @@ public static class DiscreteProbabilitiesExtensions
         }   
     }
 
-    public static void AddProbabilitiesRow(this ICollection<DiscreteProbabilityDto> probabilities, Guid addedStateId, List<Guid> siblingsOfAddedState)
+    public static void AddProbabilitiesRow(
+        this ICollection<DiscreteProbabilityDto> probabilities, 
+        Guid issueId,
+        Guid addedStateId, 
+        List<Guid> siblingsOfAddedState)
     {
         probabilities.ValidateProbabilities();
         // Implementation for adding a probabilities row goes here
@@ -82,7 +89,7 @@ public static class DiscreteProbabilitiesExtensions
                     newDp.ParentOutcomeIds.Add(addedStateId);
                 }
                 probabilities.Add(newDp);
-                newDp.Id = IdGenerationUtils.GetDeterministicId(newDp.UncertaintyId, newDp.OutcomeId, newDp.ParentOutcomeIds, newDp.ParentOptionIds);
+                newDp.Id = IdGenerationUtils.GetDeterministicIdProbability(issueId, newDp.OutcomeId, newDp.ParentOutcomeIds, newDp.ParentOptionIds);
             }
         }
 

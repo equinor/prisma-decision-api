@@ -1,3 +1,4 @@
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Utilities;
 
@@ -5,7 +6,7 @@ namespace PrismaDotnetApi.PrismaApi.Domain.Extensions;
 
 public static class DiscreteUtilitiesExtensions
 {
-	public static void AddUtilitiesColumn(this ICollection<DiscreteUtilityDto> utilities, ValueMetricOutgoingDto addedValueMetric)
+	public static void AddUtilitiesColumn(this ICollection<DiscreteUtilityDto> utilities, Guid issueId)
 	{
 		utilities.ValidateUtilities();
 		var rows = utilities.SeparateByRow();
@@ -15,18 +16,18 @@ public static class DiscreteUtilitiesExtensions
 			var template = row.First();
 			utilities.Add(new DiscreteUtilityDto
 			{
-                Id = IdGenerationUtils.GetDeterministicId(template.UtilityId, addedValueMetric.Id, template.ParentOutcomeIds, template.ParentOptionIds),
+                Id = IdGenerationUtils.GetDeterministicIdUtility(issueId, DomainConstants.DefaultValueMetricId, template.ParentOutcomeIds, template.ParentOptionIds),
 				ProjectId = template.ProjectId,
 				UtilityId = template.UtilityId,
 				ParentOptionIds = new List<Guid>(template.ParentOptionIds),
 				ParentOutcomeIds = new List<Guid>(template.ParentOutcomeIds),
-				ValueMetricId = addedValueMetric.Id,
+				ValueMetricId = DomainConstants.DefaultValueMetricId,
 				UtilityValue = 0
 			});
 		}
 	}
 
-	public static void AddUtilitiesRow(this ICollection<DiscreteUtilityDto> utilities, Guid addedStateId, List<Guid> siblingsOfAddedState)
+	public static void AddUtilitiesRow(this ICollection<DiscreteUtilityDto> utilities, Guid issueId, Guid addedStateId, List<Guid> siblingsOfAddedState)
 	{
 		utilities.ValidateUtilities();
 		var rows = utilities.SeparateByRow();
@@ -47,7 +48,7 @@ public static class DiscreteUtilitiesExtensions
 					ParentOptionIds = new List<Guid>(utility.ParentOptionIds),
 					ParentOutcomeIds = new List<Guid>(utility.ParentOutcomeIds),
 					ValueMetricId = utility.ValueMetricId,
-					UtilityValue = 0
+					UtilityValue = 0,
 				};
 
 				if (newUtility.ParentOptionIds.Remove(exampleSiblingId))
@@ -60,7 +61,7 @@ public static class DiscreteUtilitiesExtensions
 				}
 
 				utilities.Add(newUtility);
-				newUtility.Id = IdGenerationUtils.GetDeterministicId(newUtility.UtilityId, newUtility.ParentOutcomeIds, newUtility.ParentOptionIds);
+				newUtility.Id = IdGenerationUtils.GetDeterministicIdUtility(issueId, DomainConstants.DefaultValueMetricId, newUtility.ParentOutcomeIds, newUtility.ParentOptionIds);
 			}
 		}
 	}

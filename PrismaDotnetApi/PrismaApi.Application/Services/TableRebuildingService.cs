@@ -245,7 +245,7 @@ public class TableRebuildingService : ITableRebuildingService
             {
                 var newEntry = new DiscreteProbability
                 {
-                    Id = IdGenerationUtils.GetDeterministicId(
+                    Id = IdGenerationUtils.GetDeterministicIdProbability(
                         issue.Id, 
                         outcome.Id,
                         [.. parentOutcomesList.SelectMany(x => x)],
@@ -274,7 +274,7 @@ public class TableRebuildingService : ITableRebuildingService
                 var parentOutcomeIds = combination.Where(allOutcomes.Contains).OrderBy(id => id).ToList();
                 var parentOptionIds = combination.Where(allOptions.Contains).OrderBy(id => id).ToList();
 
-                var probabilityId = IdGenerationUtils.GetDeterministicId(issue.Id, outcome.Id, parentOutcomeIds, parentOptionIds);
+                var probabilityId = IdGenerationUtils.GetDeterministicIdProbability(issue.Id, outcome.Id, parentOutcomeIds, parentOptionIds);
 
                 var newEntity = new DiscreteProbability
                 {
@@ -338,7 +338,7 @@ public class TableRebuildingService : ITableRebuildingService
         {
             var parentOutcomeIds = combination.Where(allOutcomes.Contains).OrderBy(id => id).ToList();
             var parentOptionIds = combination.Where(allOptions.Contains).OrderBy(id => id).ToList();
-            var utilityId = IdGenerationUtils.GetDeterministicId(issue.Id, DomainConstants.DefaultValueMetricId, parentOutcomeIds, parentOptionIds);
+            var utilityId = IdGenerationUtils.GetDeterministicIdUtility(issue.Id, DomainConstants.DefaultValueMetricId, parentOutcomeIds, parentOptionIds);
 
             await DbContext.DiscreteUtilities
                 .AddAsync(new DiscreteUtility
@@ -374,7 +374,7 @@ public class TableRebuildingService : ITableRebuildingService
 
     }
 
-    private (List<List<Guid>> ParentOutcomes, List<List<Guid>> ParentOptions) CollectParents(Issue issue)
+    private static (List<List<Guid>> ParentOutcomes, List<List<Guid>> ParentOptions) CollectParents(Issue issue)
     {
         var parentOutcomesList = new List<List<Guid>>();
         var parentOptionsList = new List<List<Guid>>();
