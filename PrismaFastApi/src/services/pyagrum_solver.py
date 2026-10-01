@@ -1,11 +1,13 @@
 import json
 import uuid
 import pyagrum as gum  # type: ignore
+from pydantic import BaseModel
 from pathlib import Path
 from itertools import product
 from threading import Lock
 from src.config import config
 from src.constants import Type
+from src.dtos.margin_table_dtos import MarginTableRowDto
 from src.utils.discrete_probability_array_manager import DiscreteProbabilityArrayManager
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
@@ -29,6 +31,9 @@ _EXPORT_MODEL_LOCK = Lock()
 
 # run for each optimal solution
 
+class ParsedTensor(BaseModel):
+    states: list[str]
+    value: float
 
 class PyagrumSolver:
     def __init__(self):
@@ -70,6 +75,14 @@ class PyagrumSolver:
 
     def _sort_state_dtos(self, dtos: list[T]) -> list[T]:
         return sorted(dtos, key=lambda x: x.id.__str__())
+
+    def _get_all_options_combinations(self) -> list[list[str]]:
+        from itertools import product
+        all_options: list[list[str]] = []
+        for issue in self.issues:
+            if issue.type == Type.DECISION.value and issue.decision is not None:
+                all_options.append([str(option.id) for option in issue.decision.options])
+        return list(product(*all_options))
 
     def _find_state(
         self, state_id: str, issues: Optional[list[IssueOutgoingDto]] = None
@@ -197,7 +210,23 @@ class PyagrumSolver:
         return SolutionDto(
             decision_solutions=[self.get_optimal_decisions(ie, x) for x in decisions]
         )
-
+    def get_margins(self) -> dict[str, list[MarginTableRowDto]]:
+        margins: dict[str, list[MarginTableRowDto]] = {}
+        if self.ie is None:
+            raise RuntimeError(
+                "Inference engine has not been initialized. Call build_inference_engine or find_optimal_decisions first."
+            )
+        for issue in self.issues:
+            if issue.type != Type.UNCERTAINTY.value:
+                continue
+            # need to set the evidence for all possible decision paths
+            parent_combinations = self._get_all_options_combinations()
+            for combination in parent_combinations:
+                self.set_evidence(self.ie, list(combination))
+                margin = self.ie.posterior(issue.id.__str__())
+                margins[f"{issue.id.__str__()} | {'_'.join(list(combination))}"] = self._parse_margin_tensor(issue.id.__str__(), margin, list(combination))
+        return margins  # type: ignore
+    
     def get_inference(self) -> gum.ShaferShenoyLIMIDInference:
         if self.ie is None:
             raise RuntimeError(
@@ -512,7 +541,7 @@ class PyagrumSolver:
         optimal_decision_tensor = ie.optimalDecision(decision_issue_id)  # type: ignore
         return self._parse_policy_tensor(decision_issue_id, optimal_decision_tensor)
 
-    def _get_option_id_from_policy_table_states(self, states: list[str]) -> str:
+    def _get_option_id_from_table_states(self, states: list[str]) -> str:
         option_ids = [
             str(option.id)
             for issue in self.issues
@@ -525,6 +554,37 @@ class PyagrumSolver:
 
         raise ValueError("No option ID found in policy states")
 
+    def _get_outcome_id_from_table_states(self, states: list[str]) -> str:
+        outcome_ids = [
+            str(outcome.id)
+            for issue in self.issues
+            if issue.uncertainty is not None
+            for outcome in issue.uncertainty.outcomes
+        ]
+        for state in states:
+            if state in outcome_ids:
+                return str(self._find_state_uncertainty(state).id)
+
+        raise ValueError("No outcome ID found in policy states")
+
+    def _parse_tensor(self, tensor: Any) -> list[ParsedTensor]:
+        inst: Any = gum.Instantiation(tensor)
+        variables: list[Any] = list(inst.variablesSequence())
+        parsed_rows: list[ParsedTensor] = []
+
+        inst.setFirst()
+        while not inst.end():
+            states = [str(variable.label(inst.val(variable))) for variable in variables]
+            value = float(tensor.get(inst))
+            parsed_rows.append(
+                ParsedTensor(
+                    states=states,
+                    value=value,
+                )
+            )
+            inst.inc()
+        return parsed_rows
+
     def _parse_policy_tensor(
         self, decision_issue_id: str, optimal_decision_tensor: Any
     ) -> list[PolicyTableRowDto]:
@@ -534,24 +594,40 @@ class PyagrumSolver:
         label into `states` (in tensor variable order), and reads the cell value for
         that assignment.
         """
-        inst: Any = gum.Instantiation(optimal_decision_tensor)
-        variables: list[Any] = list(inst.variablesSequence())
-        parsed_rows: list[PolicyTableRowDto] = []
-
-        inst.setFirst()
-        while not inst.end():
-            states = [str(variable.label(inst.val(variable))) for variable in variables]
-            value = float(optimal_decision_tensor.get(inst))
-            parsed_rows.append(
+        parsed_rows = self._parse_tensor(optimal_decision_tensor)
+        policy_rows: list[PolicyTableRowDto] = []
+        for parsed_row in parsed_rows:
+            policy_rows.append(
                 PolicyTableRowDto(
                     decision_id=uuid.UUID(decision_issue_id),
-                    parent_state_ids=[uuid.UUID(state) for state in states],
-                    option_id=uuid.UUID(self._get_option_id_from_policy_table_states(states)),
-                    value=value,
+                    parent_state_ids=[uuid.UUID(state) for state in parsed_row.states],
+                    option_id=uuid.UUID(self._get_option_id_from_table_states(parsed_row.states)),
+                    value=parsed_row.value,
                 )
             )
-            inst.inc()
-        return parsed_rows
+        return policy_rows
+
+    def _parse_margin_tensor(
+            self, uncertainty_id: str, margin_tensor: Any, evidence: list[str]
+        ) -> list[MarginTableRowDto]:
+            """Flatten a margin tensor into row DTOs with ordered state labels and probability.
+    
+            Iterates every Instantiation of the tensor, collects each variable's current
+            label into `states` (in tensor variable order), and reads the cell value for
+            that assignment.
+            """
+            parsed_rows = self._parse_tensor(margin_tensor)
+            margin_rows: list[MarginTableRowDto] = []
+            for parsed_row in parsed_rows:
+                margin_rows.append(
+                    MarginTableRowDto(
+                        uncertainty_id=uuid.UUID(uncertainty_id),
+                        outcome_id=uuid.UUID(self._get_outcome_id_from_table_states(parsed_row.states)),
+                        options_evidence=[uuid.UUID(option_id) for option_id in evidence],
+                        probability=parsed_row.value,
+                    )
+                )
+            return margin_rows
 
     def export_pyagrum_model(self) -> dict:
         with _EXPORT_MODEL_LOCK:
