@@ -7,6 +7,9 @@ spec:
     - name: public
       build:
         from: public|public-deploy*
+    - name: design
+      build:
+        from: design|design-deploy*
   components:
     - name: api
       src: .
@@ -35,6 +38,13 @@ spec:
           maxReplicas: 3
       environmentConfig:
         - environment: public
+          replicas: 1
+          variables:
+            ASPNETCORE_ENVIRONMENT: 'Public'
+          identity:
+            azure:
+                clientId: 23042ef9-dbae-40e9-9345-626087966321
+        - environment: design
           replicas: 1
           variables:
             ASPNETCORE_ENVIRONMENT: 'Public'
