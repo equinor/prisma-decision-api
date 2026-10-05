@@ -7,6 +7,9 @@ spec:
     - name: public
       build:
         from: public|public-deploy*
+    - name: design
+      build:
+        from: design|design-deploy*
   components:
     - name: api
       src: .
@@ -35,6 +38,34 @@ spec:
           replicas: 1
           variables:
             ASPNETCORE_ENVIRONMENT: 'Public'
+          secretRefs:
+            azureKeyVaults:
+                - name: kvprismadecisionprodsw
+                  useAzureIdentity: true
+                  items:
+                      - name: applicationinsightapiprod
+                        envVar: APPINSIGHTS_CONNECTIONSTRING
+          identity:
+            azure:
+                clientId: 23042ef9-dbae-40e9-9345-626087966321
+        - environment: design
+          replicas: 1
+          variables:
+            ASPNETCORE_ENVIRONMENT: 'Public'
+          secretRefs:
+            azureKeyVaults:
+                - name: kvprismadecisionprodsw
+                  useAzureIdentity: true
+                  items:
+                      - name: applicationinsightapiprod
+                        envVar: APPINSIGHTS_CONNECTIONSTRING
+          identity:
+            azure:
+                clientId: 23042ef9-dbae-40e9-9345-626087966321
+        - environment: design
+          replicas: 1
+          variables:
+            ASPNETCORE_ENVIRONMENT: 'Public'
             secretRefs:
             azureKeyVaults:
                 - name: kvprismadecisionprodsw
@@ -44,16 +75,13 @@ spec:
                         envVar: APPINSIGHTS_CONNECTIONSTRING
           identity:
             azure:
-                clientId: 519d9a9d-de73-4352-a9ea-f278317c8b75
+                clientId: 23042ef9-dbae-40e9-9345-626087966321
     - name: fastapi
       src: .
       dockerfileName: fastApi.Dockerfile
       ports:
         - name: http
           port: 8000
-      secrets:
-        - CLIENT_SECRET
-        - APPINSIGHTS_CONNECTIONSTRING
       resources:
         requests:
           memory: '2000Mi'
