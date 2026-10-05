@@ -38,13 +38,13 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
-        var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
-        if (!string.IsNullOrEmpty(clientSecret))
-        {
-            builder.Configuration["AzureAd:ClientSecret"] = clientSecret;
-        }
         if (!isPublicInstance && !isResearchInstance)
         {
+            var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
+            if (!string.IsNullOrEmpty(clientSecret))
+            {
+                builder.Configuration["AzureAd:ClientSecret"] = clientSecret;
+            }
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddMicrosoftIdentityWebApi(builder.Configuration, "AzureAd")
