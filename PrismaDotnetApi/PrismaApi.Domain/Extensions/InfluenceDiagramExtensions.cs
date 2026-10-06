@@ -7,6 +7,13 @@ namespace PrismaApi.Domain.Extensions;
 
 public static class InfluenceDiagramDtoExtensions
 {
+    public static IssueOutgoingDto? GetIssueByStateId(this InfluenceDiagramDto influenceDiagramDto, Guid stateId)
+    {
+        return influenceDiagramDto.issues.FirstOrDefault(issue =>
+            issue.Decision?.Options.Any(option => option.Id == stateId) == true ||
+            issue.Uncertainty?.Outcomes.Any(outcome => outcome.Id == stateId) == true);
+    }
+
     public static InfluenceDiagramDto DeepClone<InfluenceDiagramDto>(this InfluenceDiagramDto source)
     {
         var json = JsonSerializer.Serialize(source);
@@ -217,7 +224,7 @@ public static class InfluenceDiagramDtoExtensions
 
             foreach (var parentStateId in totallyRestrictedParentStateIds)
             {
-                influenceDiagramDto.ApplyTotalRestriction(issue, parentStateId, utilityChildren);
+                influenceDiagramDto.ApplyTotalRestriction(issue, parentStateId, utilityChildren, restrictionTable);
             }
         }
     }
@@ -226,11 +233,12 @@ public static class InfluenceDiagramDtoExtensions
         this InfluenceDiagramDto influenceDiagramDto,
         IssueOutgoingDto issue,
         Guid parentStateId,
-        IReadOnlyCollection<IssueOutgoingDto> utilityChildren)
+        IReadOnlyCollection<IssueOutgoingDto> utilityChildren,
+        RestrictionTableOutgoingDto restrictionTable)
     {
         if (issue.Type == IssueType.Decision.ToString() && issue.Decision is not null)
         {
-            influenceDiagramDto.AddNotApplicableOption(issue, parentStateId, utilityChildren);
+            influenceDiagramDto.AddNotApplicableOption(issue, parentStateId, utilityChildren, restrictionTable);
         }
         else if (issue.Type == IssueType.Uncertainty.ToString() && issue.Uncertainty is not null)
         {
@@ -242,11 +250,14 @@ public static class InfluenceDiagramDtoExtensions
         this InfluenceDiagramDto influenceDiagramDto,
         IssueOutgoingDto issue,
         Guid parentStateId,
-        IEnumerable<IssueOutgoingDto> utilityChildren)
+        IEnumerable<IssueOutgoingDto> utilityChildren,
+        RestrictionTableOutgoingDto restrictionTable)
     {
         var decision = issue.Decision!;
         var stateName = $"N/A {parentStateId}";
         var stateId = $"{issue.ProjectId}|Decision:{decision.Id}|State:{stateName}".GenerateDeterministicGuid();
+
+        var parentIssue = influenceDiagramDto.GetIssueByStateId(parentStateId);
         if (decision.Options.Any(option => option.Id == stateId))
         {
             return;
@@ -260,6 +271,38 @@ public static class InfluenceDiagramDtoExtensions
             Name = stateName
         };
         decision.Options.Add(notApplicableOption);
+        // add the new option to the restriction table
+        // add for the parent state so it will not be restricted
+        restrictionTable.RestrictionEntries.Add(new RestrictionEntryOutgoingDto
+        {
+            ProjectId = issue.ProjectId,
+            ParentStateId = parentStateId,
+            ChildStateId = notApplicableOption.Id,
+            RestrictionValue = 1,
+            RestrictionTableId = restrictionTable.Id,
+            IsChildUncertainty = false,
+            IsParentUncertainty = parentIssue?.Type == IssueType.Uncertainty.ToString()
+        });
+
+        // add for the other possible parents so they will be restricted
+        var otherParentStateIds = parentIssue?.Type == IssueType.Uncertainty.ToString()
+            ? parentIssue?.Uncertainty!.Outcomes.Select(outcome => outcome.Id).ToList()
+            : parentIssue?.Decision!.Options.Select(option => option.Id).ToList();
+        otherParentStateIds = otherParentStateIds?.Where(id => id != parentStateId).ToList();
+        foreach (var otherParentStateId in otherParentStateIds ?? Enumerable.Empty<Guid>())
+        {
+            restrictionTable.RestrictionEntries.Add(new RestrictionEntryOutgoingDto
+            {
+                ProjectId = issue.ProjectId,
+                ParentStateId = otherParentStateId,
+                ChildStateId = notApplicableOption.Id,
+                RestrictionValue = 0,
+                RestrictionTableId = restrictionTable.Id,
+                IsChildUncertainty = false,
+                IsParentUncertainty = parentIssue?.Type == IssueType.Uncertainty.ToString()
+            });
+        }
+
         foreach (var utilityIssue in utilityChildren)
         {
             influenceDiagramDto.AddUtilitiesFromNAState(utilityIssue, notApplicableOption, decision);
@@ -458,4 +501,6 @@ public static class InfluenceDiagramDtoExtensions
         }
         discreteProbabilities.NormalizeProbabilities();
     }
+
+    
 }

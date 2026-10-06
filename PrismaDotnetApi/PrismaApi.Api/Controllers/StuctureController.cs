@@ -21,23 +21,6 @@ public class StuctureController : PrismaBaseController
         _influenceDiagramService = influenceDiagramService;
     }
 
-    [HttpGet("structure/{projectId:guid}/test_total_restrictions")]
-    public async Task<ActionResult<ICollection<DiscreteUtilityDto>>> TestTotalRestrictionsAsync([FromRoute] Guid projectId, CancellationToken ct = default)
-    {
-        UserOutgoingDto user = HttpContext.GetLoadedUser();
-
-        var influenceDiagram = await _influenceDiagramService.GetInfluenceDiagramAsync(projectId, user, ct);
-        if (influenceDiagram is null)
-        {
-            return NotFound();
-        }
-
-var restrictedInfluenceDiagram = influenceDiagram.DeepClone();
-        restrictedInfluenceDiagram.ApplyTotalRestrictions();
-
-        return Ok(restrictedInfluenceDiagram.discreteUtilities);
-    }
-
     [HttpGet("structure/{projectId:guid}/decision_tree/v2")]
     public async Task<ActionResult<ApiResponseDto>> GetDecisionTreeAsync([FromRoute] Guid projectId, CancellationToken ct = default)
     {

@@ -116,11 +116,6 @@ public static class DiscreteProbabilitiesExtensions
 
     private static void ValidateAllProbabilitiesBelongToSameUncertainty(this ICollection<DiscreteProbabilityDto> probabilities)
     {
-        if (!probabilities.Any())
-        {
-            return;
-        }
-
         var firstUncertaintyId = probabilities.First().UncertaintyId;
         if (probabilities.Any(p => p.UncertaintyId != firstUncertaintyId))
         {
