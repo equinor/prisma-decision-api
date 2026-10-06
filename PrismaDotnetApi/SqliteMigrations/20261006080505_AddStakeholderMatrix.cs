@@ -15,17 +15,16 @@ namespace PrismaApi.Infrastructure.Migrations
                 name: "StakeholderMatrixes",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    StakeholderName = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    StakeholderRole = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    AffectingTheDecision = table.Column<int>(type: "int", nullable: false),
-                    AffectedByTheDecision = table.Column<int>(type: "int", nullable: false),
-                    ProjectId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    UpdatedById = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    ProjectId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    StakeholderName = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false),
+                    StakeholderRole = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: false),
+                    AffectingTheDecision = table.Column<double>(type: "REAL", nullable: false),
+                    AffectedByTheDecision = table.Column<double>(type: "REAL", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
+                    CreatedById = table.Column<string>(type: "TEXT", nullable: false),
+                    UpdatedById = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -36,11 +35,6 @@ namespace PrismaApi.Infrastructure.Migrations
                         principalTable: "Projects",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_StakeholderMatrixes_Projects_ProjectId1",
-                        column: x => x.ProjectId1,
-                        principalTable: "Projects",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_StakeholderMatrixes_Users_CreatedById",
                         column: x => x.CreatedById,
@@ -64,11 +58,6 @@ namespace PrismaApi.Infrastructure.Migrations
                 name: "IX_StakeholderMatrixes_ProjectId",
                 table: "StakeholderMatrixes",
                 column: "ProjectId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_StakeholderMatrixes_ProjectId1",
-                table: "StakeholderMatrixes",
-                column: "ProjectId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_StakeholderMatrixes_UpdatedById",

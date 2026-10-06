@@ -212,10 +212,10 @@ public class Program
 
         app.UseHttpsRedirection();
 
-        app.UseRateLimiter();
-
-        // Use CORS - must be before UseAuthorization
+        // CORS must wrap middleware that can short-circuit requests.
         app.UseCors(CorsPolicy.AllowOriginsPolicy);
+
+        app.UseRateLimiter();
 
         if (!isPublicInstance && !isResearchInstance)
         {

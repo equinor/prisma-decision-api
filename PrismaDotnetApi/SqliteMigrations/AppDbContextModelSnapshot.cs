@@ -912,11 +912,11 @@ namespace PrismaApi.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("AffectedByTheDecision")
-                        .HasColumnType("INTEGER");
+                    b.Property<double>("AffectedByTheDecision")
+                        .HasColumnType("REAL");
 
-                    b.Property<int>("AffectingTheDecision")
-                        .HasColumnType("INTEGER");
+                    b.Property<double>("AffectingTheDecision")
+                        .HasColumnType("REAL");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TEXT");
@@ -926,9 +926,6 @@ namespace PrismaApi.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("ProjectId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("ProjectId1")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("StakeholderName")
@@ -953,8 +950,6 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasIndex("CreatedById");
 
                     b.HasIndex("ProjectId");
-
-                    b.HasIndex("ProjectId1");
 
                     b.HasIndex("UpdatedById");
 
@@ -1722,14 +1717,10 @@ namespace PrismaApi.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
-                        .WithMany()
+                        .WithMany("StakeholderMatrices")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("PrismaApi.Domain.Entities.Project", null)
-                        .WithMany("StakeholderMatrices")
-                        .HasForeignKey("ProjectId1");
 
                     b.HasOne("PrismaApi.Domain.Entities.User", "UpdatedBy")
                         .WithMany()

@@ -15,8 +15,8 @@ namespace PrismaApi.Domain.Entities
 
         public required string StakeholderName { get; set; }
         public required string StakeholderRole { get; set; }
-        public required int AffectingTheDecision { get; set; }
-        public required int AffectedByTheDecision { get; set; }
+        public required double AffectingTheDecision { get; set; }
+        public required double AffectedByTheDecision { get; set; }
         public Project? Project { get; set; }
 
         public static void OnModelConfiguring(ModelBuilder modelBuilder)
@@ -36,7 +36,7 @@ namespace PrismaApi.Domain.Entities
                 entity.Property(e => e.StakeholderName).HasMaxLength(DomainConstants.MaxShortStringLength);
                 entity.Property(e => e.StakeholderRole).HasMaxLength(DomainConstants.MaxShortStringLength);
                 entity.HasOne(e => e.Project)
-                    .WithMany()
+                    .WithMany(project => project.StakeholderMatrices)
                     .HasForeignKey(e => e.ProjectId)
                     .OnDelete(DeleteBehavior.Cascade);
             });

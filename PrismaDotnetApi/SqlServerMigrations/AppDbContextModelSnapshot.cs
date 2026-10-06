@@ -917,11 +917,11 @@ namespace PrismaApi.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("AffectedByTheDecision")
-                        .HasColumnType("int");
+                    b.Property<double>("AffectedByTheDecision")
+                        .HasColumnType("float");
 
-                    b.Property<int>("AffectingTheDecision")
-                        .HasColumnType("int");
+                    b.Property<double>("AffectingTheDecision")
+                        .HasColumnType("float");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -931,9 +931,6 @@ namespace PrismaApi.Infrastructure.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<Guid>("ProjectId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("ProjectId1")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("StakeholderName")
@@ -958,8 +955,6 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.HasIndex("CreatedById");
 
                     b.HasIndex("ProjectId");
-
-                    b.HasIndex("ProjectId1");
 
                     b.HasIndex("UpdatedById");
 
@@ -1727,14 +1722,10 @@ namespace PrismaApi.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
-                        .WithMany()
+                        .WithMany("StakeholderMatrices")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("PrismaApi.Domain.Entities.Project", null)
-                        .WithMany("StakeholderMatrices")
-                        .HasForeignKey("ProjectId1");
 
                     b.HasOne("PrismaApi.Domain.Entities.User", "UpdatedBy")
                         .WithMany()

@@ -17,10 +17,10 @@ namespace PrismaApi.Domain.Dtos
         [JsonPropertyName("stakeholder_role")]
         public string StakeholderRole { get; set; } = string.Empty;
         [JsonPropertyName("affecting_the_decision")]
-        public int AffectingTheDecision { get; set; }
+        public double AffectingTheDecision { get; set; }
 
         [JsonPropertyName("affected_by_the_decision")]
-        public int AffectedByTheDecision { get; set; }
+        public double AffectedByTheDecision { get; set; }
 
     }
 
