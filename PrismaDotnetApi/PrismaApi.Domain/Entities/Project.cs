@@ -23,6 +23,7 @@ public class Project : AuditableEntity, IBaseEntity<Guid>
     public ICollection<BoardNode> BoardNodes { get; set; } = new List<BoardNode>();
     public ICollection<BoardSheet> BoardSheets { get; set; } = new List<BoardSheet>();
     public ICollection<Assessment> Assessments { get; set; } = new List<Assessment>();
+    public ICollection<StakeholderMatrix> StakeholderMatrices { get; set; } = new List<StakeholderMatrix>();
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Project>(entity =>
@@ -77,11 +78,16 @@ public class Project : AuditableEntity, IBaseEntity<Guid>
                 .HasForeignKey(e => e.ProjectId)
                 .OnDelete(DeleteBehavior.NoAction); // will be cascade deleted through BoardSheets
 
+
             entity.HasMany(e => e.Edges)
                 .WithOne(e => e.Project)
                 .HasForeignKey(e => e.ProjectId)
                 .OnDelete(DeleteBehavior.NoAction); // will be cascade deleted through Issues -> Nodes
             entity.HasMany(e => e.Assessments)
+                .WithOne(e => e.Project)
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(e => e.StakeholderMatrices)
                 .WithOne(e => e.Project)
                 .HasForeignKey(e => e.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);

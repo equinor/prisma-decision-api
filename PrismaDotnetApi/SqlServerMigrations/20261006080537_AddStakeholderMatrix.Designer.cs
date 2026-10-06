@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PrismaApi.Infrastructure.Context;
 
@@ -11,9 +12,11 @@ using PrismaApi.Infrastructure.Context;
 namespace PrismaApi.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261006080537_AddStakeholderMatrix")]
+    partial class AddStakeholderMatrix
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1026,14 +1029,9 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Property<Guid>("OptionId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ProjectId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("StrategyId", "OptionId");
 
                     b.HasIndex("OptionId");
-
-                    b.HasIndex("ProjectId");
 
                     b.ToTable("StrategyOptions");
                 });
@@ -1780,12 +1778,6 @@ namespace PrismaApi.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.HasOne("PrismaApi.Domain.Entities.Strategy", "Strategy")
                         .WithMany("StrategyOptions")
                         .HasForeignKey("StrategyId")
@@ -1793,8 +1785,6 @@ namespace PrismaApi.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Option");
-
-                    b.Navigation("Project");
 
                     b.Navigation("Strategy");
                 });
