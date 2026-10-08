@@ -1,6 +1,7 @@
 import asyncio
 import uuid
 from typing import Optional
+from src.dtos.margin_table_dtos import MarginTableRowDto
 from src.config import config
 from src.utils.visit_tree_node_and_populate import visit_tree_node_and_populate
 from src.services.decision_tree.decision_tree_creator_v3 import DecisionTreeCreator_v3
@@ -31,6 +32,23 @@ class SolverService:
         self,
     ):
         pass
+
+    async def get_margins_pyagrum(
+        self,
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+    ) -> dict[str, list[MarginTableRowDto]]:
+        solver = PyagrumSolver()
+        await solver.build_inference_engine(
+            issues=issues,
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+        )
+        res = solver.get_margins()  
+        return res
 
     async def export_pyagrum_model(
         self,
@@ -118,7 +136,7 @@ class SolverService:
         )
         # for debugging
         if config.SAVE_INFLUENCE_DIAGRAM:
-            solver.export_as_jgum()
+            solver.export_pyagrum_model()
         return result
 
     async def get_decision_tree_for_optimal_decisions_old(
