@@ -19,6 +19,9 @@ pyinstrument = "^5.1.1"
 azure-monitor-opentelemetry = "^1.8.1"
 xarray = "^2025.10.1"
 psutil = "^7.2.2"
+pyjwt = "2.14.0"
+urllib3 = "2.8.0"
+oauthlib = "4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "26.3.1"
