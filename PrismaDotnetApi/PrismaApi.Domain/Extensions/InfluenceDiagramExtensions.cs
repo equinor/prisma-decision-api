@@ -119,6 +119,14 @@ public static class InfluenceDiagramDtoExtensions
         RestrictUncertainties(influenceDiagramDto);
     }
 
+    /// <summary>
+    /// Validates the restrictions applied to the influence diagram.
+    /// Throws an exception if any total restriction is violated.
+    /// 
+    /// Validation requirements:
+    /// - Each total restriction must not have any grandchildren unconnected to the restricting issue.
+    /// - No child of a totally restricted issue can be of type uncertainty.
+    /// </summary>
     public static void ValidateRestrictions(this InfluenceDiagramDto influenceDiagramDto)
     {
         var tablesWithTotalRestrictions = influenceDiagramDto.restrictionTables
@@ -136,8 +144,8 @@ public static class InfluenceDiagramDtoExtensions
         {
             var restrictedEdge = influenceDiagramDto.edges.FirstOrDefault(edge => edge.Id == table.EdgeId)
                 ?? throw new InvalidOperationException($"Restriction table '{table.Id}' references an edge that is not in the influence diagram.");
-            
-            var childIssueIds = influenceDiagramDto.edges
+                
+            var grandChildIssueIds = influenceDiagramDto.edges
                 .Where(
                     edge => edge.TailIssueId == restrictedEdge.HeadIssueId 
                     && !utilityIssueIds.Contains(edge.HeadIssueId) // filter out utility issues as children we don't have to consider
@@ -145,22 +153,24 @@ public static class InfluenceDiagramDtoExtensions
                 .Select(edge => edge.HeadIssueId)
                 .Distinct();
 
-            // if any of the children are of type uncertainty => throw invalid exception with details of the issue:
-            if (childIssueIds.Any(childIssueId => influenceDiagramDto.issues.FirstOrDefault(issue => issue.Id == childIssueId)?.Type == IssueType.Uncertainty.ToString()))
+            // if any of the children are of type uncertainty => throw invalid exception with details of the issue
+            // this is because the generated N/A state would not have the necessary information for probability table calculations
+            if (grandChildIssueIds.Any(childIssueId => influenceDiagramDto.issues.FirstOrDefault(issue => issue.Id == childIssueId)?.Type == IssueType.Uncertainty.ToString()))
             {
                 throw new InvalidOperationException(
                     $"Restriction table '{table.Id}' totally restricts an available row, but node '{restrictedEdge.HeadIssueId}' has a child of type uncertainty. This does not provide the nessessary information for total restriction. To address this try reversing the order of Uncertainties in the influence diagram if possible.");
             }
             
-            var missingChildIssueIds = childIssueIds
+            var unconnectedIssueIds = grandChildIssueIds
                 .Where(childIssueId => !influenceDiagramDto.edges.Any(edge =>
                     edge.TailIssueId == restrictedEdge.TailIssueId && edge.HeadIssueId == childIssueId))
                 .ToList();
-
-            if (missingChildIssueIds.Count > 0)
+            
+            // if there are any unconnected grandchildren, it indicates a missing bypass edge from the restricting issue to it's grandchildren, which violates the total restriction requirement
+            if (unconnectedIssueIds.Count > 0)
             {
                 throw new InvalidOperationException(
-                    $"Restriction table '{table.Id}' totally restricts an available row, but node '{restrictedEdge.TailIssueId}' does not have an edge to every child of node '{restrictedEdge.HeadIssueId}'. Missing child node ids: {string.Join(", ", missingChildIssueIds)}.");
+                    $"Restriction table '{table.Id}' totally restricts an available row, but node '{restrictedEdge.TailIssueId}' does not have an edge to every child of node '{restrictedEdge.HeadIssueId}'. Missing child node ids: {string.Join(", ", unconnectedIssueIds)}.");
             }
         }
     }
@@ -305,7 +315,7 @@ public static class InfluenceDiagramDtoExtensions
 
         foreach (var utilityIssue in utilityChildren)
         {
-            influenceDiagramDto.AddUtilitiesFromNAState(utilityIssue, notApplicableOption, decision);
+            influenceDiagramDto.AddUtilitiesFromUncertaintyNAState(utilityIssue, notApplicableOption, decision);
         }
     }
 
@@ -334,11 +344,11 @@ public static class InfluenceDiagramDtoExtensions
         influenceDiagramDto.AddProbabilitiesFromAddedOutcome(parentStateId, notApplicableOutcome, uncertainty);
         foreach (var utilityIssue in utilityChildren)
         {
-            influenceDiagramDto.AddUtilitiesFromNAState(utilityIssue, notApplicableOutcome, uncertainty);
+            influenceDiagramDto.AddUtilitiesFromDecisionNAState(utilityIssue, notApplicableOutcome, uncertainty);
         }
     }
 
-    public static void AddUtilitiesFromNAState(this InfluenceDiagramDto influenceDiagramDto, IssueOutgoingDto utilityIssue, OptionOutgoingDto notApplicableState, DecisionOutgoingDto parent)
+    public static void AddUtilitiesFromUncertaintyNAState(this InfluenceDiagramDto influenceDiagramDto, IssueOutgoingDto utilityIssue, OptionOutgoingDto notApplicableState, DecisionOutgoingDto parent)
     {
         influenceDiagramDto.AddUtilitiesFromNAState(
             utilityIssue,
@@ -346,7 +356,7 @@ public static class InfluenceDiagramDtoExtensions
             parent.Options.Select(option => option.Id).ToList());
     }
 
-    public static void AddUtilitiesFromNAState(this InfluenceDiagramDto influenceDiagramDto, IssueOutgoingDto utilityIssue, OutcomeOutgoingDto notApplicableState, UncertaintyOutgoingDto parent)
+    public static void AddUtilitiesFromDecisionNAState(this InfluenceDiagramDto influenceDiagramDto, IssueOutgoingDto utilityIssue, OutcomeOutgoingDto notApplicableState, UncertaintyOutgoingDto parent)
     {
         influenceDiagramDto.AddUtilitiesFromNAState(
             utilityIssue,
@@ -410,6 +420,11 @@ public static class InfluenceDiagramDtoExtensions
 
     }
 
+    /// <summary>
+    /// Orders the issue IDs in the influence diagram by a topological sort, ensuring that parent issues appear before their children.
+    /// </summary>
+    /// <param name="influenceDiagramDto"></param>
+    /// <returns></returns>
     public static IEnumerable<Guid> OrderIssueIdsByTopologicalSort(this InfluenceDiagramDto influenceDiagramDto)
     {
         var sorted = new List<Guid>();

@@ -65,8 +65,8 @@ public static class DiscreteProbabilitiesExtensions
         var rows = probabilities.SeperateByRow();
         // add rows for the added state, the siblings already exist in the current rows and one sibling can be used as a template for the new rows
         // for the example sibling, take all rows where that sibling is a parent outcome/option and duplicate them, but replace the sibling id with the added state id, default to 0 probability
-        var exampleSiblingId = siblingsOfAddedState.First();
-        var rowsToDuplicate = rows.Where(row => row.Any(dp => dp.ParentOptionIds.Contains(exampleSiblingId) || dp.ParentOutcomeIds.Contains(exampleSiblingId))).ToList();
+        var siblingIdOfAddedState = siblingsOfAddedState.First();
+        var rowsToDuplicate = rows.Where(row => row.Any(dp => dp.ParentOptionIds.Contains(siblingIdOfAddedState) || dp.ParentOutcomeIds.Contains(siblingIdOfAddedState))).ToList();
         foreach (var row in rowsToDuplicate)
         {
             foreach (var dp in row)
@@ -80,11 +80,11 @@ public static class DiscreteProbabilitiesExtensions
                     OutcomeId = dp.OutcomeId,
                     Probability = 0
                 };
-                if (newDp.ParentOptionIds.Remove(exampleSiblingId))
+                if (newDp.ParentOptionIds.Remove(siblingIdOfAddedState))
                 {
                     newDp.ParentOptionIds.Add(addedStateId);
                 }
-                else if (newDp.ParentOutcomeIds.Remove(exampleSiblingId))
+                else if (newDp.ParentOutcomeIds.Remove(siblingIdOfAddedState))
                 {
                     newDp.ParentOutcomeIds.Add(addedStateId);
                 }

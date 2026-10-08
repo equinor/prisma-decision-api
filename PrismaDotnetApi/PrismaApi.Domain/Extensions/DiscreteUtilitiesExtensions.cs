@@ -31,10 +31,10 @@ public static class DiscreteUtilitiesExtensions
 	{
 		utilities.ValidateUtilities();
 		var rows = utilities.SeparateByRow();
-		var exampleSiblingId = siblingsOfAddedState.First();
+		var siblingIdOfAddedState = siblingsOfAddedState.First();
 		var rowsToDuplicate = rows
-			.Where(row => row.Any(utility => utility.ParentOptionIds.Contains(exampleSiblingId)
-				|| utility.ParentOutcomeIds.Contains(exampleSiblingId)))
+			.Where(row => row.Any(utility => utility.ParentOptionIds.Contains(siblingIdOfAddedState)
+				|| utility.ParentOutcomeIds.Contains(siblingIdOfAddedState)))
 			.ToList();
 
 		foreach (var row in rowsToDuplicate)
@@ -51,11 +51,11 @@ public static class DiscreteUtilitiesExtensions
 					UtilityValue = 0,
 				};
 
-				if (newUtility.ParentOptionIds.Remove(exampleSiblingId))
+				if (newUtility.ParentOptionIds.Remove(siblingIdOfAddedState))
 				{
 					newUtility.ParentOptionIds.Add(addedStateId);
 				}
-				else if (newUtility.ParentOutcomeIds.Remove(exampleSiblingId))
+				else if (newUtility.ParentOutcomeIds.Remove(siblingIdOfAddedState))
 				{
 					newUtility.ParentOutcomeIds.Add(addedStateId);
 				}

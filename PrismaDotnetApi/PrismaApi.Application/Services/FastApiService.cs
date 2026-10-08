@@ -58,7 +58,7 @@ public class FastApiService : IFastApiService
     public async Task<ApiResponseDto> SendInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, UserOutgoingDto user, bool restrictInfluenceDiagram, CancellationToken ct = default)
     {
         var influenceDiagram = restrictInfluenceDiagram
-            ? await GetRestrictedInfluenceDiagramAsync(projectId, user, ct)
+            ? await _influenceDiagramService.GetRestrictedInfluenceDiagramAsync(projectId, user, ct)
             : await _influenceDiagramService.GetInfluenceDiagramAsync(projectId, user, ct);
         
         var payload = new
@@ -76,7 +76,7 @@ public class FastApiService : IFastApiService
 
     public async Task<ApiResponseDto> SendPartialInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, List<List<Guid>> paths, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var influenceDiagram = await GetRestrictedInfluenceDiagramAsync(projectId, user, ct);
+        var influenceDiagram = await _influenceDiagramService.GetRestrictedInfluenceDiagramAsync(projectId, user, ct);
 
         var payload = new
         {
@@ -93,7 +93,7 @@ public class FastApiService : IFastApiService
 
     public async Task<ApiResponseDto> SendInfluenceDiagramWithEvidenceToFastApiAsync(Guid projectId, string endpoint, List<EvidenceRequestDto> data, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var influenceDiagram = await GetRestrictedInfluenceDiagramAsync(projectId, user, ct);
+        var influenceDiagram = await _influenceDiagramService.GetRestrictedInfluenceDiagramAsync(projectId, user, ct);
 
         var payload = new
         {
@@ -109,7 +109,7 @@ public class FastApiService : IFastApiService
     }
     public async Task<ApiResponseDto> SendInfluenceDiagramPolicyTableToFastApiAsync(Guid projectId, string endpoint, EvidenceRequestDto? evidence, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var influenceDiagram = await GetRestrictedInfluenceDiagramAsync(projectId, user, ct);
+        var influenceDiagram = await _influenceDiagramService.GetRestrictedInfluenceDiagramAsync(projectId, user, ct);
         var payload = new
         {
             issues = influenceDiagram.issues,
@@ -121,16 +121,6 @@ public class FastApiService : IFastApiService
         };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
         return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
-    }
-
-    private async Task<InfluenceDiagramDto> GetRestrictedInfluenceDiagramAsync(
-        Guid projectId,
-        UserOutgoingDto user,
-        CancellationToken ct)
-    {
-        var influenceDiagram = (await _influenceDiagramService.GetInfluenceDiagramAsync(projectId, user, ct)).DeepClone();
-        influenceDiagram.ApplyRestrictions();
-        return influenceDiagram;
     }
 
     public List<PolicyTableOutgoingDto> ParsePolicyTableResponse(string? content)
