@@ -67,8 +67,6 @@ class PyagrumSolver:
         self.add_nodes(issues)
         self.add_edges(edges)
         self.fill_cpts(issues)
-        self.add_virtual_utilities(issues)
-        self.fill_utilities(issues)
         self.combine_utility_nodes(issues)
 
     def raise_if_issues_edges_not_set(self):
@@ -447,65 +445,6 @@ class PyagrumSolver:
         else:
             return probabilities
 
-    def fill_utility_table(self, issue: IssueOutgoingDto):
-        if issue.type in [Type.DECISION.value, Type.UNCERTAINTY.value]:
-            return
-        assert issue.utility is not None
-
-        node_id = self.node_lookup[issue.id.__str__()]
-        parent_ids: list[int] = self.diagram.parents(node_id)  # type: ignore
-        parent_labels = [self.diagram.variable(pid).labels() for pid in parent_ids]  # type: ignore
-
-        # Build all parent state combinations
-        parent_combinations = list(product(*parent_labels))
-        disc_utilities = [
-            utility for utility in self.discrete_utilities if utility.utility_id == issue.utility.id
-        ]
-        parent_dimensions = {
-            self.diagram.variable(parent_id).name(): list(parent_labels[index])  # type: ignore
-            for index, parent_id in enumerate(parent_ids)
-        }
-        discrete_utility_manager = DiscreteUtilityArrayManager(
-            disc_utilities, parent_dimensions
-        )
-        for combination in parent_combinations:
-            assign = {
-                self.diagram.variable(parent_id).name(): state  # type: ignore
-                for parent_id, state in zip(parent_ids, combination)
-            }
-            self.diagram.utility(node_id)[assign] = (  # type: ignore
-                discrete_utility_manager.get_utility_for_combination(combination)
-            )
-
-    def add_virtual_utility_node(self, issue: IssueOutgoingDto):
-        if issue.type == Type.UTILITY.value:
-            return
-
-        if issue.type == Type.DECISION and issue.decision is not None:
-            if all([option.utility == 0 for option in issue.decision.options]):
-                return
-
-        if issue.type == Type.UNCERTAINTY and issue.uncertainty is not None:
-            if all([outcome.utility == 0 for outcome in issue.uncertainty.outcomes]):
-                return
-
-        node_id = self.diagram.addUtilityNode(  # type: ignore
-            gum.LabelizedVariable(
-                f"{issue.id.__str__()} utility",
-                f"{issue.id.__str__()} utility",
-                1,
-            )
-        )
-        self.diagram.addArc(self.diagram.idFromName(issue.id.__str__()), node_id)  # type: ignore
-
-        if issue.type == Type.DECISION and issue.decision is not None:
-            for n, x in enumerate(self._sort_state_dtos(issue.decision.options)):
-                self.diagram.utility(node_id)[{issue.id.__str__(): n}] = x.utility  # type: ignore
-
-        if issue.type == Type.UNCERTAINTY and issue.uncertainty is not None:
-            for n, x in enumerate(self._sort_state_dtos(issue.uncertainty.outcomes)):
-                self.diagram.utility(node_id)[{issue.id.__str__(): n}] = x.utility  # type: ignore
-
     def _get_utility_value_metric_id(self) -> uuid.UUID:
         value_metric_ids = {utility.value_metric_id for utility in self.discrete_utilities}
         if len(value_metric_ids) > 1:
@@ -546,6 +485,8 @@ class PyagrumSolver:
         for issue in issues:
             states: list[OptionOutgoingDto] | list[OutcomeOutgoingDto]
             if issue.type == Type.DECISION.value and issue.decision is not None:
+                if all([option.utility == 0 for option in issue.decision.options]):
+                    continue
                 states = self._sort_state_dtos(issue.decision.options)
                 utilities = [
                     DiscreteUtilityOutgoingDto(
@@ -557,6 +498,8 @@ class PyagrumSolver:
                     for state in states
                 ]
             elif issue.type == Type.UNCERTAINTY.value and issue.uncertainty is not None:
+                if all([outcome.utility == 0 for outcome in issue.uncertainty.outcomes]):
+                    continue
                 states = self._sort_state_dtos(issue.uncertainty.outcomes)
                 utilities = [
                     DiscreteUtilityOutgoingDto(
@@ -662,12 +605,6 @@ class PyagrumSolver:
 
     def add_nodes(self, issues: list[IssueOutgoingDto]):
         [self.add_node(x) for x in issues]
-
-    def add_virtual_utilities(self, issues: list[IssueOutgoingDto]):
-        [self.add_virtual_utility_node(x) for x in issues]
-
-    def fill_utilities(self, issues: list[IssueOutgoingDto]):
-        [self.fill_utility_table(x) for x in issues]
 
     def get_policy_table(self, decision_issue_id: str) -> list[PolicyTableRowDto]:
         ie = self.get_inference()
