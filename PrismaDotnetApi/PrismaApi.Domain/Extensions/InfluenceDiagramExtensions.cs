@@ -95,6 +95,7 @@ public static class InfluenceDiagramDtoExtensions
                     UtilityId = restrictionTableId,
                     ParentOptionIds = parentOptionIds,
                     ParentOutcomeIds = parentOutcomeIds,
+                    ValueMetricId = DomainConstants.DefaultValueMetricId,
                     // using -1e100 instead of double.MinValue because the solver cannot handle extremely large negative values
                     UtilityValue = entry.RestrictionValue == 0 ? -1e100 : 0 
                 };
