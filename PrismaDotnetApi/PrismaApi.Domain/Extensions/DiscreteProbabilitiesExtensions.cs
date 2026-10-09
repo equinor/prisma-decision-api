@@ -142,4 +142,62 @@ public static class DiscreteProbabilitiesExtensions
             }
         }
     }
+
+    public static void AddProbabilityParent(
+        this ICollection<DiscreteProbabilityDto> probabilities,
+        Guid issueId,
+        ICollection<Guid> addedParentStateIds,
+        bool parentIsUncertainty
+    )
+    {
+        // Expand each existing row into one copy per state of the new parent, preserving its probabilities.
+        // The expanded rows replace the original row because every valid row must reference a state of the new parent.
+
+        var probabilityRows = probabilities.SeperateByRow();
+        var newProbabilities = new List<DiscreteProbabilityDto>();
+
+        foreach (var row in probabilityRows)
+        {
+            foreach (var addedParentStateId in addedParentStateIds)
+            {
+                var newRow = row.Select(p => new DiscreteProbabilityDto
+                {
+                    ProjectId = p.ProjectId,
+                    Probability = p.Probability,
+                    UncertaintyId = p.UncertaintyId,
+                    ParentOptionIds = new List<Guid>(p.ParentOptionIds),
+                    ParentOutcomeIds = new List<Guid>(p.ParentOutcomeIds)
+                }).ToList();
+
+                // update the deterministic ID for the new row based on the added parent state
+                foreach (var probability in newRow)
+                {
+                    probability.Id = IdGenerationUtils.GetDeterministicIdProbability(issueId, probability.OutcomeId, probability.ParentOutcomeIds, probability.ParentOptionIds);
+                }
+
+                if (parentIsUncertainty)
+                {
+                    foreach (var probability in newRow)
+                    {
+                        probability.ParentOptionIds.Add(addedParentStateId);
+                    }
+                }
+                else
+                {
+                    foreach (var probability in newRow)
+                    {
+                        probability.ParentOutcomeIds.Add(addedParentStateId);
+                    }
+                }
+
+                newProbabilities.AddRange(newRow);
+            }
+        }
+
+        probabilities.Clear();
+        foreach (var newProbability in newProbabilities)
+        {
+            probabilities.Add(newProbability);
+        }
+    }
 }
