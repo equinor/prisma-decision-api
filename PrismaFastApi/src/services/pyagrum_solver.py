@@ -7,6 +7,7 @@ from threading import Lock
 from src.config import config
 from src.constants import Type
 from src.utils.discrete_probability_array_manager import DiscreteProbabilityArrayManager
+from src.utils.discrete_utility_array_manager import DiscreteUtilityArrayManager
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.dtos.option_dtos import OptionOutgoingDto
@@ -454,17 +455,21 @@ class PyagrumSolver:
         disc_utilities = [
             utility for utility in self.discrete_utilities if utility.utility_id == issue.utility.id
         ]
+        parent_dimensions = {
+            self.diagram.variable(parent_id).name(): list(parent_labels[index])  # type: ignore
+            for index, parent_id in enumerate(parent_ids)
+        }
+        discrete_utility_manager = DiscreteUtilityArrayManager(
+            disc_utilities, parent_dimensions
+        )
         for combination in parent_combinations:
-            for utility in disc_utilities:
-                parents = [str(option_id) for option_id in utility.parent_option_ids] + [
-                    str(outcome_id) for outcome_id in utility.parent_outcome_ids
-                ]
-                if all([x in parents for x in combination]):
-                    assign = {
-                        self.diagram.variable(parent_id).name(): state  # type: ignore
-                        for parent_id, state in zip(parent_ids, combination)
-                    }  # type: ignore
-                    self.diagram.utility(node_id)[assign] = utility.utility_value  # type: ignore
+            assign = {
+                self.diagram.variable(parent_id).name(): state  # type: ignore
+                for parent_id, state in zip(parent_ids, combination)
+            }
+            self.diagram.utility(node_id)[assign] = (  # type: ignore
+                discrete_utility_manager.get_utility_for_combination(combination)
+            )
 
     def add_virtual_utility_node(self, issue: IssueOutgoingDto):
         if issue.type == Type.UTILITY.value:
