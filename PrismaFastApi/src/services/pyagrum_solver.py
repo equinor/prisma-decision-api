@@ -1,11 +1,15 @@
 import json
 import uuid
+import numpy as np
 import pyagrum as gum  # type: ignore
+import xarray as xr
 from pathlib import Path
+from functools import reduce
 from itertools import product
+from operator import add
 from threading import Lock
 from src.config import config
-from src.constants import Type
+from src.constants import Type, default_value_metric_id
 from src.utils.discrete_probability_array_manager import DiscreteProbabilityArrayManager
 from src.utils.discrete_utility_array_manager import DiscreteUtilityArrayManager
 from src.dtos.issue_dtos import IssueOutgoingDto
@@ -27,6 +31,7 @@ from typing import Any, TypeVar, Optional
 T = TypeVar("T", OptionOutgoingDto, OutcomeOutgoingDto)
 
 _EXPORT_MODEL_LOCK = Lock()
+_COMBINED_UTILITY_NODE_NAME = "combined_utility"
 
 # run for each optimal solution
 
@@ -64,6 +69,7 @@ class PyagrumSolver:
         self.fill_cpts(issues)
         self.add_virtual_utilities(issues)
         self.fill_utilities(issues)
+        self.combine_utility_nodes(issues)
 
     def raise_if_issues_edges_not_set(self):
         if not self.issues:
@@ -499,6 +505,157 @@ class PyagrumSolver:
         if issue.type == Type.UNCERTAINTY and issue.uncertainty is not None:
             for n, x in enumerate(self._sort_state_dtos(issue.uncertainty.outcomes)):
                 self.diagram.utility(node_id)[{issue.id.__str__(): n}] = x.utility  # type: ignore
+
+    def _get_utility_value_metric_id(self) -> uuid.UUID:
+        value_metric_ids = {utility.value_metric_id for utility in self.discrete_utilities}
+        if len(value_metric_ids) > 1:
+            raise ValueError("All utilities must use the same value metric")
+        return next(iter(value_metric_ids), default_value_metric_id)
+
+    def _create_explicit_utility_managers(
+        self, issues: list[IssueOutgoingDto]
+    ) -> list[DiscreteUtilityArrayManager]:
+        managers: list[DiscreteUtilityArrayManager] = []
+        for issue in issues:
+            if issue.type != Type.UTILITY.value or issue.utility is None:
+                continue
+
+            utilities = [
+                utility
+                for utility in self.discrete_utilities
+                if utility.utility_id == issue.utility.id
+            ]
+            if not utilities:
+                continue
+
+            node_id = self.node_lookup[str(issue.id)]
+            parent_ids: list[int] = list(self.diagram.parents(node_id))  # type: ignore
+            parent_dimensions = {
+                self.diagram.variable(parent_id).name(): list(  # type: ignore
+                    self.diagram.variable(parent_id).labels()  # type: ignore
+                )
+                for parent_id in parent_ids
+            }
+            managers.append(DiscreteUtilityArrayManager(utilities, parent_dimensions))
+        return managers
+
+    def _create_virtual_utility_managers(
+        self, issues: list[IssueOutgoingDto], value_metric_id: uuid.UUID
+    ) -> list[DiscreteUtilityArrayManager]:
+        managers: list[DiscreteUtilityArrayManager] = []
+        for issue in issues:
+            states: list[OptionOutgoingDto] | list[OutcomeOutgoingDto]
+            if issue.type == Type.DECISION.value and issue.decision is not None:
+                states = self._sort_state_dtos(issue.decision.options)
+                utilities = [
+                    DiscreteUtilityOutgoingDto(
+                        utility_id=issue.id,
+                        value_metric_id=value_metric_id,
+                        utility_value=state.utility,
+                        parent_option_ids=[state.id],
+                    )
+                    for state in states
+                ]
+            elif issue.type == Type.UNCERTAINTY.value and issue.uncertainty is not None:
+                states = self._sort_state_dtos(issue.uncertainty.outcomes)
+                utilities = [
+                    DiscreteUtilityOutgoingDto(
+                        utility_id=issue.id,
+                        value_metric_id=value_metric_id,
+                        utility_value=state.utility,
+                        parent_outcome_ids=[state.id],
+                    )
+                    for state in states
+                ]
+            else:
+                continue
+
+            if all(state.utility == 0 for state in states):
+                continue
+
+            managers.append(
+                DiscreteUtilityArrayManager(
+                    utilities,
+                    {str(issue.id): [str(state.id) for state in states]},
+                )
+            )
+        return managers
+
+    def _erase_utility_nodes(self) -> None:
+        utility_node_ids = [
+            node_id
+            for node_id in self.diagram.nodes()  # type: ignore
+            if self.diagram.isUtilityNode(node_id)  # type: ignore
+        ]
+        for node_id in utility_node_ids:
+            self.diagram.erase(node_id)  # type: ignore
+
+        self.node_lookup = {
+            issue_id: node_id
+            for issue_id, node_id in self.node_lookup.items()
+            if node_id not in utility_node_ids
+        }
+
+    def combine_utility_nodes(self, issues: list[IssueOutgoingDto]) -> None:
+        value_metric_id = self._get_utility_value_metric_id()
+        managers = self._create_explicit_utility_managers(issues)
+        managers.extend(self._create_virtual_utility_managers(issues, value_metric_id))
+
+        utility_arrays = [manager.array for manager in managers]
+        combined_utility = (
+            reduce(add, utility_arrays)
+            if utility_arrays
+            else xr.DataArray(
+                [0.0],
+                dims=[DiscreteUtilityArrayManager.VALUE_METRICS_DIM],
+                coords={
+                    DiscreteUtilityArrayManager.VALUE_METRICS_DIM: [str(value_metric_id)]
+                },
+                name=DiscreteUtilityArrayManager.UTILITY_GRID_NAME,
+            )
+        )
+
+        parent_dimensions = [
+            dimension
+            for dimension in combined_utility.dims
+            if dimension != DiscreteUtilityArrayManager.VALUE_METRICS_DIM
+        ]
+        combined_utility = combined_utility.transpose(
+            *parent_dimensions, DiscreteUtilityArrayManager.VALUE_METRICS_DIM
+        )
+
+        self._erase_utility_nodes()
+        combined_node_id = self.diagram.addUtilityNode(  # type: ignore
+            gum.LabelizedVariable(
+                _COMBINED_UTILITY_NODE_NAME,
+                _COMBINED_UTILITY_NODE_NAME,
+                1,
+            )
+        )
+
+        parent_states: list[list[str]] = []
+        for dimension in parent_dimensions:
+            parent_id = self.diagram.idFromName(dimension)  # type: ignore
+            self.diagram.addArc(parent_id, combined_node_id)  # type: ignore
+            parent_states.append(
+                [str(state) for state in self.diagram.variable(parent_id).labels()]  # type: ignore
+            )
+
+        combined_values = np.asarray(combined_utility.values)
+        if not parent_dimensions:
+            self.diagram.utility(combined_node_id)[:] = float(combined_values[0])  # type: ignore
+            return
+
+        for indexes in product(*(range(len(states)) for states in parent_states)):
+            assignment = {
+                dimension: parent_states[index][state_index]
+                for index, (dimension, state_index) in enumerate(
+                    zip(parent_dimensions, indexes)
+                )
+            }
+            self.diagram.utility(combined_node_id)[assignment] = float(  # type: ignore
+                combined_values[indexes + (0,)]
+            )
 
     def add_edges(self, edges: list[EdgeOutgoingDto]):
         [self.add_edge(x) for x in edges]
