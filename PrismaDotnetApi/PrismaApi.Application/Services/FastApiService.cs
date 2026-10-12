@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Dtos;
+using PrismaApi.Domain.Extensions;
 using System.Text;
 using System.Text.Json;
 
@@ -54,9 +55,12 @@ public class FastApiService : IFastApiService
         }
     }
 
-    public async Task<ApiResponseDto> SendInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, UserOutgoingDto user, CancellationToken ct = default)
+    public async Task<ApiResponseDto> SendInfluenceDiagramToFastApiAsync(Guid projectId, string endpoint, UserOutgoingDto user, bool restrictInfluenceDiagram, CancellationToken ct = default)
     {
-        var influenceDiagram = await _influenceDiagramService.GetRestrictedInfluenceDiagramAsync(projectId, user, ct);
+        var influenceDiagram = restrictInfluenceDiagram
+            ? await _influenceDiagramService.GetRestrictedInfluenceDiagramAsync(projectId, user, ct)
+            : await _influenceDiagramService.GetInfluenceDiagramAsync(projectId, user, ct);
+        
         var payload = new
         {
             issues = influenceDiagram.issues,
