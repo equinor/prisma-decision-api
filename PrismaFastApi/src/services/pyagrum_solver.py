@@ -64,6 +64,7 @@ class PyagrumSolver:
         edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        use_combined_utility_node: bool = True,
     ):
         self.issues = issues
         self.edges = edges
@@ -72,7 +73,11 @@ class PyagrumSolver:
         self.add_nodes(issues)
         self.add_edges(edges)
         self.fill_cpts(issues)
-        self.combine_utility_nodes(issues)
+        if use_combined_utility_node:
+            self.combine_utility_nodes(issues)
+        else:
+            self.add_virtual_utility_node(issues)
+            self.fill_utility_table(issues)
 
     def raise_if_issues_edges_not_set(self):
         if not self.issues:
@@ -780,4 +785,62 @@ class PyagrumSolver:
                 value = value.replace(entity_id, name)
         return value
 
+    def fill_utility_table(self, issue: IssueOutgoingDto):
+        if issue.type in [Type.DECISION.value, Type.UNCERTAINTY.value]:
+            return
+        assert issue.utility is not None
+
+        node_id = self.node_lookup[issue.id.__str__()]
+        parent_ids: list[int] = self.diagram.parents(node_id)  # type: ignore
+        parent_labels = [self.diagram.variable(pid).labels() for pid in parent_ids]  # type: ignore
+
+        # Build all parent state combinations
+        parent_combinations = list(product(*parent_labels))
+        disc_utilities = [
+            utility for utility in self.discrete_utilities if utility.utility_id == issue.utility.id
+        ]
+        parent_dimensions = {
+            self.diagram.variable(parent_id).name(): list(parent_labels[index])  # type: ignore
+            for index, parent_id in enumerate(parent_ids)
+        }
+        discrete_utility_manager = DiscreteUtilityArrayManager(
+            disc_utilities, parent_dimensions
+        )
+        for combination in parent_combinations:
+            assign = {
+                self.diagram.variable(parent_id).name(): state  # type: ignore
+                for parent_id, state in zip(parent_ids, combination)
+            }
+            self.diagram.utility(node_id)[assign] = (  # type: ignore
+                discrete_utility_manager.get_utility_for_combination(combination)
+            )
+
+    def add_virtual_utility_node(self, issue: IssueOutgoingDto):
+        if issue.type == Type.UTILITY.value:
+            return
+
+        if issue.type == Type.DECISION and issue.decision is not None:
+            if all([option.utility == 0 for option in issue.decision.options]):
+                return
+
+        if issue.type == Type.UNCERTAINTY and issue.uncertainty is not None:
+            if all([outcome.utility == 0 for outcome in issue.uncertainty.outcomes]):
+                return
+
+        node_id = self.diagram.addUtilityNode(  # type: ignore
+            gum.LabelizedVariable(
+                f"{issue.id.__str__()} utility",
+                f"{issue.id.__str__()} utility",
+                1,
+            )
+        )
+        self.diagram.addArc(self.diagram.idFromName(issue.id.__str__()), node_id)  # type: ignore
+
+        if issue.type == Type.DECISION and issue.decision is not None:
+            for n, x in enumerate(self._sort_state_dtos(issue.decision.options)):
+                self.diagram.utility(node_id)[{issue.id.__str__(): n}] = x.utility  # type: ignore
+
+        if issue.type == Type.UNCERTAINTY and issue.uncertainty is not None:
+            for n, x in enumerate(self._sort_state_dtos(issue.uncertainty.outcomes)):
+                self.diagram.utility(node_id)[{issue.id.__str__(): n}] = x.utility  # type: ignore
     
