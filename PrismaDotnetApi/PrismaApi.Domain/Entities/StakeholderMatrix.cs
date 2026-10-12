@@ -8,7 +8,7 @@ using PrismaApi.Domain.Interfaces;
 
 namespace PrismaApi.Domain.Entities
 {
-    public class StakeholderMatrix : AuditableEntity, IBaseEntity<Guid>
+    public class StakeholderMatrix : AuditableEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
     {
         public required Guid Id { get; set; }
         public required Guid ProjectId { get; set; }
@@ -18,6 +18,7 @@ namespace PrismaApi.Domain.Entities
         public required double AffectingTheDecision { get; set; }
         public required double AffectedByTheDecision { get; set; }
         public Project? Project { get; set; }
+        public TransferBehavior IsTransferable => TransferBehavior.NotTransferable;
 
         public static void OnModelConfiguring(ModelBuilder modelBuilder)
         {
