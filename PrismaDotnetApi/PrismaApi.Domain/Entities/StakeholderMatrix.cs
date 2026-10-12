@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ namespace PrismaApi.Domain.Entities
         public required double AffectingTheDecision { get; set; }
         public required double AffectedByTheDecision { get; set; }
         public Project? Project { get; set; }
+        [NotMapped]
         public TransferBehavior IsTransferable => TransferBehavior.NotTransferable;
 
         public static void OnModelConfiguring(ModelBuilder modelBuilder)
