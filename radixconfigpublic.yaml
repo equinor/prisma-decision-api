@@ -7,6 +7,9 @@ spec:
     - name: public
       build:
         from: public|public-deploy*
+    - name: design
+      build:
+        from: design|design-deploy*
   components:
     - name: api
       src: .
@@ -15,9 +18,6 @@ spec:
         - name: http
           port: 7075
       publicPort: http
-      secrets:
-        - CLIENT_SECRET
-        - APPLICATION_INSIGHTS_CONNECTIONSTRING
       resources:
         requests:
           memory: '2000Mi'
@@ -38,6 +38,41 @@ spec:
           replicas: 1
           variables:
             ASPNETCORE_ENVIRONMENT: 'Public'
+          secretRefs:
+            azureKeyVaults:
+                - name: kvprismadecisionprodsw
+                  useAzureIdentity: true
+                  items:
+                      - name: applicationinsightapiprod
+                        envVar: APPINSIGHTS_CONNECTIONSTRING
+          identity:
+            azure:
+                clientId: 23042ef9-dbae-40e9-9345-626087966321
+        - environment: design
+          replicas: 1
+          variables:
+            ASPNETCORE_ENVIRONMENT: 'Public'
+          secretRefs:
+            azureKeyVaults:
+                - name: kvprismadecisionprodsw
+                  useAzureIdentity: true
+                  items:
+                      - name: applicationinsightapiprod
+                        envVar: APPINSIGHTS_CONNECTIONSTRING
+          identity:
+            azure:
+                clientId: 23042ef9-dbae-40e9-9345-626087966321
+        - environment: design
+          replicas: 1
+          variables:
+            ASPNETCORE_ENVIRONMENT: 'Public'
+            secretRefs:
+            azureKeyVaults:
+                - name: kvprismadecisionprodsw
+                  useAzureIdentity: true
+                  items:
+                      - name: applicationinsightapiprod
+                        envVar: APPINSIGHTS_CONNECTIONSTRING
           identity:
             azure:
                 clientId: 23042ef9-dbae-40e9-9345-626087966321
@@ -47,9 +82,6 @@ spec:
       ports:
         - name: http
           port: 8000
-      secrets:
-        - CLIENT_SECRET
-        - APPINSIGHTS_CONNECTIONSTRING
       resources:
         requests:
           memory: '2000Mi'
@@ -68,13 +100,3 @@ spec:
       environmentConfig:
         - environment: public
           replicas: 1
-          variables:
-            CLIENT_ID: '418f5a86-0b39-46bb-9a83-ea12b33d8b5b'
-            REDIRECT_URL: 'https://api-prisma-decision-api-dev.radix.equinor.com/docs/oauth2-redirect'
-            AUDIENCE: "418f5a86-0b39-46bb-9a83-ea12b33d8b5b"
-            SCOPE: '418f5a86-0b39-46bb-9a83-ea12b33d8b5b/Read'
-            APP_ENV: 'public'
-            DATABASE_CONN_PUBLIC: 'DRIVER={ODBC Driver 18 for SQL Server};MARS_Connection=Yes;Server=sql-prisma-decision-public.database.windows.net;Database=sqldb-prisma-decision-public;'
-          identity:
-            azure:
-                clientId: 23042ef9-dbae-40e9-9345-626087966321

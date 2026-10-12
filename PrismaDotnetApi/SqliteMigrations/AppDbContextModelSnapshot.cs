@@ -1021,9 +1021,14 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Property<Guid>("OptionId")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("StrategyId", "OptionId");
 
                     b.HasIndex("OptionId");
+
+                    b.HasIndex("ProjectId");
 
                     b.ToTable("StrategyOptions");
                 });
@@ -1770,6 +1775,12 @@ namespace PrismaApi.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("PrismaApi.Domain.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("PrismaApi.Domain.Entities.Strategy", "Strategy")
                         .WithMany("StrategyOptions")
                         .HasForeignKey("StrategyId")
@@ -1777,6 +1788,8 @@ namespace PrismaApi.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Option");
+
+                    b.Navigation("Project");
 
                     b.Navigation("Strategy");
                 });

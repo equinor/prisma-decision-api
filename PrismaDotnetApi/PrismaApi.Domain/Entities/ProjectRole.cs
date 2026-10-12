@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Interfaces;
 
 namespace PrismaApi.Domain.Entities;
 
-public class ProjectRole : AuditableEntity, IBaseEntity<Guid>
+public class ProjectRole : AuditableEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
 {
     public required Guid Id { get; set; }
     public required Guid ProjectId { get; set; }
@@ -14,6 +15,8 @@ public class ProjectRole : AuditableEntity, IBaseEntity<Guid>
 
     public Project? Project { get; set; }
     public User? User { get; set; }
+    [NotMapped]
+    public TransferBehavior IsTransferable => TransferBehavior.Transferable;
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ProjectRole>(entity =>

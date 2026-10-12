@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Interfaces;
 
 namespace PrismaApi.Domain.Entities;
 
-public class DecisionQualityAssessment : AuditableEntity, IBaseEntity<Guid>
+public class DecisionQualityAssessment : AuditableEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
 {
     public required Guid Id { get; set; }
     public int AppropriateFrame { get; set; }
@@ -19,6 +20,8 @@ public class DecisionQualityAssessment : AuditableEntity, IBaseEntity<Guid>
     public required Guid ProjectId { get; set; }
     public Assessment? Assessment { get; set; }
     public Project? Project { get; set; }
+    [NotMapped]
+    public TransferBehavior IsTransferable => TransferBehavior.NotTransferable;
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<DecisionQualityAssessment>(entity =>
