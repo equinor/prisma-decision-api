@@ -72,10 +72,9 @@ namespace PrismaApi.Application.Services
                )
            ).ToOutgoingDtos(),
            getProjectId: dto => dto.ProjectId,
-           getCacheKey: CacheKeys.GetObjectivesInProjectKey,
+           getCacheKey: CacheKeys.GetStakeHolderEntryInProjectKey,
            cacheDuration: CacheConstants.DefaultMediumQueryCacheInTimeSpan,
            ct: ct);
-            // return entities.ToOutgoingDtos(); // This line is no longer needed as the return is handled within the cache block.
         }
         private static Expression<Func<StakeholderMatrixEntry, bool>> UserFilter(UserOutgoingDto user)
             => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
