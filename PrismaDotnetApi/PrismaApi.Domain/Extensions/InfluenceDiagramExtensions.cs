@@ -1,11 +1,19 @@
 using System.Text.Json;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
+using PrismaDotnetApi.PrismaApi.Domain.Extensions;
 
 namespace PrismaApi.Domain.Extensions;
 
 public static class InfluenceDiagramDtoExtensions
 {
+    public static IssueOutgoingDto? GetIssueByStateId(this InfluenceDiagramDto influenceDiagramDto, Guid stateId)
+    {
+        return influenceDiagramDto.issues.FirstOrDefault(issue =>
+            issue.Decision?.Options.Any(option => option.Id == stateId) == true ||
+            issue.Uncertainty?.Outcomes.Any(outcome => outcome.Id == stateId) == true);
+    }
+
     public static InfluenceDiagramDto DeepClone<InfluenceDiagramDto>(this InfluenceDiagramDto source)
     {
         var json = JsonSerializer.Serialize(source);
@@ -105,8 +113,361 @@ public static class InfluenceDiagramDtoExtensions
     
     public static void ApplyRestrictions(this InfluenceDiagramDto influenceDiagramDto)
     {
+        influenceDiagramDto.ValidateRestrictions();
+        ApplyTotalRestrictions(influenceDiagramDto);
         RestrictDecisions(influenceDiagramDto);
         RestrictUncertainties(influenceDiagramDto);
+    }
+
+    /// <summary>
+    /// Validates the restrictions applied to the influence diagram.
+    /// Throws an exception if any total restriction is violated.
+    /// 
+    /// Validation requirements:
+    /// - Each total restriction must not have any grandchildren unconnected to the restricting issue.
+    /// - No child of a totally restricted issue can be of type uncertainty.
+    /// </summary>
+    public static void ValidateRestrictions(this InfluenceDiagramDto influenceDiagramDto)
+    {
+        var tablesWithTotalRestrictions = influenceDiagramDto.restrictionTables
+            .Where(table => table.RestrictionEntries
+                .Where(entry => entry.ParentStateId is not null)
+                .GroupBy(entry => entry.ParentStateId)
+                .Any(row => row.All(entry => entry.RestrictionValue == 0)));
+
+        var utilityIssueIds = influenceDiagramDto.issues
+            .Where(issue => issue.Type == IssueType.Utility.ToString())
+            .Select(issue => issue.Id)
+            .ToList();
+
+        foreach (var table in tablesWithTotalRestrictions)
+        {
+            var restrictedEdge = influenceDiagramDto.edges.FirstOrDefault(edge => edge.Id == table.EdgeId)
+                ?? throw new InvalidOperationException($"Restriction table '{table.Id}' references an edge that is not in the influence diagram.");
+                
+            var grandChildIssueIds = influenceDiagramDto.edges
+                .Where(
+                    edge => edge.TailIssueId == restrictedEdge.HeadIssueId 
+                    && !utilityIssueIds.Contains(edge.HeadIssueId) // filter out utility issues as children we don't have to consider
+                )
+                .Select(edge => edge.HeadIssueId)
+                .Distinct();
+
+            // if any of the children are of type uncertainty => throw invalid exception with details of the issue
+            // this is because the generated N/A state would not have the necessary information for probability table calculations
+            if (grandChildIssueIds.Any(childIssueId => influenceDiagramDto.issues.FirstOrDefault(issue => issue.Id == childIssueId)?.Type == IssueType.Uncertainty.ToString()))
+            {
+                throw new InvalidOperationException(
+                    $"Restriction table '{table.Id}' totally restricts an available row, but node '{restrictedEdge.HeadIssueId}' has a child of type uncertainty. This does not provide the nessessary information for total restriction. To address this try reversing the order of Uncertainties in the influence diagram if possible.");
+            }
+            
+            var unconnectedIssueIds = grandChildIssueIds
+                .Where(childIssueId => !influenceDiagramDto.edges.Any(edge =>
+                    edge.TailIssueId == restrictedEdge.TailIssueId && edge.HeadIssueId == childIssueId))
+                .ToList();
+            
+            // if there are any unconnected grandchildren, it indicates a missing bypass edge from the restricting issue to it's grandchildren, which violates the total restriction requirement
+            if (unconnectedIssueIds.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"Restriction table '{table.Id}' totally restricts an available row, but node '{restrictedEdge.TailIssueId}' does not have an edge to every child of node '{restrictedEdge.HeadIssueId}'. Missing child node ids: {string.Join(", ", unconnectedIssueIds)}.");
+            }
+        }
+    }
+
+    public static void ApplyTotalRestrictions(this InfluenceDiagramDto influenceDiagramDto)
+    {
+        var issuesById = influenceDiagramDto.issues
+            .GroupBy(issue => issue.Id)
+            .ToDictionary(group => group.Key, group => group.First());
+        var headIssueIdsByEdgeId = influenceDiagramDto.edges
+            .GroupBy(edge => edge.Id)
+            .ToDictionary(group => group.Key, group => group.First().HeadIssueId);
+        var restrictionTablesByIssueId = influenceDiagramDto.restrictionTables
+            .Where(table => headIssueIdsByEdgeId.ContainsKey(table.EdgeId))
+            .GroupBy(table => headIssueIdsByEdgeId[table.EdgeId])
+            .ToDictionary(group => group.Key, group => group.ToList());
+        var utilityChildrenByIssueId = influenceDiagramDto.edges
+            .GroupBy(edge => edge.TailIssueId)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .Select(edge => issuesById.GetValueOrDefault(edge.HeadIssueId))
+                    .Where(issue => issue?.Type == IssueType.Utility.ToString() && issue.Utility is not null)
+                    .Select(issue => issue!)
+                    .ToList());
+
+        var orderedIssueIds = influenceDiagramDto.OrderIssueIdsByTopologicalSort();
+        foreach (var issueId in orderedIssueIds)
+        {
+            var issue = issuesById.GetValueOrDefault(issueId)
+                ?? throw new InvalidOperationException($"Issue with id '{issueId}' not found in the influence diagram.");
+
+            if (!restrictionTablesByIssueId.TryGetValue(issueId, out var restrictionTables))
+            {
+                continue;
+            }
+
+            var utilityChildren = utilityChildrenByIssueId.GetValueOrDefault(issueId) ?? [];
+            influenceDiagramDto.ApplyTotalRestrictionsForIssue(issue, restrictionTables, utilityChildren);
+        }
+    }
+
+    private static void ApplyTotalRestrictionsForIssue(
+        this InfluenceDiagramDto influenceDiagramDto,
+        IssueOutgoingDto issue,
+        IEnumerable<RestrictionTableOutgoingDto> restrictionTables,
+        IReadOnlyCollection<IssueOutgoingDto> utilityChildren)
+    {
+        foreach (var restrictionTable in restrictionTables)
+        {
+            if (restrictionTable.RestrictionEntries.All(entry => entry.RestrictionValue == 0))
+            {
+                throw new InvalidOperationException($"All entries for issue with id '{issue.Id}' are restricted.");
+            }
+
+            var totallyRestrictedParentStateIds = restrictionTable.RestrictionEntries
+                .GroupBy(entry => entry.ParentStateId)
+                .Where(row => row.Key is not null && row.Key != Guid.Empty)
+                .Where(row => row.All(entry => entry.RestrictionValue == 0))
+                .Select(row => row.Key!.Value);
+
+            foreach (var parentStateId in totallyRestrictedParentStateIds)
+            {
+                influenceDiagramDto.ApplyTotalRestriction(issue, parentStateId, utilityChildren, restrictionTable);
+            }
+        }
+    }
+
+    private static void ApplyTotalRestriction(
+        this InfluenceDiagramDto influenceDiagramDto,
+        IssueOutgoingDto issue,
+        Guid parentStateId,
+        IReadOnlyCollection<IssueOutgoingDto> utilityChildren,
+        RestrictionTableOutgoingDto restrictionTable)
+    {
+        if (issue.Type == IssueType.Decision.ToString() && issue.Decision is not null)
+        {
+            influenceDiagramDto.AddNotApplicableOption(issue, parentStateId, utilityChildren, restrictionTable);
+        }
+        else if (issue.Type == IssueType.Uncertainty.ToString() && issue.Uncertainty is not null)
+        {
+            influenceDiagramDto.AddNotApplicableOutcome(issue, parentStateId, utilityChildren);
+        }
+    }
+
+    private static void AddNotApplicableOption(
+        this InfluenceDiagramDto influenceDiagramDto,
+        IssueOutgoingDto issue,
+        Guid parentStateId,
+        IEnumerable<IssueOutgoingDto> utilityChildren,
+        RestrictionTableOutgoingDto restrictionTable)
+    {
+        var decision = issue.Decision!;
+        var stateName = $"N/A {parentStateId}";
+        var stateId = $"{issue.ProjectId}|Decision:{decision.Id}|State:{stateName}".GenerateDeterministicGuid();
+
+        var parentIssue = influenceDiagramDto.GetIssueByStateId(parentStateId);
+        if (decision.Options.Any(option => option.Id == stateId))
+        {
+            return;
+        }
+
+        var notApplicableOption = new OptionOutgoingDto
+        {
+            Id = stateId,
+            ProjectId = issue.ProjectId,
+            DecisionId = decision.Id,
+            Name = stateName
+        };
+        decision.Options.Add(notApplicableOption);
+        // add the new option to the restriction table
+        // add for the parent state so it will not be restricted
+        restrictionTable.RestrictionEntries.Add(new RestrictionEntryOutgoingDto
+        {
+            ProjectId = issue.ProjectId,
+            ParentStateId = parentStateId,
+            ChildStateId = notApplicableOption.Id,
+            RestrictionValue = 1,
+            RestrictionTableId = restrictionTable.Id,
+            IsChildUncertainty = false,
+            IsParentUncertainty = parentIssue?.Type == IssueType.Uncertainty.ToString()
+        });
+
+        // add for the other possible parents so they will be restricted
+        var otherParentStateIds = parentIssue?.Type == IssueType.Uncertainty.ToString()
+            ? parentIssue?.Uncertainty!.Outcomes.Select(outcome => outcome.Id).ToList()
+            : parentIssue?.Decision!.Options.Select(option => option.Id).ToList();
+        otherParentStateIds = otherParentStateIds?.Where(id => id != parentStateId).ToList();
+        foreach (var otherParentStateId in otherParentStateIds ?? Enumerable.Empty<Guid>())
+        {
+            restrictionTable.RestrictionEntries.Add(new RestrictionEntryOutgoingDto
+            {
+                ProjectId = issue.ProjectId,
+                ParentStateId = otherParentStateId,
+                ChildStateId = notApplicableOption.Id,
+                RestrictionValue = 0,
+                RestrictionTableId = restrictionTable.Id,
+                IsChildUncertainty = false,
+                IsParentUncertainty = parentIssue?.Type == IssueType.Uncertainty.ToString()
+            });
+        }
+
+        foreach (var utilityIssue in utilityChildren)
+        {
+            influenceDiagramDto.AddUtilitiesFromUncertaintyNAState(utilityIssue, notApplicableOption, decision);
+        }
+    }
+
+    private static void AddNotApplicableOutcome(
+        this InfluenceDiagramDto influenceDiagramDto,
+        IssueOutgoingDto issue,
+        Guid parentStateId,
+        IEnumerable<IssueOutgoingDto> utilityChildren)
+    {
+        var uncertainty = issue.Uncertainty!;
+        var stateName = $"N/A {parentStateId}";
+        var stateId = $"{issue.ProjectId}|Uncertainty:{uncertainty.Id}|State:{stateName}".GenerateDeterministicGuid();
+        if (uncertainty.Outcomes.Any(outcome => outcome.Id == stateId))
+        {
+            return;
+        }
+
+        var notApplicableOutcome = new OutcomeOutgoingDto
+        {
+            Id = stateId,
+            ProjectId = issue.ProjectId,
+            UncertaintyId = uncertainty.Id,
+            Name = stateName
+        };
+        uncertainty.Outcomes.Add(notApplicableOutcome);
+        influenceDiagramDto.AddProbabilitiesFromAddedOutcome(parentStateId, notApplicableOutcome, uncertainty);
+        foreach (var utilityIssue in utilityChildren)
+        {
+            influenceDiagramDto.AddUtilitiesFromDecisionNAState(utilityIssue, notApplicableOutcome, uncertainty);
+        }
+    }
+
+    public static void AddUtilitiesFromUncertaintyNAState(this InfluenceDiagramDto influenceDiagramDto, IssueOutgoingDto utilityIssue, OptionOutgoingDto notApplicableState, DecisionOutgoingDto parent)
+    {
+        influenceDiagramDto.AddUtilitiesFromNAState(
+            utilityIssue,
+            notApplicableState.Id,
+            parent.Options.Select(option => option.Id).ToList());
+    }
+
+    public static void AddUtilitiesFromDecisionNAState(this InfluenceDiagramDto influenceDiagramDto, IssueOutgoingDto utilityIssue, OutcomeOutgoingDto notApplicableState, UncertaintyOutgoingDto parent)
+    {
+        influenceDiagramDto.AddUtilitiesFromNAState(
+            utilityIssue,
+            notApplicableState.Id,
+            parent.Outcomes.Select(outcome => outcome.Id).ToList());
+    }
+
+    private static void AddUtilitiesFromNAState(
+        this InfluenceDiagramDto influenceDiagramDto,
+        IssueOutgoingDto utilityIssue,
+        Guid notApplicableStateId,
+        List<Guid> parentStateIds)
+    {
+        if (utilityIssue.Utility is null)
+        {
+            throw new InvalidOperationException("Utility issue does not have an associated utility.");
+        }
+
+        var siblingStateIds = parentStateIds
+            .Where(stateId => stateId != notApplicableStateId)
+            .ToList();
+        if (siblingStateIds.Count == 0)
+        {
+            throw new InvalidOperationException("The parent does not have an existing state.");
+        }
+
+        var utilityEntries = influenceDiagramDto.discreteUtilities
+            .Where(utility => utility.UtilityId == utilityIssue.Utility.Id)
+            .ToList();
+        if (utilityEntries.Count == 0)
+        {
+            return;
+        }
+
+        var existingEntryCount = utilityEntries.Count;
+        utilityEntries.AddUtilitiesRow(utilityIssue.Id, notApplicableStateId, siblingStateIds);
+        foreach (var newUtility in utilityEntries.Skip(existingEntryCount))
+        {
+            influenceDiagramDto.discreteUtilities.Add(newUtility);
+        }
+    }
+
+    private static void AddProbabilitiesFromAddedOutcome(this InfluenceDiagramDto influenceDiagramDto, Guid restrictionParentStateId, OutcomeOutgoingDto addedOutcome, UncertaintyOutgoingDto parent)
+    {
+        // this is an added outcome that must add corresponding probabilities for the new outcome in the parent uncertainty's probability table.
+        // for the existing rows when this outcome is added it's probability will be 0. 
+        // then for new rows added the probability for this new outcome will be 1 for the N/A state and 0 for all other outcomes.
+
+        var relevantDiscreteProbabilities = influenceDiagramDto.discreteProbabilities
+            .Where(probability => probability.UncertaintyId == parent.Id)
+            .ToList();
+        relevantDiscreteProbabilities.AddProbabilitiesColumn(parent.IssueId, addedOutcome);
+        relevantDiscreteProbabilities.SetProbabilitiesToOne(restrictionParentStateId, addedOutcome.Id);
+
+        // from influence diagram replace all probabilities with the uncertainty id with the updated relevantDiscreteProbabilities
+        foreach (var probability in relevantDiscreteProbabilities)
+        {
+            influenceDiagramDto.discreteProbabilities.Remove(probability);
+            influenceDiagramDto.discreteProbabilities.Add(probability);
+        }
+
+    }
+
+    /// <summary>
+    /// Orders the issue IDs in the influence diagram by a topological sort, ensuring that parent issues appear before their children.
+    /// </summary>
+    /// <param name="influenceDiagramDto"></param>
+    /// <returns></returns>
+    public static IEnumerable<Guid> OrderIssueIdsByTopologicalSort(this InfluenceDiagramDto influenceDiagramDto)
+    {
+        var sorted = new List<Guid>();
+        var visited = new HashSet<Guid>();
+
+        void Visit(Guid issueId)
+        {
+            if (!visited.Contains(issueId))
+            {
+                visited.Add(issueId);
+                var children = influenceDiagramDto.edges
+                    .Where(edge => edge.TailIssueId == issueId)
+                    .Select(edge => edge.HeadIssueId);
+                foreach (var child in children)
+                {
+                    Visit(child);
+                }
+                sorted.Add(issueId);
+            }
+        }
+
+        var allIssueIds = influenceDiagramDto.edges
+            .SelectMany(edge => new[] { edge.TailIssueId, edge.HeadIssueId })
+            .Distinct();
+
+        foreach (var issueId in allIssueIds)
+        {
+            Visit(issueId);
+        }
+
+        sorted.Reverse();
+        return sorted;
+    }
+
+    public static bool RequiresMarginsForRestrictions(this InfluenceDiagramDto influenceDiagramDto)
+    {
+        // Check if there are any total restrictions (i.e., restrictions where all entries for a given parent state have a restriction value of 0)
+        // this could require margins for rebalincing the probabilities
+        return influenceDiagramDto.restrictionTables.Any(restrictionTable =>
+            restrictionTable.RestrictionEntries
+                .Where(entry => entry.ParentStateId is not null)
+                .GroupBy(entry => entry.ParentStateId)
+                .Any(row => row.All(entry => entry.RestrictionValue == 0)));
     }
 
     private static void RestrictDecisions(InfluenceDiagramDto influenceDiagramDto)
@@ -153,28 +514,8 @@ public static class InfluenceDiagramDtoExtensions
                 }
             }
         }
-        NormalizeProbabilities(discreteProbabilities);
+        discreteProbabilities.NormalizeProbabilities();
     }
 
-    private static void NormalizeProbabilities(ICollection<DiscreteProbabilityDto> discreteProbabilities)
-    {
-        var probabilityRows = discreteProbabilities.GroupBy(dp =>
-                    string.Join(",", dp.ParentOptionIds.OrderBy(x => x)
-                        .Concat(dp.ParentOutcomeIds.OrderBy(x => x)))).ToList();
-        foreach (var row in probabilityRows)
-        {
-            int precision = 2;
-            var totalProbability = row.Sum(x => x.Probability);
-            if (totalProbability is null || Math.Round(totalProbability.Value, precision) == 0 || Math.Round(totalProbability.Value, precision) == 1) continue; // no need to normalize 
-
-            // normalize the probabilities for this row, but leave out any probabilities that are already 0
-            // since they are restricted and should not be normalized
-            var nonZeroProbabilities = row.Where(x => x.Probability > 0).ToList();
-            var nonZeroTotalProbability = nonZeroProbabilities.Sum(x => x.Probability);
-            foreach (var probability in nonZeroProbabilities)
-            {
-                probability.Probability = probability.Probability / nonZeroTotalProbability;
-            }
-        }
-    }
+    
 }

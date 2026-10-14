@@ -20,7 +20,9 @@ permissions: {}
 
 jobs:
   run-migration:
-    runs-on: ubuntu-latest
+    runs-on:
+      group: standard
+      labels: ubuntu
     permissions:
       id-token: write
       contents: read
@@ -43,26 +45,6 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           enable-AzPSSession: true
 
-      - name: Get IP Address
-        id: get_ip
-        run: |
-          echo "ip=$(curl -s ifconfig.me)" >> $GITHUB_OUTPUT
-
-      - name: Add Firewall Rule
-        env:
-          RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          SQL_SERVER_NAME: ${{ secrets.AZURE_SQL_SERVER_NAME }}
-          SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          RUNNER_IP: ${{ steps.get_ip.outputs.ip }}
-        run: |
-          az sql server firewall-rule create \
-            --resource-group "${RESOURCE_GROUP}" \
-            --server "${SQL_SERVER_NAME}" \
-            --name AllowGitHubActionsIP \
-            --start-ip-address "${RUNNER_IP}" \
-            --end-ip-address "${RUNNER_IP}" \
-            --subscription "${SUBSCRIPTION_ID}"
-
       - name: Set up .NET
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
@@ -81,15 +63,3 @@ jobs:
           ASPNETCORE_ENVIRONMENT: ${{ inputs.env-name }}
         run: |
           dotnet ef database update --project ./SqlServerMigrations/SqlServerMigrations.csproj --startup-project ./PrismaApi.Api/PrismaApi.Api.csproj -- --provider=sqlserver
-
-      - name: Remove Firewall Rule
-        env:
-          RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          SQL_SERVER_NAME: ${{ secrets.AZURE_SQL_SERVER_NAME }}
-          SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        run: |
-          az sql server firewall-rule delete \
-            --resource-group "${RESOURCE_GROUP}" \
-            --server "${SQL_SERVER_NAME}" \
-            --name AllowGitHubActionsIP \
-            --subscription "${SUBSCRIPTION_ID}"

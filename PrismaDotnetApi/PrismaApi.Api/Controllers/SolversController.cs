@@ -23,7 +23,7 @@ public class SolversController : PrismaBaseController
     public async Task<ActionResult<ApiResponseDto>> GetSolutionAsDecisionTreeAsync([FromRoute] Guid projectId, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}/decision_tree/v2", user, ct);
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}/decision_tree/v2", user, restrictInfluenceDiagram: true, ct: ct);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
             return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeLogString() : null);
@@ -49,7 +49,7 @@ public class SolversController : PrismaBaseController
     public async Task<ActionResult<ApiResponseDto>> GetSolutionAsync([FromRoute] Guid projectId, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}", user, ct);
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}", user, restrictInfluenceDiagram: true, ct: ct);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
             return Ok(!string.IsNullOrEmpty(fastApiResponse.Content) ? fastApiResponse.Content.SanitizeLogString() : null);
@@ -62,7 +62,20 @@ public class SolversController : PrismaBaseController
     public async Task<IActionResult> ExportPyagrumModelAsync([FromRoute] Guid projectId, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
-        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}/export", user, ct);
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}/export", user,restrictInfluenceDiagram: true, ct);
+        if (fastApiResponse.StatusCode == HttpStatusCode.OK)
+        {
+            return Content(fastApiResponse.Content ?? "{}", "application/json");
+        }
+
+        return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
+    }
+
+    [HttpGet("solvers/project/{projectId:guid}/margins")]
+    public async Task<IActionResult> GetMarginsAsync([FromRoute] Guid projectId, CancellationToken ct = default)
+    {
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
+        var fastApiResponse = await _fastApiService.SendInfluenceDiagramToFastApiAsync(projectId, $"/solvers/project/{projectId}/margins", user, restrictInfluenceDiagram: false, ct: ct);
         if (fastApiResponse.StatusCode == HttpStatusCode.OK)
         {
             return Content(fastApiResponse.Content ?? "{}", "application/json");
