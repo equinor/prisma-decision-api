@@ -28,13 +28,23 @@ class DiscreteUtilityArrayManager:
         utilities: list[DiscreteUtilityOutgoingDto],
         parent_dimensions: dict[str, list[str]],
     ) -> xr.DataArray:
+        """
+        Create an xarray DataArray representing the utility values indexed by parent-state combinations.
+        The resulting DataArray will have dimensions corresponding to each parent issue's states and a separate dimension for value metrics.
+        For example if a utility node has parent issues A and B with states A1, A2 and B1, B2 respectively, the dimensions are ("A", "B", "value_metrics"),
+        where the coordinates of A are ["A1", "A2"] and the coordinates of B are ["B1", "B2"].
+
+        Args:
+            utilities: A list of DiscreteUtilityOutgoingDto objects representing the utility table.
+            parent_dimensions: A dictionary mapping parent issue IDs to their possible states.
+
+        Returns:
+            An xarray DataArray with dimensions corresponding to parent states and value metrics.
+        """
         self.all_parent_ids = set()
         self.utility_by_parents = {}
         if not utilities:
             return xr.DataArray([])
-
-        if self.VALUE_METRICS_DIM in parent_dimensions:
-            raise ValueError(f"Parent dimension cannot be named {self.VALUE_METRICS_DIM}")
 
         if any(not states for states in parent_dimensions.values()):
             raise ValueError("Each parent dimension must contain at least one state")
@@ -67,7 +77,10 @@ class DiscreteUtilityArrayManager:
                         f"Utility row must contain exactly one state for parent {dimension}"
                     )
                 indexes.append(coordinate_indexes[dimension][matching_states.pop()])
-            data[tuple(indexes) + (0,)] = utility_value
+                
+            # Assign the utility value to the corresponding position in the data array, will not work for multiple value metrics
+            # TODO: Extend this to handle multiple value metrics if necessary.
+            data[tuple(indexes) + (0,)] = utility_value 
 
         self.utility_by_parents = utility_by_parents
         return xr.DataArray(

@@ -547,9 +547,6 @@ class PyagrumSolver:
             else:
                 continue
 
-            if all(state.utility == 0 for state in states):
-                continue
-
             managers.append(
                 DiscreteUtilityArrayManager(
                     utilities,
