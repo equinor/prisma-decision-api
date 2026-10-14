@@ -8,7 +8,7 @@ public static class CacheKeys
     public static string GetNodesInProjectKey(Guid projectId) => $"Nodes_Project_{projectId}";
     public static string GetAssessmentKey(Guid projectId) => $"Assessment_Project_{projectId}";
     public static string GetObjectivesInProjectKey(Guid projectId) => $"Objectives_Project_{projectId}";
-    public static string GetStakeHolderEntryInProjectKey(Guid projectId) => $"StakeholderMatrixEntries_Project_{projectId}";
+    public static string GetStakeHolderMatrixEntriesInProjectKey(Guid projectId) => $"StakeholderMatrixEntries_Project_{projectId}";
     public static string GetStrategyInProjectKey(Guid projectId) => $"Strategy_Project_{projectId}";
     public static string GetDiscreteProbabilitiesInProjectKey(Guid projectId) => $"DiscreteProbabilities_Project_{projectId}";
     public static string GetDiscreteUtilitiesInProjectKey(Guid projectId) => $"DiscreteUtilities_Project_{projectId}";

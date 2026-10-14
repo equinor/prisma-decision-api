@@ -72,7 +72,7 @@ namespace PrismaApi.Application.Services
                )
            ).ToOutgoingDtos(),
            getProjectId: dto => dto.ProjectId,
-           getCacheKey: CacheKeys.GetStakeHolderEntryInProjectKey,
+           getCacheKey: CacheKeys.GetStakeHolderMatrixEntriesInProjectKey,
            cacheDuration: CacheConstants.DefaultMediumQueryCacheInTimeSpan,
            ct: ct);
         }
