@@ -51,7 +51,7 @@ public partial class AppDbContext : DbContext
     public DbSet<BoardSheet> BoardSheets => Set<BoardSheet>();
     public DbSet<RestrictionTable> RestrictionTables => Set<RestrictionTable>();
     public DbSet<RestrictionEntry> RestrictionEntries => Set<RestrictionEntry>();
-    public DbSet<StakeholderMatrix> StakeholderMatrixes => Set<StakeholderMatrix>();
+    public DbSet<StakeholderMatrixEntry> StakeholderMatrixes => Set<StakeholderMatrixEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -85,7 +85,7 @@ public partial class AppDbContext : DbContext
         BoardSheet.OnModelConfiguring(modelBuilder);
         RestrictionTable.OnModelConfiguring(modelBuilder);
         RestrictionEntry.OnModelConfiguring(modelBuilder);
-        StakeholderMatrix.OnModelConfiguring(modelBuilder);
+        StakeholderMatrixEntry.OnModelConfiguring(modelBuilder);
 
         ValidateEntityHandlingPolicies(modelBuilder);
     }

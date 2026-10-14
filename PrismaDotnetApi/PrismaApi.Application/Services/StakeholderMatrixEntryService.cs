@@ -14,12 +14,12 @@ using PrismaApi.Infrastructure.Caching;
 
 namespace PrismaApi.Application.Services
 {
-    public class StakeholderMatrixService : IStakeholderMatrixService
+    public class StakeholderMatrixEntryService : IStakeholderMatrixEntryService
     {
-        private readonly IStakeholderMatrixRepository _stakeholderMatrixRepository;
+        private readonly IStakeholderMatrixEntryRepository _stakeholderMatrixRepository;
         private readonly IMemoryCache _cache;
 
-        public StakeholderMatrixService(IStakeholderMatrixRepository stakeholderMatrixRepository, IMemoryCache cache)
+        public StakeholderMatrixEntryService(IStakeholderMatrixEntryRepository stakeholderMatrixRepository, IMemoryCache cache)
         {
             _stakeholderMatrixRepository = stakeholderMatrixRepository;
             _cache = cache;
@@ -62,14 +62,28 @@ namespace PrismaApi.Application.Services
 
         public async Task<List<StakeholderMatrixDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
         {
-            var entities = await _stakeholderMatrixRepository.GetAllAsync(withTracking: false, filterPredicate: UserFilter(user), ct: ct);
-            return entities.ToOutgoingDtos();
+            return await _cache.GetProjectScopedAsync(
+           user,
+           loadMissingAsync: async (projectIds, ct) => (
+               await _stakeholderMatrixRepository.GetAllAsync(
+                   withTracking: false,
+                   filterPredicate: ProjectFilter(projectIds),
+                   ct: ct
+               )
+           ).ToOutgoingDtos(),
+           getProjectId: dto => dto.ProjectId,
+           getCacheKey: CacheKeys.GetObjectivesInProjectKey,
+           cacheDuration: CacheConstants.DefaultMediumQueryCacheInTimeSpan,
+           ct: ct);
+            // return entities.ToOutgoingDtos(); // This line is no longer needed as the return is handled within the cache block.
         }
-        private static Expression<Func<StakeholderMatrix, bool>> UserFilter(UserOutgoingDto user)
+        private static Expression<Func<StakeholderMatrixEntry, bool>> UserFilter(UserOutgoingDto user)
             => e => e.Project!.ProjectRoles.Any(p => p.UserId == user.Id);
 
-        private static Expression<Func<StakeholderMatrix, bool>> ProjectAndUserFilter(Guid projectId, UserOutgoingDto user)
+        private static Expression<Func<StakeholderMatrixEntry, bool>> ProjectAndUserFilter(Guid projectId, UserOutgoingDto user)
         => e => e.Project != null && e.Project.Id == projectId && e.Project.ProjectRoles.Any(p => p.UserId == user.Id);
+        private static Expression<Func<StakeholderMatrixEntry, bool>> ProjectFilter(HashSet<Guid> projectIds)
+            => e => e.Project != null && projectIds.Contains(e.Project.Id);
 
 
     }

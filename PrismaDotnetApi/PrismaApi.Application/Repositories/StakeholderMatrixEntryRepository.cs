@@ -6,13 +6,13 @@ using PrismaApi.Infrastructure.Context;
 
 namespace PrismaApi.Application.Repositories
 {
-    public class StakeholderMatrixRepository : BaseRepository<StakeholderMatrix, Guid>, IStakeholderMatrixRepository
+    public class StakeholderMatrixEntryRepository : BaseRepository<StakeholderMatrixEntry, Guid>, IStakeholderMatrixEntryRepository
     {
 
-        public StakeholderMatrixRepository(AppDbContext dbContext) : base(dbContext)
+        public StakeholderMatrixEntryRepository(AppDbContext dbContext) : base(dbContext)
         {
         }
-        public async Task UpdateRangeAsync(IEnumerable<StakeholderMatrix> incomingEntities, Expression<Func<StakeholderMatrix, bool>> filterPredicate, CancellationToken ct = default)
+        public async Task UpdateRangeAsync(IEnumerable<StakeholderMatrixEntry> incomingEntities, Expression<Func<StakeholderMatrixEntry, bool>> filterPredicate, CancellationToken ct = default)
         {
             var incomingList = incomingEntities.ToList();
             if (incomingList.Count == 0)
@@ -29,9 +29,9 @@ namespace PrismaApi.Application.Repositories
             await DbContext.SaveChangesAsync(ct);
         }
 
-        protected override IQueryable<StakeholderMatrix> Query()
+        protected override IQueryable<StakeholderMatrixEntry> Query()
         {
-            return DbContext.Set<StakeholderMatrix>();
+            return DbContext.Set<StakeholderMatrixEntry>();
         }
 
     }

@@ -9,7 +9,7 @@ namespace PrismaApi.Application.Mapping
 {
     public static class StakeholderMatrixMappingExtensions
     {
-        public static StakeholderMatrixDto ToOutgoingDto(this StakeholderMatrix entity)
+        public static StakeholderMatrixDto ToOutgoingDto(this StakeholderMatrixEntry entity)
         {
             return new StakeholderMatrixDto
             {
@@ -22,14 +22,14 @@ namespace PrismaApi.Application.Mapping
             };
         }
 
-        public static List<StakeholderMatrixDto> ToOutgoingDtos(this IEnumerable<StakeholderMatrix> entities)
+        public static List<StakeholderMatrixDto> ToOutgoingDtos(this IEnumerable<StakeholderMatrixEntry> entities)
         {
             return entities.Select(ToOutgoingDto).ToList();
         }
 
-        public static StakeholderMatrix ToEntity(this StakeholderMatrixDto dto, UserOutgoingDto user)
+        public static StakeholderMatrixEntry ToEntity(this StakeholderMatrixDto dto, UserOutgoingDto user)
         {
-            return new StakeholderMatrix
+            return new StakeholderMatrixEntry
             {
                 Id = dto.Id,
                 ProjectId = dto.ProjectId,
@@ -43,7 +43,7 @@ namespace PrismaApi.Application.Mapping
             };
         }
 
-        public static List<StakeholderMatrix> ToEntities(this IEnumerable<StakeholderMatrixIncomingDto> dtos, UserOutgoingDto user)
+        public static List<StakeholderMatrixEntry> ToEntities(this IEnumerable<StakeholderMatrixIncomingDto> dtos, UserOutgoingDto user)
         {
             return dtos.Select(dto => dto.ToEntity(user)).ToList();
         }

@@ -6,7 +6,7 @@ using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Interfaces.Services
 {
-    public interface IStakeholderMatrixService
+    public interface IStakeholderMatrixEntryService
     {
         Task<List<StakeholderMatrixDto>> CreateAsync(List<StakeholderMatrixIncomingDto> dtos, UserOutgoingDto user, CancellationToken ct = default);
         Task<List<StakeholderMatrixDto>> UpdateAsync(List<StakeholderMatrixIncomingDto> dtos, UserOutgoingDto user, CancellationToken ct = default);

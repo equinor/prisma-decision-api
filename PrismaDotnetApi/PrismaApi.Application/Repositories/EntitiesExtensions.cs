@@ -167,13 +167,13 @@ public static class EntitiesExtensions
             entity.StrategyOptions.Update(incomingEntity.StrategyOptions, context);
         }
     }
-    public static void Update(this ICollection<StakeholderMatrix> entities, ICollection<StakeholderMatrix> incomingEntities, AppDbContext context)
+    public static void Update(this ICollection<StakeholderMatrixEntry> entities, ICollection<StakeholderMatrixEntry> incomingEntities, AppDbContext context)
     {
         // delete
-        RepositoryUtilities.RemoveMissingFromCollectionMutate<StakeholderMatrix, Guid>(incomingEntities, entities, context);
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<StakeholderMatrixEntry, Guid>(incomingEntities, entities, context);
 
         // create
-        RepositoryUtilities.AddMissingFromCollectionMutate<StakeholderMatrix, Guid>(incomingEntities, entities, context);
+        RepositoryUtilities.AddMissingFromCollectionMutate<StakeholderMatrixEntry, Guid>(incomingEntities, entities, context);
 
         // update
         foreach (var entity in entities)

@@ -906,7 +906,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.ToTable("RestrictionTables");
                 });
 
-            modelBuilder.Entity("PrismaApi.Domain.Entities.StakeholderMatrix", b =>
+            modelBuilder.Entity("PrismaApi.Domain.Entities.StakeholderMatrixEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1713,7 +1713,7 @@ namespace PrismaApi.Infrastructure.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
-            modelBuilder.Entity("PrismaApi.Domain.Entities.StakeholderMatrix", b =>
+            modelBuilder.Entity("PrismaApi.Domain.Entities.StakeholderMatrixEntry", b =>
                 {
                     b.HasOne("PrismaApi.Domain.Entities.User", "CreatedBy")
                         .WithMany()

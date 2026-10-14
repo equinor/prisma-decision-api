@@ -9,11 +9,10 @@ using PrismaApi.Domain.Interfaces;
 
 namespace PrismaApi.Domain.Entities
 {
-    public class StakeholderMatrix : AuditableEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
+    public class StakeholderMatrixEntry : AuditableEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
     {
         public required Guid Id { get; set; }
         public required Guid ProjectId { get; set; }
-
         public required string StakeholderName { get; set; }
         public required string StakeholderRole { get; set; }
         public required double AffectingTheDecision { get; set; }
@@ -24,7 +23,7 @@ namespace PrismaApi.Domain.Entities
 
         public static void OnModelConfiguring(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<StakeholderMatrix>(entity =>
+            modelBuilder.Entity<StakeholderMatrixEntry>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.HasOne(e => e.CreatedBy)

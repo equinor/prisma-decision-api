@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace PrismaApi.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddStakeholderMatrix : Migration
+    public partial class AddStakeholderMatrixEntries : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
