@@ -2,19 +2,11 @@ using System.Text.Json;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaDotnetApi.PrismaApi.Domain.Extensions;
-using PrismaDotnetApi.PrismaApi.Domain.Extensions;
 
 namespace PrismaApi.Domain.Extensions;
 
 public static class InfluenceDiagramDtoExtensions
 {
-    public static IssueOutgoingDto? GetIssueByStateId(this InfluenceDiagramDto influenceDiagramDto, Guid stateId)
-    {
-        return influenceDiagramDto.issues.FirstOrDefault(issue =>
-            issue.Decision?.Options.Any(option => option.Id == stateId) == true ||
-            issue.Uncertainty?.Outcomes.Any(outcome => outcome.Id == stateId) == true);
-    }
-
     public static IssueOutgoingDto? GetIssueByStateId(this InfluenceDiagramDto influenceDiagramDto, Guid stateId)
     {
         return influenceDiagramDto.issues.FirstOrDefault(issue =>
@@ -528,9 +520,4 @@ public static class InfluenceDiagramDtoExtensions
         discreteProbabilities.NormalizeProbabilities();
     }
 
-    
-        discreteProbabilities.NormalizeProbabilities();
-    }
-
-    
 }

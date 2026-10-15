@@ -165,29 +165,29 @@ public static class DiscreteProbabilitiesExtensions
                     ProjectId = p.ProjectId,
                     Probability = p.Probability,
                     UncertaintyId = p.UncertaintyId,
+                    OutcomeId = p.OutcomeId,
                     ParentOptionIds = new List<Guid>(p.ParentOptionIds),
                     ParentOutcomeIds = new List<Guid>(p.ParentOutcomeIds)
                 }).ToList();
-
-                // update the deterministic ID for the new row based on the added parent state
-                foreach (var probability in newRow)
-                {
-                    probability.Id = IdGenerationUtils.GetDeterministicIdProbability(issueId, probability.OutcomeId, probability.ParentOutcomeIds, probability.ParentOptionIds);
-                }
 
                 if (parentIsUncertainty)
                 {
                     foreach (var probability in newRow)
                     {
-                        probability.ParentOptionIds.Add(addedParentStateId);
+                        probability.ParentOutcomeIds.Add(addedParentStateId);
                     }
                 }
                 else
                 {
                     foreach (var probability in newRow)
                     {
-                        probability.ParentOutcomeIds.Add(addedParentStateId);
+                        probability.ParentOptionIds.Add(addedParentStateId);
                     }
+                }
+
+                foreach (var probability in newRow)
+                {
+                    probability.Id = IdGenerationUtils.GetDeterministicIdProbability(issueId, probability.OutcomeId, probability.ParentOutcomeIds, probability.ParentOptionIds);
                 }
 
                 newProbabilities.AddRange(newRow);

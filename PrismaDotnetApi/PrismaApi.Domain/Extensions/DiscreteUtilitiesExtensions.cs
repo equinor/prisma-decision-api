@@ -90,6 +90,7 @@ public static class DiscreteUtilitiesExtensions
 
 	public static void AddUtilityParent(
 		this ICollection<DiscreteUtilityDto> utilities,
+		Guid issueId,
 		ICollection<Guid> addedParentStateIds,
 		bool parentIsOption
 	)
@@ -111,7 +112,7 @@ public static class DiscreteUtilitiesExtensions
 					ParentOptionIds = new List<Guid>(u.ParentOptionIds),
 					ParentOutcomeIds = new List<Guid>(u.ParentOutcomeIds),
 					ValueMetricId = u.ValueMetricId,
-					UtilityValue = 0
+					UtilityValue = u.UtilityValue
 				}).ToList();
 
 				if (parentIsOption)
@@ -127,6 +128,11 @@ public static class DiscreteUtilitiesExtensions
 					{
 						utility.ParentOutcomeIds.Add(addedParentStateId);
 					}
+				}
+
+				foreach (var utility in newRow)
+				{
+					utility.Id = IdGenerationUtils.GetDeterministicIdUtility(issueId, utility.ValueMetricId, utility.ParentOutcomeIds, utility.ParentOptionIds);
 				}
 
 				newUtilities.AddRange(newRow);
