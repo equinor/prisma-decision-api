@@ -2,11 +2,19 @@ using System.Text.Json;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaDotnetApi.PrismaApi.Domain.Extensions;
+using PrismaDotnetApi.PrismaApi.Domain.Extensions;
 
 namespace PrismaApi.Domain.Extensions;
 
 public static class InfluenceDiagramDtoExtensions
 {
+    public static IssueOutgoingDto? GetIssueByStateId(this InfluenceDiagramDto influenceDiagramDto, Guid stateId)
+    {
+        return influenceDiagramDto.issues.FirstOrDefault(issue =>
+            issue.Decision?.Options.Any(option => option.Id == stateId) == true ||
+            issue.Uncertainty?.Outcomes.Any(outcome => outcome.Id == stateId) == true);
+    }
+
     public static IssueOutgoingDto? GetIssueByStateId(this InfluenceDiagramDto influenceDiagramDto, Guid stateId)
     {
         return influenceDiagramDto.issues.FirstOrDefault(issue =>
@@ -103,6 +111,7 @@ public static class InfluenceDiagramDtoExtensions
                     UtilityId = restrictionTableId,
                     ParentOptionIds = parentOptionIds,
                     ParentOutcomeIds = parentOutcomeIds,
+                    ValueMetricId = DomainConstants.DefaultValueMetricId,
                     // using -1e100 instead of double.MinValue because the solver cannot handle extremely large negative values
                     UtilityValue = entry.RestrictionValue == 0 ? -1e100 : 0 
                 };
@@ -113,6 +122,8 @@ public static class InfluenceDiagramDtoExtensions
     
     public static void ApplyRestrictions(this InfluenceDiagramDto influenceDiagramDto)
     {
+        influenceDiagramDto.ValidateRestrictions();
+        ApplyTotalRestrictions(influenceDiagramDto);
         influenceDiagramDto.ValidateRestrictions();
         ApplyTotalRestrictions(influenceDiagramDto);
         RestrictDecisions(influenceDiagramDto);
@@ -514,6 +525,10 @@ public static class InfluenceDiagramDtoExtensions
                 }
             }
         }
+        discreteProbabilities.NormalizeProbabilities();
+    }
+
+    
         discreteProbabilities.NormalizeProbabilities();
     }
 

@@ -6,7 +6,7 @@ namespace PrismaApi.Infrastructure.Caching;
 public static class MemoryCacheExtensions
 {
     private static readonly HashSet<CacheItem> cachedKeys = new();
-    private static readonly SemaphoreSlim cacheLock = new(1, 1);
+    private static readonly SemaphoreSlim cacheLock = new(100, 100);
 
     private static readonly MemoryCacheEntryOptions CacheEntryOptions =
         new MemoryCacheEntryOptions().SetSlidingExpiration(
@@ -32,6 +32,15 @@ public static class MemoryCacheExtensions
         return null;
     }
 
+    public static T? GetCacheItemWithAccessCheck<T>(this IMemoryCache cache, UserOutgoingDto user, Guid projectId, Func<Guid, string> projectCacheKeyGenerator) where T : class
+    {
+        if (!cache.HasAccessToProject(user, projectId))
+        {
+            return null;
+        }
+        return cache.GetCacheItem<T>(projectCacheKeyGenerator(projectId));
+    }
+
     public static InfluenceDiagramDto? GetCacheItemAsInfluenceDiagram(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
     {
         // check that the user has access to the project before returning cached diagram
@@ -41,108 +50,6 @@ public static class MemoryCacheExtensions
             return null;
         }
         return cache.GetCacheItem<InfluenceDiagramDto>(CacheKeys.GetInfluenceDiagramKey(projectId));
-    }
-
-    public static List<IssueOutgoingDto>? GetCacheItemAsIssues(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
-    {
-        // check that the user has access to the project before returning cached issues
-
-        if (!cache.HasAccessToProject(user, projectId))
-        {
-            return null;
-        }
-        return cache.GetCacheItem<List<IssueOutgoingDto>>(CacheKeys.GetIssuesInProjectKey(projectId));
-    }
-
-    public static List<EdgeOutgoingDto>? GetCacheItemAsEdges(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
-    {
-        // check that the user has access to the project before returning cached edges
-
-        if (!cache.HasAccessToProject(user, projectId))
-        {
-            return null;
-        }
-        return cache.GetCacheItem<List<EdgeOutgoingDto>>(CacheKeys.GetEdgesInProjectKey(projectId));
-    }
-
-    public static List<NodeOutgoingDto>? GetCacheItemAsNodes(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
-    {
-        // check that the user has access to the project before returning cached nodes
-
-        if (!cache.HasAccessToProject(user, projectId))
-        {
-            return null;
-        }
-        return cache.GetCacheItem<List<NodeOutgoingDto>>(CacheKeys.GetNodesInProjectKey(projectId));
-    }
-
-    public static List<BoardNodeOutgoingDto>? GetCacheItemAsBoardNodes(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
-    {
-        // check that the user has access to the project before returning cached board nodes
-        if (!cache.HasAccessToProject(user, projectId))
-        {
-            return null;
-        }
-        return cache.GetCacheItem<List<BoardNodeOutgoingDto>>(CacheKeys.GetBoardNodesInProjectKey(projectId));
-    }
-
-    public static List<BoardSheetOutgoingDto>? GetCacheItemAsBoardSheets(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
-    {
-        // check that the user has access to the project before returning cached board sheets
-        if (!cache.HasAccessToProject(user, projectId))
-        {
-            return null;
-        }
-        return cache.GetCacheItem<List<BoardSheetOutgoingDto>>(CacheKeys.GetBoardSheetsInProjectKey(projectId));
-    }
-
-    public static List<AssessmentOutgoingDto>? GetCacheItemAsAssessment(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
-    {
-        // check that the user has access to the project before returning cached assessment
-        if (!cache.HasAccessToProject(user, projectId))
-        {
-            return null;
-        }
-        return cache.GetCacheItem<List<AssessmentOutgoingDto>>(CacheKeys.GetAssessmentKey(projectId));
-    }
-
-    public static List<DiscreteProbabilityDto>? GetCacheItemAsDiscreteProbabilities(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
-    {
-        // check that the user has access to the project before returning cached discrete probabilities
-        if (!cache.HasAccessToProject(user, projectId))
-        {
-            return null;
-        }
-        return cache.GetCacheItem<List<DiscreteProbabilityDto>>(CacheKeys.GetDiscreteProbabilitiesInProjectKey(projectId));
-    }
-
-    public static List<DiscreteUtilityDto>? GetCacheItemAsDiscreteUtilities(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
-    {
-        // check that the user has access to the project before returning cached discrete utilities
-        if (!cache.HasAccessToProject(user, projectId))
-        {
-            return null;
-        }
-        return cache.GetCacheItem<List<DiscreteUtilityDto>>(CacheKeys.GetDiscreteUtilitiesInProjectKey(projectId));
-    }
-
-    public static List<RestrictionTableOutgoingDto>? GetCacheItemAsRestrictionTables(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
-    {
-        // check that the user has access to the project before returning cached restriction tables
-        if (!cache.HasAccessToProject(user, projectId))
-        {
-            return null;
-        }
-        return cache.GetCacheItem<List<RestrictionTableOutgoingDto>>(CacheKeys.GetRestrictionTablesInProjectKey(projectId));
-    }
-    public static List<ProjectOutgoingDto>? GetCacheItemAsProjects(this IMemoryCache cache, Guid projectId, UserOutgoingDto user)
-    {
-        // check that the user has access to the project before returning cached projects
-        if (!cache.HasAccessToProject(user, projectId))
-        {
-            return null;
-        }
-        return cache.GetCacheItem<List<ProjectOutgoingDto>>(CacheKeys.GetProjectKey(projectId));
     }
 
     public static HashSet<Guid> GetPublicProjectIds(this IMemoryCache cache)
@@ -282,5 +189,60 @@ public static class MemoryCacheExtensions
 
         var publicIds = cache.GetCacheItem<HashSet<Guid>>(CacheKeys.PublicProjectIdsKey);
         return publicIds?.Contains(projectId) == true;
+    }
+
+    ///<summary>
+    /// Retrieves project-scoped cached items, loading missing items as needed.
+    /// <param name="user">The user for whom to retrieve cached items.</param>
+    /// <param name="loadMissingAsync">Function to load missing items from the database.</param>
+    /// <param name="getProjectId">Function to get the project ID from a DTO.</param>
+    /// <param name="getCacheKey">Function to get the cache key for a project ID.</param>
+    /// <param name="cacheDuration">Duration to cache the items.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// </summary>
+    public static async Task<List<TDto>> GetProjectScopedAsync<TDto>(
+    this IMemoryCache cache,
+    UserOutgoingDto user,
+    Func<HashSet<Guid>, CancellationToken, Task<List<TDto>>> loadMissingAsync,
+    Func<TDto, Guid> getProjectId,
+    Func<Guid, string> getCacheKey,
+    TimeSpan cacheDuration,
+    CancellationToken ct = default)
+    where TDto : class
+    {
+        var results = new List<TDto>();
+        var projectIdsToLoad = new HashSet<Guid>();
+
+        foreach (var projectId in cache.GetAccessibleProjectIds(user))
+        {
+            var cachedDtos = cache.GetCacheItem<List<TDto>>(getCacheKey(projectId));
+            if (cachedDtos is not null)
+            {
+                results.AddRange(cachedDtos);
+            }
+            else
+            {
+                projectIdsToLoad.Add(projectId);
+            }
+        }
+
+        if (projectIdsToLoad.Count == 0)
+        {
+            return results;
+        }
+
+        var loadedDtos = await loadMissingAsync(projectIdsToLoad, ct);
+        results.AddRange(loadedDtos);
+
+        foreach (var projectId in projectIdsToLoad)
+        {
+            var projectDtos = loadedDtos.Where(dto => getProjectId(dto) == projectId).ToList();
+            cache.AddCacheItem(
+                new CacheItem { CacheKey = getCacheKey(projectId) },
+                cacheDuration,
+                projectDtos);
+        }
+
+        return results;
     }
 }

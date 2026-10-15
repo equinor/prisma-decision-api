@@ -167,6 +167,25 @@ public static class EntitiesExtensions
             entity.StrategyOptions.Update(incomingEntity.StrategyOptions, context);
         }
     }
+    public static void Update(this ICollection<StakeholderMatrixEntry> entities, ICollection<StakeholderMatrixEntry> incomingEntities, AppDbContext context)
+    {
+        // delete
+        RepositoryUtilities.RemoveMissingFromCollectionMutate<StakeholderMatrixEntry, Guid>(incomingEntities, entities, context);
+
+        // create
+        RepositoryUtilities.AddMissingFromCollectionMutate<StakeholderMatrixEntry, Guid>(incomingEntities, entities, context);
+
+        // update
+        foreach (var entity in entities)
+        {
+            var incomingEntity = incomingEntities.First(x => x.Id == entity.Id);
+            entity.StakeholderName = incomingEntity.StakeholderName;
+            entity.StakeholderRole = incomingEntity.StakeholderRole;
+            entity.AffectingTheDecision = incomingEntity.AffectingTheDecision;
+            entity.AffectedByTheDecision = incomingEntity.AffectedByTheDecision;
+            entity.UpdatedById = incomingEntity.UpdatedById;
+        }
+    }
 
     public static void Update(this ICollection<StrategyOption> entities, ICollection<StrategyOption> incomingEntities, AppDbContext context)
     {

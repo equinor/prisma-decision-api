@@ -38,13 +38,13 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
-        var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
-        if (!string.IsNullOrEmpty(clientSecret))
-        {
-            builder.Configuration["AzureAd:ClientSecret"] = clientSecret;
-        }
         if (!isPublicInstance && !isResearchInstance)
         {
+            var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
+            if (!string.IsNullOrEmpty(clientSecret))
+            {
+                builder.Configuration["AzureAd:ClientSecret"] = clientSecret;
+            }
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddMicrosoftIdentityWebApi(builder.Configuration, "AzureAd")
@@ -122,6 +122,7 @@ public class Program
         builder.Services.AddScoped<IBoardSheetRepository, BoardSheetRepository>();
         builder.Services.AddScoped<IRestrictionTableRepository, RestrictionTableRepository>();
         builder.Services.AddScoped<IRestrictionEntryRepository, RestrictionEntryRepository>();
+        builder.Services.AddScoped<IStakeholderMatrixEntryRepository, StakeholderMatrixEntryRepository>();
 
         builder.Services.AddScoped<ITableRebuildingService, TableRebuildingService>();
         builder.Services.AddScoped<IProjectService, ProjectService>();
@@ -146,6 +147,7 @@ public class Program
         builder.Services.AddHostedService<TableCleanupService>();
         builder.Services.AddScoped<IRestrictionTableService, RestrictionTableService>();
         builder.Services.AddScoped<IRestrictionEntryService, RestrictionEntryService>();
+        builder.Services.AddScoped<IStakeholderMatrixEntryService, StakeholderMatrixEntryService>();
 
         if (isPublicInstance || isResearchInstance)
         {
@@ -210,10 +212,10 @@ public class Program
 
         app.UseHttpsRedirection();
 
-        app.UseRateLimiter();
-
-        // Use CORS - must be before UseAuthorization
+        // CORS must wrap middleware that can short-circuit requests.
         app.UseCors(CorsPolicy.AllowOriginsPolicy);
+
+        app.UseRateLimiter();
 
         if (!isPublicInstance && !isResearchInstance)
         {

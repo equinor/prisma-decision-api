@@ -51,6 +51,7 @@ public partial class AppDbContext : DbContext
     public DbSet<BoardSheet> BoardSheets => Set<BoardSheet>();
     public DbSet<RestrictionTable> RestrictionTables => Set<RestrictionTable>();
     public DbSet<RestrictionEntry> RestrictionEntries => Set<RestrictionEntry>();
+    public DbSet<StakeholderMatrixEntry> StakeholderMatrixes => Set<StakeholderMatrixEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -84,6 +85,26 @@ public partial class AppDbContext : DbContext
         BoardSheet.OnModelConfiguring(modelBuilder);
         RestrictionTable.OnModelConfiguring(modelBuilder);
         RestrictionEntry.OnModelConfiguring(modelBuilder);
+        StakeholderMatrixEntry.OnModelConfiguring(modelBuilder);
+
+        ValidateEntityHandlingPolicies(modelBuilder);
+    }
+
+    private static void ValidateEntityHandlingPolicies(ModelBuilder modelBuilder)
+    {
+        var entityTypesWithoutPolicy = modelBuilder.Model.GetEntityTypes()
+            .Select(entityType => entityType.ClrType)
+            .Where(entityType => !typeof(IEntityHandlingPolicy).IsAssignableFrom(entityType))
+            .Distinct()
+            .OrderBy(entityType => entityType.Name)
+            .Select(entityType => entityType.FullName ?? entityType.Name)
+            .ToList();
+
+        if (entityTypesWithoutPolicy.Count != 0)
+        {
+            throw new InvalidOperationException(
+                $"All registered entity types must implement {nameof(IEntityHandlingPolicy)}. Missing: {string.Join(", ", entityTypesWithoutPolicy)}");
+        }
     }
 
     private IEnumerable<EntityEntry<T>> GetChangedEntries<T>() where T : class =>
@@ -105,7 +126,7 @@ public partial class AppDbContext : DbContext
         // invalidate before savechanges because save changes clears out the change tracker
         await InvalidateCacheAsync();
         return await base.SaveChangesAsync(cancellationToken);
-        
+
     }
 
 
@@ -113,7 +134,7 @@ public partial class AppDbContext : DbContext
     {
         // Alternitive design can be found at https://learn.microsoft.com/en-us/ef/core/logging-events-diagnostics/events
 
-        // no need to invalidate cache here since the duplicated entities will have new ids 
+        // no need to invalidate cache here since the duplicated entities will have new ids
         // and won't affect existing cache entries
         return await base.SaveChangesAsync(cancellationToken);
     }
@@ -173,7 +194,7 @@ public partial class AppDbContext : DbContext
             var currentFacilitatorCount = await ProjectRoles
                 .AsNoTracking()
                 .CountAsync(r => r.ProjectId == projectId &&
-                    r.Role == facilitatorRole, 
+                    r.Role == facilitatorRole,
                     cancellationToken);
 
             if (currentFacilitatorCount - facilitatorsBeingRemoved <= 0)
@@ -242,7 +263,7 @@ public partial class AppDbContext : DbContext
 
             var affectedRestrictionEntries = await RestrictionEntries
                 .Where(
-                    re => (re.ParentOutcomeId != null && deletedOutcomeIds.Contains((Guid)re.ParentOutcomeId)) || 
+                    re => (re.ParentOutcomeId != null && deletedOutcomeIds.Contains((Guid)re.ParentOutcomeId)) ||
                     (re.ChildOutcomeId != null && deletedOutcomeIds.Contains((Guid)re.ChildOutcomeId)))
                 .ToListAsync(cancellationToken);
             RestrictionEntries.RemoveRange(affectedRestrictionEntries);
@@ -302,7 +323,7 @@ public partial class AppDbContext : DbContext
 
             var affectedRestrictionEntries = await RestrictionEntries
                 .Where(
-                    re => (re.ParentOptionId != null && deletedOptionIds.Contains((Guid)re.ParentOptionId)) || 
+                    re => (re.ParentOptionId != null && deletedOptionIds.Contains((Guid)re.ParentOptionId)) ||
                     (re.ChildOptionId != null && deletedOptionIds.Contains((Guid)re.ChildOptionId)))
                 .ToListAsync(cancellationToken);
             RestrictionEntries.RemoveRange(affectedRestrictionEntries);
