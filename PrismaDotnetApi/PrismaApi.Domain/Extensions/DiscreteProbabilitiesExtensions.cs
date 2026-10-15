@@ -8,7 +8,7 @@ public static class DiscreteProbabilitiesExtensions
     public static void AddProbabilitiesColumn(
         this ICollection<DiscreteProbabilityDto> probabilities, 
         Guid issueId,
-        OutcomeOutgoingDto addedOutcome)
+        Guid addedOutcomeId)
     {
         probabilities.ValidateProbabilities();
         // Implementation for adding a probabilities column goes here
@@ -19,12 +19,12 @@ public static class DiscreteProbabilitiesExtensions
             var template = row.First();
             probabilities.Add(new DiscreteProbabilityDto
             {
-                Id = IdGenerationUtils.GetDeterministicIdProbability(issueId, addedOutcome.Id, template.ParentOutcomeIds, template.ParentOptionIds),
+                Id = IdGenerationUtils.GetDeterministicIdProbability(issueId, addedOutcomeId, template.ParentOutcomeIds, template.ParentOptionIds),
                 ProjectId = template.ProjectId,
                 UncertaintyId = template.UncertaintyId,
                 ParentOptionIds = new List<Guid>(template.ParentOptionIds),
                 ParentOutcomeIds = new List<Guid>(template.ParentOutcomeIds),
-                OutcomeId = addedOutcome.Id,
+                OutcomeId = addedOutcomeId,
                 Probability = 0
             });
         }

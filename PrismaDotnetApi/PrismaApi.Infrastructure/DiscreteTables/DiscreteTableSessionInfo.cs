@@ -8,8 +8,26 @@ namespace PrismaApi.Infrastructure.DiscreteTables;
 public enum AffectedIssueReason
 {
     Unknown,
-    ParentStateAdded,
     OwnOutcomeAdded,
+    ParentStateAdded,
+    ParnetAdded,
+}
+
+public class OwnOutcomeAddedArguments
+{
+    public Guid AddedOutcomeId { get; set; }
+}
+
+public class ParentStateAddedArgurments
+{
+    public Guid AddedParentStateId { get; set; }
+    public List<Guid> SiblingsOfAddedStateIds { get; set; } = new();
+}
+
+public class ParentAddedArguments
+{
+    public List<Guid> AddedParentStateIds { get; set; } = new();
+    public bool IsAddedParentUncertainty { get; set; }
 }
 
 public class AffectedIssueObject
@@ -17,7 +35,7 @@ public class AffectedIssueObject
     public Guid AffectedIssueId { get; set; }
     // provide information on why this issue is affected
     public AffectedIssueReason Reason { get; set; } = AffectedIssueReason.Unknown;
-
+    public object RequiredArguments { get; set; } = new();
 }
 
 public sealed class DiscreteTableSessionInfo
