@@ -22,7 +22,8 @@ app = FastAPI(
 if config.LOGGER:
     try:
         configure_azure_monitor(
-            logger_name=DOT_API_LOGGER_NAME, connection_string=config.APPINSIGHTS_CONNECTIONSTRING
+            logger_name=DOT_API_LOGGER_NAME,
+            connection_string=config.APPLICATION_INSIGHTS_CONNECTION_STRING,
         )
         FastAPIInstrumentor.instrument_app(app)
         logger.info("Successfully configured telemetry after starting application")
