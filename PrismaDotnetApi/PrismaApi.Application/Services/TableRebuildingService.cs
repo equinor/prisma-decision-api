@@ -1,11 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PrismaApi.Application.Interfaces.Services;
+using PrismaApi.Application.Mapping;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
 using PrismaApi.Domain.Extensions;
 using PrismaApi.Domain.Utilities;
+using PrismaDotnetApi.PrismaApi.Domain.Extensions;
 
 namespace PrismaApi.Application.Services;
 
@@ -27,17 +29,18 @@ public class TableRebuildingService : ITableRebuildingService
 
     public async Task RebuildTablesAsync(CancellationToken ct = default)
     {
-        var issueIds = DbContext.DiscreteTableSessionInfo.AffectedIssueIds;
+        var issueIds = DbContext.DiscreteTableSessionInfo.AffectedIssueIds.ToHashSet();
         if (issueIds.Count != 0 && !DbContext.IsDiscreteTableEventDisabled)
         {
             await RebuildIssuesFromIssueIds(issueIds, ct);
         }
-        var restrictionTableIds = DbContext.DiscreteTableSessionInfo.AffectedRestrictionTables;
+        var restrictionTableIds = DbContext.DiscreteTableSessionInfo.AffectedRestrictionTables.ToHashSet();
         if (restrictionTableIds.Count != 0 && !DbContext.IsDiscreteTableEventDisabled)
         {
             await RebuildRestrictionTablesFromIds(restrictionTableIds, ct);
         }
         await DbContext.SaveChangesAsync(ct);
+        DbContext.DiscreteTableSessionInfo.Clear();
     }
 
     private async Task RebuildRestrictionTablesFromIds(HashSet<Guid> restrictionTableIds, CancellationToken ct)
@@ -234,80 +237,28 @@ public class TableRebuildingService : ITableRebuildingService
         {
             return;
         }
-        RemoveDiscreteProbabilities(uncertainty.DiscreteProbabilities);
-        uncertainty.DiscreteProbabilities.Clear();
+        var existingProbabilities = uncertainty.DiscreteProbabilities.ToList();
+        // Convert the existing probabilities to DTOs that will be used for expansion and reconciliation.
+        var expandedProbabilities = existingProbabilities.ToDtos();
+        var parentGroups = CollectParentStateGroups(issue);
 
-        var (parentOutcomesList, parentOptionsList) = CollectParents(issue);
-
-        if (parentOutcomesList.Count == 0 && parentOptionsList.Count == 0)
+        if (expandedProbabilities.Count != 0)
         {
-            foreach (var outcome in uncertainty.Outcomes)
+            ExpandProbabilityParents(issue.Id, expandedProbabilities, parentGroups);
+
+            var representedOutcomeIds = expandedProbabilities
+                .Select(probability => probability.OutcomeId)
+                .ToHashSet();
+            foreach (var addedOutcomeId in uncertainty.Outcomes
+                .Select(outcome => outcome.Id)
+                .Where(outcomeId => !representedOutcomeIds.Contains(outcomeId)))
             {
-                var newEntry = new DiscreteProbability
-                {
-                    Id = IdGenerationUtils.GetDeterministicIdProbability(
-                        issue.Id, 
-                        outcome.Id,
-                        [.. parentOutcomesList.SelectMany(x => x)],
-                        [.. parentOptionsList.SelectMany(x => x)]
-                    ),
-                    OutcomeId = outcome.Id,
-                    UncertaintyId = uncertainty.Id,
-                    ProjectId = issue.ProjectId,
-                    Probability = 0
-                };
-                DbContext.Entry(newEntry).State = EntityState.Added;
-                await DbContext.DiscreteProbabilities.AddAsync(newEntry, ct);
-            }
-            return;
-        }
-
-        var parentCombinations = BuildCombinations(parentOutcomesList.Concat(parentOptionsList).ToList());
-        var allOutcomes = new HashSet<Guid>(parentOutcomesList.SelectMany(list => list));
-        var allOptions = new HashSet<Guid>(parentOptionsList.SelectMany(list => list));
-
-
-        foreach (var outcome in uncertainty.Outcomes)
-        {
-            foreach (var combination in parentCombinations)
-            {
-                var parentOutcomeIds = combination.Where(allOutcomes.Contains).OrderBy(id => id).ToList();
-                var parentOptionIds = combination.Where(allOptions.Contains).OrderBy(id => id).ToList();
-
-                var probabilityId = IdGenerationUtils.GetDeterministicIdProbability(issue.Id, outcome.Id, parentOutcomeIds, parentOptionIds);
-
-                var newEntity = new DiscreteProbability
-                {
-                    Id = probabilityId,
-                    OutcomeId = outcome.Id,
-                    UncertaintyId = uncertainty.Id,
-                    ProjectId = issue.ProjectId,
-                    Probability = 0,
-                };
-                DbContext.DiscreteProbabilities.Add(newEntity);
-
-
-                var parentOptions = parentOptionIds.Select(x =>
-                    new DiscreteProbabilityParentOption
-                    {
-                        ParentOptionId = x,
-                        DiscreteProbabilityId = probabilityId,
-                    }
-                ).ToList();
-
-                await DbContext.DiscreteProbabilityParentOptions.AddRangeAsync(parentOptions, ct);
-
-                var parentOutcomes = parentOutcomeIds.Select(x =>
-                    new DiscreteProbabilityParentOutcome
-                    {
-                        ParentOutcomeId = x,
-                        DiscreteProbabilityId = probabilityId,
-                    }
-                ).ToList();
-
-                await DbContext.DiscreteProbabilityParentOutcomes.AddRangeAsync(parentOutcomes, ct);
+                expandedProbabilities.AddProbabilitiesColumn(issue.Id, addedOutcomeId);
             }
         }
+
+        var desiredProbabilities = BuildDesiredProbabilities(issue, parentGroups, expandedProbabilities);
+        await ReconcileProbabilities(existingProbabilities, desiredProbabilities, ct);
     }
 
     private async Task RebuildUtilityTable(Issue issue, CancellationToken ct = default)
@@ -318,60 +269,261 @@ public class TableRebuildingService : ITableRebuildingService
             return;
         }
 
-        var (parentOutcomesList, parentOptionsList) = CollectParents(issue);
+        var existingUtilities = utility.DiscreteUtilities.ToList();
+        var expandedUtilities = existingUtilities.ToDtos();
+        var parentGroups = CollectParentStateGroups(issue);
 
-        RemoveDiscreteUtilities(utility.DiscreteUtilities);
-        utility.DiscreteUtilities.Clear();
-        if (parentOutcomesList.Count == 0 && parentOptionsList.Count == 0)
+        if (expandedUtilities.Count != 0)
         {
-            return;
+            ExpandUtilityParents(issue.Id, expandedUtilities, parentGroups);
         }
 
-        var parentCombinations = BuildCombinations([.. parentOutcomesList, .. parentOptionsList]);
-        var allOutcomes = new HashSet<Guid>(parentOutcomesList.SelectMany(list => list));
-        var allOptions = new HashSet<Guid>(parentOptionsList.SelectMany(list => list));
+        var desiredUtilities = BuildDesiredUtilities(issue, parentGroups, expandedUtilities);
+        await ReconcileUtilities(existingUtilities, desiredUtilities, ct);
+    }
 
-        var desiredKeys = new HashSet<string>();
-        var desiredMap = new Dictionary<string, (List<Guid> ParentOutcomes, List<Guid> ParentOptions)>();
-
-        foreach (var combination in parentCombinations)
+    private static void ExpandProbabilityParents(
+        Guid issueId,
+        ICollection<DiscreteProbabilityDto> probabilities,
+        IEnumerable<ParentStateGroup> parentGroups)
+    {
+        foreach (var parentGroup in parentGroups)
         {
-            var parentOutcomeIds = combination.Where(allOutcomes.Contains).OrderBy(id => id).ToList();
-            var parentOptionIds = combination.Where(allOptions.Contains).OrderBy(id => id).ToList();
-            var utilityId = IdGenerationUtils.GetDeterministicIdUtility(issue.Id, DomainConstants.DefaultValueMetricId, parentOutcomeIds, parentOptionIds);
+            var representedStateIds = parentGroup.StateIds
+                .Where(stateId => probabilities.Any(probability =>
+                    probability.ParentOutcomeIds.Contains(stateId) ||
+                    probability.ParentOptionIds.Contains(stateId)))
+                .ToList();
+            var addedStateIds = parentGroup.StateIds.Except(representedStateIds).ToList();
 
-            await DbContext.DiscreteUtilities
-                .AddAsync(new DiscreteUtility
+            if (representedStateIds.Count == 0)
+            {
+                probabilities.AddProbabilityParent(issueId, addedStateIds, parentGroup.IsUncertainty);
+                continue;
+            }
+
+            foreach (var addedStateId in addedStateIds)
+            {
+                probabilities.AddProbabilitiesRow(issueId, addedStateId, representedStateIds);
+            }
+        }
+    }
+
+    private static void ExpandUtilityParents(
+        Guid issueId,
+        ICollection<DiscreteUtilityDto> utilities,
+        IEnumerable<ParentStateGroup> parentGroups)
+    {
+        foreach (var parentGroup in parentGroups)
+        {
+            var representedStateIds = parentGroup.StateIds
+                .Where(stateId => utilities.Any(utility =>
+                    utility.ParentOutcomeIds.Contains(stateId) ||
+                    utility.ParentOptionIds.Contains(stateId)))
+                .ToList();
+            var addedStateIds = parentGroup.StateIds.Except(representedStateIds).ToList();
+
+            if (representedStateIds.Count == 0)
+            {
+                utilities.AddUtilityParent(issueId, addedStateIds, !parentGroup.IsUncertainty);
+                continue;
+            }
+
+            foreach (var addedStateId in addedStateIds)
+            {
+                utilities.AddUtilitiesRow(issueId, addedStateId, representedStateIds);
+            }
+        }
+    }
+
+    private static List<DiscreteProbabilityDto> BuildDesiredProbabilities(
+        Issue issue,
+        IReadOnlyCollection<ParentStateGroup> parentGroups,
+        ICollection<DiscreteProbabilityDto> expandedProbabilities)
+    {
+        var uncertainty = issue.Uncertainty!;
+        var expandedByKey = expandedProbabilities
+            .GroupBy(ProbabilityKey)
+            .ToDictionary(group => group.Key, group => group.First());
+        var combinations = BuildCombinations(parentGroups.Select(group => group.StateIds).ToList());
+        var outcomeStateIds = parentGroups
+            .Where(group => group.IsUncertainty)
+            .SelectMany(group => group.StateIds)
+            .ToHashSet();
+
+        return (from outcome in uncertainty.Outcomes
+                from combination in combinations
+                let parentOutcomeIds = combination.Where(outcomeStateIds.Contains).OrderBy(id => id).ToList()
+                let parentOptionIds = combination.Where(id => !outcomeStateIds.Contains(id)).OrderBy(id => id).ToList()
+                let key = ProbabilityKey(outcome.Id, parentOutcomeIds, parentOptionIds)
+                let expanded = expandedByKey.GetValueOrDefault(key)
+                select new DiscreteProbabilityDto
                 {
-                    Id = utilityId,
+                    Id = IdGenerationUtils.GetDeterministicIdProbability(issue.Id, outcome.Id, parentOutcomeIds, parentOptionIds),
+                    OutcomeId = outcome.Id,
+                    UncertaintyId = uncertainty.Id,
+                    ProjectId = issue.ProjectId,
+                    Probability = expanded?.Probability ?? 0,
+                    ParentOutcomeIds = parentOutcomeIds,
+                    ParentOptionIds = parentOptionIds
+                }).ToList();
+    }
+
+    private static List<DiscreteUtilityDto> BuildDesiredUtilities(
+        Issue issue,
+        IReadOnlyCollection<ParentStateGroup> parentGroups,
+        ICollection<DiscreteUtilityDto> expandedUtilities)
+    {
+        if (parentGroups.Count == 0)
+        {
+            return [];
+        }
+
+        var utility = issue.Utility!;
+        var expandedByKey = expandedUtilities
+            .GroupBy(UtilityKey)
+            .ToDictionary(group => group.Key, group => group.First());
+        var combinations = BuildCombinations(parentGroups.Select(group => group.StateIds).ToList());
+        var outcomeStateIds = parentGroups
+            .Where(group => group.IsUncertainty)
+            .SelectMany(group => group.StateIds)
+            .ToHashSet();
+
+        // TODO: expand declarative LINQ expression to include additional utility metrics when they are added to the system
+        // see BuildDesiredUtilities for an example of how to expand the LINQ expression to include additional utility metrics
+        return (from combination in combinations
+                let parentOutcomeIds = combination.Where(outcomeStateIds.Contains).OrderBy(id => id).ToList()
+                let parentOptionIds = combination.Where(id => !outcomeStateIds.Contains(id)).OrderBy(id => id).ToList()
+                let key = UtilityKey(DomainConstants.DefaultValueMetricId, parentOutcomeIds, parentOptionIds)
+                let expanded = expandedByKey.GetValueOrDefault(key)
+                select new DiscreteUtilityDto
+                {
+                    Id = IdGenerationUtils.GetDeterministicIdUtility(issue.Id, DomainConstants.DefaultValueMetricId, parentOutcomeIds, parentOptionIds),
                     ValueMetricId = DomainConstants.DefaultValueMetricId,
                     UtilityId = utility.Id,
                     ProjectId = issue.ProjectId,
-                    UtilityValue = 0,
-                }, ct);
+                    UtilityValue = expanded?.UtilityValue ?? 0,
+                    ParentOutcomeIds = parentOutcomeIds,
+                    ParentOptionIds = parentOptionIds
+                }).ToList();
+    }
 
+    private async Task ReconcileProbabilities(
+        ICollection<DiscreteProbability> existingProbabilities,
+        ICollection<DiscreteProbabilityDto> desiredProbabilities,
+        CancellationToken ct)
+    {
+        var desiredByKey = desiredProbabilities.ToDictionary(ProbabilityKey);
+        var existingGroups = existingProbabilities.GroupBy(ProbabilityKey).ToList();
+        var probabilitiesToRemove = existingGroups
+            .Where(group => !desiredByKey.ContainsKey(group.Key))
+            .SelectMany(group => group)
+            .Concat(existingGroups.SelectMany(group => group.Skip(1)))
+            .Distinct()
+            .ToList();
+        RemoveDiscreteProbabilities(probabilitiesToRemove);
 
-            var parentOptions = parentOptionIds.Select(x =>
-                new DiscreteUtilityParentOption
+        var existingKeys = existingGroups
+            .Where(group => desiredByKey.ContainsKey(group.Key))
+            .Select(group => group.Key)
+            .ToHashSet();
+        var probabilitiesToAdd = desiredByKey
+            .Where(pair => !existingKeys.Contains(pair.Key))
+            .Select(pair => pair.Value.ToEntity())
+            .ToList();
+        await DbContext.DiscreteProbabilities.AddRangeAsync(probabilitiesToAdd, ct);
+    }
+
+    private async Task ReconcileUtilities(
+        ICollection<DiscreteUtility> existingUtilities,
+        ICollection<DiscreteUtilityDto> desiredUtilities,
+        CancellationToken ct)
+    {
+        var desiredByKey = desiredUtilities.ToDictionary(UtilityKey);
+        var existingGroups = existingUtilities.GroupBy(UtilityKey).ToList();
+        var utilitiesToRemove = existingGroups
+            .Where(group => !desiredByKey.ContainsKey(group.Key))
+            .SelectMany(group => group)
+            .Concat(existingGroups.SelectMany(group => group.Skip(1)))
+            .Distinct()
+            .ToList();
+        RemoveDiscreteUtilities(utilitiesToRemove);
+
+        var existingKeys = existingGroups
+            .Where(group => desiredByKey.ContainsKey(group.Key))
+            .Select(group => group.Key)
+            .ToHashSet();
+        var utilitiesToAdd = desiredByKey
+            .Where(pair => !existingKeys.Contains(pair.Key))
+            .Select(pair => pair.Value.ToEntity())
+            .ToList();
+        await DbContext.DiscreteUtilities.AddRangeAsync(utilitiesToAdd, ct);
+    }
+
+    private static string ProbabilityKey(DiscreteProbability probability) => ProbabilityKey(
+        probability.OutcomeId,
+        probability.ParentOutcomes.Select(parent => parent.ParentOutcomeId),
+        probability.ParentOptions.Select(parent => parent.ParentOptionId));
+
+    private static string ProbabilityKey(DiscreteProbabilityDto probability) => ProbabilityKey(
+        probability.OutcomeId,
+        probability.ParentOutcomeIds,
+        probability.ParentOptionIds);
+
+    private static string ProbabilityKey(Guid outcomeId, IEnumerable<Guid> parentOutcomeIds, IEnumerable<Guid> parentOptionIds) =>
+        $"{outcomeId}|{string.Join(',', parentOutcomeIds.OrderBy(id => id))}|{string.Join(',', parentOptionIds.OrderBy(id => id))}";
+
+    private static string UtilityKey(DiscreteUtility utility) => UtilityKey(
+        utility.ValueMetricId,
+        utility.ParentOutcomes.Select(parent => parent.ParentOutcomeId),
+        utility.ParentOptions.Select(parent => parent.ParentOptionId));
+
+    private static string UtilityKey(DiscreteUtilityDto utility) => UtilityKey(
+        utility.ValueMetricId,
+        utility.ParentOutcomeIds,
+        utility.ParentOptionIds);
+
+    private static string UtilityKey(Guid valueMetricId, IEnumerable<Guid> parentOutcomeIds, IEnumerable<Guid> parentOptionIds) =>
+        $"{valueMetricId}|{string.Join(',', parentOutcomeIds.OrderBy(id => id))}|{string.Join(',', parentOptionIds.OrderBy(id => id))}";
+
+    /// <summary>
+    /// Represents a group of parent states, either from an uncertainty or a decision.
+    /// </summary>
+    /// <param name="StateIds"></param>
+    /// <param name="IsUncertainty"></param>
+    private sealed record ParentStateGroup(List<Guid> StateIds, bool IsUncertainty);
+
+    /// <summary>
+    /// Collects the parent state groups for a given issue.
+    /// </summary>
+    /// <param name="issue">The issue for which to collect parent state groups.</param>
+    /// <returns>A list of parent state groups associated with the issue.</returns>
+    private static List<ParentStateGroup> CollectParentStateGroups(Issue issue)
+    {
+        // Collect head edges, i.e. the edges that are pointing to the current issue node.
+        // Note that parents are determined by the tail nodes of these edges.
+        var edges = issue.Node?.HeadEdges ?? Array.Empty<Edge>();
+        return edges
+            .GroupBy(edge => new { edge.TailId, edge.HeadId })
+            .Select(group => group.First().TailNode?.Issue)
+            .Where(parentIssue => parentIssue != null && IsBoundaryInScope(parentIssue.Boundary))
+            .Select(parentIssue =>
+            {
+                if (IsIssueType(parentIssue!.Type, IssueType.Uncertainty) && parentIssue.Uncertainty?.IsKey == true)
                 {
-                    ParentOptionId = x,
-                    DiscreteUtilityId = utilityId,
+                    return new ParentStateGroup(parentIssue.Uncertainty.Outcomes.Select(outcome => outcome.Id).ToList(), true);
                 }
-            ).ToList();
 
-            await DbContext.DiscreteUtilityParentOptions.AddRangeAsync(parentOptions, ct);
-
-            var parentOutcomes = parentOutcomeIds.Select(x =>
-                new DiscreteUtilityParentOutcome
+                if (IsIssueType(parentIssue.Type, IssueType.Decision) && IsDecisionFocus(parentIssue.Decision?.Type))
                 {
-                    ParentOutcomeId = x,
-                    DiscreteUtilityId = utilityId,
+                    return new ParentStateGroup(parentIssue.Decision!.Options.Select(option => option.Id).ToList(), false);
                 }
-            ).ToList();
 
-            await DbContext.DiscreteUtilityParentOutcomes.AddRangeAsync(parentOutcomes, ct);
-        }
-
+                return null;
+            })
+            .Where(group => group is not null)
+            .Cast<ParentStateGroup>()
+            .ToList();
     }
 
     private static (List<List<Guid>> ParentOutcomes, List<List<Guid>> ParentOptions) CollectParents(Issue issue)
