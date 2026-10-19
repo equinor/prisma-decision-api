@@ -136,7 +136,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (discreteUtilityDtos.Count > 0)
             await _discreteUtilityService.CreateAsync(discreteUtilityDtos);
 
-        var objectiveDtos = CreateObjectives(fullProject.objectives, objective => objective.Type, newProjectId);
+        var objectiveDtos = CreateObjectives(fullProject.objectives, newProjectId);
 
         if (objectiveDtos.Count > 0)
             await _objectiveService.CreateAsync(objectiveDtos, user);
@@ -259,7 +259,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (discreteUtilityDtos.Count > 0)
             await _discreteUtilityService.CreateAsync(discreteUtilityDtos);
 
-        var objectiveDtos = CreateObjectives(dto.Objectives, objective => objective.Type, newProjectId);
+        var objectiveDtos = CreateObjectives(dto.Objectives, newProjectId);
         if (objectiveDtos.Count > 0)
             await _objectiveService.CreateAsync(objectiveDtos, user);
         var stakeholderMatrixEntryDtos = CreateStakeholderMatrixEntries(dto.StakeholderMatrixEntries, newProjectId);
@@ -535,7 +535,6 @@ public class ProjectDuplicationService : IProjectDuplicationService
 
     private static List<ObjectiveIncomingDto> CreateObjectives<TObjective>(
         IEnumerable<TObjective> objectives,
-        Func<TObjective, string> getType,
         Guid newProjectId) where TObjective : ObjectiveDto
     {
         return objectives.Select(objective => new ObjectiveIncomingDto
@@ -543,7 +542,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
             Id = Guid.NewGuid(),
             Name = objective.Name,
             Description = objective.Description,
-            Type = getType(objective),
+            Type = objective.Type,
             Ordering = objective.Ordering,
             ProjectId = newProjectId
         }).ToList();
