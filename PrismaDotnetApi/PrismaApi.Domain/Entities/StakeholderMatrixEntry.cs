@@ -19,7 +19,7 @@ namespace PrismaApi.Domain.Entities
         public required double AffectedByTheDecision { get; set; }
         public Project? Project { get; set; }
         [NotMapped]
-        public TransferBehavior IsTransferable => TransferBehavior.NotTransferable;
+        public TransferBehavior IsTransferable => TransferBehavior.Transferable;
 
         public static void OnModelConfiguring(ModelBuilder modelBuilder)
         {
@@ -38,7 +38,7 @@ namespace PrismaApi.Domain.Entities
                 entity.Property(e => e.StakeholderName).HasMaxLength(DomainConstants.MaxShortStringLength);
                 entity.Property(e => e.StakeholderRole).HasMaxLength(DomainConstants.MaxShortStringLength);
                 entity.HasOne(e => e.Project)
-                    .WithMany(project => project.StakeholderMatrices)
+                    .WithMany(project => project.StakeholderMatrixEntries)
                     .HasForeignKey(e => e.ProjectId)
                     .OnDelete(DeleteBehavior.Cascade);
             });

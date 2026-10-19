@@ -24,6 +24,7 @@ public class ProjectDuplicationRepository : IProjectDuplicationRepository
             .AsNoTracking()
             .Where(p => p.Id == projectId && p.ProjectRoles.Any(pr => pr.UserId == user.Id))
             .Include(p => p.Objectives)
+            .Include(p => p.StakeholderMatrixEntries)
             .Include(p => p.ProjectRoles).ThenInclude(pr => pr.User)
             .Include(p => p.Strategies).ThenInclude(s => s.StrategyOptions).ThenInclude(so => so.Option)
             .Include(p => p.BoardNodes)

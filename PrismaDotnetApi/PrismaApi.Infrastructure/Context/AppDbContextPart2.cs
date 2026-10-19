@@ -109,6 +109,17 @@ public partial class AppDbContext : DbContext
             _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetStrategyInProjectKey(projectId) });
         }
     }
+    private void InvalidateStakeholderMatrixEntriesCache()
+    {
+        HashSet<Guid> affectedProjectIds = [
+            ..GetChangedEntries<StakeholderMatrixEntry>().Select(e => e.Entity.ProjectId),
+        ];
+
+        foreach (var projectId in affectedProjectIds)
+        {
+            _cache.InvalidateCacheEntry(new CacheItem { CacheKey = CacheKeys.GetStakeHolderMatrixEntriesInProjectKey(projectId) });
+        }
+    }
 
     private void InvalidateInfluenceDiagramData()
     {
@@ -173,6 +184,7 @@ public partial class AppDbContext : DbContext
         InvalidateProjectCache();
         InvalidateObjectivesCache();
         InvalidateStrategiesCache();
+        InvalidateStakeholderMatrixEntriesCache();
         await InvalidateProjectUsersAsync();
     }
 }

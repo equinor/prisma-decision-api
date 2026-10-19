@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 
 namespace PrismaApi.Domain.Dtos
 {
-    public class StakeholderMatrixDto
+    public class StakeholderMatrixEntryDto
     {
         [JsonPropertyName("stakeholder_matrix_id")]
         public Guid Id { get; set; } = Guid.NewGuid();
@@ -24,10 +24,10 @@ namespace PrismaApi.Domain.Dtos
 
     }
 
-    public class StakeholderMatrixIncomingDto : StakeholderMatrixDto
+    public class StakeholderMatrixEntryIncomingDto : StakeholderMatrixEntryDto
     {
     }
-    public class StakeholderMatrixOutgoingDto : StakeholderMatrixDto
+    public class StakeholderMatrixEntryOutgoingDto : StakeholderMatrixEntryDto
     {
 
     }

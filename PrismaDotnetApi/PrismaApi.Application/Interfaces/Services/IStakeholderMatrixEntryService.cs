@@ -8,11 +8,11 @@ namespace PrismaApi.Application.Interfaces.Services
 {
     public interface IStakeholderMatrixEntryService
     {
-        Task<List<StakeholderMatrixDto>> CreateAsync(List<StakeholderMatrixIncomingDto> dtos, UserOutgoingDto user, CancellationToken ct = default);
-        Task<List<StakeholderMatrixDto>> UpdateAsync(List<StakeholderMatrixIncomingDto> dtos, UserOutgoingDto user, CancellationToken ct = default);
+        Task<List<StakeholderMatrixEntryDto>> CreateAsync(List<StakeholderMatrixEntryIncomingDto> dtos, UserOutgoingDto user, CancellationToken ct = default);
+        Task<List<StakeholderMatrixEntryDto>> UpdateAsync(List<StakeholderMatrixEntryIncomingDto> dtos, UserOutgoingDto user, CancellationToken ct = default);
         Task DeleteAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default);
-        Task<List<StakeholderMatrixDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default);
-        Task<List<StakeholderMatrixDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default);
-        Task<List<StakeholderMatrixDto>> GetByProjectAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default);
+        Task<List<StakeholderMatrixEntryDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default);
+        Task<List<StakeholderMatrixEntryDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default);
+        Task<List<StakeholderMatrixEntryDto>> GetByProjectAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default);
     }
 }

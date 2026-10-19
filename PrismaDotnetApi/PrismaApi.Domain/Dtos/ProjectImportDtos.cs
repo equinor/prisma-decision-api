@@ -31,4 +31,6 @@ public class ProjectImportDto
     public List<DiscreteUtilityDto> DiscreteUtilities { get; set; } = new();
     [JsonPropertyName("restriction_tables")]
     public List<RestrictionTableIncomingDto> RestrictionTables { get; set; } = new();
+    [JsonPropertyName("stakeholder_matrix_entries")]
+    public List<StakeholderMatrixEntryIncomingDto> StakeholderMatrixEntries { get; set; } = new();
 }

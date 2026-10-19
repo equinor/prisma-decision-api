@@ -22,6 +22,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
     private readonly IBoardNodeService _boardNodeService;
     private readonly IBoardSheetService _boardSheetService;
     private readonly IRestrictionTableService _restrictionTableService;
+    private readonly IStakeholderMatrixEntryService _stakeholderMatrixEntryService;
     private readonly IMemoryCache _cache;
 
     public ProjectDuplicationService(
@@ -38,7 +39,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         IBoardNodeService boardNodeService,
         IBoardSheetService boardSheetService,
         IRestrictionTableService restrictionTableService,
-        IObjectiveService objectiveService)
+        IObjectiveService objectiveService,
+        IStakeholderMatrixEntryService stakeholderMatrixEntryService)
     {
         _duplicationRepo = duplicationRepo;
         _projectService = projectService;
@@ -53,6 +55,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         _boardSheetService = boardSheetService;
         _restrictionTableService = restrictionTableService;
         _objectiveService = objectiveService;
+        _stakeholderMatrixEntryService = stakeholderMatrixEntryService;
         _cache = cache;
     }
 
@@ -137,6 +140,10 @@ public class ProjectDuplicationService : IProjectDuplicationService
 
         if (objectiveDtos.Count > 0)
             await _objectiveService.CreateAsync(objectiveDtos, user);
+        var stakeholderMatrixEntryDtos = CreateStakeholderMatrixEntries(fullProject.StakeholderMatrixEntries, newProjectId);
+
+        if (stakeholderMatrixEntryDtos.Count > 0)
+            await _stakeholderMatrixEntryService.CreateAsync(stakeholderMatrixEntryDtos, user);
         var strategyDtos = CreateStrategies(fullProject.strategies, s => s.Options, newProjectId, mappings);
         if (strategyDtos.Count > 0)
             await _strategyService.CreateAsync(strategyDtos, user);
@@ -255,6 +262,9 @@ public class ProjectDuplicationService : IProjectDuplicationService
         var objectiveDtos = CreateObjectives(dto.Objectives, newProjectId);
         if (objectiveDtos.Count > 0)
             await _objectiveService.CreateAsync(objectiveDtos, user);
+        var stakeholderMatrixEntryDtos = CreateStakeholderMatrixEntries(dto.StakeholderMatrixEntries, newProjectId);
+        if (stakeholderMatrixEntryDtos.Count > 0)
+            await _stakeholderMatrixEntryService.CreateAsync(stakeholderMatrixEntryDtos, user);
         var strategyDtos = CreateStrategies(dto.Strategies, s => s.Options, newProjectId, mappings);
         if (strategyDtos.Count > 0)
             await _strategyService.CreateAsync(strategyDtos, user);
@@ -545,6 +555,30 @@ public class ProjectDuplicationService : IProjectDuplicationService
             Description = o.Description,
             Type = o.Type,
             Ordering = o.Ordering,
+            ProjectId = newProjectId
+        }).ToList();
+    }
+    private static List<StakeholderMatrixEntryIncomingDto> CreateStakeholderMatrixEntries(IEnumerable<StakeholderMatrixEntryOutgoingDto> entries, Guid newProjectId)
+    {
+        return entries.Select(e => new StakeholderMatrixEntryIncomingDto
+        {
+            Id = Guid.NewGuid(),
+            StakeholderName = e.StakeholderName,
+            StakeholderRole = e.StakeholderRole,
+            AffectedByTheDecision = e.AffectedByTheDecision,
+            AffectingTheDecision = e.AffectingTheDecision,
+            ProjectId = newProjectId
+        }).ToList();
+    }
+    private static List<StakeholderMatrixEntryIncomingDto> CreateStakeholderMatrixEntries(IEnumerable<StakeholderMatrixEntryIncomingDto> entries, Guid newProjectId)
+    {
+        return entries.Select(e => new StakeholderMatrixEntryIncomingDto
+        {
+            Id = Guid.NewGuid(),
+            StakeholderName = e.StakeholderName,
+            StakeholderRole = e.StakeholderRole,
+            AffectedByTheDecision = e.AffectedByTheDecision,
+            AffectingTheDecision = e.AffectingTheDecision,
             ProjectId = newProjectId
         }).ToList();
     }
