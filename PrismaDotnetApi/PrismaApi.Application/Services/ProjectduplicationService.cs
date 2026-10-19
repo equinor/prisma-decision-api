@@ -136,7 +136,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (discreteUtilityDtos.Count > 0)
             await _discreteUtilityService.CreateAsync(discreteUtilityDtos);
 
-        var objectiveDtos = CreateObjectives(fullProject.objectives, newProjectId);
+        var objectiveDtos = CreateObjectives(fullProject.objectives, objective => objective.Type, newProjectId);
 
         if (objectiveDtos.Count > 0)
             await _objectiveService.CreateAsync(objectiveDtos, user);
@@ -259,7 +259,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         if (discreteUtilityDtos.Count > 0)
             await _discreteUtilityService.CreateAsync(discreteUtilityDtos);
 
-        var objectiveDtos = CreateObjectives(dto.Objectives, newProjectId);
+        var objectiveDtos = CreateObjectives(dto.Objectives, objective => objective.Type, newProjectId);
         if (objectiveDtos.Count > 0)
             await _objectiveService.CreateAsync(objectiveDtos, user);
         var stakeholderMatrixEntryDtos = CreateStakeholderMatrixEntries(dto.StakeholderMatrixEntries, newProjectId);
@@ -533,52 +533,31 @@ public class ProjectDuplicationService : IProjectDuplicationService
         return (utilityDto, mappedDiscreteUtilities);
     }
 
-    private static List<ObjectiveIncomingDto> CreateObjectives(IEnumerable<ObjectiveOutgoingDto> objectives, Guid newProjectId)
+    private static List<ObjectiveIncomingDto> CreateObjectives<TObjective>(
+        IEnumerable<TObjective> objectives,
+        Func<TObjective, string> getType,
+        Guid newProjectId) where TObjective : ObjectiveDto
     {
-        return objectives.Select(o => new ObjectiveIncomingDto
+        return objectives.Select(objective => new ObjectiveIncomingDto
         {
             Id = Guid.NewGuid(),
-            Name = o.Name,
-            Description = o.Description,
-            Type = o.Type,
-            Ordering = o.Ordering,
+            Name = objective.Name,
+            Description = objective.Description,
+            Type = getType(objective),
+            Ordering = objective.Ordering,
             ProjectId = newProjectId
         }).ToList();
     }
-
-    private static List<ObjectiveIncomingDto> CreateObjectives(IEnumerable<ObjectiveIncomingDto> objectives, Guid newProjectId)
+    private static List<StakeholderMatrixEntryIncomingDto> CreateStakeholderMatrixEntries<TStakeholder>(IEnumerable<TStakeholder> entries, Guid newProjectId)
+        where TStakeholder : StakeholderMatrixEntryDto
     {
-        return objectives.Select(o => new ObjectiveIncomingDto
+        return entries.Select(stakeholderEntry => new StakeholderMatrixEntryIncomingDto
         {
             Id = Guid.NewGuid(),
-            Name = o.Name,
-            Description = o.Description,
-            Type = o.Type,
-            Ordering = o.Ordering,
-            ProjectId = newProjectId
-        }).ToList();
-    }
-    private static List<StakeholderMatrixEntryIncomingDto> CreateStakeholderMatrixEntries(IEnumerable<StakeholderMatrixEntryOutgoingDto> entries, Guid newProjectId)
-    {
-        return entries.Select(e => new StakeholderMatrixEntryIncomingDto
-        {
-            Id = Guid.NewGuid(),
-            StakeholderName = e.StakeholderName,
-            StakeholderRole = e.StakeholderRole,
-            AffectedByTheDecision = e.AffectedByTheDecision,
-            AffectingTheDecision = e.AffectingTheDecision,
-            ProjectId = newProjectId
-        }).ToList();
-    }
-    private static List<StakeholderMatrixEntryIncomingDto> CreateStakeholderMatrixEntries(IEnumerable<StakeholderMatrixEntryIncomingDto> entries, Guid newProjectId)
-    {
-        return entries.Select(e => new StakeholderMatrixEntryIncomingDto
-        {
-            Id = Guid.NewGuid(),
-            StakeholderName = e.StakeholderName,
-            StakeholderRole = e.StakeholderRole,
-            AffectedByTheDecision = e.AffectedByTheDecision,
-            AffectingTheDecision = e.AffectingTheDecision,
+            StakeholderName = stakeholderEntry.StakeholderName,
+            StakeholderRole = stakeholderEntry.StakeholderRole,
+            AffectedByTheDecision = stakeholderEntry.AffectedByTheDecision,
+            AffectingTheDecision = stakeholderEntry.AffectingTheDecision,
             ProjectId = newProjectId
         }).ToList();
     }
@@ -608,7 +587,6 @@ public class ProjectDuplicationService : IProjectDuplicationService
             }).ToList()
         }).ToList();
     }
-
     // this is used to ensure that if the CreatedAt is not set, we provide a fallback value based on the index to maintain order
     private static DateTimeOffset GetCreatedAtOrOrderFallback(DateTimeOffset createdAt, int index)
         => createdAt == default ? DateTimeOffset.UnixEpoch.AddSeconds(index + 1) : createdAt;
