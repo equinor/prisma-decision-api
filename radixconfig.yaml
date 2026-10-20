@@ -49,7 +49,7 @@ spec:
                       - name: prismadecisionapiprodsec
                         envVar: CLIENT_SECRET
                       - name: applicationinsightapiprod
-                        envVar: APPINSIGHTS_CONNECTIONSTRING
+                        envVar: APPLICATION_INSIGHTS_CONNECTION_STRING
           identity:
             azure:
                 clientId: 0301648e-27c7-4bdb-b366-0f9a206028c4
@@ -65,7 +65,7 @@ spec:
                       - name: prismadecisionapiptestsec
                         envVar: CLIENT_SECRET
                       - name: applicationinsightapiptest
-                        envVar: APPINSIGHTS_CONNECTIONSTRING
+                        envVar: APPLICATION_INSIGHTS_CONNECTION_STRING
           identity:
             azure:
               clientId: f3df74ff-7a88-4f51-8ecd-1e3d8a580961
@@ -81,7 +81,7 @@ spec:
                       - name: prismadecisionapidevsec
                         envVar: CLIENT_SECRET
                       - name: applicationinsightapidev
-                        envVar: APPINSIGHTS_CONNECTIONSTRING
+                        envVar: APPLICATION_INSIGHTS_CONNECTION_STRING
           identity:
             azure:
               clientId: 0e69d773-2ad4-4918-a22c-e7df52e3ab7a
@@ -92,9 +92,6 @@ spec:
       ports:
         - name: http
           port: 8000
-      secrets:
-        - CLIENT_SECRET
-        - APPINSIGHTS_CONNECTIONSTRING
       resources:
         requests:
           memory: '10000Mi'
@@ -113,7 +110,39 @@ spec:
       environmentConfig:
         - environment: prod
           replicas: 1
+          secretRefs:
+            azureKeyVaults:
+                - name: kvprismadecisionprodsw
+                  useAzureIdentity: true
+                  items:
+                      - name: applicationinsightapiprod
+                        envVar: APPLICATION_INSIGHTS_CONNECTION_STRING
+          identity:
+            azure:
+              clientId: 0301648e-27c7-4bdb-b366-0f9a206028c4
+
         - environment: test
           replicas: 1
+          secretRefs:
+            azureKeyVaults:
+                - name: kvprismadecisiontestsw
+                  useAzureIdentity: true
+                  items:
+                      - name: applicationinsightapitest
+                        envVar: APPLICATION_INSIGHTS_CONNECTION_STRING
+          identity:
+            azure:
+              clientId: f3df74ff-7a88-4f51-8ecd-1e3d8a580961
+
         - environment: dev
           replicas: 1
+          secretRefs:
+            azureKeyVaults:
+                - name: kvprismadecisiondevsw
+                  useAzureIdentity: true
+                  items:
+                      - name: applicationinsightapidev
+                        envVar: APPLICATION_INSIGHTS_CONNECTION_STRING
+          identity:
+            azure:
+              clientId: 0e69d773-2ad4-4918-a22c-e7df52e3ab7a

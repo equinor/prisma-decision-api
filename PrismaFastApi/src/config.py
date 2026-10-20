@@ -15,7 +15,9 @@ class Config(BaseSettings):
         "https://frontend-prisma-decision-web-prod.radix.equinor.com",
     ]
 
-    APPINSIGHTS_CONNECTIONSTRING: str = Field(default=os.getenv("APPINSIGHTS_CONNECTIONSTRING", ""))
+    APPLICATION_INSIGHTS_CONNECTION_STRING: str = Field(
+        default=os.getenv("APPLICATION_INSIGHTS_CONNECTION_STRING", "")
+    )
     APP_ENV: str = Field(default=os.getenv("APP_ENV", "local"))
     # Database token duration in seconds (default: 50 minutes)
     DEBUG: bool = False

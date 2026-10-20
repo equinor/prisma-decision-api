@@ -59,7 +59,10 @@ class DiscreteUtilityArrayManager:
             dimension: {state_id: index for index, state_id in enumerate(state_ids)}
             for dimension, state_ids in parent_dimensions.items()
         }
-        data = np.zeros(tuple(len(parent_dimensions[dimension]) for dimension in dimensions) + (len(value_metrics)),))
+        data = np.zeros(
+            tuple(len(parent_dimensions[dimension]) for dimension in dimensions)
+            + (len(value_metrics),)
+        )
 
         for utility in utilities:
             parent_ids = [str(parent_id) for parent_id in utility.parent_outcome_ids] + [
