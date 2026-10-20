@@ -9,9 +9,9 @@ namespace PrismaApi.Application.Mapping
 {
     public static class StakeholderMatrixEntryMappingExtensions
     {
-        public static StakeholderMatrixEntryDto ToOutgoingDto(this StakeholderMatrixEntry entity)
+        public static StakeholderMatrixEntryOutgoingDto ToOutgoingDto(this StakeholderMatrixEntry entity)
         {
-            return new StakeholderMatrixEntryDto
+            return new StakeholderMatrixEntryOutgoingDto
             {
                 Id = entity.Id,
                 ProjectId = entity.ProjectId,
@@ -22,12 +22,12 @@ namespace PrismaApi.Application.Mapping
             };
         }
 
-        public static List<StakeholderMatrixEntryDto> ToOutgoingDtos(this IEnumerable<StakeholderMatrixEntry> entities)
+        public static List<StakeholderMatrixEntryOutgoingDto> ToOutgoingDtos(this IEnumerable<StakeholderMatrixEntry> entities)
         {
             return entities.Select(ToOutgoingDto).ToList();
         }
 
-        public static StakeholderMatrixEntry ToEntity(this StakeholderMatrixEntryDto dto, UserOutgoingDto user)
+        public static StakeholderMatrixEntry ToEntity(this StakeholderMatrixEntryIncomingDto dto, UserOutgoingDto user)
         {
             return new StakeholderMatrixEntry
             {
@@ -43,7 +43,7 @@ namespace PrismaApi.Application.Mapping
             };
         }
 
-        public static List<StakeholderMatrixEntry> ToEntities(this IEnumerable<StakeholderMatrixEntryDto> dtos, UserOutgoingDto user)
+        public static List<StakeholderMatrixEntry> ToEntities(this IEnumerable<StakeholderMatrixEntryIncomingDto> dtos, UserOutgoingDto user)
         {
             return dtos.Select(dto => dto.ToEntity(user)).ToList();
         }
