@@ -76,6 +76,7 @@ public static class ProjectMappingExtensions
             BoardNodes = entity.BoardNodes.ToOutgoingDtos(),
             Assessments = entity.Assessments.ToOutgoingDtos(),
             BoardSheets = entity.BoardSheets.ToOutgoingDtos(),
+            StakeholderMatrixEntries = entity.StakeholderMatrixEntries.ToOutgoingDtos(),
             DiscreteProbabilities = entity.Issues
                 .SelectMany(issue => issue.Uncertainty?.DiscreteProbabilities ?? [])
                 .ToOutgoingDtos(),
