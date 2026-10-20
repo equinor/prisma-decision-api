@@ -24,6 +24,7 @@ public class FullProjectForDuplicationDto : ProjectOutgoingDto
     public List<DiscreteUtilityDto> DiscreteUtilities { get; set; } = new();
     [JsonPropertyName("restriction_tables")]
     public List<RestrictionTableOutgoingDto> RestrictionTables { get; set; } = new();
+
     [JsonPropertyName("stakeholder_matrix_entries")]
-    public List<StakeholderMatrixEntryDto> StakeholderMatrixEntries { get; set; } = new();
+    public List<StakeholderMatrixEntryOutgoingDto> StakeholderMatrixEntries { get; set; } = new();
 }
