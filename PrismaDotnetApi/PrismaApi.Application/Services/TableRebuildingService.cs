@@ -230,6 +230,11 @@ public class TableRebuildingService : ITableRebuildingService
         await DbContext.SaveChangesAsync(ct);
     }
 
+
+    /// <summary>
+    /// Rebuilds the uncertainty table for the specified issue.
+    /// Note that the differance between the desired probabilities and the expanded probabilities is that the desired probabilities will always have the correct dimensions, while the expansion probabilities handles the prepopulation logic.
+    /// </summary>
     private async Task RebuildUncertaintyTable(Issue issue, CancellationToken ct = default)
     {
         var uncertainty = issue.Uncertainty;
@@ -240,12 +245,17 @@ public class TableRebuildingService : ITableRebuildingService
         var existingProbabilities = uncertainty.DiscreteProbabilities.ToList();
         // Convert the existing probabilities to DTOs that will be used for expansion and reconciliation.
         var expandedProbabilities = existingProbabilities.ToDtos();
+
+        // Collect the parent state groups for the issue. 
+        // These groups represent the different combinations of parent states that will influence the probabilities.
         var parentGroups = CollectParentStateGroups(issue);
 
         if (expandedProbabilities.Count != 0)
         {
+            // Add rows to the Probability table for each combination of parent states.
             ExpandProbabilityParents(issue.Id, expandedProbabilities, parentGroups);
 
+            // Add columns for any new outcomes that are not already represented in the expanded probabilities.
             var representedOutcomeIds = expandedProbabilities
                 .Select(probability => probability.OutcomeId)
                 .ToHashSet();
@@ -257,10 +267,16 @@ public class TableRebuildingService : ITableRebuildingService
             }
         }
 
+        // Build the desired probabilities that reflect the expanded parent state groups.
+        // This represents the target state of the Probability table with the correct dimensions
         var desiredProbabilities = BuildDesiredProbabilities(issue, parentGroups, expandedProbabilities);
         await ReconcileProbabilities(existingProbabilities, desiredProbabilities, ct);
     }
 
+    /// <summary>
+    /// Rebuilds the utility table for the specified issue.
+    /// Note that the difference between the desired utilities and the expanded utilities is that the desired utilities will always have the correct dimensions, while the expanded utilities handle the prepopulation logic.
+    /// </summary>
     private async Task RebuildUtilityTable(Issue issue, CancellationToken ct = default)
     {
         var utility = issue.Utility;
@@ -270,14 +286,21 @@ public class TableRebuildingService : ITableRebuildingService
         }
 
         var existingUtilities = utility.DiscreteUtilities.ToList();
+        // Convert the existing utilities to DTOs that will be used for expansion and reconciliation.
         var expandedUtilities = existingUtilities.ToDtos();
+
+        // Collect the parent state groups for the issue.
+        // These groups represent the different combinations of parent states that will influence the utilities.
         var parentGroups = CollectParentStateGroups(issue);
 
         if (expandedUtilities.Count != 0)
         {
+            // Add rows to the Utility table for each combination of parent states.
             ExpandUtilityParents(issue.Id, expandedUtilities, parentGroups);
         }
 
+        // Build the desired utilities that reflect the expanded parent state groups.
+        // This represents the target state of the Utility table with the correct dimensions.
         var desiredUtilities = BuildDesiredUtilities(issue, parentGroups, expandedUtilities);
         await ReconcileUtilities(existingUtilities, desiredUtilities, ct);
     }
@@ -495,6 +518,7 @@ public class TableRebuildingService : ITableRebuildingService
 
     /// <summary>
     /// Collects the parent state groups for a given issue.
+    /// Each element in the list represents the states for one issue node.
     /// </summary>
     /// <param name="issue">The issue for which to collect parent state groups.</param>
     /// <returns>A list of parent state groups associated with the issue.</returns>
@@ -524,51 +548,6 @@ public class TableRebuildingService : ITableRebuildingService
             .Where(group => group is not null)
             .Cast<ParentStateGroup>()
             .ToList();
-    }
-
-    private static (List<List<Guid>> ParentOutcomes, List<List<Guid>> ParentOptions) CollectParents(Issue issue)
-    {
-        var parentOutcomesList = new List<List<Guid>>();
-        var parentOptionsList = new List<List<Guid>>();
-
-        var edges = issue.Node?.HeadEdges ?? Array.Empty<Edge>();
-        var distinctEdges = edges
-            .GroupBy(edge => new { edge.TailId, edge.HeadId })
-            .Select(group => group.First())
-            .ToList();
-
-        foreach (var edge in distinctEdges)
-        {
-            var parentIssue = edge.TailNode?.Issue;
-            if (parentIssue == null || !IsBoundaryInScope(parentIssue.Boundary))
-            {
-                continue;
-            }
-
-            if (IsIssueType(parentIssue.Type, IssueType.Uncertainty) && parentIssue.Uncertainty?.IsKey == true)
-            {
-                parentOutcomesList.Add(parentIssue.Uncertainty.Outcomes.Select(outcome => outcome.Id).ToList());
-            }
-            else if (IsIssueType(parentIssue.Type, IssueType.Decision) && IsDecisionFocus(parentIssue.Decision?.Type))
-            {
-                parentOptionsList.Add(parentIssue.Decision!.Options.Select(option => option.Id).ToList());
-            }
-        }
-
-        return (parentOutcomesList, parentOptionsList);
-    }
-
-    public async Task RemoveExcessDataInTables(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
-    {
-        var discreteUncertaintyIds = await DbContext.Uncertainties
-            .Where(x => x.Issue!.ProjectId == projectId && x.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id))
-            .Select(e => e.Id).ToListAsync(ct);
-        var discreteUtilityIds = await DbContext.Utilities
-            .Where(x => x.Issue!.ProjectId == projectId && x.Issue!.Project!.ProjectRoles.Any(p => p.UserId == user.Id))
-            .Select(e => e.Id).ToListAsync(ct);
-        foreach (var id in discreteUncertaintyIds) await RemoveExcessDiscreteProbabilities(id, ct);
-        foreach (var id in discreteUtilityIds) await RemoveExcessDiscreteUtilities(id, ct);
-        await DbContext.SaveChangesAsync(ct);
     }
 
     public async Task RemoveExcessDiscreteProbabilities(Guid uncertaintyId, CancellationToken ct = default)
