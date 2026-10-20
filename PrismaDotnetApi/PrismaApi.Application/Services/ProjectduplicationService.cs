@@ -22,6 +22,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
     private readonly IBoardNodeService _boardNodeService;
     private readonly IBoardSheetService _boardSheetService;
     private readonly IRestrictionTableService _restrictionTableService;
+    private readonly IStakeholderMatrixEntryService _stakeholderMatrixEntryService;
     private readonly IMemoryCache _cache;
 
     public ProjectDuplicationService(
@@ -38,7 +39,8 @@ public class ProjectDuplicationService : IProjectDuplicationService
         IBoardNodeService boardNodeService,
         IBoardSheetService boardSheetService,
         IRestrictionTableService restrictionTableService,
-        IObjectiveService objectiveService)
+        IObjectiveService objectiveService,
+        IStakeholderMatrixEntryService stakeholderMatrixEntryService)
     {
         _duplicationRepo = duplicationRepo;
         _projectService = projectService;
@@ -53,6 +55,7 @@ public class ProjectDuplicationService : IProjectDuplicationService
         _boardSheetService = boardSheetService;
         _restrictionTableService = restrictionTableService;
         _objectiveService = objectiveService;
+        _stakeholderMatrixEntryService = stakeholderMatrixEntryService;
         _cache = cache;
     }
 
@@ -137,6 +140,10 @@ public class ProjectDuplicationService : IProjectDuplicationService
 
         if (objectiveDtos.Count > 0)
             await _objectiveService.CreateAsync(objectiveDtos, user);
+        var stakeholderMatrixEntryDtos = CreateStakeholderMatrixEntries(fullProject.StakeholderMatrixEntries, newProjectId);
+
+        if (stakeholderMatrixEntryDtos.Count > 0)
+            await _stakeholderMatrixEntryService.CreateAsync(stakeholderMatrixEntryDtos, user);
         var strategyDtos = CreateStrategies(fullProject.strategies, s => s.Options, newProjectId, mappings);
         if (strategyDtos.Count > 0)
             await _strategyService.CreateAsync(strategyDtos, user);
@@ -255,6 +262,9 @@ public class ProjectDuplicationService : IProjectDuplicationService
         var objectiveDtos = CreateObjectives(dto.Objectives, newProjectId);
         if (objectiveDtos.Count > 0)
             await _objectiveService.CreateAsync(objectiveDtos, user);
+        var stakeholderMatrixEntryDtos = CreateStakeholderMatrixEntries(dto.StakeholderMatrixEntries, newProjectId);
+        if (stakeholderMatrixEntryDtos.Count > 0)
+            await _stakeholderMatrixEntryService.CreateAsync(stakeholderMatrixEntryDtos, user);
         var strategyDtos = CreateStrategies(dto.Strategies, s => s.Options, newProjectId, mappings);
         if (strategyDtos.Count > 0)
             await _strategyService.CreateAsync(strategyDtos, user);
@@ -523,28 +533,30 @@ public class ProjectDuplicationService : IProjectDuplicationService
         return (utilityDto, mappedDiscreteUtilities);
     }
 
-    private static List<ObjectiveIncomingDto> CreateObjectives(IEnumerable<ObjectiveOutgoingDto> objectives, Guid newProjectId)
+    private static List<ObjectiveIncomingDto> CreateObjectives<TObjective>(
+        IEnumerable<TObjective> objectives,
+        Guid newProjectId) where TObjective : ObjectiveDto
     {
-        return objectives.Select(o => new ObjectiveIncomingDto
+        return objectives.Select(objective => new ObjectiveIncomingDto
         {
             Id = Guid.NewGuid(),
-            Name = o.Name,
-            Description = o.Description,
-            Type = o.Type,
-            Ordering = o.Ordering,
+            Name = objective.Name,
+            Description = objective.Description,
+            Type = objective.Type,
+            Ordering = objective.Ordering,
             ProjectId = newProjectId
         }).ToList();
     }
-
-    private static List<ObjectiveIncomingDto> CreateObjectives(IEnumerable<ObjectiveIncomingDto> objectives, Guid newProjectId)
+    private static List<StakeholderMatrixEntryIncomingDto> CreateStakeholderMatrixEntries<TStakeholder>(IEnumerable<TStakeholder> entries, Guid newProjectId)
+        where TStakeholder : StakeholderMatrixEntryDto
     {
-        return objectives.Select(o => new ObjectiveIncomingDto
+        return entries.Select(stakeholderEntry => new StakeholderMatrixEntryIncomingDto
         {
             Id = Guid.NewGuid(),
-            Name = o.Name,
-            Description = o.Description,
-            Type = o.Type,
-            Ordering = o.Ordering,
+            StakeholderName = stakeholderEntry.StakeholderName,
+            StakeholderRole = stakeholderEntry.StakeholderRole,
+            AffectedByTheDecision = stakeholderEntry.AffectedByTheDecision,
+            AffectingTheDecision = stakeholderEntry.AffectingTheDecision,
             ProjectId = newProjectId
         }).ToList();
     }
@@ -574,7 +586,6 @@ public class ProjectDuplicationService : IProjectDuplicationService
             }).ToList()
         }).ToList();
     }
-
     // this is used to ensure that if the CreatedAt is not set, we provide a fallback value based on the index to maintain order
     private static DateTimeOffset GetCreatedAtOrOrderFallback(DateTimeOffset createdAt, int index)
         => createdAt == default ? DateTimeOffset.UnixEpoch.AddSeconds(index + 1) : createdAt;

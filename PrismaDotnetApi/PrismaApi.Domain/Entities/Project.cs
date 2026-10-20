@@ -24,7 +24,7 @@ public class Project : AuditableEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
     public ICollection<BoardNode> BoardNodes { get; set; } = new List<BoardNode>();
     public ICollection<BoardSheet> BoardSheets { get; set; } = new List<BoardSheet>();
     public ICollection<Assessment> Assessments { get; set; } = new List<Assessment>();
-    public ICollection<StakeholderMatrixEntry> StakeholderMatrices { get; set; } = new List<StakeholderMatrixEntry>();
+    public ICollection<StakeholderMatrixEntry> StakeholderMatrixEntries { get; set; } = new List<StakeholderMatrixEntry>();
     [NotMapped]
     public TransferBehavior IsTransferable => TransferBehavior.Transferable;
     public static void OnModelConfiguring(ModelBuilder modelBuilder)
@@ -90,7 +90,7 @@ public class Project : AuditableEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
                 .WithOne(e => e.Project)
                 .HasForeignKey(e => e.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
-            entity.HasMany(e => e.StakeholderMatrices)
+            entity.HasMany(e => e.StakeholderMatrixEntries)
                 .WithOne(e => e.Project)
                 .HasForeignKey(e => e.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);

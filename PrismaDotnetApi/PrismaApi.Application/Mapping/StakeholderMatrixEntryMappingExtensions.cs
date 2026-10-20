@@ -7,11 +7,11 @@ using PrismaApi.Domain.Dtos;
 
 namespace PrismaApi.Application.Mapping
 {
-    public static class StakeholderMatrixMappingExtensions
+    public static class StakeholderMatrixEntryMappingExtensions
     {
-        public static StakeholderMatrixDto ToOutgoingDto(this StakeholderMatrixEntry entity)
+        public static StakeholderMatrixEntryDto ToOutgoingDto(this StakeholderMatrixEntry entity)
         {
-            return new StakeholderMatrixDto
+            return new StakeholderMatrixEntryDto
             {
                 Id = entity.Id,
                 ProjectId = entity.ProjectId,
@@ -22,12 +22,12 @@ namespace PrismaApi.Application.Mapping
             };
         }
 
-        public static List<StakeholderMatrixDto> ToOutgoingDtos(this IEnumerable<StakeholderMatrixEntry> entities)
+        public static List<StakeholderMatrixEntryDto> ToOutgoingDtos(this IEnumerable<StakeholderMatrixEntry> entities)
         {
             return entities.Select(ToOutgoingDto).ToList();
         }
 
-        public static StakeholderMatrixEntry ToEntity(this StakeholderMatrixDto dto, UserOutgoingDto user)
+        public static StakeholderMatrixEntry ToEntity(this StakeholderMatrixEntryDto dto, UserOutgoingDto user)
         {
             return new StakeholderMatrixEntry
             {
@@ -43,7 +43,7 @@ namespace PrismaApi.Application.Mapping
             };
         }
 
-        public static List<StakeholderMatrixEntry> ToEntities(this IEnumerable<StakeholderMatrixIncomingDto> dtos, UserOutgoingDto user)
+        public static List<StakeholderMatrixEntry> ToEntities(this IEnumerable<StakeholderMatrixEntryDto> dtos, UserOutgoingDto user)
         {
             return dtos.Select(dto => dto.ToEntity(user)).ToList();
         }

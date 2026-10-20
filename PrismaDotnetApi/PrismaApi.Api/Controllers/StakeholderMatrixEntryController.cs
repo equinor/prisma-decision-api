@@ -24,7 +24,7 @@ public class StakeholderMatrixEntryController : PrismaBaseEntityController
     }
 
     [HttpPost("stakeholder-matrix-entry")]
-    public async Task<ActionResult<List<StakeholderMatrixDto>>> CreateObjectives([FromBody] List<StakeholderMatrixIncomingDto> dtos, CancellationToken ct = default)
+    public async Task<ActionResult<List<StakeholderMatrixEntryDto>>> CreateObjectives([FromBody] List<StakeholderMatrixEntryIncomingDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 
@@ -43,7 +43,7 @@ public class StakeholderMatrixEntryController : PrismaBaseEntityController
     }
 
     [HttpGet("stakeholder-matrix-entry/{id:guid}")]
-    public async Task<ActionResult<StakeholderMatrixDto>> GetObjective(Guid id, CancellationToken ct = default)
+    public async Task<ActionResult<StakeholderMatrixEntryDto>> GetObjective(Guid id, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _stakeholderMatrixEntryService.GetAsync(new List<Guid> { id }, user, ct);
@@ -51,7 +51,7 @@ public class StakeholderMatrixEntryController : PrismaBaseEntityController
     }
 
     [HttpGet("stakeholder-matrix-entry")]
-    public async Task<ActionResult<List<StakeholderMatrixDto>>> GetAllObjectives(CancellationToken ct = default)
+    public async Task<ActionResult<List<StakeholderMatrixEntryDto>>> GetAllObjectives(CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _stakeholderMatrixEntryService.GetAllAsync(user, ct);
@@ -59,7 +59,7 @@ public class StakeholderMatrixEntryController : PrismaBaseEntityController
     }
 
     [HttpGet("projects/{projectId:guid}/stakeholder-matrix-entry")]
-    public async Task<ActionResult<List<StakeholderMatrixDto>>> GetStakeholderMatrixByProject(Guid projectId, CancellationToken ct = default)
+    public async Task<ActionResult<List<StakeholderMatrixEntryDto>>> GetStakeholderMatrixByProject(Guid projectId, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
         var result = await _stakeholderMatrixEntryService.GetByProjectAsync(projectId, user, ct);
@@ -67,7 +67,7 @@ public class StakeholderMatrixEntryController : PrismaBaseEntityController
     }
 
     [HttpPut("stakeholder-matrix-entry")]
-    public async Task<ActionResult<List<StakeholderMatrixDto>>> UpdateObjectives([FromBody] List<StakeholderMatrixIncomingDto> dtos, CancellationToken ct = default)
+    public async Task<ActionResult<List<StakeholderMatrixEntryDto>>> UpdateObjectives([FromBody] List<StakeholderMatrixEntryIncomingDto> dtos, CancellationToken ct = default)
     {
         UserOutgoingDto user = HttpContext.GetLoadedUser();
 

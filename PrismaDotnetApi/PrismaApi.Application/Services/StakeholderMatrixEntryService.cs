@@ -25,7 +25,7 @@ namespace PrismaApi.Application.Services
             _cache = cache;
         }
 
-        public async Task<List<StakeholderMatrixDto>> CreateAsync(List<StakeholderMatrixIncomingDto> dtos, UserOutgoingDto user, CancellationToken ct = default)
+        public async Task<List<StakeholderMatrixEntryDto>> CreateAsync(List<StakeholderMatrixEntryIncomingDto> dtos, UserOutgoingDto user, CancellationToken ct = default)
         {
             var entities = dtos.ToEntities(user);
             await _stakeholderMatrixRepository.AddRangeAsync(entities, ct);
@@ -34,7 +34,7 @@ namespace PrismaApi.Application.Services
             return created.ToOutgoingDtos();
         }
 
-        public async Task<List<StakeholderMatrixDto>> UpdateAsync(List<StakeholderMatrixIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
+        public async Task<List<StakeholderMatrixEntryDto>> UpdateAsync(List<StakeholderMatrixEntryIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
         {
             var entities = dtos.ToEntities(userDto);
             await _stakeholderMatrixRepository.UpdateRangeAsync(entities, UserFilter(userDto), ct);
@@ -48,19 +48,19 @@ namespace PrismaApi.Application.Services
             await _stakeholderMatrixRepository.DeleteByIdsAsync(ids, filterPredicate: UserFilter(user), ct: ct);
         }
 
-        public async Task<List<StakeholderMatrixDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
+        public async Task<List<StakeholderMatrixEntryDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
         {
             var entities = await _stakeholderMatrixRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
             return entities.ToOutgoingDtos();
         }
 
-        public async Task<List<StakeholderMatrixDto>> GetByProjectAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
+        public async Task<List<StakeholderMatrixEntryDto>> GetByProjectAsync(Guid projectId, UserOutgoingDto user, CancellationToken ct = default)
         {
             var objectives = await _stakeholderMatrixRepository.GetAllAsync(filterPredicate: ProjectAndUserFilter(projectId, user), ct: ct);
             return objectives.ToOutgoingDtos();
         }
 
-        public async Task<List<StakeholderMatrixDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
+        public async Task<List<StakeholderMatrixEntryDto>> GetAllAsync(UserOutgoingDto user, CancellationToken ct = default)
         {
             return await _cache.GetProjectScopedAsync(
            user,
