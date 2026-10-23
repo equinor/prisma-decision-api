@@ -136,6 +136,12 @@ public static class InfluenceDiagramDtoExtensions
                 .GroupBy(entry => entry.ParentStateId)
                 .Any(row => row.All(entry => entry.RestrictionValue == 0)));
 
+        // "feature flag" throw exception if in Production or Public environment should throw a not implemented exception if any total restrictions exist
+        if (tablesWithTotalRestrictions.Any() 
+            && (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production" || Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Public")
+        )
+            throw new NotImplementedException("Total restrictions not supported yet.");
+
         var utilityIssueIds = influenceDiagramDto.issues
             .Where(issue => issue.Type == IssueType.Utility.ToString())
             .Select(issue => issue.Id)
