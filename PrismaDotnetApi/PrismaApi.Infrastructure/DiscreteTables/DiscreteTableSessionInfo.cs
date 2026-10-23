@@ -1,7 +1,3 @@
-using Microsoft.Identity.Client;
-using System;
-using System.Collections.Generic;
-
 namespace PrismaApi.Infrastructure.DiscreteTables;
 
 public sealed class DiscreteTableSessionInfo
