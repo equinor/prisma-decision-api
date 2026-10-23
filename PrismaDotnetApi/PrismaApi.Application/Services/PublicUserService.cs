@@ -12,6 +12,8 @@ namespace PrismaApi.Application.Services;
 
 public class PublicUserService : IUserProvider
 {
+    private static readonly SemaphoreSlim UserCreationLock = new(1, 1);
+
     private readonly IUserRepository _userRepository;
     private readonly IMemoryCache _memoryCache;
 
@@ -36,12 +38,25 @@ public class PublicUserService : IUserProvider
             return cachedUser;
         }
 
-        var dto = new UserIncomingDto { Id = Guid.NewGuid().ToString(), Name = userName };
-        var user = (await _userRepository.GetOrAddByUserNameAsync(dto)).ToOutgoingDto();
+        await UserCreationLock.WaitAsync(context.RequestAborted);
+        try
+        {
+            if (_memoryCache.TryGetValue(cacheKey, out cachedUser) && cachedUser != null)
+            {
+                return cachedUser;
+            }
 
-        _memoryCache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(30), user);
+            var dto = new UserIncomingDto { Id = Guid.NewGuid().ToString(), Name = userName };
+            var user = (await _userRepository.GetOrAddByUserNameAsync(dto, context.RequestAborted)).ToOutgoingDto();
 
-        return user;
+            _memoryCache.AddCacheItem(new CacheItem { CacheKey = cacheKey }, TimeSpan.FromMinutes(30), user);
+
+            return user;
+        }
+        finally
+        {
+            UserCreationLock.Release();
+        }
     }
 
     public async Task<List<UserOutgoingDto>> SearchUsersAsync(string query)
