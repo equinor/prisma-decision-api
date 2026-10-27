@@ -25,6 +25,7 @@ public class ApiExceptionFilterAttribute : ExceptionFilterAttribute
             { typeof(DbUpdateException), HandleDbUpdateException },
             { typeof(UnauthorizedAccessException), HandleUnauthorizedAccessException },
             { typeof(TaskCanceledException), HandleTaskCanceledException },
+            { typeof(NotImplementedException), HandleNotImplementedException },
             { typeof(SqlException), HandleSqlException },
             { typeof(CannotInsertNullException), HandleInsertNullSqlException },
             { typeof(UniqueConstraintException), HandleUniqueConstraintSqlException },
@@ -179,6 +180,26 @@ public class ApiExceptionFilterAttribute : ExceptionFilterAttribute
         };
 
         context.Result = new ObjectResult(details);
+
+        context.ExceptionHandled = true;
+    }
+
+    private static void HandleNotImplementedException(ExceptionContext context)
+    {
+        var exception = (NotImplementedException)context.Exception;
+
+        var details = new ProblemDetails
+        {
+            Type = "https://datatracker.ietf.org/doc/html/rfc9110#section-15.6.2",
+            Status = StatusCodes.Status501NotImplemented,
+            Title = "Not Implemented",
+            Detail = exception.GetInnermostExceptionMessage()
+        };
+
+        context.Result = new ObjectResult(details)
+        {
+            StatusCode = StatusCodes.Status501NotImplemented
+        };
 
         context.ExceptionHandled = true;
     }
