@@ -196,10 +196,8 @@ public class ApiExceptionFilterAttribute : ExceptionFilterAttribute
             Detail = exception.GetInnermostExceptionMessage()
         };
 
-        context.Result = new ObjectResult(details)
-        {
-            StatusCode = StatusCodes.Status501NotImplemented
-        };
+        context.Result = new ObjectResult(details);
+
 
         context.ExceptionHandled = true;
     }
