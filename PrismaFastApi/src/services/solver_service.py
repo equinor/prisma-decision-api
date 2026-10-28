@@ -17,6 +17,7 @@ from src.services.decision_tree_pruning_service import (
     OptimalDecisionTreePrunerOld,
 )
 from src.dtos.policy_table_dtos import PolicyTableRowDto
+from src.dtos.restriction_table_dtos import RestrictionEntryOutgoingDto
 from src.dtos.issue_dtos import IssueOutgoingDto
 from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.dtos.discrete_probability_dtos import DiscreteProbabilityOutgoingDto
@@ -336,6 +337,7 @@ class SolverService:
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
         evidence: Optional[list[uuid.UUID]] = None,
+        restriction_entries: Optional[list[RestrictionEntryOutgoingDto]] = None,
     ) -> list[PolicyTableRowDto]:
         solver = PyagrumSolver()
         ie = await solver.build_inference_engine(
@@ -349,4 +351,51 @@ class SolverService:
             solver.set_evidence(ie, [str(x) for x in evidence])
 
         decision_ids = [str(issue.id) for issue in issues if issue.type == Type.DECISION.value]
-        return [row for decision_id in decision_ids for row in solver.get_policy_table(decision_id)]
+        policy_rows = [
+            row for decision_id in decision_ids for row in solver.get_policy_table(decision_id)
+        ]
+        return self.prune_policy_table(policy_rows, restriction_entries or [])
+
+    def prune_policy_table(
+        self,
+        policy_rows: list[PolicyTableRowDto],
+        restriction_entries: list[RestrictionEntryOutgoingDto],
+    ) -> list[PolicyTableRowDto]:
+        pruned_rows = policy_rows.copy()
+
+        max_iterations = 100
+        i = 0
+        while True:
+            # stop if too many iterations at the start to avoid infinite loop
+            i += 1
+            if i > max_iterations:
+                break
+            rows_by_decision: dict[uuid.UUID, list[PolicyTableRowDto]] = {}
+            for row in pruned_rows:
+                rows_by_decision.setdefault(row.decision_id, []).append(row)
+
+            determined_option_ids = {
+                next(iter(selected_option_ids))
+                for rows in rows_by_decision.values()
+                if len(
+                    selected_option_ids := {
+                        row.option_id for row in rows if row.value == 1
+                    }
+                ) == 1
+            }
+            restricted_outcome_ids = {
+                entry.child_state_id
+                for entry in restriction_entries
+                if entry.restriction_value == 0
+                and entry.parent_state_id in determined_option_ids
+                and entry.is_child_uncertainty
+                and entry.child_state_id is not None
+            }
+            next_rows = [
+                row
+                for row in pruned_rows
+                if restricted_outcome_ids.isdisjoint(row.parent_state_ids)
+            ]
+            if len(next_rows) == len(pruned_rows):
+                return pruned_rows
+            pruned_rows = next_rows
