@@ -40,28 +40,28 @@ spec:
             ASPNETCORE_ENVIRONMENT: 'Public'
           secretRefs:
             azureKeyVaults:
-                - name: kvprismadecisionprodsw
+                - name: kvprismadecisionpublicsw
                   useAzureIdentity: true
                   items:
-                      - name: applicationinsightapiprod
-                        envVar: APPINSIGHTS_CONNECTIONSTRING
+                      - name: applicationinsightapipublic
+                        envVar: APPLICATION_INSIGHTS_CONNECTIONSTRING
           identity:
             azure:
-                clientId: 23042ef9-dbae-40e9-9345-626087966321
+                clientId: 519d9a9d-de73-4352-a9ea-f278317c8b75
         - environment: design
           replicas: 1
           variables:
             ASPNETCORE_ENVIRONMENT: 'Public'
           secretRefs:
             azureKeyVaults:
-                - name: kvprismadecisionprodsw
+                - name: kvprismadecisionpublicsw
                   useAzureIdentity: true
                   items:
-                      - name: applicationinsightapiprod
-                        envVar: APPINSIGHTS_CONNECTIONSTRING
+                      - name: applicationinsightapipublic
+                        envVar: APPLICATION_INSIGHTS_CONNECTIONSTRING
           identity:
             azure:
-                clientId: 23042ef9-dbae-40e9-9345-626087966321
+                clientId: 519d9a9d-de73-4352-a9ea-f278317c8b75
     - name: fastapi
       src: .
       dockerfileName: fastApi.Dockerfile
