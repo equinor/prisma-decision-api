@@ -62,20 +62,6 @@ spec:
           identity:
             azure:
                 clientId: 23042ef9-dbae-40e9-9345-626087966321
-        - environment: design
-          replicas: 1
-          variables:
-            ASPNETCORE_ENVIRONMENT: 'Public'
-            secretRefs:
-            azureKeyVaults:
-                - name: kvprismadecisionprodsw
-                  useAzureIdentity: true
-                  items:
-                      - name: applicationinsightapiprod
-                        envVar: APPINSIGHTS_CONNECTIONSTRING
-          identity:
-            azure:
-                clientId: 23042ef9-dbae-40e9-9345-626087966321
     - name: fastapi
       src: .
       dockerfileName: fastApi.Dockerfile
