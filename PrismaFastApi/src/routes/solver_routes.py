@@ -13,6 +13,7 @@ from src.dtos.discrete_utility_dtos import DiscreteUtilityOutgoingDto
 from src.dtos.model_solution_dtos import SolutionDto
 from src.dtos.evidence_dtos import EvidenceIncomingDto, EvidenceOutgoingDto
 from src.dtos.policy_table_dtos import PolicyTableRowDto
+from src.dtos.value_of_information_dtos import ValueOfPerfectInformationDto
 
 router = APIRouter(tags=["solvers"])
 
@@ -57,6 +58,29 @@ async def get_optimal_decisions_for_project_from_dtos(
     return await solver_service.find_optimal_decision_pyagrum_from_dtos(
         issues, edges, discrete_probabilities, discrete_utilities
     )
+
+
+@router.post("/solvers/project/{project_id}/value_of_perfect_information")
+async def get_value_of_perfect_information_for_project(
+    project_id: uuid.UUID,
+    uncertainty_issue_ids: list[uuid.UUID],
+    issues: list[IssueOutgoingDto],
+    edges: list[EdgeOutgoingDto],
+    discrete_probabilities: Optional[list[DiscreteProbabilityOutgoingDto]] = None,
+    discrete_utilities: Optional[list[DiscreteUtilityOutgoingDto]] = None,
+    evidence: Optional[list[uuid.UUID]] = None,
+    solver_service: SolverService = Depends(get_solver_service),
+    lock_manager: ProjectQueueManager = Depends(get_project_lock_manager),
+) -> list[ValueOfPerfectInformationDto]:
+    async with lock_manager.acquire_project_lock(project_id):
+        return await solver_service.get_value_of_perfect_information(
+            uncertainty_issue_ids=uncertainty_issue_ids,
+            evidence=evidence or [],
+            issues=issues,
+            edges=edges,
+            discrete_probabilities=discrete_probabilities or [],
+            discrete_utilities=discrete_utilities or [],
+        )
 
 
 @router.post("/solvers/project/{project_id}/with_evidence")

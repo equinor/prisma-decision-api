@@ -22,6 +22,7 @@ from src.dtos.edge_dtos import EdgeOutgoingDto
 from src.dtos.discrete_probability_dtos import DiscreteProbabilityOutgoingDto
 from src.dtos.discrete_utility_dtos import DiscreteUtilityOutgoingDto
 from src.dtos.model_solution_dtos import SolutionDto
+from src.dtos.value_of_information_dtos import ValueOfPerfectInformationDto
 from src.constants import Type
 
 executor = ThreadPoolExecutor()
@@ -98,6 +99,165 @@ class SolverService:
         )
 
         return solution
+
+    async def get_value_of_perfect_information(
+        self,
+        uncertainty_issue_ids: list[uuid.UUID],
+        evidence: list[uuid.UUID],
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+    ) -> list[ValueOfPerfectInformationDto]:
+        uncertainty_ids = {
+            issue.id
+            for issue in issues
+            if issue.type == Type.UNCERTAINTY.value
+        }
+        existing_arcs = {
+            (edge.tail_issue_id, edge.head_issue_id)
+            for edge in edges
+        }
+        valid_information_arcs = self._get_valid_information_arcs(
+            uncertainty_issue_ids, uncertainty_ids, issues, edges, existing_arcs
+        )
+
+        base_meu = await PyagrumSolver().get_mean_expected_utility(
+            issues=issues,
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+            evidence=evidence,
+        )
+        results: list[ValueOfPerfectInformationDto] = []
+        for uncertainty_issue_id, information_arcs in valid_information_arcs:
+            perfect_information_meu = (
+                await PyagrumSolver().get_mean_expected_utility(
+                    issues=issues,
+                    edges=edges,
+                    discrete_probabilities=discrete_probabilities,
+                    discrete_utilities=discrete_utilities,
+                    additional_arcs=information_arcs,
+                    evidence=evidence,
+                )
+            )
+            results.append(
+                ValueOfPerfectInformationDto(
+                    uncertainty_issue_id=uncertainty_issue_id,
+                    base_meu=base_meu,
+                    perfect_information_meu=perfect_information_meu,
+                    value_of_information=max(
+                        0.0,
+                        perfect_information_meu - base_meu,
+                    ),
+                )
+            )
+        return results
+
+    def _get_valid_information_arcs(
+        self,
+        uncertainty_issue_ids: list[uuid.UUID],
+        uncertainty_ids: set[uuid.UUID],
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        existing_arcs: set[tuple[uuid.UUID, uuid.UUID]],
+    ) -> list[tuple[uuid.UUID, list[tuple[uuid.UUID, uuid.UUID]]]]:
+        """
+        Get valid info arcs for each uncertainty
+        Returns list of valid info arcs for each uncertainty issue
+        Each item is (uncertainty_issue_id, list of arcs)
+        """
+        valid_information_arcs: list[
+            tuple[uuid.UUID, list[tuple[uuid.UUID, uuid.UUID]]]
+        ] = []
+        for uncertainty_issue_id in uncertainty_issue_ids:
+            if uncertainty_issue_id not in uncertainty_ids:
+                continue
+            valid_decision_ids = self._get_valid_decision_ids_for_perfect_information(
+                uncertainty_issue_id=uncertainty_issue_id,
+                issues=issues,
+                edges=edges,
+            )
+            if not valid_decision_ids:
+                continue
+            information_arcs = [
+                (uncertainty_issue_id, decision_id)
+                for decision_id in valid_decision_ids
+                if (uncertainty_issue_id, decision_id) not in existing_arcs
+            ]
+            valid_information_arcs.append(
+                (uncertainty_issue_id, information_arcs)
+            )
+        if not valid_information_arcs:
+           return []
+        return valid_information_arcs
+
+    def _get_valid_decision_ids_for_perfect_information(
+        self,
+        uncertainty_issue_id: uuid.UUID,
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+    ) -> list[uuid.UUID]:
+        """
+        Get valid decision ids that can't reach the uncertainty issue.
+        This means that we can add information arcs from the uncertainty to the decisions.
+        Args:
+            uncertainty_issue_id: UUID of the uncertainty
+            issues: list of issues
+            edges: list of edges
+        """
+        descendants_by_issue_id: dict[uuid.UUID, set[uuid.UUID]] = {}
+        for edge in edges:
+            descendants_by_issue_id.setdefault(edge.tail_issue_id, set()).add(
+                edge.head_issue_id
+            )
+        return [
+            issue.id
+            for issue in issues
+            if issue.type == Type.DECISION.value
+            and not self._can_reach_uncertainty(
+                issue.id,
+                uncertainty_issue_id,
+                descendants_by_issue_id,
+            )
+        ]
+
+    def _can_reach_uncertainty(
+        self,
+        issue_id: uuid.UUID,
+        uncertainty_issue_id: uuid.UUID,
+        descendants_by_issue_id: dict[uuid.UUID, set[uuid.UUID]],
+    ) -> bool:
+        """
+        Check if issue_id can reach uncertainty_issue_id in the graph.
+        Uses DFS with max depth to avoid cycles.
+        Returns True if reachable, False otherwise.
+        Args:
+            issue_id: UUID
+                the start issue
+            uncertainty_issue_id: UUID
+                the issue to check reachability for
+            descendants_by_issue_id: dict
+                Key: issue id
+                Value: set of descendant ids
+        """
+        pending = list(descendants_by_issue_id.get(issue_id, set()))
+        visited: set[uuid.UUID] = set()
+        max_depth = 30
+        depth = 0
+        while pending:
+            if depth > max_depth:
+                break
+            depth += 1
+            
+            descendant_id = pending.pop()
+            if descendant_id == uncertainty_issue_id:
+                return True
+            if descendant_id in visited:
+                continue
+            visited.add(descendant_id)
+            pending.extend(descendants_by_issue_id.get(descendant_id, set()))
+        return False
 
     async def find_optimal_decision_pyagrum_from_with_evidence(
         self,

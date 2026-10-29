@@ -58,6 +58,26 @@ public class SolversController : PrismaBaseController
         return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
     }
 
+    [HttpPost("solvers/project/{projectId:guid}/value_of_perfect_information")]
+    [ProducesResponseType<List<ValueOfPerfectInformationDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<ValueOfPerfectInformationDto>>> GetValueOfPerfectInformationAsync(
+        [FromRoute] Guid projectId,
+        [FromBody] ValueOfPerfectInformationRequestDto request,
+        CancellationToken ct = default)
+    {
+        UserOutgoingDto user = HttpContext.GetLoadedUser();
+        var endpoint = $"/solvers/project/{projectId}/value_of_perfect_information";
+        var fastApiResponse = await _fastApiService
+            .SendInfluenceDiagramValueOfPerfectInformationToFastApiAsync(projectId, endpoint, request, user, ct);
+
+        if (fastApiResponse.StatusCode == HttpStatusCode.OK)
+        {
+            return Content(fastApiResponse.Content ?? "{}", "application/json");
+        }
+
+        return StatusCode((int)fastApiResponse.StatusCode, fastApiResponse.Content);
+    }
+
     [HttpGet("solvers/project/{projectId:guid}/export")]
     public async Task<IActionResult> ExportPyagrumModelAsync([FromRoute] Guid projectId, CancellationToken ct = default)
     {
