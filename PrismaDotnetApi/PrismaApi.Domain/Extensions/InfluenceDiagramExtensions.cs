@@ -116,6 +116,8 @@ public static class InfluenceDiagramDtoExtensions
     {
         influenceDiagramDto.ValidateRestrictions();
         ApplyTotalRestrictions(influenceDiagramDto);
+        influenceDiagramDto.ValidateRestrictions();
+        ApplyTotalRestrictions(influenceDiagramDto);
         RestrictDecisions(influenceDiagramDto);
         RestrictUncertainties(influenceDiagramDto);
     }
@@ -415,7 +417,7 @@ public static class InfluenceDiagramDtoExtensions
         var relevantDiscreteProbabilities = influenceDiagramDto.discreteProbabilities
             .Where(probability => probability.UncertaintyId == parent.Id)
             .ToList();
-        relevantDiscreteProbabilities.AddProbabilitiesColumn(parent.IssueId, addedOutcome);
+        relevantDiscreteProbabilities.AddProbabilitiesColumn(parent.IssueId, addedOutcome.Id);
         relevantDiscreteProbabilities.SetProbabilitiesToOne(restrictionParentStateId, addedOutcome.Id);
 
         // from influence diagram replace all probabilities with the uncertainty id with the updated relevantDiscreteProbabilities
@@ -524,5 +526,4 @@ public static class InfluenceDiagramDtoExtensions
         discreteProbabilities.NormalizeProbabilities();
     }
 
-    
 }

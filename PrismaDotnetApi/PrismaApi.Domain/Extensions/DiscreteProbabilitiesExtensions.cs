@@ -8,7 +8,7 @@ public static class DiscreteProbabilitiesExtensions
     public static void AddProbabilitiesColumn(
         this ICollection<DiscreteProbabilityDto> probabilities, 
         Guid issueId,
-        OutcomeOutgoingDto addedOutcome)
+        Guid addedOutcomeId)
     {
         probabilities.ValidateProbabilities();
         // Implementation for adding a probabilities column goes here
@@ -19,12 +19,12 @@ public static class DiscreteProbabilitiesExtensions
             var template = row.First();
             probabilities.Add(new DiscreteProbabilityDto
             {
-                Id = IdGenerationUtils.GetDeterministicIdProbability(issueId, addedOutcome.Id, template.ParentOutcomeIds, template.ParentOptionIds),
+                Id = IdGenerationUtils.GetDeterministicIdProbability(issueId, addedOutcomeId, template.ParentOutcomeIds, template.ParentOptionIds),
                 ProjectId = template.ProjectId,
                 UncertaintyId = template.UncertaintyId,
                 ParentOptionIds = new List<Guid>(template.ParentOptionIds),
                 ParentOutcomeIds = new List<Guid>(template.ParentOutcomeIds),
-                OutcomeId = addedOutcome.Id,
+                OutcomeId = addedOutcomeId,
                 Probability = 0
             });
         }
@@ -140,6 +140,64 @@ public static class DiscreteProbabilitiesExtensions
             {
                 probability.Probability = probability.Probability / nonZeroTotalProbability;
             }
+        }
+    }
+
+    public static void AddProbabilityParent(
+        this ICollection<DiscreteProbabilityDto> probabilities,
+        Guid issueId,
+        ICollection<Guid> addedParentStateIds,
+        bool parentIsUncertainty
+    )
+    {
+        // Expand each existing row into one copy per state of the new parent, preserving its probabilities.
+        // The expanded rows replace the original row because every valid row must reference a state of the new parent.
+
+        var probabilityRows = probabilities.SeperateByRow();
+        var newProbabilities = new List<DiscreteProbabilityDto>();
+
+        foreach (var row in probabilityRows)
+        {
+            foreach (var addedParentStateId in addedParentStateIds)
+            {
+                var newRow = row.Select(p => new DiscreteProbabilityDto
+                {
+                    ProjectId = p.ProjectId,
+                    Probability = p.Probability,
+                    UncertaintyId = p.UncertaintyId,
+                    OutcomeId = p.OutcomeId,
+                    ParentOptionIds = new List<Guid>(p.ParentOptionIds),
+                    ParentOutcomeIds = new List<Guid>(p.ParentOutcomeIds)
+                }).ToList();
+
+                if (parentIsUncertainty)
+                {
+                    foreach (var probability in newRow)
+                    {
+                        probability.ParentOutcomeIds.Add(addedParentStateId);
+                    }
+                }
+                else
+                {
+                    foreach (var probability in newRow)
+                    {
+                        probability.ParentOptionIds.Add(addedParentStateId);
+                    }
+                }
+
+                foreach (var probability in newRow)
+                {
+                    probability.Id = IdGenerationUtils.GetDeterministicIdProbability(issueId, probability.OutcomeId, probability.ParentOutcomeIds, probability.ParentOptionIds);
+                }
+
+                newProbabilities.AddRange(newRow);
+            }
+        }
+
+        probabilities.Clear();
+        foreach (var newProbability in newProbabilities)
+        {
+            probabilities.Add(newProbability);
         }
     }
 }

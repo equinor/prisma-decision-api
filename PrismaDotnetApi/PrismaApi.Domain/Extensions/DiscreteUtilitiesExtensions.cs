@@ -87,4 +87,62 @@ public static class DiscreteUtilitiesExtensions
 			throw new InvalidOperationException("All utilities must belong to the same utility.");
 		}
 	}
+
+	public static void AddUtilityParent(
+		this ICollection<DiscreteUtilityDto> utilities,
+		Guid issueId,
+		ICollection<Guid> addedParentStateIds,
+		bool parentIsOption
+	)
+	{
+		// Expand each existing row into one copy per state of the new parent, preserving its utility values.
+        // The expanded rows replace the original row because every valid row must reference a state of the new parent.
+
+		var utilityRows = utilities.SeparateByRow();
+		var newUtilities = new List<DiscreteUtilityDto>();
+
+		foreach (var row in utilityRows)
+		{
+			foreach (var addedParentStateId in addedParentStateIds)
+			{
+				var newRow = row.Select(u => new DiscreteUtilityDto
+				{
+					ProjectId = u.ProjectId,
+					UtilityId = u.UtilityId,
+					ParentOptionIds = new List<Guid>(u.ParentOptionIds),
+					ParentOutcomeIds = new List<Guid>(u.ParentOutcomeIds),
+					ValueMetricId = u.ValueMetricId,
+					UtilityValue = u.UtilityValue
+				}).ToList();
+
+				if (parentIsOption)
+				{
+					foreach (var utility in newRow)
+					{
+						utility.ParentOptionIds.Add(addedParentStateId);
+					}
+				}
+				else
+				{
+					foreach (var utility in newRow)
+					{
+						utility.ParentOutcomeIds.Add(addedParentStateId);
+					}
+				}
+
+				foreach (var utility in newRow)
+				{
+					utility.Id = IdGenerationUtils.GetDeterministicIdUtility(issueId, utility.ValueMetricId, utility.ParentOutcomeIds, utility.ParentOptionIds);
+				}
+
+				newUtilities.AddRange(newRow);
+			}
+		}
+
+		utilities.Clear();
+		foreach (var newUtility in newUtilities)
+		{
+			utilities.Add(newUtility);
+		}
+	}
 }
