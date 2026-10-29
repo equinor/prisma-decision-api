@@ -364,7 +364,9 @@ public class TableRebuildingService : ITableRebuildingService
         IReadOnlyCollection<ParentStateGroup> parentGroups,
         ICollection<DiscreteProbabilityDto> expandedProbabilities)
     {
-        var uncertainty = issue.Uncertainty!;
+        // should not be null due to earlier checks
+        var uncertainty = issue.Uncertainty ?? throw new InvalidOperationException("Uncertainty cannot be null during table rebuild");
+        
         var expandedByKey = expandedProbabilities
             .GroupBy(ProbabilityKey)
             .ToDictionary(group => group.Key, group => group.First());
@@ -402,7 +404,9 @@ public class TableRebuildingService : ITableRebuildingService
             return [];
         }
 
-        var utility = issue.Utility!;
+        // should not be null due to earlier checks
+        var utility = issue.Utility ?? throw new InvalidOperationException("Utility cannot be null");
+
         var expandedByKey = expandedUtilities
             .GroupBy(UtilityKey)
             .ToDictionary(group => group.Key, group => group.First());
