@@ -19,8 +19,8 @@ public class ValueOfPerfectInformationDto
     [JsonPropertyName("base_meu")]
     public required double BaseMeu { get; set; }
 
-    [JsonPropertyName("perfect_information_meu")]
-    public required double PerfectInformationMeu { get; set; }
+    [JsonPropertyName("meu_with_information")]
+    public required double MeuWithInformation { get; set; }
 
     [JsonPropertyName("value_of_information")]
     public required double ValueOfInformation { get; set; }
