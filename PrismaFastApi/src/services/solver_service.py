@@ -1,5 +1,6 @@
 import asyncio
 import uuid
+import numpy as np
 from typing import Optional
 from src.dtos.margin_table_dtos import MarginTableRowDto
 from src.config import config
@@ -141,6 +142,12 @@ class SolverService:
                     evidence=evidence,
                 )
             )
+            # TODO: make a decision on handling non-finite MEU values
+            if (
+                not np.isfinite(perfect_information_meu) or 
+                not np.isfinite(base_meu)
+            ):
+                continue
             results.append(
                 ValueOfPerfectInformationDto(
                     uncertainty_issue_id=uncertainty_issue_id,
