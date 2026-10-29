@@ -243,13 +243,7 @@ class SolverService:
         """
         pending = list(descendants_by_issue_id.get(issue_id, set()))
         visited: set[uuid.UUID] = set()
-        max_depth = 30
-        depth = 0
         while pending:
-            if depth > max_depth:
-                break
-            depth += 1
-            
             descendant_id = pending.pop()
             if descendant_id == uncertainty_issue_id:
                 return True
