@@ -25,13 +25,5 @@ public class ValueOfPerfectInformationDto
     [JsonPropertyName("value_of_information")]
     public required double ValueOfInformation { get; set; }
     [JsonPropertyName("information_arcs")]
-    public List<InformationArcDto> InformationArcs { get; set; } = [];
-}
-
-public class InformationArcDto
-{
-    [JsonPropertyName("tail_issue_id")]
-    public required Guid TailIssueId { get; set; }
-    [JsonPropertyName("head_issue_id")]
-    public required Guid HeadIssueId { get; set; }
+    public List<EdgeOutgoingDto> InformationArcs { get; set; } = [];
 }

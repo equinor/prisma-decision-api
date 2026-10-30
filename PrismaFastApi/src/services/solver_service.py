@@ -19,7 +19,7 @@ from src.services.decision_tree_pruning_service import (
 )
 from src.dtos.policy_table_dtos import PolicyTableRowDto
 from src.dtos.issue_dtos import IssueOutgoingDto
-from src.dtos.edge_dtos import EdgeOutgoingDto
+from src.dtos.edge_dtos import EdgeOutgoingDto, build_information_arc
 from src.dtos.discrete_probability_dtos import DiscreteProbabilityOutgoingDto
 from src.dtos.discrete_utility_dtos import DiscreteUtilityOutgoingDto
 from src.dtos.model_solution_dtos import SolutionDto
@@ -157,6 +157,7 @@ class SolverService:
                         0.0,
                         perfect_information_meu - base_meu,
                     ),
+                    information_arcs=[build_information_arc(issues, x[0], x[1]) for x in information_arcs]
                 )
             )
         return results
@@ -187,6 +188,7 @@ class SolverService:
             )
             if not valid_decision_ids:
                 continue
+
             information_arcs = [
                 (uncertainty_issue_id, decision_id)
                 for decision_id in valid_decision_ids
