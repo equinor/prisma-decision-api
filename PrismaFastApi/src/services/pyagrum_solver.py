@@ -268,8 +268,11 @@ class PyagrumSolver:
         edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        additional_arcs: Optional[list[tuple[uuid.UUID, uuid.UUID]]] = None,
     ) -> gum.ShaferShenoyLIMIDInference:
         self.build_influence_diagram(issues, edges, discrete_probabilities, discrete_utilities)
+        for tail_issue_id, head_issue_id in additional_arcs or []:
+            self.add_edge_by_issue_ids(tail_issue_id, head_issue_id)
 
         self.ie = gum.ShaferShenoyLIMIDInference(self.diagram)
 
@@ -283,14 +286,39 @@ class PyagrumSolver:
 
         return self.ie
 
+    async def get_mean_expected_utility(
+        self,
+        issues: list[IssueOutgoingDto],
+        edges: list[EdgeOutgoingDto],
+        discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
+        discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        additional_arcs: Optional[list[tuple[uuid.UUID, uuid.UUID]]] = None,
+        evidence: Optional[list[uuid.UUID]] = None,
+    ) -> float:
+        inference_engine = await self.build_inference_engine(
+            issues=issues,
+            edges=edges,
+            discrete_probabilities=discrete_probabilities,
+            discrete_utilities=discrete_utilities,
+            additional_arcs=additional_arcs,
+        )
+        if evidence:
+            self.set_evidence(inference_engine, [str(state_id) for state_id in evidence])
+        meu: dict[str, float] = inference_engine.MEU()  # type: ignore
+        mean = meu.get("mean", None)
+        if mean is None:
+            raise RuntimeError("The inference engine did not return a mean expected utility")
+        return mean
+
     async def find_optimal_decisions(
         self,
         issues: list[IssueOutgoingDto],
         edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        additional_arcs: list[tuple[uuid.UUID, uuid.UUID]] = [],
     ) -> SolutionDto:
-        await self.build_inference_engine(issues, edges, discrete_probabilities, discrete_utilities)
+        await self.build_inference_engine(issues, edges, discrete_probabilities, discrete_utilities, additional_arcs)
         partial_order = await self.get_partial_order()
         solution = self.get_solution(
             self.get_inference(),
@@ -309,9 +337,10 @@ class PyagrumSolver:
         evidence: list[list[uuid.UUID]],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
+        additional_arcs: list[tuple[uuid.UUID, uuid.UUID]] = [],
     ) -> list[SolutionDto]:
         ie = await self.build_inference_engine(
-            issues, edges, discrete_probabilities, discrete_utilities
+            issues, edges, discrete_probabilities, discrete_utilities, additional_arcs
         )
         solutions: list[SolutionDto] = []
         partial_order = await self.get_partial_order()
@@ -334,10 +363,11 @@ class PyagrumSolver:
         edges: list[EdgeOutgoingDto],
         discrete_probabilities: list[DiscreteProbabilityOutgoingDto],
         discrete_utilities: list[DiscreteUtilityOutgoingDto],
-        evidence: list[list[uuid.UUID]],
+        additional_arcs: list[tuple[uuid.UUID, uuid.UUID]] = [],
+        evidence: list[list[uuid.UUID]] = [],
     ) -> list[Optional[float]]:
         ie = await self.build_inference_engine(
-            issues, edges, discrete_probabilities, discrete_utilities
+            issues, edges, discrete_probabilities, discrete_utilities, additional_arcs
         )
         MEUs: list[Optional[float]] = []
         for evidence_item in evidence:
@@ -430,6 +460,13 @@ class PyagrumSolver:
         tail_id = self.node_lookup[edge.tail_issue_id.__str__()]
         head_id = self.node_lookup[edge.head_issue_id.__str__()]
 
+        self.diagram.addArc(tail_id, head_id)  # type: ignore
+
+    def add_edge_by_issue_ids(
+        self, tail_issue_id: uuid.UUID, head_issue_id: uuid.UUID
+    ) -> None:
+        tail_id = self.node_lookup[str(tail_issue_id)]
+        head_id = self.node_lookup[str(head_issue_id)]
         self.diagram.addArc(tail_id, head_id)  # type: ignore
 
     def fill_cpts(self, issues: list[IssueOutgoingDto]):

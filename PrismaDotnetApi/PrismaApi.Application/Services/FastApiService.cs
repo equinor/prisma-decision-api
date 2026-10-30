@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using PrismaApi.Application.Interfaces.Services;
+using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Dtos;
 using PrismaApi.Domain.Extensions;
 using System.Text;
@@ -120,6 +121,34 @@ public class FastApiService : IFastApiService
             evidence,
         };
         var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+        return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
+    }
+
+    public async Task<ApiResponseDto> SendInfluenceDiagramValueOfPerfectInformationToFastApiAsync(
+        Guid projectId,
+        string endpoint,
+        ValueOfPerfectInformationRequestDto request,
+        UserOutgoingDto user,
+        CancellationToken ct = default)
+    {
+        var influenceDiagram = await _influenceDiagramService.GetRestrictedInfluenceDiagramAsync(
+            projectId,
+            user,
+            ct);
+        var payload = new
+        {
+            issues = influenceDiagram.issues,
+            edges = influenceDiagram.edges,
+            discrete_probabilities = influenceDiagram.discreteProbabilities,
+            discrete_utilities = influenceDiagram.discreteUtilities,
+            restriction_tables = influenceDiagram.restrictionTables,
+            uncertainty_issue_ids = influenceDiagram.issues.Where(x => x.Type == IssueType.Uncertainty.ToString()).Select(x => x.Id),
+            evidence = request.Evidence,
+        };
+        var content = new StringContent(
+            JsonSerializer.Serialize(payload),
+            Encoding.UTF8,
+            "application/json");
         return await CallDownstreamFastApiPostAsync(endpoint, content, ct);
     }
 
