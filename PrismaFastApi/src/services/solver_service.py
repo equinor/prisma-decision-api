@@ -152,7 +152,7 @@ class SolverService:
                 ValueOfPerfectInformationDto(
                     uncertainty_issue_id=uncertainty_issue_id,
                     base_meu=base_meu,
-                    perfect_information_meu=perfect_information_meu,
+                    meu_with_information=perfect_information_meu,
                     value_of_information=max(
                         0.0,
                         perfect_information_meu - base_meu,
