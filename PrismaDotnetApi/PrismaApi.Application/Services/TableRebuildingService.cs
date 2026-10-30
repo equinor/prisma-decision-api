@@ -186,7 +186,10 @@ public class TableRebuildingService : ITableRebuildingService
     {
         var issues = await DbContext.Issues
             .AsSplitQuery()
-            .Where(issue => issueIds.Contains(issue.Id))
+            .Where(issue =>
+                issueIds.Contains(issue.Id) &&
+                (issue.Type == IssueType.Uncertainty.ToString() ||
+                issue.Type == IssueType.Utility.ToString()))
             .Include(issue => issue.Uncertainty!)
                 .ThenInclude(uncertainty => uncertainty.Outcomes)
             .Include(issue => issue.Uncertainty!)
