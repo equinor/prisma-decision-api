@@ -13,6 +13,8 @@ namespace PrismaApi.Application.Services;
 
 public class TableRebuildingService : ITableRebuildingService
 {
+    private const int MaxTableEntryCount = 500;
+
     protected readonly AppDbContext DbContext;
     public TableRebuildingService(AppDbContext dbContext)
     {
@@ -116,6 +118,12 @@ public class TableRebuildingService : ITableRebuildingService
         var childIds = isChildUncertainty
             ? childIssue.Uncertainty!.Outcomes.Select(o => (Guid?)o.Id)
             : childIssue.Decision!.Options.Select(o => (Guid?)o.Id);
+
+        if (WouldExceedTableEntryLimit(parentIds.Count(), childIds.Count()))
+        {
+            DbContext.RestrictionEntries.RemoveRange(restrictionEntries);
+            return;
+        }
 
         List<(Guid? ParentId, Guid? ChildId)> validCombinations = (from parentId in parentIds
                                                                    from childId in childIds
@@ -253,6 +261,14 @@ public class TableRebuildingService : ITableRebuildingService
         // These groups represent the different combinations of parent states that will influence the probabilities.
         var parentGroups = CollectParentStateGroups(issue);
 
+        if (WouldExceedTableEntryLimit(
+            uncertainty.Outcomes.Count,
+            parentGroups.Select(group => group.StateIds.Count)))
+        {
+            RemoveDiscreteProbabilities(existingProbabilities);
+            return;
+        }
+
         if (expandedProbabilities.Count != 0)
         {
             // Add rows to the Probability table for each combination of parent states.
@@ -295,6 +311,13 @@ public class TableRebuildingService : ITableRebuildingService
         // Collect the parent state groups for the issue.
         // These groups represent the different combinations of parent states that will influence the utilities.
         var parentGroups = CollectParentStateGroups(issue);
+
+        if (parentGroups.Count != 0 &&
+            WouldExceedTableEntryLimit(parentGroups.Select(group => group.StateIds.Count)))
+        {
+            RemoveDiscreteUtilities(existingUtilities);
+            return;
+        }
 
         if (expandedUtilities.Count != 0)
         {
@@ -703,6 +726,20 @@ public class TableRebuildingService : ITableRebuildingService
         }
 
         return results;
+    }
+
+    private static bool WouldExceedTableEntryLimit(int initialEntryCount, IEnumerable<int> dimensions) =>
+        WouldExceedTableEntryLimit(dimensions.Prepend(initialEntryCount));
+
+    private static bool WouldExceedTableEntryLimit(params int[] dimensions) =>
+        WouldExceedTableEntryLimit(dimensions.AsEnumerable());
+
+    private static bool WouldExceedTableEntryLimit(IEnumerable<int> dimensions)
+    {
+        var count = dimensions.Aggregate(
+            1L,
+            (entryCount, dimension) => Math.Min(MaxTableEntryCount + 1L, entryCount * dimension));
+        return count > MaxTableEntryCount;
     }
 
     private static bool IsBoundaryInScope(string? boundary)
