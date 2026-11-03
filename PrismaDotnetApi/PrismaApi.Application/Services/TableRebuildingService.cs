@@ -49,7 +49,7 @@ public class TableRebuildingService : ITableRebuildingService
     {
         // the data we need is the edges connected to the issues that are parents of the restriction tables, so we can determine the new combinations of parent outcomes and options that should be in the restriction table, then we can delete the existing entries and add the new ones
         // we can get the outcomes and options connected without joining from the restriction table, the issue information is still needed to determine the parent issues and their types, but we can get that with a separate query and then do the rest of the processing in memory
-        var restrictionTables = await DbContext.RestrictionTables
+        var restrictionTables = DbContext.RestrictionTables
             .AsSplitQuery()
             .Where(rt => restrictionTableIds.Contains(rt.Id))
             .Include(rt => rt.RestrictionEntries)
@@ -73,9 +73,9 @@ public class TableRebuildingService : ITableRebuildingService
                     .ThenInclude(node => node!.Issue)
                         .ThenInclude(issue => issue!.Decision)
                             .ThenInclude(decision => decision!.Options)
-            .ToListAsync(ct);
+            .AsAsyncEnumerable();
 
-        foreach (var restrictionTable in restrictionTables)
+        await foreach (var restrictionTable in restrictionTables.WithCancellation(ct))
         {
             await RebuildRestrictionTable(restrictionTable, ct);
         }
@@ -192,7 +192,7 @@ public class TableRebuildingService : ITableRebuildingService
 
     public async Task RebuildIssuesFromIssueIds(ICollection<Guid> issueIds, CancellationToken ct = default)
     {
-        var issues = await DbContext.Issues
+        var issues = DbContext.Issues
             .AsSplitQuery()
             .Where(issue =>
                 issueIds.Contains(issue.Id) &&
@@ -224,9 +224,9 @@ public class TableRebuildingService : ITableRebuildingService
                         .ThenInclude(node => node.Issue!)
                             .ThenInclude(parentIssue => parentIssue.Decision!)
                                 .ThenInclude(decision => decision.Options)
-            .ToListAsync(ct);
+            .AsAsyncEnumerable();
 
-        foreach (var issue in issues)
+        await foreach (var issue in issues.WithCancellation(ct))
         {
             if (IsIssueType(issue.Type, IssueType.Uncertainty) && issue.Uncertainty != null)
             {

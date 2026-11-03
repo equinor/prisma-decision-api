@@ -36,6 +36,13 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
         );
     }
 
+    public async Task<int> GetCountWhereUserHasAccess(ICollection<Guid> projectIds, string userId, CancellationToken ct = default)
+    {
+        return await DbContext.Projects
+            .Where(p => projectIds.Contains(p.Id) && p.ProjectRoles.Any(r => r.UserId == userId))
+            .CountAsync(ct);
+    }
+
 
     public async Task<IEnumerable<Project>> UpdateRangeAsync(IEnumerable<Project> incomingEntities, UserOutgoingDto userDto, Expression<Func<Project, bool>> filterPredicate, CancellationToken ct = default)
     {
