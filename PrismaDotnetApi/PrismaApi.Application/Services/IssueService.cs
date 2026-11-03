@@ -32,7 +32,7 @@ public class IssueService : IIssueService
     public async Task<List<IssueOutgoingDto>> CreateAsync(List<IssueIncomingDto> dtos, UserOutgoingDto userDto, CancellationToken ct = default)
     {
         var projectIds = dtos.Select(d => d.ProjectId).Distinct().ToList();
-        if ((await _projectRepository.GetProjectsWhereUserHasAccess(projectIds, userDto.Id, ct)).Count == 0)
+        if ((await _projectRepository.GetCountWhereUserHasAccess(projectIds, userDto.Id, ct)) == 0)
             throw new UnauthorizedAccessException("User does not have access to one or more projects.");
 
         EnsureNodeDefaults(dtos);
