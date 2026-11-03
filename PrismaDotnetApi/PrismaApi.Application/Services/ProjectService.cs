@@ -57,7 +57,7 @@ public class ProjectService : IProjectService
         }
 
         var ids = projectEntities.Select(p => p.Id).ToList();
-        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, ct: ct);
+        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, customQuery: _projectRepository.QueryForProjectOutgoingDto(), ct: ct);
         return projects.ToOutgoingDtos(userDto.Id);
     }
 
@@ -81,7 +81,7 @@ public class ProjectService : IProjectService
         if (!updated)
             return null;
 
-        var projects = await _projectRepository.GetByIdsAsync([id], withTracking: false, filterPredicate: UserFilter(user), ct: ct);
+        var projects = await _projectRepository.GetByIdsAsync([id], withTracking: false, customQuery: _projectRepository.QueryForProjectOutgoingDto(), filterPredicate: UserFilter(user), ct: ct);
         return projects.FirstOrDefault()?.ToOutgoingDto(user.Id);
     }
 
@@ -92,7 +92,7 @@ public class ProjectService : IProjectService
 
     public async Task<List<ProjectOutgoingDto>> GetAsync(List<Guid> ids, UserOutgoingDto user, CancellationToken ct = default)
     {
-        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, filterPredicate: UserFilter(user), ct: ct);
+        var projects = await _projectRepository.GetByIdsAsync(ids, withTracking: false, customQuery: _projectRepository.QueryForProjectOutgoingDto(), filterPredicate: UserFilter(user), ct: ct);
         var dtos = projects.ToOutgoingDtos(user.Id);
         RegisterPublicProjectsInCache(dtos);
         return dtos;
@@ -105,6 +105,7 @@ public class ProjectService : IProjectService
             loadMissingAsync: async (projectIds, ct) => (
                 await _projectRepository.GetAllAsync(
                     withTracking: false,
+                    customQuery: _projectRepository.QueryForProjectOutgoingDto(),
                     filterPredicate: project => projectIds.Contains(project.Id),
                     ct: ct
                 )

@@ -76,9 +76,20 @@ public class ProjectRepository : BaseRepository<Project, Guid>, IProjectReposito
         return incomingEntities;
     }
 
+    // Only what ProjectOutgoingDto maps.
+    public IQueryable<Project> QueryForProjectOutgoingDto()
+    {
+        return DbContext.Projects
+            .AsSplitQuery()
+            .Include(p => p.BoardNodes)
+            .Include(p => p.ProjectRoles)
+                .ThenInclude(pr => pr.User);
+    }
+
     protected override IQueryable<Project> Query()
     {
         return DbContext.Projects
+            .AsSplitQuery()
             .Include(p => p.Objectives)
             .Include(p => p.BoardNodes)
             .Include(p => p.BoardSheets)
