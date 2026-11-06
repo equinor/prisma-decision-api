@@ -588,6 +588,10 @@ class DecisionTreeCreator_v3:
     def get_utility_nodes(self) -> list[uuid.UUID]:
         return self.get_nodes_from_type(Type.UTILITY.value)
 
+    def _stable_node_key(self, treenode_id: uuid.UUID) -> str:
+        dto_id = self.node_treenode_lookup.get_dto_id_for_treenode_id(treenode_id)
+        return str(dto_id or treenode_id)
+
     @property
     def decision_count(self) -> int:
         return len(self.get_decision_nodes())
@@ -606,7 +610,9 @@ class DecisionTreeCreator_v3:
         decisions: list[uuid.UUID] = []
         decisions_count = cid_copy.decision_count
         while decisions_count > 0:
-            nodes: list[uuid.UUID] = list(cid_copy.nx.nodes())  # type: ignore
+            nodes: list[uuid.UUID] = sorted(
+                cid_copy.nx.nodes(), key=self._stable_node_key  # type: ignore
+            )
             for node in nodes:
                 if not cid_copy.has_children(node):
                     if self.get_type_from_id(node) == Type.DECISION.value:
@@ -626,7 +632,11 @@ class DecisionTreeCreator_v3:
         """Partial order algorithm"""
         # get all chance nodes and sort according to child/parent relationship
         uncertainty_subgraph = self.nx.subgraph(self.get_uncertainty_nodes())  # type: ignore
-        uncertainty_nodes = list(nx.topological_sort(uncertainty_subgraph))  # type: ignore
+        uncertainty_nodes = list(
+            nx.lexicographical_topological_sort(
+                uncertainty_subgraph, key=self._stable_node_key
+            ) # type: ignore
+        )
 
         elimination_order = self.decision_elimination_order()
         # TODO: Add utility nodes
@@ -635,7 +645,7 @@ class DecisionTreeCreator_v3:
         while elimination_order:
             decision = elimination_order.pop()
             parent_decision_nodes: list[uuid.UUID] = []
-            for parent in self.get_parents(decision):
+            for parent in sorted(self.get_parents(decision), key=self._stable_node_key):
                 if not self.get_type_from_id(parent) == Type.DECISION.value:
                     if parent in uncertainty_nodes:
                         parent_decision_nodes.append(parent)
@@ -784,7 +794,9 @@ class DecisionTreeCreator_v3:
                             outcome.id == state_id for outcome in issue.uncertainty.outcomes
                         )
                     if not valid_state:
-                        raise ValueError(f"Invalid path: state_id {state_id} not found in issue {partial_order[k]}")
+                        raise ValueError(
+                            f"Invalid path: state_id {state_id} not found in issue {issue.id}"
+                        )
                 else:
                     raise ValueError(f"Invalid path: issue {partial_order[k]} not found or not an IssueOutgoingDto")
                 
