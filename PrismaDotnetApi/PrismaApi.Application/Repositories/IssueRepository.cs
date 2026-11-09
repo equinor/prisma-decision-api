@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using PrismaApi.Application.Exceptions;
 using PrismaApi.Application.Interfaces.Repositories;
 using PrismaApi.Application.Interfaces.Services;
 using PrismaApi.Domain.Constants;
 using PrismaApi.Domain.Entities;
 using PrismaApi.Infrastructure.Context;
 using PrismaApi.Infrastructure.Interfaces;
+using PrismaApi.Infrastructure.Extensions;
 using System.Linq.Expressions;
 
 namespace PrismaApi.Application.Repositories;
@@ -28,7 +30,21 @@ public class IssueRepository : BaseRepository<Issue, Guid>, IIssueRepository
         await _ruleTrigger.OnEdgesRemovedAsync(edgesToDelete.Select(x => x.Id).ToList(), ct);
         await _tableRebuildingService.RebuildTablesAsync(ct);
         await DbContext.SaveChangesAsync(ct);
-        await base.DeleteByIdsAsync(ids, filterPredicate, ct);
+
+        // get the issues before deleting to load the complete issue graph 
+        // so all related entities get correctly marked as deleted
+        var issues = await Query()
+            .OptionalWhere(filterPredicate)
+            .Where(issue => ids.Contains(issue.Id))
+            .ToListAsync(ct);
+
+        if (issues.Count == 0)
+        {
+            throw new NotFoundException("No Issue entities found. Either the entities do not exist or the user does not have permission to delete them.");
+        }
+
+        DbContext.Issues.RemoveRange(issues);
+        await DbContext.SaveChangesAsync(ct);
     }
 
     public async Task UpdateRangeAsync(IEnumerable<Issue> incomingEntities, Expression<Func<Issue, bool>> filterPredicate, CancellationToken ct = default)
