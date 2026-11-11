@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from typing import Optional
 from src.dtos.decision_dtos import (
@@ -25,3 +26,7 @@ class IssueOutgoingDto(IssueDto):
     utility: Optional[UtilityDto]
     created_at: datetime
     updated_at: datetime
+
+    def get_node_id(self) -> uuid.UUID:
+        return self.node.id
+    
