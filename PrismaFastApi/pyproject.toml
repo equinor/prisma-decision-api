@@ -21,13 +21,14 @@ xarray = "^2025.10.1"
 psutil = "^7.2.2"
 
 [tool.poetry.group.dev.dependencies]
-black = "26.3.1"
+black = "26.10.1"
 flake8 = "^7.3.0"
 pytest = "9.0.3"
 pytest-asyncio = "^1.0.0"
 pytest-cov = "^6.1.1"
 pytest-ordering = "^0.6"
 httpx = "^0.28.1"
+oauthlib = ">=4.0.1,<5.0.0"
 
 [tool.pytest.ini_options]
 asyncio_mode = "strict"
