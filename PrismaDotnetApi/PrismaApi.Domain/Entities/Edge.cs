@@ -21,6 +21,7 @@ public class Edge : BaseEntity, IBaseEntity<Guid>, IEntityHandlingPolicy
         modelBuilder.Entity<Edge>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.TailId, e.HeadId }).IsUnique();
         });
     }
 }
