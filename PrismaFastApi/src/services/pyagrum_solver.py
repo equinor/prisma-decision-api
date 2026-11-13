@@ -28,7 +28,7 @@ from src.dtos.model_solution_dtos import (
 )
 from src.services.decision_tree.decision_tree_creator import DecisionTreeCreator
 from src.dtos.policy_table_dtos import PolicyTableRowDto
-from typing import Any, TypeVar, Optional
+from typing import Any, TypeVar, Optional, cast
 
 T = TypeVar("T", OptionOutgoingDto, OutcomeOutgoingDto)
 
@@ -181,7 +181,7 @@ class PyagrumSolver:
     ) -> float:
         return ie.meanVar(node_name)["mean"]  # type: ignore
 
-    def _pyagrum_get_node_labels(self, node_identifier: str | int) -> tuple[str]:
+    def _pyagrum_get_node_labels(self, node_identifier: str | int) -> tuple[str, ...]:
         return self.diagram.variable(node_identifier).labels()  # type: ignore
 
     def get_optimal_decisions(self, ie: gum.ShaferShenoyLIMIDInference, decision_issue_id: str):
@@ -638,9 +638,47 @@ class PyagrumSolver:
         [self.add_node(x) for x in issues]
 
     def get_policy_table(self, decision_issue_id: str) -> list[PolicyTableRowDto]:
+        """Build the policy rows for a decision.
+
+        Decisions with decision parents are recalculated for every combination of
+        parent options and merged into one table.
+        """
         ie = self.get_inference()
+        parents = cast(list[int], self.diagram.parents(decision_issue_id))  # type: ignore
+        decision_parents = [p for p in parents if self.diagram.isDecisionNode(p)]  # type: ignore
+        if not decision_parents:
+            optimal_decision_tensor = ie.optimalDecision(decision_issue_id)  # type: ignore
+            return self._parse_policy_tensor(decision_issue_id, optimal_decision_tensor)
+
+        # This tensor contains all expected rows, but pyAgrum does not calculate those
+        # rows separately for each decision-parent option. Returning it directly would
+        # give the correct table shape with incorrect policy values. Keep it as the
+        # template whose rows are replaced by the option-specific calculations below.
         optimal_decision_tensor = ie.optimalDecision(decision_issue_id)  # type: ignore
-        return self._parse_policy_tensor(decision_issue_id, optimal_decision_tensor)
+        policies = self._parse_policy_tensor(decision_issue_id, optimal_decision_tensor)
+        decision_parent_state_ids = [
+            self._pyagrum_get_node_labels(parent_id)
+            for parent_id in decision_parents
+        ]
+        for state_ids in product(*decision_parent_state_ids):
+            self.set_evidence(ie, list(state_ids))
+            optimal_decision_tensor = ie.optimalDecision(decision_issue_id)  # type: ignore
+            table = self._parse_policy_tensor(decision_issue_id, optimal_decision_tensor)
+            evidence_state_ids = {uuid.UUID(state_id) for state_id in state_ids}
+
+            # pyAgrum uses the selected parent options to calculate every row, including
+            # rows for other parent options. Those other values are therefore wrong, so
+            # only replace rows that contain the selected option IDs.
+            replacements = {
+                tuple(entry.parent_state_ids): entry
+                for entry in table
+                if evidence_state_ids.issubset(entry.parent_state_ids)
+            }
+            policies = [
+                replacements.get(tuple(entry.parent_state_ids), entry)
+                for entry in policies
+            ]
+        return policies
 
     def _get_option_id_from_table_states(self, states: list[str]) -> str:
         option_ids = [
